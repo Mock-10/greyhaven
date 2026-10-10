@@ -14,6 +14,33 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
+## Phase 1 — Vertical slice (in progress)
+
+Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers"), docs/01 ("Names") and docs/16. Delivered in playable milestones, one PR each.
+
+### Milestone 1: Downtown, player, clock, HUD
+- [ ] Downtown map (about 48 × 48 tiles) with the approved names: Pellridge Tower, Open Most Hours, a parking lot, The Low Tide, Marlo's Tow & Salvage at the edge, Drizzle Row Residences. Roads, sidewalks, dense street props.
+- [ ] New exterior art made with `art/source/`: bar, chop shop and apartment block buildings, street name signs.
+- [ ] Player: walk and sprint in 8 directions with a smoother walk cycle, collision, interact (E) with gold rims and prompts, Tab to cycle.
+- [ ] Clock: the 20-minute day, day/dusk/night tint, warm lamps and lit windows (style guide).
+- [ ] HUD from `art/drafts/hud/`: vitals panel, stars, time and money panel, radar, objective line, phone message, key hints.
+
+### Milestone 2: interiors and the office job
+- [ ] Drafts approved: the expanded office building (lobby, open office, manager's office, server room) and the bar (main room and Dez's back room).
+- [ ] Interior scene with doors and the sight system (docs/19): apartment, office building, corner store (shopping), bar.
+- [ ] Office Worker job: clock in, 3 filing / data-entry tasks, pay, promotion XP, rank 1 → 2.
+- [ ] Sleep at the apartment.
+
+### Milestone 3: driving and the carjack loop
+- [ ] One sedan with arcade handling, fuel and basic damage; enter and exit (F).
+- [ ] Carjacking a parked car: lockpick and hotwire minigames; sell it at the chop shop for dirty money; launder at Dez's.
+
+### Milestone 4: police, saves, crowd
+- [ ] Wanted 1–2★: witnesses with the call delay, one police car and officers, search circle, escape timer, arrest with surrender, fine, first-offense rule.
+- [ ] Saves: 3 slots, autosave on sleep, export and import, SAVE_VERSION and migrations.
+- [ ] A few pedestrians and ambient traffic.
+- [ ] **Done when:** a full day loop can be played (work → evening carjack → escape or arrest → launder → sleep → reload the save), all unit tests pass, and the frame rate holds.
+
 ## Phase 0 — Foundations (2026-10-10)
 
 ### Checklist

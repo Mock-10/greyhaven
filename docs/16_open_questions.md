@@ -6,7 +6,7 @@ All 12 earlier questions were answered on 2026-10-10 and folded into the docs (s
 
 ## Still open
 1. **Story chains:** the cast in `17_story_and_characters.md` is **approved** (decided 2026-10-10). Before writing each character's chain (dialogue and mission data), show the user the outline and get a go-ahead.
-2. **Street and business names** *(decided: Claude Code proposes, the user approves)*: the town is **Greyhaven**. Propose a list of street names, district nicknames and business names (the bar, the store, the bank, the chop shop, the fronts) in the same muted, wry tone, and get it approved. Needed by Phase 1 for signage, and the map.
+2. **Street and business names:** answered 2026-10-10. The approved list is in `01_world_and_time.md` ("Names").
 3. **Interiors:** every interior needs its question round from `18_interiors.md` before it is built. The four drafts set the direction, and the user may still change them.
 4. **Rival crew identity:** a name and look for Vance's rival crew. Propose 3 options. Needed by Phase 5.
 

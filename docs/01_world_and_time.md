@@ -16,6 +16,13 @@ The town is called **Greyhaven**. It is compact and hand-authored. Target size i
 | **Docks** | Containers, water, cranes | Container yard, piers, fishing shacks | Smuggling drops, armored truck route, product supplier |
 | **Outskirts** | Fields, forest, dirt roads | Lumber camp, Old Pete's farm, open fields where planes airdrop product at night, highway, isolated barns | Lumberjack, farmer · airdrop pickups, remote smuggling drops, chop shop dumping |
 
+The starter apartment block, **Drizzle Row Residences**, stands on the edge of Downtown (decided 2026-10-10), so the Phase 1 vertical slice has a home. It stays there when the Suburbs are built.
+
+### Names (approved 2026-10-10)
+- **District nicknames:** Downtown "The Ledger", Suburbs "Hedgerow Park", Industrial "The Works", Docks "Saltgate", Outskirts "Far Acres".
+- **Downtown streets:** Overcast Avenue (main east–west), Pewter Street (main north–south), Ledger Lane, Drizzle Row, Gullsway (towards the Docks), Millwright Road (towards Industrial).
+- **Businesses:** office: Pellridge Mutual Assurance in Pellridge Tower · corner store: Open Most Hours · bar (Dez): The Low Tide · chop shop: Marlo's Tow & Salvage ("WE BUY ANY CAR*") · apartments: Drizzle Row Residences · bank: Greyhaven Savings & Loan · police: Greyhaven PD, Precinct 1 · jeweller: Gilt & Ward · gas station: Pump & Go · mechanic: Torque & Sons Garage · scrap yard: Ferris Metals · lumber: Ashby Timber · delivery depot: Swiftish Couriers · hospital: St. Agnes General · fronts: Clean Getaway Laundromat, Squeaky's Car Wash, Static (nightclub).
+
 Building interiors are separate small maps entered through doors: apartment, store, office floor, bank vault and so on. This keeps the outdoor map light and gives heists a contained stage.
 
 ## Time
