@@ -1,0 +1,12 @@
+node_modules/
+dist/
+shots/
+test-results/
+playwright-report/
+*.log
+.DS_Store
+__pycache__/
+art/source/cache/
+art/source/pack/
+art/source/out/
+public/assets/
