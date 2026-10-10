@@ -1,0 +1,970 @@
+{
+ "image": "characters_steps.png",
+ "cell": [
+  42,
+  65
+ ],
+ "note": "In-between walk poses (step1 = walk +0.4, step2 = walk -0.4) for the 8-frame cycle idle, step1, walk1, step1, idle, step2, walk2, step2. Same cell and anchor rules as characters.json.",
+ "frames": {
+  "office_worker/step1/SE": {
+   "x": 0,
+   "y": 0,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "office_worker/step1/S": {
+   "x": 42,
+   "y": 0,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "office_worker/step1/SW": {
+   "x": 84,
+   "y": 0,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "office_worker/step1/W": {
+   "x": 126,
+   "y": 0,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "office_worker/step1/NW": {
+   "x": 168,
+   "y": 0,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "office_worker/step1/N": {
+   "x": 210,
+   "y": 0,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "office_worker/step1/NE": {
+   "x": 252,
+   "y": 0,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "office_worker/step1/E": {
+   "x": 294,
+   "y": 0,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  },
+  "office_worker/step2/SE": {
+   "x": 0,
+   "y": 65,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "office_worker/step2/S": {
+   "x": 42,
+   "y": 65,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "office_worker/step2/SW": {
+   "x": 84,
+   "y": 65,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "office_worker/step2/W": {
+   "x": 126,
+   "y": 65,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "office_worker/step2/NW": {
+   "x": 168,
+   "y": 65,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "office_worker/step2/N": {
+   "x": 210,
+   "y": 65,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "office_worker/step2/NE": {
+   "x": 252,
+   "y": 65,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "office_worker/step2/E": {
+   "x": 294,
+   "y": 65,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  },
+  "masked_thief/step1/SE": {
+   "x": 0,
+   "y": 130,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "masked_thief/step1/S": {
+   "x": 42,
+   "y": 130,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "masked_thief/step1/SW": {
+   "x": 84,
+   "y": 130,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "masked_thief/step1/W": {
+   "x": 126,
+   "y": 130,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "masked_thief/step1/NW": {
+   "x": 168,
+   "y": 130,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "masked_thief/step1/N": {
+   "x": 210,
+   "y": 130,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "masked_thief/step1/NE": {
+   "x": 252,
+   "y": 130,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "masked_thief/step1/E": {
+   "x": 294,
+   "y": 130,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  },
+  "masked_thief/step2/SE": {
+   "x": 0,
+   "y": 195,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "masked_thief/step2/S": {
+   "x": 42,
+   "y": 195,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "masked_thief/step2/SW": {
+   "x": 84,
+   "y": 195,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "masked_thief/step2/W": {
+   "x": 126,
+   "y": 195,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "masked_thief/step2/NW": {
+   "x": 168,
+   "y": 195,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "masked_thief/step2/N": {
+   "x": 210,
+   "y": 195,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "masked_thief/step2/NE": {
+   "x": 252,
+   "y": 195,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "masked_thief/step2/E": {
+   "x": 294,
+   "y": 195,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  },
+  "road_worker/step1/SE": {
+   "x": 0,
+   "y": 260,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "road_worker/step1/S": {
+   "x": 42,
+   "y": 260,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "road_worker/step1/SW": {
+   "x": 84,
+   "y": 260,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "road_worker/step1/W": {
+   "x": 126,
+   "y": 260,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "road_worker/step1/NW": {
+   "x": 168,
+   "y": 260,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "road_worker/step1/N": {
+   "x": 210,
+   "y": 260,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "road_worker/step1/NE": {
+   "x": 252,
+   "y": 260,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "road_worker/step1/E": {
+   "x": 294,
+   "y": 260,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  },
+  "road_worker/step2/SE": {
+   "x": 0,
+   "y": 325,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "road_worker/step2/S": {
+   "x": 42,
+   "y": 325,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "road_worker/step2/SW": {
+   "x": 84,
+   "y": 325,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "road_worker/step2/W": {
+   "x": 126,
+   "y": 325,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "road_worker/step2/NW": {
+   "x": 168,
+   "y": 325,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "road_worker/step2/N": {
+   "x": 210,
+   "y": 325,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "road_worker/step2/NE": {
+   "x": 252,
+   "y": 325,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "road_worker/step2/E": {
+   "x": 294,
+   "y": 325,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  },
+  "civilian_a/step1/SE": {
+   "x": 0,
+   "y": 390,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "civilian_a/step1/S": {
+   "x": 42,
+   "y": 390,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "civilian_a/step1/SW": {
+   "x": 84,
+   "y": 390,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "civilian_a/step1/W": {
+   "x": 126,
+   "y": 390,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "civilian_a/step1/NW": {
+   "x": 168,
+   "y": 390,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "civilian_a/step1/N": {
+   "x": 210,
+   "y": 390,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "civilian_a/step1/NE": {
+   "x": 252,
+   "y": 390,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "civilian_a/step1/E": {
+   "x": 294,
+   "y": 390,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  },
+  "civilian_a/step2/SE": {
+   "x": 0,
+   "y": 455,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "civilian_a/step2/S": {
+   "x": 42,
+   "y": 455,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "civilian_a/step2/SW": {
+   "x": 84,
+   "y": 455,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "civilian_a/step2/W": {
+   "x": 126,
+   "y": 455,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "civilian_a/step2/NW": {
+   "x": 168,
+   "y": 455,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "civilian_a/step2/N": {
+   "x": 210,
+   "y": 455,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "civilian_a/step2/NE": {
+   "x": 252,
+   "y": 455,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "civilian_a/step2/E": {
+   "x": 294,
+   "y": 455,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  },
+  "civilian_b/step1/SE": {
+   "x": 0,
+   "y": 520,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "civilian_b/step1/S": {
+   "x": 42,
+   "y": 520,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "civilian_b/step1/SW": {
+   "x": 84,
+   "y": 520,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "civilian_b/step1/W": {
+   "x": 126,
+   "y": 520,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "civilian_b/step1/NW": {
+   "x": 168,
+   "y": 520,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "civilian_b/step1/N": {
+   "x": 210,
+   "y": 520,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "civilian_b/step1/NE": {
+   "x": 252,
+   "y": 520,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "civilian_b/step1/E": {
+   "x": 294,
+   "y": 520,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  },
+  "civilian_b/step2/SE": {
+   "x": 0,
+   "y": 585,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "civilian_b/step2/S": {
+   "x": 42,
+   "y": 585,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "civilian_b/step2/SW": {
+   "x": 84,
+   "y": 585,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "civilian_b/step2/W": {
+   "x": 126,
+   "y": 585,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "civilian_b/step2/NW": {
+   "x": 168,
+   "y": 585,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "civilian_b/step2/N": {
+   "x": 210,
+   "y": 585,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "civilian_b/step2/NE": {
+   "x": 252,
+   "y": 585,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "civilian_b/step2/E": {
+   "x": 294,
+   "y": 585,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  },
+  "police_officer/step1/SE": {
+   "x": 0,
+   "y": 650,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "police_officer/step1/S": {
+   "x": 42,
+   "y": 650,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "police_officer/step1/SW": {
+   "x": 84,
+   "y": 650,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "police_officer/step1/W": {
+   "x": 126,
+   "y": 650,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "police_officer/step1/NW": {
+   "x": 168,
+   "y": 650,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "police_officer/step1/N": {
+   "x": 210,
+   "y": 650,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "police_officer/step1/NE": {
+   "x": 252,
+   "y": 650,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "police_officer/step1/E": {
+   "x": 294,
+   "y": 650,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  },
+  "police_officer/step2/SE": {
+   "x": 0,
+   "y": 715,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    53
+   ]
+  },
+  "police_officer/step2/S": {
+   "x": 42,
+   "y": 715,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    56
+   ]
+  },
+  "police_officer/step2/SW": {
+   "x": 84,
+   "y": 715,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    53
+   ]
+  },
+  "police_officer/step2/W": {
+   "x": 126,
+   "y": 715,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "police_officer/step2/NW": {
+   "x": 168,
+   "y": 715,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    22,
+    54
+   ]
+  },
+  "police_officer/step2/N": {
+   "x": 210,
+   "y": 715,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    58
+   ]
+  },
+  "police_officer/step2/NE": {
+   "x": 252,
+   "y": 715,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    20,
+    54
+   ]
+  },
+  "police_officer/step2/E": {
+   "x": 294,
+   "y": 715,
+   "w": 42,
+   "h": 65,
+   "anchor": [
+    19,
+    54
+   ]
+  }
+ }
+}

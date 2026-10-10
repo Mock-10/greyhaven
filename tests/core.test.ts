@@ -59,19 +59,30 @@ describe('event bus', () => {
 
 describe('state and params', () => {
   it('keeps the game state a plain serialisable object', () => {
-    const s = createState(7, { x: 1, y: 2 });
+    const s = createState(7, 'downtown', { x: 1, y: 2 });
     expect(JSON.parse(JSON.stringify(s))).toEqual(s);
+    expect(s.money.clean).toBeGreaterThan(0);
+    expect(s.wanted.stars).toBe(0);
   });
 
   it('reads debug URL parameters and ignores junk', () => {
-    expect(parseParams('')).toEqual({ scene: 'title', seed: 1, zoom: 0, debug: false, spawn: null });
-    expect(parseParams('?scene=world&seed=9&zoom=3&debug=1&x=10&y=20')).toEqual({
+    expect(parseParams('')).toEqual({
+      scene: 'title',
+      seed: 1,
+      zoom: 0,
+      debug: false,
+      spawn: null,
+      minute: null,
+    });
+    expect(parseParams('?scene=world&seed=9&zoom=3&debug=1&x=10&y=20&time=21:30')).toEqual({
       scene: 'world',
       seed: 9,
       zoom: 3,
       debug: true,
       spawn: { x: 10, y: 20 },
+      minute: 21 * 60 + 30,
     });
+    expect(parseParams('?time=25:00').minute).toBeNull();
     expect(parseParams('?scene=cheat&zoom=9&seed=-4').scene).toBe('title');
     expect(parseParams('?zoom=9').zoom).toBe(0);
   });

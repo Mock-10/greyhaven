@@ -24,16 +24,44 @@ export interface Placement {
   lamp?: boolean;
   /** Blocks movement. Box footprints use the shadow box; blobs use the blob radius. */
   solid?: boolean;
+  /** The sprite has a lit-window `_night` variant that glows after dark. */
+  night?: boolean;
+  /** Something the player can use with E (shows the gold rim in range and a prompt when targeted). */
+  interact?: { id: string; label: string };
+}
+
+/** Interiors a street door can lead to (built in milestone 2). */
+export type DoorTarget = 'tower_lobby' | 'store' | 'apartment' | 'bar' | 'chop_shop';
+
+/** A street door: a hotspot on the pavement in front of an entrance. */
+export interface Door {
+  x: number;
+  y: number;
+  target: DoorTarget;
+  label: string;
+}
+
+/** A named street's area, for the HUD street-name readout. */
+export interface StreetSpan {
+  name: string;
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
 }
 
 export interface MapData {
   id: string;
+  /** District name shown on the HUD. */
+  name?: string;
   /** Tiles per side. */
   width: number;
   height: number;
   /** Tile kind per cell, indexed [i][j] with i along world x. */
   tiles: string[][];
   placements: Placement[];
-  /** Where the debug walker starts, in world units. */
+  doors?: Door[];
+  streets?: StreetSpan[];
+  /** Where the player starts, in world units. */
   spawn: { x: number; y: number };
 }

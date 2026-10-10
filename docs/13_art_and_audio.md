@@ -17,6 +17,8 @@ The art direction is **locked**. Read `art/STYLE_GUIDE.md` before touching anyth
 | `interactables.png/.json` | ATM, safe, gold bars, cash stack, loot bag, loot crate, toolbox, filing cabinet, desk, cash register. Each comes as normal / idle0–2 / hover. |
 | `tiles.png/.json` | 24 ground tiles: asphalt, wet asphalt, road lanes (edge/centre/dashed for both axes), crosswalks, intersection, manhole, 2 sidewalks, 2 grass, dirt, planks, water, 2 lots |
 | `tiles_var.png/.json` | The same 26 ground tiles in all 7 seeded variants (`<kind>/s<seed>`). The game draws ground from this sheet. The reference scenes pick seed `(i·31 + j·17) % 7` per tile. Made by `source/tile_variants.py`. |
+| `buildings2.png/.json` | Phase 1 buildings in 4 orientations with `_night` variants: Pellridge Tower and Open Most Hours (named versions), The Low Tide, Marlo's Tow & Salvage, Drizzle Row Residences (`source/pack_phase1.py`) |
+| `characters_steps.png/.json` | In-between walk poses (`step1` = walk +0.4, `step2` = −0.4) for the 8-frame cycle idle, step1, walk1, step1, idle, step2, walk2, step2 (`source/pack_steps.py`) |
 | `scene_*.png` | Reference compositions: overcast day and rainy dusk. **Match these.** |
 | `drafts/hud/` | HUD mockups (street and lockpick) and the HUD kit (see 11) |
 | `drafts/interiors/` | Interior drafts v2: apartment, 3-room store, office, multi-room bank heist (see 18) |
@@ -32,6 +34,8 @@ New sprites must match the existing ones exactly. Generate them with the same pi
 - `sdf.py`: the renderer (signed-distance models, isometric ray-march, palette quantisation, dithering, outlines, `highlight()` for interactable states, `scaled()`).
 - `humans.py`, `cars.py`, `env.py`, `props2.py`: model definitions. Copy an existing model and adapt it.
 - `ground2d.py`: ground tiles, including interior floors. `rooms.py`: multi-room cutaway composer, wall decals (paintings, clocks, posters, curtains, tiles, signs) and the four v2 drafts. `decor.py`: furniture and decoration library, where every model's front is local +y and `face()` sets the direction. `interiors.py`: older furniture models still in use. `hud.py` + `pixfont.py`: HUD parts and the pixel font. `cache.py`: rendering plus scale constants. `atlas.py`: packs the atlases. `scene.py`: composes reference scenes.
+
+Signs: `env.sign_text()` draws the 3 × 5 pixel font into a building's material in its local coordinates (one font pixel is about one screen pixel), so names read in every orientation. On a +x face, run the text along −y.
 
 Workflow for a new asset:
 1. Add the model to the right file.

@@ -3,8 +3,12 @@
 
 import buildingsPng from '../../art/buildings.png';
 import buildingsJson from '../../art/buildings.json';
+import buildings2Png from '../../art/buildings2.png';
+import buildings2Json from '../../art/buildings2.json';
 import charactersPng from '../../art/characters.png';
 import charactersJson from '../../art/characters.json';
+import stepsPng from '../../art/characters_steps.png';
+import stepsJson from '../../art/characters_steps.json';
 import interactablesPng from '../../art/interactables.png';
 import interactablesJson from '../../art/interactables.json';
 import propsPng from '../../art/props.png';
@@ -18,8 +22,10 @@ import type { AtlasJson } from './atlasFormat';
 export const ATLASES = {
   tiles: { url: tilesVarPng, json: tilesVarJson as unknown as AtlasJson },
   buildings: { url: buildingsPng, json: buildingsJson as unknown as AtlasJson },
+  buildings2: { url: buildings2Png, json: buildings2Json as unknown as AtlasJson },
   props: { url: propsPng, json: propsJson as unknown as AtlasJson },
   characters: { url: charactersPng, json: charactersJson as unknown as AtlasJson },
+  steps: { url: stepsPng, json: stepsJson as unknown as AtlasJson },
   vehicles: { url: vehiclesPng, json: vehiclesJson as unknown as AtlasJson },
   interactables: { url: interactablesPng, json: interactablesJson as unknown as AtlasJson },
 } as const;

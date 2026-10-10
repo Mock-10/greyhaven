@@ -7,7 +7,7 @@ import { parseParams } from './debug/params';
 import { installHook } from './debug/hooks';
 import { BootScene } from './scenes/BootScene';
 import { TitleScene } from './scenes/TitleScene';
-import { UIScene } from './scenes/UIScene';
+import { HudScene } from './scenes/HudScene';
 import { WorldScene } from './scenes/WorldScene';
 
 const hook = installHook();
@@ -33,7 +33,7 @@ const game = new Phaser.Game({
   scale: { mode: Phaser.Scale.NONE, width: size.w, height: size.h },
   input: { mouse: { preventDefaultWheel: false } },
   disableContextMenu: true,
-  scene: [BootScene, WorldScene, TitleScene, UIScene],
+  scene: [BootScene, WorldScene, TitleScene, HudScene],
   callbacks: {
     preBoot: (g) => g.registry.set('params', params),
   },

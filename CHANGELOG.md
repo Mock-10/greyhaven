@@ -18,12 +18,13 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers"), docs/01 ("Names") and docs/16. Delivered in playable milestones, one PR each.
 
-### Milestone 1: Downtown, player, clock, HUD
-- [ ] Downtown map (about 48 × 48 tiles) with the approved names: Pellridge Tower, Open Most Hours, a parking lot, The Low Tide, Marlo's Tow & Salvage at the edge, Drizzle Row Residences. Roads, sidewalks, dense street props.
-- [ ] New exterior art made with `art/source/`: bar, chop shop and apartment block buildings, street name signs.
-- [ ] Player: walk and sprint in 8 directions with a smoother walk cycle, collision, interact (E) with gold rims and prompts, Tab to cycle.
-- [ ] Clock: the 20-minute day, day/dusk/night tint, warm lamps and lit windows (style guide).
-- [ ] HUD from `art/drafts/hud/`: vitals panel, stars, time and money panel, radar, objective line, phone message, key hints.
+### Milestone 1: Downtown, player, clock, HUD (2026-10-10)
+- [x] Downtown ("The Ledger") map, 48 × 48 tiles, with the approved names: Pellridge Tower and its plaza, Open Most Hours and its parking lot, a second lot on Millwright Road, Drizzle Row Residences, The Low Tide, Marlo's Tow & Salvage at the east edge. Overcast Avenue and Drizzle Row run east–west; Pewter Street and Millwright Road run north–south. Crosswalks, traffic lights and street signs at every crossing, lamps, benches, planters, hydrants, bins and trees along the sidewalks, parked cars in the lots, junk cars in Marlo's yard.
+- [x] New exterior art made with `art/source/`: The Low Tide, Marlo's chop shop and Drizzle Row Residences (`env.py`), plus named versions of the tower and the store. Business names are drawn on the sign boards in the 3 × 5 pixel font, inside the model's material, so they read in every orientation. Every Phase 1 building has a `_night` variant with lit windows. Packed by `art/source/pack_phase1.py` into `art/buildings2.png/.json`.
+- [x] Player: walk and sprint in 8 directions with a smoother 8-frame walk cycle (new in-between poses from `art/source/pack_steps.py`, `art/characters_steps.png/.json`), collision, footprint-aware depth, occlusion fade.
+- [x] Interaction: everything usable within 1.5 tiles shows the idle gold rim; the one in front of you shows the hover rim and the prompt; **Tab** cycles; **E** uses. In this milestone: the plaza ATM and the five street doors.
+- [x] Clock: the 20-minute day (setting stored for 15 / 20 / 30), Monday 07:00 start, darkness ramps at dawn and dusk, night tints from the style guide (objects, ground and usable objects separately), lit windows that ignore the tint, warm dithered lamp pools, a darker sky.
+- [x] HUD drawn with the `hud.py` primitives at UI resolution and scaled by whole numbers: vitals panel, stars, day/clock/clean/dirty panel, radar (iso-oriented, buildings, home and shop blips, the arrow points where you face), objective line, phone messages (Ms. Hollis at the start, Dez at 17:30), street name and district when you enter a street, key hints. The F3 readout moved into the HUD.
 
 ### Milestone 2: interiors and the office job
 - [x] Drafts approved (2026-10-10, after one revision: a bigger back room for Dez with laundering clutter, and fixes from the new layout checker): `interior_tower_lobby.png`, `interior_office_floor.png`, `interior_bar.png`.
@@ -40,6 +41,22 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - [ ] Saves: 3 slots, autosave on sleep, export and import, SAVE_VERSION and migrations.
 - [ ] A few pedestrians and ambient traffic.
 - [ ] **Done when:** a full day loop can be played (work → evening carjack → escape or arrest → launder → sleep → reload the save), all unit tests pass, and the frame rate holds.
+
+### Milestone 1 notes
+**How to try:** click to start, walk with WASD (Shift sprints). Walk up to the ATM on the plaza or any building door: the gold rim and the `[E]` prompt appear; Tab switches target when two are in range. Watch the clock: dusk starts at 18:00 and windows and street lamps light up. Debug links: `?scene=world&time=19:45` (dusk), `?scene=world&time=23:30` (night).
+
+**Assumptions (please review):**
+- A new game starts on Monday 07:00 with $250 clean and $0 dirty (docs/02 gives no starting cash).
+- Darkness ramps from 18:00 to 21:30 and from 05:00 to 07:00; lamps and lit windows switch on past 35% darkness.
+- Doors and the ATM are usable but only show a phone message until their systems arrive (interiors in milestone 2, banking with the phone in Phase 2).
+- The vitals panel shows UNARMED until weapons arrive (Phase 4).
+- Lamp light is drawn additively (warm colour in 4 dithered bands), an approximation of the reference composer's lamp formula.
+
+**Art debt:** none. All new art was generated with `art/source/`.
+
+**Known issues:**
+- Parked cars can't be used yet (milestone 3). There are no pedestrians or traffic yet (milestone 4).
+- Lamp light pools are faint at the start of dusk and full only after 21:30.
 
 ## Phase 0 — Foundations (2026-10-10)
 
