@@ -50,6 +50,10 @@ Never hand-draw placeholder rectangles in the shipped game. If an asset is missi
 - **Characters:** palette-swap player sprites for the character creator (marker ramps; 4 hair styles), story characters (17), rival crew members, farmer and scrap yard outfits, more civilian variety, clerk, mechanic, lumberjack, delivery uniform, security guard, SWAT, military unit, crew portraits.
 - **Vehicles:** small airdrop plane (night flyover sprite plus shadow), tractor, scrap-yard crane, beater, pickup, sports car, armored SUV, log truck, SWAT van, helicopter (with a rotor animation), armored truck.
 - **Buildings:** bank, police HQ, gas station, mechanic garage, scrap yard, chop shop, bar, lumber camp, farm (fields, barn), legal scrap yard (car crusher, metal piles), docks crane, apartment block, front businesses (laundromat, car wash, nightclub), interiors.
+- **Streets (user direction 2026-10-10, see 01 "Street layout and density"):**
+  - Ground: curved kerb, road-edge and sidewalk pieces at a few radii (rounded corners, bends, a roundabout), or a ground baked from a vector street layout by `ground2d.py`. Paving variants and patterns, grates, cracks, puddles.
+  - Props: bus stop, newspaper boxes, phone booth, bike racks, café tables and awnings, kiosks, tree pits, fences and low walls, posters on walls, and alley clutter (dumpsters, pallets, crates, pipes, AC units).
+  - Small infill buildings and shopfronts to close the gaps between the main buildings.
 - **Effects:** muzzle flash, tracer, smoke, fire, explosion, blood-free hit spark, rain splash, siren light glow.
 - **UI:** the phone screens, inventory grid, shop screens, pause menu, Life Summary. (The HUD, prompts and the lockpick panel are drafted in `drafts/hud/`.)
 

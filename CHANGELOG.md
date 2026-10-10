@@ -17,7 +17,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 ## Handover (2026-10-10) — read this first in a new session
 
 **Where things stand**
-- **The current phase is still Phase 1 (vertical slice).** It is delivered in 4 milestones, one PR each, and only milestone 1 is finished. A new session continues with **Phase 1, milestone 2**, not Phase 2.
+- **The current phase is still Phase 1 (vertical slice).** It is delivered in 4 milestones, one PR each, and only milestone 1 is finished. A new session continues Phase 1, not Phase 2. It starts with the **Downtown rework (milestone 1b, below)** that you asked for after playing milestone 1, then picks milestone 2 back up.
 - **`main`** has Phase 0 and Phase 1 milestone 1 (PR #1 and PR #2, both merged). It is live at `https://mock-10.github.io/greyhaven/`. The deploy workflow is green, and the Pages source is set to GitHub Actions.
 - **Unfinished milestone 2 work** is on branch **`claude/festive-allen-rw96zv`** in one WIP commit on top of this `main`. It is not merged and not yet wired into the game. It passes `npm test` (85 tests), `tsc` and `npm run lint`. It contains:
   - `art/source/export_interiors.py`, which turns each approved draft (`art/source/rooms.py`) into a game-ready sprite sheet plus JSON: baked floor, walls, wall segments, items with shadows, prompts and doors, NPC spots, and partitions with door gaps. Output is in `art/interiors/` (apartment, store, tower_lobby, office_floor, bar). `check_layout.py` now also records floors, walls and stub gaps.
@@ -26,6 +26,25 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
   - `src/data/jobs.ts` and `src/systems/career.ts` (clock-in window, late penalty, tasks, pay, XP, promotion, key card), plus the `careers` and `minigames` numbers in `balance.ts`. Tests are in `tests/career.test.ts`.
   - `src/minigames/logic.ts`: the rules of the filing and data-entry minigames, with no drawing. Tests are in `tests/minigames.test.ts`.
 - To continue: `git fetch origin && git checkout claude/festive-allen-rw96zv`. If `main` has moved, merge it in first. If your session is told to work on a different branch, create it from `main` and run `git merge origin/claude/festive-allen-rw96zv` so the WIP comes with you. Don't start milestone 2 from scratch.
+
+**Do first: milestone 1b, the Downtown rework (your feedback, 2026-10-10)**
+Your words, after playing milestone 1: *"The player when sprinting feels still too slow for such a vast and open world. Driving will be a portion implemented later on of course. The entire map feels lackluster and desolate with a lot of empty space. For example stores have huge portions of repeated sidewalk/concrete and the design feels very open space but lacks any level of details with decorations. Implement a lot more decorations, close the space, and process it like an actual city as opposed to such vast empty spaces. The map also feels very squared off and boxed like although this is only a small section being drafted and shown right now. I'd like for rounded corners or streets with more curved turns and an increased addition of curved spaces and geometry as seen fit going with the look and feel of the game."*
+
+The binding rules are now in `docs/01_world_and_time.md` ("Street layout and density"), `CLAUDE.md` (hard rule 7) and the street art list in `docs/13`. The work:
+1. **Faster on foot.** Raise `BALANCE.walker`. Today walking is 32 units/s (1 tile/s) and sprinting 1.9× (about 1.9 tiles/s). A suggested start is walking at 48 units/s and sprinting at about 2.3× (about 110 units/s, about 3.4 tiles/s), then tune by feel. Keep the walk cycle's frame rate in step so the feet don't slide.
+2. **Close the space.**
+   - Rework `src/maps/downtown.ts` into a real city block pattern:
+     - tighter blocks, with buildings fronting the sidewalk;
+     - infill buildings and shopfronts, plus alleys between them;
+     - parking lots smaller and edged with planters, fences or low walls;
+     - no wide strips of plain concrete in front of the stores.
+   - Keep the approved names and the five buildings with doors, plus the Phase 1 needs: a parking lot with cars to steal, the chop shop at the edge, and room for police and traffic later.
+3. **Decorate densely.** Add many more street props, made with `art/source` (`decor.py` / `env.py`). Examples: bus stops, newspaper boxes, phone booths, bike racks, café tables with awnings, kiosks, alley clutter (dumpsters, pallets, crates, pipes, AC units), wall posters, fences, tree pits and grates. Break up the repeated paving with variants, patterns, cracks, puddles and kerb details.
+4. **Curves.** Round the street corners, add curved bends and at least one curved feature (a curved plaza, a roundabout or a bending street), plus curved planters and walls where they fit. This needs new ground art from `art/source/ground2d.py`: curved kerb, road-edge and sidewalk pieces at a few radii, or a ground baked from a vector street layout. Collision for curves uses footprint polygons in world units (docs/14).
+5. **Draft first.** This is a big visual change. Before building it in the game, render a draft of the new Downtown with `art/source` (like the reference scenes and the interior drafts) and get your approval.
+6. Then check it in the game with Playwright screenshots (day and night), compare them with the reference scenes and the approved draft, update tests and the smoke test (the building positions change), open a PR, and check the Pages build after merge.
+
+Then merge `main` into the milestone 2 branch and continue below.
 
 **Next steps (milestone 2, in order)**
 1. **Minigame overlay scene** (`MinigameScene`): it dims the world by 35%, shows a 176 × 128 panel matching `art/drafts/hud/` (the lockpick mockup) and a gold title at 2×. Draw the filing and data-entry panels with `src/ui/hudDraw.ts`. Job tasks pause the world.
@@ -51,7 +70,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 - "Animations are a bit stiff" (after Phase 0): **done in milestone 1**. There is now an 8-frame walk and sprint cycle, with new in-between poses. Idle, interact and other animations are still single poses; tell me if you want those smoothed too.
 - Dez's back room made bigger, with bills and laundering clutter on the floor and tables: **done**, and the draft was approved.
 - Check every draft for furniture facing the right way and for overlaps or clipping: **done**. `art/source/check_layout.py` now checks this automatically, and all three drafts pass with 0 issues.
-- **Nothing you asked for is outstanding.**
+- **Outstanding (2026-10-10, after milestone 1): sprinting too slow, Downtown too empty and open, too boxy. Wanted: more decoration, a closed-in city feel, rounded corners and curved streets.** Not done yet. It is milestone 1b above.
 
 **Questions I still owe you or need answered**
 1. **Corner store in Phase 1.** The roadmap says "shopping only", but there is no item catalogue or shop menu until the Phase 2 economy. Right now the counter prompt only says "the shop opens in Phase 2". Should Phase 1 sell a few basics (for example snacks that heal, or a fuel can for milestone 3), or is walk-in only fine until Phase 2?
@@ -75,6 +94,14 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - [x] Interaction: everything usable within 1.5 tiles shows the idle gold rim; the one in front of you shows the hover rim and the prompt; **Tab** cycles; **E** uses. In this milestone: the plaza ATM and the five street doors.
 - [x] Clock: the 20-minute day (setting stored for 15 / 20 / 30), Monday 07:00 start, darkness ramps at dawn and dusk, night tints from the style guide (objects, ground and usable objects separately), lit windows that ignore the tint, warm dithered lamp pools, a darker sky.
 - [x] HUD drawn with the `hud.py` primitives at UI resolution and scaled by whole numbers: vitals panel, stars, day/clock/clean/dirty panel, radar (iso-oriented, buildings, home and shop blips, the arrow points where you face), objective line, phone messages (Ms. Hollis at the start, Dez at 17:30), street name and district when you enter a street, key hints. The F3 readout moved into the HUD.
+
+### Milestone 1b: Downtown rework (your feedback, 2026-10-10)
+- [ ] Faster walking and sprinting (`BALANCE.walker`), tuned by feel.
+- [ ] Draft of the reworked Downtown rendered with `art/source` and approved.
+- [ ] Closed-in city layout: tighter blocks, infill buildings, alleys, smaller lots, no wide strips of bare concrete.
+- [ ] Dense street decoration (new props from `art/source`) and varied paving.
+- [ ] Rounded corners, curved streets and curved features (new curved ground art).
+- [ ] Tests, screenshots (day and night), notes, PR.
 
 ### Milestone 2: interiors and the office job
 - [x] Drafts approved (2026-10-10, after one revision: a bigger back room for Dez with laundering clutter, and fixes from the new layout checker): `interior_tower_lobby.png`, `interior_office_floor.png`, `interior_bar.png`.
