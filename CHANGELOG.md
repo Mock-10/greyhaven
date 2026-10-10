@@ -14,6 +14,56 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
+## Handover (2026-10-10) — read this first in a new session
+
+**Where things stand**
+- **The current phase is still Phase 1 (vertical slice).** It is delivered in 4 milestones, one PR each, and only milestone 1 is finished. A new session continues with **Phase 1, milestone 2**, not Phase 2.
+- **`main`** has Phase 0 and Phase 1 milestone 1 (PR #1 and PR #2, both merged). It is live at `https://mock-10.github.io/greyhaven/`. The deploy workflow is green, and the Pages source is set to GitHub Actions.
+- **Unfinished milestone 2 work** is on branch **`claude/festive-allen-rw96zv`** in one WIP commit on top of this `main`. It is not merged and not yet wired into the game. It passes `npm test` (85 tests), `tsc` and `npm run lint`. It contains:
+  - `art/source/export_interiors.py`, which turns each approved draft (`art/source/rooms.py`) into a game-ready sprite sheet plus JSON: baked floor, walls, wall segments, items with shadows, prompts and doors, NPC spots, and partitions with door gaps. Output is in `art/interiors/` (apartment, store, tower_lobby, office_floor, bar). `check_layout.py` now also records floors, walls and stub gaps.
+  - `src/systems/sight.ts`: the docs/19 sight rules as pure code (8-unit cells, rays blocked by walls and closed doors, the current room always visible, visible / remembered / unseen). Tests are in `tests/sight.test.ts`.
+  - `src/data/interiors.ts`: what each interior means in the game (names, opening hours, what each draft prompt does, door rules, NPC roles and hours, entrances, elevator links).
+  - `src/data/jobs.ts` and `src/systems/career.ts` (clock-in window, late penalty, tasks, pay, XP, promotion, key card), plus the `careers` and `minigames` numbers in `balance.ts`. Tests are in `tests/career.test.ts`.
+  - `src/minigames/logic.ts`: the rules of the filing and data-entry minigames, with no drawing. Tests are in `tests/minigames.test.ts`.
+- To continue: `git fetch origin && git checkout claude/festive-allen-rw96zv`. If `main` has moved, merge it in first.
+
+**Next steps (milestone 2, in order)**
+1. **Minigame overlay scene** (`MinigameScene`): it dims the world by 35%, shows a 176 × 128 panel matching `art/drafts/hud/` (the lockpick mockup) and a gold title at 2×. Draw the filing and data-entry panels with `src/ui/hudDraw.ts`. Job tasks pause the world.
+2. **Interior area:** split `WorldScene` into the shared parts (player, camera, interaction, HUD feed) and two area views, street and interior, with a fade between them.
+   - Loading and depth: load `art/interiors/<id>.json`. The floor goes in the ground layer, walls at the back, stubs on top, segments at depth x + y − 2, items at x + y + zBias. Use footprint-aware depth for the player against box-shadow items and wall segments.
+   - Collision: the room edges, partitions minus their gaps, closed doors, and furniture footprints.
+   - Doors: OPEN / CLOSE DOOR prompts, and LOCKED shown in red. Door rules follow `data/interiors.ts` (open, locked, key card at rank 2, staff hours).
+   - Moving between areas: the exit at the entrance, elevator links between the lobby and floor 4, and opening hours on street doors. After hours, the tower needs the key card. The chop shop says "MARLO: COME BACK WITH A CAR."
+   - NPCs appear according to their hours.
+3. **Sight rendering** (docs/19):
+   - dithered lids over unseen cells;
+   - remembered cells dimmed;
+   - back walls darkened above rooms you can't see;
+   - lavender NPC "ghosts" at 40%;
+   - 150 ms fades;
+   - the **sight lines** setting turns all of this off;
+   - remembered rooms kept in the game state.
+4. **Office job in game:** clock in with Ms. Hollis, then 3 tasks at the filing cabinets and your desk, then clock out for pay, XP and rank, with objective lines and phone toasts. Rank 2 gives the key card (after-hours lobby and the server room).
+5. **Sleep** in the apartment: skip to 06:00 the next day. Autosave arrives with saves in milestone 4.
+6. Unit and e2e tests for the above, screenshots in `docs/screenshots/phase1_m2/` compared with the drafts, the milestone 2 notes below, a PR, and a Pages check after merge.
+
+**Tweaks you asked for**
+- "Animations are a bit stiff" (after Phase 0): **done in milestone 1**. There is now an 8-frame walk and sprint cycle, with new in-between poses. Idle, interact and other animations are still single poses; tell me if you want those smoothed too.
+- Dez's back room made bigger, with bills and laundering clutter on the floor and tables: **done**, and the draft was approved.
+- Check every draft for furniture facing the right way and for overlaps or clipping: **done**. `art/source/check_layout.py` now checks this automatically, and all three drafts pass with 0 issues.
+- **Nothing you asked for is outstanding.**
+
+**Questions I still owe you or need answered**
+1. **Corner store in Phase 1.** The roadmap says "shopping only", but there is no item catalogue or shop menu until the Phase 2 economy. Right now the counter prompt only says "the shop opens in Phase 2". Should Phase 1 sell a few basics (for example snacks that heal, or a fuel can for milestone 3), or is walk-in only fine until Phase 2?
+2. **Please review the assumptions** in the milestone 1 notes and the milestone 2 notes below (for example the $250 starting cash and the Monday 07:00 start).
+3. Still open from docs/16, but **not needed yet**: names and looks for the rival crew (3 options, needed by Phase 5), and an outline of each story chain before it is written.
+
+**Session notes for whoever picks this up**
+- npm goes through the proxy. Before `npm`, `npx vite preview` or Playwright, set `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1`. Playwright uses the pre-installed Chromium (`/opt/pw-browsers`), so don't run `playwright install` locally.
+- `npm run shots` starts its own preview server and kills it afterwards. Don't use `pkill -f "vite preview"`, because it also kills the calling shell.
+- Interior art pipeline: edit `art/source/rooms.py` → `python3 art/source/check_layout.py` (must report 0 issues) → `python3 art/source/export_interiors.py` → commit `art/interiors/*`.
+- The simulation runs on `game.loop.rawDelta`, because Phaser's smoothed delta crawls in headless Chromium.
+
 ## Phase 1 — Vertical slice (in progress)
 
 Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers"), docs/01 ("Names") and docs/16. Delivered in playable milestones, one PR each.
@@ -28,9 +78,31 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 
 ### Milestone 2: interiors and the office job
 - [x] Drafts approved (2026-10-10, after one revision: a bigger back room for Dez with laundering clutter, and fixes from the new layout checker): `interior_tower_lobby.png`, `interior_office_floor.png`, `interior_bar.png`.
+- [x] Export of the approved drafts into game-ready sprites and geometry (`art/source/export_interiors.py` → `art/interiors/`). *On the WIP branch.*
+- [x] Sight rules as tested logic (`src/systems/sight.ts`). *On the WIP branch, not drawn in game yet.*
+- [x] Interior definitions: hours, door rules, prompt actions, NPC schedules (`src/data/interiors.ts`). *On the WIP branch.*
+- [x] Career logic for the office job: clock-in window, late pay, pay, XP, promotion bonus, key card (`src/systems/career.ts`, `src/data/jobs.ts`). *On the WIP branch.*
+- [x] Filing and data-entry minigame rules (`src/minigames/logic.ts`). *On the WIP branch, no on-screen panel yet.*
+- [ ] Minigame overlay scene (panels drawn to match `art/drafts/hud/`).
 - [ ] Interior scene with doors and the sight system (docs/19): apartment, office building, corner store (shopping), bar.
 - [ ] Office Worker job: clock in, 3 filing / data-entry tasks, pay, promotion XP, rank 1 → 2.
 - [ ] Sleep at the apartment.
+- [ ] Tests, screenshots, notes, PR.
+
+### Milestone 2 notes (in progress)
+**Assumptions so far (please review):**
+- Opening hours: corner store 07:00–21:00, Pellridge Tower 08:00–18:00, The Low Tide 16:00–02:00, with Dez in the back room 18:00–02:00 (all from docs/18). Outside opening hours the street door is locked. The tower lets you in after hours only with the rank 2 key card.
+- Dez's back-room door opens only while Dez is in (18:00–02:00). At other times it shows "STAFF ONLY". The store's back-room door stays locked in Phase 1, because robbery comes in Phase 3.
+- In Phase 1 the draft's crime prompts in the store (rob register, lockpick, safe, cameras, footage) are hidden. The counter shows SHOP (see the question in the handover). The wardrobe and stash in the apartment show "coming in Phase 3 / Phase 5" messages. Dez's LAUNDER says "bring me something to wash first" until dirty cash exists in milestone 3.
+- A shift counts on Monday to Friday, clock-in 08:00–10:00, late after 09:00 at 80% pay, one shift per day (docs/03).
+- **Shift XP:** docs/03 lists XP by shift result ("mostly poor / OK / good / excellent" = 6 / 9 / 11 / 14). I take "mostly" to mean the average task grade, rounded down. A minigame can also end in **fail** (for example when data entry runs out of time), which counts like poor.
+- Spare XP carries over after a promotion. The promotion bonus is paid in clean cash with the shift's pay.
+- **Filing:** 8 papers in 3 colours (red, navy, sage), each falling a little faster than the last; a misfile cancels one correct paper. docs/06 also mentions dragging and stamping each paper, which the overlay must add. The logic currently files with keys 1–3 or a click.
+- **Data entry:** 3 sequences of 5 keys in 14 seconds. Excellent needs no errors and at least 35% of the time left.
+
+**Art debt:** none. All interior sprites come from the approved drafts through `art/source/`.
+
+**Known issues:** milestone 2 is not playable yet. Street doors still only show a phone message on `main`.
 
 ### Milestone 3: driving and the carjack loop
 - [ ] One sedan with arcade handling, fuel and basic damage; enter and exit (F).
@@ -57,6 +129,7 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 **Known issues:**
 - Parked cars can't be used yet (milestone 3). There are no pedestrians or traffic yet (milestone 4).
 - Lamp light pools are faint at the start of dusk and full only after 21:30.
+- Still open from Phase 0: the camera has no world bounds (panning can show the background past the map edge, within the 12-tile pan limit). Headless Chromium renders at about 12 fps, so screenshots and e2e runs are slow (real GPUs are fine). The JS bundle is about 1.3 MB, mostly Phaser, so no code splitting yet.
 
 ## Phase 0 — Foundations (2026-10-10)
 
