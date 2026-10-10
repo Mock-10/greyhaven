@@ -1,0 +1,170 @@
+{
+ "image": "props.png",
+ "cell": [
+  152,
+  212
+ ],
+ "note": "anchor = pixel inside the cell that sits on the object's ground point (feet / footprint centre).",
+ "frames": {
+  "props0/tree_a": {
+   "x": 0,
+   "y": 0,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    76,
+    173
+   ]
+  },
+  "props0/tree_b": {
+   "x": 152,
+   "y": 0,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    76,
+    173
+   ]
+  },
+  "props0/pine": {
+   "x": 304,
+   "y": 0,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    76,
+    183
+   ]
+  },
+  "props0/bush": {
+   "x": 456,
+   "y": 0,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    75,
+    192
+   ]
+  },
+  "props0/planter": {
+   "x": 608,
+   "y": 0,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    76,
+    194
+   ]
+  },
+  "props0/lamp": {
+   "x": 760,
+   "y": 0,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    87,
+    188
+   ]
+  },
+  "props0/bench": {
+   "x": 912,
+   "y": 0,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    75,
+    195
+   ]
+  },
+  "props0/trash_can": {
+   "x": 1064,
+   "y": 0,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    76,
+    203
+   ]
+  },
+  "props1/hydrant": {
+   "x": 0,
+   "y": 212,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    76,
+    203
+   ]
+  },
+  "props1/mailbox": {
+   "x": 152,
+   "y": 212,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    76,
+    202
+   ]
+  },
+  "props1/dumpster": {
+   "x": 304,
+   "y": 212,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    77,
+    194
+   ]
+  },
+  "props1/crate": {
+   "x": 456,
+   "y": 212,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    76,
+    200
+   ]
+  },
+  "props1/barrel_teal": {
+   "x": 608,
+   "y": 212,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    76,
+    202
+   ]
+  },
+  "props1/barrel_brick": {
+   "x": 760,
+   "y": 212,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    76,
+    202
+   ]
+  },
+  "props1/traffic_light": {
+   "x": 912,
+   "y": 212,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    80,
+    197
+   ]
+  },
+  "props1/street_sign": {
+   "x": 1064,
+   "y": 212,
+   "w": 152,
+   "h": 212,
+   "anchor": [
+    76,
+    201
+   ]
+  }
+ }
+}

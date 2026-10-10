@@ -1,0 +1,220 @@
+{
+ "image": "buildings.png",
+ "cell": [
+  352,
+  617
+ ],
+ "note": "anchor = pixel inside the cell that sits on the object's ground point (feet / footprint centre). Footprint centre. Houses/containers also rotated.",
+ "frames": {
+  "office_tower/SE": {
+   "x": 0,
+   "y": 0,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    176,
+    520
+   ]
+  },
+  "office_tower_night/SE": {
+   "x": 0,
+   "y": 617,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    176,
+    520
+   ]
+  },
+  "corner_store/SE": {
+   "x": 0,
+   "y": 1234,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    189,
+    543
+   ]
+  },
+  "house_brick/SE": {
+   "x": 0,
+   "y": 1851,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    181,
+    549
+   ]
+  },
+  "house_brick/SW": {
+   "x": 352,
+   "y": 1851,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    181,
+    554
+   ]
+  },
+  "house_brick/NE": {
+   "x": 704,
+   "y": 1851,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    171,
+    549
+   ]
+  },
+  "house_slate/SE": {
+   "x": 0,
+   "y": 2468,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    181,
+    549
+   ]
+  },
+  "house_slate/SW": {
+   "x": 352,
+   "y": 2468,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    181,
+    554
+   ]
+  },
+  "house_slate/NE": {
+   "x": 704,
+   "y": 2468,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    171,
+    549
+   ]
+  },
+  "warehouse/SE": {
+   "x": 0,
+   "y": 3085,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    178,
+    533
+   ]
+  },
+  "warehouse/SW": {
+   "x": 352,
+   "y": 3085,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    178,
+    536
+   ]
+  },
+  "warehouse/NE": {
+   "x": 704,
+   "y": 3085,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    173,
+    533
+   ]
+  },
+  "container_brick/SE": {
+   "x": 0,
+   "y": 3702,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    175,
+    569
+   ]
+  },
+  "container_brick/SW": {
+   "x": 352,
+   "y": 3702,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    175,
+    569
+   ]
+  },
+  "container_brick/NE": {
+   "x": 704,
+   "y": 3702,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    175,
+    569
+   ]
+  },
+  "container_teal/SE": {
+   "x": 0,
+   "y": 4319,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    175,
+    569
+   ]
+  },
+  "container_teal/SW": {
+   "x": 352,
+   "y": 4319,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    175,
+    569
+   ]
+  },
+  "container_teal/NE": {
+   "x": 704,
+   "y": 4319,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    175,
+    569
+   ]
+  },
+  "container_khaki/SE": {
+   "x": 0,
+   "y": 4936,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    175,
+    569
+   ]
+  },
+  "container_khaki/SW": {
+   "x": 352,
+   "y": 4936,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    175,
+    569
+   ]
+  },
+  "container_khaki/NE": {
+   "x": 704,
+   "y": 4936,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    175,
+    569
+   ]
+  }
+ }
+}

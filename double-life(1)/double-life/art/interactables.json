@@ -1,0 +1,510 @@
+{
+ "image": "interactables.png",
+ "cell": [
+  106,
+  101
+ ],
+ "note": "anchor = pixel inside the cell that sits on the object's ground point (feet / footprint centre). States: normal, idle0-2 (animated gold shimmer when in range), hover (targeted).",
+ "frames": {
+  "atm/normal": {
+   "x": 0,
+   "y": 0,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    54,
+    85
+   ]
+  },
+  "atm/idle0": {
+   "x": 106,
+   "y": 0,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    54,
+    85
+   ]
+  },
+  "atm/idle1": {
+   "x": 212,
+   "y": 0,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    54,
+    85
+   ]
+  },
+  "atm/idle2": {
+   "x": 318,
+   "y": 0,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    54,
+    85
+   ]
+  },
+  "atm/hover": {
+   "x": 424,
+   "y": 0,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    54,
+    85
+   ]
+  },
+  "safe/normal": {
+   "x": 0,
+   "y": 101,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    52,
+    80
+   ]
+  },
+  "safe/idle0": {
+   "x": 106,
+   "y": 101,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    52,
+    80
+   ]
+  },
+  "safe/idle1": {
+   "x": 212,
+   "y": 101,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    52,
+    80
+   ]
+  },
+  "safe/idle2": {
+   "x": 318,
+   "y": 101,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    52,
+    80
+   ]
+  },
+  "safe/hover": {
+   "x": 424,
+   "y": 101,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    52,
+    80
+   ]
+  },
+  "gold_bars/normal": {
+   "x": 0,
+   "y": 202,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    84
+   ]
+  },
+  "gold_bars/idle0": {
+   "x": 106,
+   "y": 202,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    84
+   ]
+  },
+  "gold_bars/idle1": {
+   "x": 212,
+   "y": 202,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    84
+   ]
+  },
+  "gold_bars/idle2": {
+   "x": 318,
+   "y": 202,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    84
+   ]
+  },
+  "gold_bars/hover": {
+   "x": 424,
+   "y": 202,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    84
+   ]
+  },
+  "cash_stack/normal": {
+   "x": 0,
+   "y": 303,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    83
+   ]
+  },
+  "cash_stack/idle0": {
+   "x": 106,
+   "y": 303,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    83
+   ]
+  },
+  "cash_stack/idle1": {
+   "x": 212,
+   "y": 303,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    83
+   ]
+  },
+  "cash_stack/idle2": {
+   "x": 318,
+   "y": 303,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    83
+   ]
+  },
+  "cash_stack/hover": {
+   "x": 424,
+   "y": 303,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    83
+   ]
+  },
+  "loot_bag/normal": {
+   "x": 0,
+   "y": 404,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    84
+   ]
+  },
+  "loot_bag/idle0": {
+   "x": 106,
+   "y": 404,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    84
+   ]
+  },
+  "loot_bag/idle1": {
+   "x": 212,
+   "y": 404,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    84
+   ]
+  },
+  "loot_bag/idle2": {
+   "x": 318,
+   "y": 404,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    84
+   ]
+  },
+  "loot_bag/hover": {
+   "x": 424,
+   "y": 404,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    84
+   ]
+  },
+  "crate_loot/normal": {
+   "x": 0,
+   "y": 505,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    85
+   ]
+  },
+  "crate_loot/idle0": {
+   "x": 106,
+   "y": 505,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    85
+   ]
+  },
+  "crate_loot/idle1": {
+   "x": 212,
+   "y": 505,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    85
+   ]
+  },
+  "crate_loot/idle2": {
+   "x": 318,
+   "y": 505,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    85
+   ]
+  },
+  "crate_loot/hover": {
+   "x": 424,
+   "y": 505,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    85
+   ]
+  },
+  "toolbox/normal": {
+   "x": 0,
+   "y": 606,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    85
+   ]
+  },
+  "toolbox/idle0": {
+   "x": 106,
+   "y": 606,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    85
+   ]
+  },
+  "toolbox/idle1": {
+   "x": 212,
+   "y": 606,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    85
+   ]
+  },
+  "toolbox/idle2": {
+   "x": 318,
+   "y": 606,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    85
+   ]
+  },
+  "toolbox/hover": {
+   "x": 424,
+   "y": 606,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    85
+   ]
+  },
+  "filing_cabinet/normal": {
+   "x": 0,
+   "y": 707,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    86
+   ]
+  },
+  "filing_cabinet/idle0": {
+   "x": 106,
+   "y": 707,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    86
+   ]
+  },
+  "filing_cabinet/idle1": {
+   "x": 212,
+   "y": 707,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    86
+   ]
+  },
+  "filing_cabinet/idle2": {
+   "x": 318,
+   "y": 707,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    86
+   ]
+  },
+  "filing_cabinet/hover": {
+   "x": 424,
+   "y": 707,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    86
+   ]
+  },
+  "desk_paperwork/normal": {
+   "x": 0,
+   "y": 808,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    74
+   ]
+  },
+  "desk_paperwork/idle0": {
+   "x": 106,
+   "y": 808,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    74
+   ]
+  },
+  "desk_paperwork/idle1": {
+   "x": 212,
+   "y": 808,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    74
+   ]
+  },
+  "desk_paperwork/idle2": {
+   "x": 318,
+   "y": 808,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    74
+   ]
+  },
+  "desk_paperwork/hover": {
+   "x": 424,
+   "y": 808,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    74
+   ]
+  },
+  "cash_register/normal": {
+   "x": 0,
+   "y": 909,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    71
+   ]
+  },
+  "cash_register/idle0": {
+   "x": 106,
+   "y": 909,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    71
+   ]
+  },
+  "cash_register/idle1": {
+   "x": 212,
+   "y": 909,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    71
+   ]
+  },
+  "cash_register/idle2": {
+   "x": 318,
+   "y": 909,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    71
+   ]
+  },
+  "cash_register/hover": {
+   "x": 424,
+   "y": 909,
+   "w": 106,
+   "h": 101,
+   "anchor": [
+    53,
+    71
+   ]
+  }
+ }
+}
