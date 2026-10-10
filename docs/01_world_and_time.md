@@ -18,6 +18,15 @@ The town is called **Greyhaven**. It is compact and hand-authored. Target size i
 
 The starter apartment block, **Drizzle Row Residences**, stands on the edge of Downtown (decided 2026-10-10), so the Phase 1 vertical slice has a home. It stays there when the Suburbs are built.
 
+### Street layout and density (user direction, 2026-10-10)
+After playing the first Downtown build, the user found it too empty, too open and too boxy. These rules apply to every outdoor area:
+- **A real city, not open lots.** Close the space in. Blocks are tight, and buildings front onto the sidewalk with infill buildings, shopfronts and alleys between them. Parking lots are small and edged with planters, fences or low walls. Avoid wide strips of plain sidewalk or concrete, especially in front of stores.
+- **Dense decoration.** Every stretch of sidewalk is dressed: lamps, benches, bins, planters, trees in tree pits, hydrants, bus stops, newspaper boxes, phone booths, bike racks, café tables and awnings, kiosks, signage and posters. Alleys get dumpsters, pallets, crates, pipes and AC units. Plazas get fountains, seating and planters.
+  - **Working rule (proposed, open to review):** no walkable open patch larger than about 3 × 3 tiles without a prop or a change in paving, except roads and deliberately designed open spaces.
+- **Varied surfaces.** Break up repeated paving with tile variants, paving patterns, kerb details, grates, cracks, puddles and painted markings.
+- **Curves, not a box grid.** Use rounded street corners, streets with curved bends, and curved spaces (curved plazas, a roundabout, curved planters and walls) wherever they suit the look. Downtown can stay mostly orthogonal, but not squared off. Outer districts can curve more.
+- **Faster on foot.** Walking and sprinting must feel quick for the size of the map, and driving comes later for longer trips. The speeds live in `BALANCE.walker`. The first build's sprint (about 1.9 tiles/s) was too slow.
+
 ### Names (approved 2026-10-10)
 - **District nicknames:** Downtown "The Ledger", Suburbs "Hedgerow Park", Industrial "The Works", Docks "Saltgate", Outskirts "Far Acres".
 - **Downtown streets:** Overcast Avenue (main east–west), Pewter Street (main north–south), Ledger Lane, Drizzle Row, Gullsway (towards the Docks), Millwright Road (towards Industrial).
