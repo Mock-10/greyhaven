@@ -9,6 +9,10 @@ export interface DebugHook {
   fps: number;
   /** Camera pan offset from the player, in art pixels. */
   pan: { x: number; y: number };
+  /** In-game minutes since day 1 00:00. */
+  minutes: number;
+  /** Id of the usable object E would use, if any. */
+  target: string | null;
   walker: { x: number; y: number; depth: number; dir: string } | null;
   /** Depth of a placed object by sprite key (first match). */
   depthOf: (sprite: string) => number | null;
@@ -31,6 +35,8 @@ export function installHook(): DebugHook {
     zoom: 0,
     fps: 0,
     pan: { x: 0, y: 0 },
+    minutes: 0,
+    target: null,
     walker: null,
     depthOf: () => null,
     alphaOf: () => null,

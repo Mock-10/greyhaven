@@ -43,19 +43,19 @@ test('boots, starts from the title and moves the walker', async ({ page }) => {
   expect(problems).toEqual([]);
 });
 
-test('sorts the walker behind and in front of the office tower', async ({ page }) => {
-  await boot(page, '?scene=world&zoom=3&x=60&y=150');
-  const tower = await page.evaluate(() => window.__DL__.depthOf('bld/office_tower'));
+test('sorts the player behind and in front of Pellridge Tower', async ({ page }) => {
+  await boot(page, '?scene=world&zoom=3&x=150&y=240');
+  const tower = await page.evaluate(() => window.__DL__.depthOf('bld/pellridge_tower'));
   const behind = await page.evaluate(() => window.__DL__.walker!.depth);
   expect(behind).toBeLessThan(tower!);
   // The tower fades so the walker stays visible behind it.
-  await page.waitForFunction(() => (window.__DL__.alphaOf('bld/office_tower') ?? 1) < 0.5);
+  await page.waitForFunction(() => (window.__DL__.alphaOf('bld/pellridge_tower') ?? 1) < 0.5);
 
-  await page.goto('?scene=world&zoom=3&x=236&y=170');
+  await page.goto('?scene=world&zoom=3&x=345&y=250');
   await page.waitForFunction(() => window.__DL__?.ready === true);
   const front = await page.evaluate(() => window.__DL__.walker!.depth);
   expect(front).toBeGreaterThan(tower!);
-  expect(await page.evaluate(() => window.__DL__.alphaOf('bld/office_tower'))).toBe(1);
+  expect(await page.evaluate(() => window.__DL__.alphaOf('bld/pellridge_tower'))).toBe(1);
 });
 
 test('the reference view renders the whole test map at 1x', async ({ page }) => {
@@ -83,4 +83,26 @@ test('zooms with Ctrl + wheel in whole steps and pans with the middle mouse', as
 
   await page.keyboard.press('KeyC');
   await page.waitForFunction(() => window.__DL__.pan.x === 0 && window.__DL__.pan.y === 0);
+});
+
+test('targets the ATM in range and the clock runs', async ({ page }) => {
+  const problems = await boot(page, '?scene=world&zoom=3&x=432&y=410');
+  await page.keyboard.down('KeyW');
+  await page.waitForTimeout(150);
+  await page.keyboard.up('KeyW');
+  await page.waitForFunction(() => window.__DL__.target === 'atm_plaza');
+  await page.keyboard.press('KeyE');
+  const t0 = await page.evaluate(() => window.__DL__.minutes);
+  await page.waitForTimeout(1500);
+  const t1 = await page.evaluate(() => window.__DL__.minutes);
+  // 20-minute day: 1.2 in-game minutes per real second
+  expect(t1 - t0).toBeGreaterThan(0.8);
+  expect(t1 - t0).toBeLessThan(3);
+  expect(problems).toEqual([]);
+});
+
+test('night falls: renders at 23:30 without errors', async ({ page }) => {
+  const problems = await boot(page, '?scene=world&zoom=2&time=23:30');
+  expect(await page.evaluate(() => Math.floor(window.__DL__.minutes))).toBe(23 * 60 + 30);
+  expect(problems).toEqual([]);
 });

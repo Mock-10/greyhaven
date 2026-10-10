@@ -53,7 +53,7 @@ export class TitleScene extends Phaser.Scene {
     const title = center('DOUBLE LIFE', titleScale, cy - plateH / 2 - 8 * z + 10 * z, PAL.cream);
     const sub = center('GREYHAVEN', 2 * z, cy - plateH / 2 + 5 * titleScale + 8 * z, PAL.lavlt5);
     const click = center('CLICK TO START', 2 * z, cy + plateH / 2 + 6 * z, PAL.white4);
-    const note = center('PHASE 0 TEST MAP', z, height - 12 * z, PAL.lav5);
+    const note = center('PHASE 1 - MILESTONE 1', z, height - 12 * z, PAL.lav5);
     this.tweens.add({ targets: click, alpha: 0.25, duration: 600, yoyo: true, repeat: -1, ease: 'Stepped' });
     this.items.push(dim, plate, title, sub, click, note);
   }
@@ -63,7 +63,7 @@ export class TitleScene extends Phaser.Scene {
     const world = this.scene.get('world') as WorldScene;
     world.startPlay();
     const params = this.registry.get('params') as Params;
-    this.scene.launch('ui', params);
+    this.scene.launch('hud', params);
     this.scene.stop();
   }
 }

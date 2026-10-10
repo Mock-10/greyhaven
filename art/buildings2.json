@@ -1,0 +1,410 @@
+{
+ "image": "buildings2.png",
+ "cell": [
+  0,
+  0
+ ],
+ "note": "Phase 1 buildings, one row per building sized to it (cell is per frame). anchor = pixel inside the cell on the footprint centre. Directions SE, SW, NW, NE; *_night variants have lit windows.",
+ "frames": {
+  "pellridge_tower/SE": {
+   "x": 0,
+   "y": 0,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    176,
+    520
+   ]
+  },
+  "pellridge_tower/SW": {
+   "x": 352,
+   "y": 0,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    191,
+    528
+   ]
+  },
+  "pellridge_tower/NW": {
+   "x": 704,
+   "y": 0,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    176,
+    535
+   ]
+  },
+  "pellridge_tower/NE": {
+   "x": 1056,
+   "y": 0,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    160,
+    528
+   ]
+  },
+  "pellridge_tower_night/SE": {
+   "x": 0,
+   "y": 617,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    176,
+    520
+   ]
+  },
+  "pellridge_tower_night/SW": {
+   "x": 352,
+   "y": 617,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    191,
+    528
+   ]
+  },
+  "pellridge_tower_night/NW": {
+   "x": 704,
+   "y": 617,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    176,
+    535
+   ]
+  },
+  "pellridge_tower_night/NE": {
+   "x": 1056,
+   "y": 617,
+   "w": 352,
+   "h": 617,
+   "anchor": [
+    160,
+    528
+   ]
+  },
+  "open_most_hours/SE": {
+   "x": 0,
+   "y": 1234,
+   "w": 261,
+   "h": 228,
+   "anchor": [
+    144,
+    154
+   ]
+  },
+  "open_most_hours/SW": {
+   "x": 261,
+   "y": 1234,
+   "w": 261,
+   "h": 228,
+   "anchor": [
+    144,
+    169
+   ]
+  },
+  "open_most_hours/NW": {
+   "x": 522,
+   "y": 1234,
+   "w": 261,
+   "h": 228,
+   "anchor": [
+    116,
+    169
+   ]
+  },
+  "open_most_hours/NE": {
+   "x": 783,
+   "y": 1234,
+   "w": 261,
+   "h": 228,
+   "anchor": [
+    116,
+    154
+   ]
+  },
+  "open_most_hours_night/SE": {
+   "x": 0,
+   "y": 1462,
+   "w": 261,
+   "h": 228,
+   "anchor": [
+    144,
+    154
+   ]
+  },
+  "open_most_hours_night/SW": {
+   "x": 261,
+   "y": 1462,
+   "w": 261,
+   "h": 228,
+   "anchor": [
+    144,
+    169
+   ]
+  },
+  "open_most_hours_night/NW": {
+   "x": 522,
+   "y": 1462,
+   "w": 261,
+   "h": 228,
+   "anchor": [
+    116,
+    169
+   ]
+  },
+  "open_most_hours_night/NE": {
+   "x": 783,
+   "y": 1462,
+   "w": 261,
+   "h": 228,
+   "anchor": [
+    116,
+    154
+   ]
+  },
+  "bar/SE": {
+   "x": 0,
+   "y": 1690,
+   "w": 230,
+   "h": 202,
+   "anchor": [
+    113,
+    142
+   ]
+  },
+  "bar/SW": {
+   "x": 230,
+   "y": 1690,
+   "w": 230,
+   "h": 202,
+   "anchor": [
+    118,
+    143
+   ]
+  },
+  "bar/NW": {
+   "x": 460,
+   "y": 1690,
+   "w": 230,
+   "h": 202,
+   "anchor": [
+    116,
+    145
+   ]
+  },
+  "bar/NE": {
+   "x": 690,
+   "y": 1690,
+   "w": 230,
+   "h": 202,
+   "anchor": [
+    111,
+    144
+   ]
+  },
+  "bar_night/SE": {
+   "x": 0,
+   "y": 1892,
+   "w": 230,
+   "h": 202,
+   "anchor": [
+    113,
+    142
+   ]
+  },
+  "bar_night/SW": {
+   "x": 230,
+   "y": 1892,
+   "w": 230,
+   "h": 202,
+   "anchor": [
+    118,
+    143
+   ]
+  },
+  "bar_night/NW": {
+   "x": 460,
+   "y": 1892,
+   "w": 230,
+   "h": 202,
+   "anchor": [
+    116,
+    145
+   ]
+  },
+  "bar_night/NE": {
+   "x": 690,
+   "y": 1892,
+   "w": 230,
+   "h": 202,
+   "anchor": [
+    111,
+    144
+   ]
+  },
+  "chop_shop/SE": {
+   "x": 0,
+   "y": 2094,
+   "w": 284,
+   "h": 240,
+   "anchor": [
+    137,
+    165
+   ]
+  },
+  "chop_shop/SW": {
+   "x": 284,
+   "y": 2094,
+   "w": 284,
+   "h": 240,
+   "anchor": [
+    147,
+    165
+   ]
+  },
+  "chop_shop/NW": {
+   "x": 568,
+   "y": 2094,
+   "w": 284,
+   "h": 240,
+   "anchor": [
+    147,
+    170
+   ]
+  },
+  "chop_shop/NE": {
+   "x": 852,
+   "y": 2094,
+   "w": 284,
+   "h": 240,
+   "anchor": [
+    137,
+    170
+   ]
+  },
+  "chop_shop_night/SE": {
+   "x": 0,
+   "y": 2334,
+   "w": 284,
+   "h": 240,
+   "anchor": [
+    137,
+    165
+   ]
+  },
+  "chop_shop_night/SW": {
+   "x": 284,
+   "y": 2334,
+   "w": 284,
+   "h": 240,
+   "anchor": [
+    147,
+    165
+   ]
+  },
+  "chop_shop_night/NW": {
+   "x": 568,
+   "y": 2334,
+   "w": 284,
+   "h": 240,
+   "anchor": [
+    147,
+    170
+   ]
+  },
+  "chop_shop_night/NE": {
+   "x": 852,
+   "y": 2334,
+   "w": 284,
+   "h": 240,
+   "anchor": [
+    137,
+    170
+   ]
+  },
+  "apartment_block/SE": {
+   "x": 0,
+   "y": 2574,
+   "w": 263,
+   "h": 323,
+   "anchor": [
+    137,
+    251
+   ]
+  },
+  "apartment_block/SW": {
+   "x": 263,
+   "y": 2574,
+   "w": 263,
+   "h": 323,
+   "anchor": [
+    142,
+    258
+   ]
+  },
+  "apartment_block/NW": {
+   "x": 526,
+   "y": 2574,
+   "w": 263,
+   "h": 323,
+   "anchor": [
+    126,
+    261
+   ]
+  },
+  "apartment_block/NE": {
+   "x": 789,
+   "y": 2574,
+   "w": 263,
+   "h": 323,
+   "anchor": [
+    121,
+    253
+   ]
+  },
+  "apartment_block_night/SE": {
+   "x": 0,
+   "y": 2897,
+   "w": 263,
+   "h": 323,
+   "anchor": [
+    137,
+    251
+   ]
+  },
+  "apartment_block_night/SW": {
+   "x": 263,
+   "y": 2897,
+   "w": 263,
+   "h": 323,
+   "anchor": [
+    142,
+    258
+   ]
+  },
+  "apartment_block_night/NW": {
+   "x": 526,
+   "y": 2897,
+   "w": 263,
+   "h": 323,
+   "anchor": [
+    126,
+    261
+   ]
+  },
+  "apartment_block_night/NE": {
+   "x": 789,
+   "y": 2897,
+   "w": 263,
+   "h": 323,
+   "anchor": [
+    121,
+    253
+   ]
+  }
+ }
+}

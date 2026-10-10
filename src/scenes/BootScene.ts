@@ -35,6 +35,6 @@ export class BootScene extends Phaser.Scene {
     const params = this.registry.get('params') as Params;
     this.scene.start('world', params);
     if (params.scene === 'title') this.scene.launch('title');
-    else this.scene.launch('ui', params);
+    else this.scene.launch('hud', params);
   }
 }

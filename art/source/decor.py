@@ -815,6 +815,299 @@ def bus_stop_sign():
     return M(parts, [solid('lavlt', 2.4), m], (-5, 5, -2, 2, 0, 41))
 
 
+
+# ======================================================================= bar + office lobby (added in Phase 1)
+def bar_stool():
+    """Round-seat bar stool. FRONT (+y) is the side you sit facing (face it toward the counter)."""
+    def parts(P):
+        seat = cyl_z(P, (0, 0, 15.5), 3.4, 1.1, 0.8)
+        post = capsule(P, (0, 0, 1), (0, 0, 15), 0.6)
+        ring = np.maximum(np.abs(np.hypot(P[:, 0], P[:, 1]) - 2.6) - 0.35, np.abs(P[:, 2] - 6.5) - 0.35)
+        base = cyl_z(P, (0, 0, 0.6), 3.0, 0.6, 0.3)
+        return [seat, post, ring, base]
+    return M(parts, [solid('brick', 2.6, 0.3), solid('lavlt', 2.4, 0.6), solid('lavlt', 2.6, 0.6), solid('night', 2.2)], (-5, 5, -5, 5, 0, 17))
+
+
+def bar_counter(length=96):
+    """Bar counter with a dark wood front panel, brass-free foot rail and a dark top. FRONT (+y) is the customer side."""
+    L = length
+
+    def parts(P):
+        base = rbox(P, (0, 0, 10), (L / 2, 6.5, 10), 0.6)
+        top = rbox(P, (0, 0.5, 20.6), (L / 2 + 1, 7.6, 0.9), 0.5)
+        rail = capsule(P, (-L / 2 + 2, 8.6, 3.2), (L / 2 - 2, 8.6, 3.2), 0.6)
+        return [base, top, rail]
+
+    def bm(p, n):
+        front = n[:, 1] > 0.5
+        panel = front & (np.mod(p[:, 0] + 200, 12.0) < 0.7)
+        trim = front & (np.abs(p[:, 2] - 17.5) < 0.8)
+        return np.full(len(p), RID['wood']), 1.7 - panel * 0.7 + trim * 0.6, np.zeros(len(p))
+    return M(parts, [bm, solid('wood', 2.9, 0.5), solid('lavlt', 2.8, 0.7)], (-L / 2 - 2, L / 2 + 2, -8, 10, 0, 22))
+
+
+def beer_taps(n=3):
+    """A row of beer taps on a drip tray; stands on the counter (use wz = counter height)."""
+    def parts(P):
+        tray = rbox(P, (0, 0, 0.4), (n * 2.4, 2.2, 0.4), 0.2)
+        column = rbox(P, (0, -0.8, 4.0), (n * 2.2, 0.9, 3.4), 0.4)
+        handles = np.minimum.reduce([capsule(P, (x, 0.2, 7.5), (x, 0.4, 10.5), 0.55) for x in np.linspace(-(n - 1) * 2.2, (n - 1) * 2.2, n)])
+        spouts = np.minimum.reduce([capsule(P, (x, 0.0, 5.2), (x, 1.3, 4.4), 0.35) for x in np.linspace(-(n - 1) * 2.2, (n - 1) * 2.2, n)])
+        return [tray, column, handles, spouts]
+
+    def hm(p, n_):
+        k = np.floor((p[:, 0] + 10) / 4.4)
+        return np.where(np.mod(k, 2) == 0, RID['red'], RID['white']), np.full(len(p), 3.2), np.full(len(p), 0.3)
+    return M(parts, [solid('night', 2.2, 0.4), solid('lavlt', 3.2, 0.8), hm, solid('lavlt', 3.0, 0.8)], (-n * 2.6, n * 2.6, -3, 3, 0, 12))
+
+
+def back_bar(length=64, seed=3):
+    """Wall-mounted back bar: low cabinet, a mirror and two shelves of bottles. Back on the wall, sticks out toward +y."""
+    L = length
+
+    def parts(P):
+        cab = rbox(P, (0, 5, 9), (L / 2, 5, 9), 0.6)
+        mirror = rbox(P, (0, 0.6, 33), (L / 2 - 2, 0.6, 11), 0.2)
+        shelves = np.minimum(rbox(P, (0, 2.6, 26), (L / 2, 2.6, 0.5), 0.2), rbox(P, (0, 2.6, 37), (L / 2, 2.6, 0.5), 0.2))
+        bottles = np.full(len(P), 1e3)
+        for row, z0 in ((0, 26.5), (1, 37.5)):
+            xs = np.arange(-L / 2 + 3, L / 2 - 2, 3.1)
+            for k, x in enumerate(xs):
+                h = 3.4 + 1.4 * ((k * 7 + row * 3 + seed) % 3) / 2
+                b = smin(cyl_z(P, (x, 2.6, z0 + h / 2), 1.1, h / 2, 0.4), capsule(P, (x, 2.6, z0 + h), (x, 2.6, z0 + h + 1.6), 0.4), 0.5)
+                bottles = np.minimum(bottles, b)
+        return [cab, mirror, shelves, bottles]
+
+    def cm(p, n):
+        front = n[:, 1] > 0.5
+        door = front & (np.mod(p[:, 0] + 200, 16.0) < 0.6)
+        return np.full(len(p), RID['wood']), 1.8 - door * 0.7, np.zeros(len(p))
+
+    def bm(p, n):
+        k = hash3(np.floor((p[:, 0] + 200) / 3.1), np.floor(p[:, 2] / 10), 1, seed)
+        r = np.array([RID['sage'], RID['clay'], RID['khaki'], RID['glass'], RID['brick'], RID['teal']])[(k * 6).astype(int) % 6]
+        return r, 2.8 + (p[:, 2] % 10 > 6) * 0.6, np.full(len(p), 0.9)
+    return M(parts, [cm, glassm(2.6), solid('wood', 2.4), bm], (-L / 2 - 1, L / 2 + 1, -1, 11, 0, 46))
+
+
+def booth(length=24, color=('brick', 2.2)):
+    """High-backed booth bench. FRONT (+y) is the side you sit facing (toward the table)."""
+    L = length
+
+    def parts(P):
+        seat = rbox(P, (0, 0, 6), (L / 2, 5, 6), 1.6)
+        back = rbox(P, (0, -5.5, 15), (L / 2, 2.2, 14), 1.4)
+        cush = rbox(P, (0, 0.6, 12.4), (L / 2 - 1.2, 4.4, 1.4), 1.2)
+        return [smin(seat, back, 0.8), cush]
+    return M(parts, [solid('wood', 1.8), solid(color[0], color[1] + 0.4)], (-L / 2 - 1, L / 2 + 1, -9, 7, 0, 30))
+
+
+def pub_table(length=24):
+    """Small table on a pedestal, with two glasses and a bowl of peanuts."""
+    L = length
+
+    def parts(P):
+        top = rbox(P, (0, 0, 15), (L / 2, 6.5, 0.8), 0.5)
+        post = capsule(P, (0, 0, 1), (0, 0, 14), 1.0)
+        foot = rbox(P, (0, 0, 0.6), (5, 4, 0.6), 0.3)
+        glasses = np.minimum(cyl_z(P, (-4, 1, 18), 1.2, 2.2, 0.3), cyl_z(P, (5, -1.5, 18), 1.2, 2.2, 0.3))
+        bowl = ell(P, (1, 2, 16.4), (2.2, 2.2, 1.0))
+        return [top, post, foot, glasses, bowl]
+
+    def gm(p, n):
+        beer = p[:, 2] < 19.2
+        return np.where(beer, RID['khaki'], RID['glass']), np.where(beer, 3.6, 4.0), np.full(len(p), 1.0)
+    return M(parts, [solid('wood', 2.6, 0.4), solid('night', 2.0), solid('night', 1.8), gm, solid('clay', 3.0)], (-L / 2 - 1, L / 2 + 1, -8, 8, 0, 21))
+
+
+def jukebox():
+    """Arched jukebox with a glass panel and coloured lights. FRONT (+y) faces the room."""
+    def parts(P):
+        body = smin(rbox(P, (0, 0, 13), (7, 5, 13), 1.2), cyl_y(P, (0, 0, 26), 7, 5, 1.2), 1.0)
+        panel = rbox(P, (0, 5.0, 18), (5, 0.4, 6), 0.4)
+        grille = rbox(P, (0, 5.0, 6), (5, 0.4, 3.6), 0.4)
+        return [body, panel, grille]
+
+    def bm(p, n):
+        x, z = p[:, 0], p[:, 2]
+        arch = (np.abs(np.hypot(x, z - 26) - 6.2) < 0.9) & (z > 22)
+        side = (np.abs(np.abs(x) - 6.2) < 0.8) & (z > 3) & (z < 24)
+        light = arch | side
+        k = np.floor((np.arctan2(z - 26, x) + 4) * 3) + np.floor(z / 4)
+        c = np.where(np.mod(k, 3) == 0, RID['red'], np.where(np.mod(k, 3) == 1, RID['teal'], RID['plum']))
+        return np.where(light, c, RID['wood']), np.where(light, 4.4, 2.0), np.where(light, 0.6, 0.2)
+
+    def pm(p, n):
+        rec = (np.mod(p[:, 0] + 20, 2.5) < 1.2) & (np.mod(p[:, 2], 3.0) < 1.6)
+        return np.where(rec, RID['white'], RID['glass']), np.where(rec, 3.6, 2.6), np.full(len(p), 1.0)
+    return M(parts, [bm, pm, solid('night', 1.8)], (-9, 9, -7, 7, 0, 34))
+
+
+def dartboard():
+    """Wall-mounted dartboard in a dark cabinet. Back on the wall, sticks out toward +y."""
+    def parts(P):
+        cab = rbox(P, (0, 0.8, 36), (7, 0.8, 7), 0.4)
+        board = cyl_y(P, (0, 2.0, 36), 5, 0.6, 0.3)
+        return [cab, board]
+
+    def dm(p, n):
+        r = np.hypot(p[:, 0], p[:, 2] - 36)
+        ang = np.floor((np.arctan2(p[:, 2] - 36, p[:, 0]) + np.pi) / (2 * np.pi) * 20)
+        ring = (np.abs(r - 3.0) < 0.45) | (np.abs(r - 4.6) < 0.45)
+        alt = np.mod(ang, 2) == 0
+        ramp = np.where(r < 0.8, RID['red'], np.where(ring, np.where(alt, RID['red'], RID['sage']), np.where(alt, RID['night'], RID['stone'])))
+        return ramp, np.where(alt & ~ring, 1.4, 3.4), np.zeros(len(p))
+    return M(parts, [solid('wood', 1.6), dm], (-8, 8, -1, 3, 28, 44))
+
+
+def neon_sign(color='teal', w=14, h=6):
+    """Wall-mounted glowing sign (a beer brand, no text). Back on the wall, sticks out toward +y."""
+    def parts(P):
+        plate = rbox(P, (0, 0.4, 40), (w / 2, 0.4, h / 2), 0.3)
+        tube = np.maximum(np.abs(np.hypot((P[:, 0]) / (w / 2 - 1.5), (P[:, 2] - 40) / (h / 2 - 1.2)) - 1.0) * 1.6 - 0.25, np.abs(P[:, 1] - 1.2) - 0.5)
+        return [plate, tube]
+    return M(parts, [solid('night', 1.6), solid(color, 4.8, 0.2)], (-w / 2 - 1, w / 2 + 1, -1, 2, 40 - h / 2 - 1, 40 + h / 2 + 1))
+
+
+def reception_desk(length=40):
+    """Lobby reception desk: tall front with a raised ledge, a monitor and a bell. FRONT (+y) is the visitor side."""
+    L = length
+
+    def parts(P):
+        body = rbox(P, (0, 0, 10), (L / 2, 6, 10), 0.8)
+        ledge = rbox(P, (0, 4.5, 22.5), (L / 2, 2.4, 0.8), 0.4)
+        ledge_wall = rbox(P, (0, 5.5, 18), (L / 2, 1.0, 4), 0.4)
+        top = rbox(P, (0, -1.5, 17.2), (L / 2 - 0.5, 4.5, 0.6), 0.3)
+        mon = np.minimum(rbox(P, (-6, -1, 23), (4, 0.4, 3), 0.2), rbox(P, (-6, -1.6, 18.5), (0.6, 0.6, 1.2), 0.2))
+        bell = smin(ell(P, (8, 4.5, 24.2), (1.2, 1.2, 0.9)), cyl_z(P, (8, 4.5, 23.4), 1.6, 0.2, 0.1), 0.3)
+        plant = smin(cyl_z(P, (L / 2 - 4, 4.4, 24.6), 1.4, 1.4, 0.3), ell(P, (L / 2 - 4, 4.4, 28), (2.4, 2.4, 2.4)), 0.8)
+        return [body, ledge, ledge_wall, top, mon, bell, plant]
+
+    def bm(p, n):
+        front = n[:, 1] > 0.5
+        stripe = front & (np.abs(p[:, 2] - 12) < 1.0)
+        return np.full(len(p), RID['stone']), 3.0 + stripe * -0.9, np.full(len(p), 0.2)
+
+    def mm(p, n):
+        scr = n[:, 1] < -0.5
+        return np.where(scr, RID['glass'], RID['night']), np.where(scr, 3.4, 2.0), np.where(scr, 1.0, 0.2)
+    return M(parts, [bm, solid('wood', 2.8, 0.4), solid('stone', 2.4), solid('wood', 2.4), mm, solid('lavlt', 3.6, 0.9), solid('sage', 2.6)],
+             (-L / 2 - 1, L / 2 + 1, -8, 9, 0, 31))
+
+
+def elevator_doors():
+    """Wall-mounted elevator: brushed metal double doors with a frame and a floor indicator. Back on the wall."""
+    def parts(P):
+        frame = rbox(P, (0, 0.8, 24), (12, 0.8, 24), 0.3)
+        doors = rbox(P, (0, 1.6, 22), (9.5, 0.4, 22), 0.2)
+        ind = rbox(P, (0, 1.8, 46), (3, 0.3, 1.2), 0.2)
+        btn = rbox(P, (14.5, 0.9, 21), (1.2, 0.5, 2.2), 0.2)
+        return [frame, doors, ind, btn]
+
+    def dm(p, n):
+        seam = np.abs(p[:, 0]) < 0.35
+        brush = np.mod(p[:, 2] * 1.3, 2.0) < 0.3
+        return np.full(len(p), RID['lavlt']), 3.3 - seam * 1.4 + brush * 0.2, np.full(len(p), 0.7)
+
+    def im(p, n):
+        lit = np.abs(p[:, 0] + 1.5) < 0.6
+        return np.where(lit, RID['red'], RID['night']), np.where(lit, 4.6, 1.6), np.zeros(len(p))
+    return M(parts, [solid('lavlt', 2.4, 0.5), dm, im, solid('lavlt', 2.8, 0.6)], (-16, 16, -1, 3, 0, 49))
+
+
+def pool_table():
+    """Pool table (decoration only): wood frame, green felt, a few balls and a cue. Long axis along x."""
+    def parts(P):
+        legs = np.minimum.reduce([rbox(P, (sx, sy, 6), (1.6, 1.6, 6), 0.4) for sx in (-19, 19) for sy in (-9, 9)])
+        body = rbox(P, (0, 0, 13), (22, 12, 2.6), 0.8)
+        felt = rbox(P, (0, 0, 15.2), (19.5, 9.5, 0.6), 0.2)
+        rails = np.maximum(rbox(P, (0, 0, 16.2), (22, 12, 1.2), 0.6), -rbox(P, (0, 0, 16.2), (19.5, 9.5, 2), 0.2))
+        balls = np.minimum.reduce([ell(P, (x, y, 16.7), (1.0, 1.0, 1.0)) for x, y in ((8, 2), (10, -1), (10, 3), (12, 0.5), (-10, -3), (3, 5))])
+        cue = capsule(P, (-16, -6, 16.6), (6, 7, 17.4), 0.45)
+        return [legs, body, felt, rails, balls, cue]
+
+    def bm(p, n):
+        k = hash3(np.floor(p[:, 0]), np.floor(p[:, 1]), 1, 6)
+        return np.array([RID['red'], RID['navy'], RID['white'], RID['night'], RID['clay'], RID['sage']])[(k * 6).astype(int) % 6], np.full(len(p), 3.4), np.full(len(p), 0.8)
+    return M(parts, [solid('wood', 1.8), solid('wood', 2.2), solid('sage', 2.0), solid('wood', 2.6, 0.3), bm, solid('wood', 3.2)], (-24, 24, -14, 14, 0, 19))
+
+
+# ======================================================================= laundering clutter (Phase 1, Dez's back room)
+# Bills are sage/khaki paper with white bands. Gold stays reserved for interactables and loot cues.
+def _billm(seed=1):
+    def m(p, n):
+        k = hash3(np.floor(p[:, 0] / 3.2), np.floor(p[:, 1] / 2.2), np.floor(p[:, 2] / 1.1), seed)
+        band = np.abs(np.mod(p[:, 0] + 50, 6.4) - 3.2) < 0.55
+        r = np.where(band & (n[:, 2] > 0.3), RID['white'], np.where(k > 0.5, RID['sage'], RID['khaki']))
+        return r, np.where(band, 4.2, 3.0 + k * 0.6), np.zeros(len(p))
+    return m
+
+
+def cash_bundles(n=6, seed=1):
+    """Banded bundles of bills stacked in a small pile (stands on a surface or the floor)."""
+    def parts(P):
+        d = np.full(len(P), 1e3)
+        for k in range(n):
+            row, col, lay = k % 2, (k // 2) % 2, k // 4
+            d = np.minimum(d, rbox(P, (-3.4 + col * 6.8, -1.6 + row * 3.4, 0.8 + lay * 1.6), (3.2, 1.6, 0.75), 0.2))
+        return [d]
+    return M(parts, [_billm(seed)], (-8, 8, -4, 4, 0, 1.6 * (n // 4 + 1) + 1))
+
+
+def loose_bills(n=7, spread=14, seed=2):
+    """Bills scattered flat (on a floor or a table top)."""
+    rng = np.random.default_rng(seed)
+    pts = [(rng.uniform(-spread, spread), rng.uniform(-spread * 0.6, spread * 0.6), rng.uniform(0, np.pi)) for _ in range(n)]
+
+    def parts(P):
+        d = np.full(len(P), 1e3)
+        for x, y, a in pts:
+            c, s_ = np.cos(a), np.sin(a)
+            lx = (P[:, 0] - x) * c + (P[:, 1] - y) * s_
+            ly = -(P[:, 0] - x) * s_ + (P[:, 1] - y) * c
+            q = np.stack([lx, ly, P[:, 2] - 0.25], 1)
+            d = np.minimum(d, rbox(q, (0, 0, 0), (3.0, 1.4, 0.25), 0.1))
+        return [d]
+
+    def m(p, n_):
+        k = hash3(np.floor(p[:, 0]), np.floor(p[:, 1]), 1, seed)
+        return np.where(k > 0.5, RID['sage'], RID['khaki']), np.full(len(p), 3.3) + k * 0.4, np.zeros(len(p))
+    return M(parts, [m], (-spread - 4, spread + 4, -spread * 0.6 - 4, spread * 0.6 + 4, 0, 1))
+
+
+def money_counter():
+    """Desktop bill-counting machine with a stack in the hopper. FRONT (+y) faces the operator."""
+    def parts(P):
+        body = rbox(P, (0, 0, 3.0), (4.2, 3.6, 3.0), 0.8)
+        hopper = rbox(P, (0, -1.4, 6.6), (3.0, 1.4, 1.2), 0.3)
+        stack = rbox(P, (0, -1.4, 7.4), (2.6, 1.0, 0.8), 0.1)
+        tray = rbox(P, (0, 3.6, 1.2), (3.0, 1.4, 0.6), 0.2)
+        display = rbox(P, (0, 3.5, 4.4), (2.0, 0.2, 0.8), 0.1)
+        return [body, hopper, stack, tray, display]
+
+    def dm(p, n):
+        return np.full(len(p), RID['red']), np.full(len(p), 4.6), np.zeros(len(p))
+    return M(parts, [solid('lavlt', 3.0, 0.4), solid('night', 2.0), _billm(4), solid('night', 2.2), dm], (-6, 6, -5, 6, 0, 9))
+
+
+def cash_duffel():
+    """An open duffel bag on the floor with bundles showing. FRONT (+y) is the open side."""
+    def parts(P):
+        bag = np.maximum(smin(ell(P, (0, 0, 5), (10, 5.5, 5)), rbox(P, (0, 0, 3), (9, 5, 3), 2), 1.5), -rbox(P, (0, 1.0, 9.5), (7.5, 3.4, 3), 1))
+        cash = rbox(P, (0, 1.0, 7.0), (7.0, 3.0, 1.2), 0.3)
+        handles = np.minimum(capsule(P, (-4, -4.6, 8.5), (4, -4.6, 8.5), 0.5), capsule(P, (-4, 5.0, 7.8), (4, 5.0, 7.8), 0.5))
+        return [bag, cash, handles]
+    return M(parts, [solid('night', 2.4, 0.2), _billm(7), solid('night', 1.8)], (-12, 12, -7, 7, 0, 11))
+
+
+def counting_table():
+    """Folding table for counting cash: plain top on steel legs."""
+    def parts(P):
+        top = rbox(P, (0, 0, 15), (14, 7, 0.6), 0.3)
+        legs = np.minimum.reduce([capsule(P, (sx, sy, 0.5), (sx, sy, 14.5), 0.5) for sx in (-12.5, 12.5) for sy in (-5.5, 5.5)])
+        return [top, legs]
+    return M(parts, [solid('lavlt', 3.2), solid('lavlt', 2.2, 0.5)], (-15, 15, -8, 8, 0, 16))
+
 DECOR = {
     # plants
     'plant_tall': plant_tall, 'plant_snake': plant_snake, 'plant_small': plant_small, 'plant_hanging': plant_hanging, 'ficus_tree': ficus_tree,
@@ -836,4 +1129,9 @@ DECOR = {
     'door_leaf': door_leaf, 'security_gate': security_gate, 'stanchions': stanchions,
     # street
     'news_box': news_box, 'bike_rack': bike_rack, 'bollard': bollard, 'street_planter': street_planter, 'bus_stop_sign': bus_stop_sign,
+    # bar + office lobby (Phase 1)
+    'bar_stool': bar_stool, 'bar_counter': bar_counter, 'beer_taps': beer_taps, 'back_bar': back_bar, 'booth': booth, 'pub_table': pub_table,
+    'jukebox': jukebox, 'dartboard': dartboard, 'neon_sign': neon_sign, 'reception_desk': reception_desk, 'elevator_doors': elevator_doors,
+    'pool_table': pool_table, 'cash_bundles': cash_bundles, 'loose_bills': loose_bills, 'money_counter': money_counter,
+    'cash_duffel': cash_duffel, 'counting_table': counting_table,
 }

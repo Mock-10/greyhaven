@@ -6,5 +6,7 @@ export const KEYS = {
   right: 'D',
   sprint: 'SHIFT',
   recenter: 'C',
+  use: 'E',
+  cycle: 'TAB',
   debugOverlay: 'F3',
 } as const;

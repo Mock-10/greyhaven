@@ -10,7 +10,19 @@ export interface FrameRef {
   frame: string;
 }
 
-export type Pose = 'idle' | 'walk1' | 'walk2';
+export type Pose = 'idle' | 'walk1' | 'walk2' | 'step1' | 'step2';
+
+/** The 8-frame walk cycle: idle → step → stride → step, then the other leg (art/source/pack_steps.py). */
+export const WALK_CYCLE: readonly Pose[] = [
+  'idle',
+  'step1',
+  'walk1',
+  'step1',
+  'idle',
+  'step2',
+  'walk2',
+  'step2',
+];
 export type InteractState = 'normal' | 'idle0' | 'idle1' | 'idle2' | 'hover';
 
 const propIndex = new Map<string, string>();
@@ -27,8 +39,15 @@ export function tileFrame(kind: string, seed: number): FrameRef {
   return { atlas: 'tiles', frame: `${kind}/s${seed}` };
 }
 
+const buildings2 = new Set(Object.keys(ATLASES.buildings2.json.frames).map((k) => k.split('/')[0]));
+
+/** Phase 1 buildings live in their own atlas (art/source/pack_phase1.py); the rest in the original one. */
 export function buildingFrame(name: string, dir: number): FrameRef {
-  return { atlas: 'buildings', frame: `${name}/${dirName(dir)}` };
+  return { atlas: buildings2.has(name) ? 'buildings2' : 'buildings', frame: `${name}/${dirName(dir)}` };
+}
+
+export function hasNightVariant(name: string): boolean {
+  return buildings2.has(`${name}_night`) || name === 'office_tower';
 }
 
 export function propFrame(name: string): FrameRef {
@@ -38,7 +57,8 @@ export function propFrame(name: string): FrameRef {
 }
 
 export function characterFrame(costume: string, pose: Pose, dir: number): FrameRef {
-  return { atlas: 'characters', frame: `${costume}/${pose}/${dirName(dir)}` };
+  const atlas = pose === 'step1' || pose === 'step2' ? 'steps' : 'characters';
+  return { atlas, frame: `${costume}/${pose}/${dirName(dir)}` };
 }
 
 export function vehicleFrame(name: string, dir: number): FrameRef {

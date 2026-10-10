@@ -32,15 +32,69 @@ export const BALANCE = {
     followRate: 8,
   },
 
+  clock: {
+    /** Real minutes per in-game day (docs/01: setting 15, 20 or 30; default 20). */
+    dayLengthMinutes: 20,
+    dayLengthOptions: [15, 20, 30] as readonly number[],
+    /** A new game starts on day 1 (Monday) at this in-game minute (07:00). */
+    startMinute: 7 * 60,
+    /** Darkness curve (in-game minutes): dawn brightens from 05:00 to 07:00, dusk darkens 18:00 to 21:30. */
+    dawnStart: 5 * 60,
+    dawnEnd: 7 * 60,
+    duskStart: 18 * 60,
+    duskEnd: 21 * 60 + 30,
+    /** Street lamps and lit windows switch on above this darkness. */
+    lightsOnDarkness: 0.35,
+  },
+
+  economy: {
+    /** Cash at the start of a new game (docs/02 is silent; assumption logged in CHANGELOG). */
+    startClean: 250,
+    startDirty: 0,
+  },
+
+  player: {
+    maxHealth: 100,
+  },
+
+  interact: {
+    /** Objects within this range show the idle rim (docs/11: 1.5 tiles). */
+    rangeTiles: 1.5,
+    /** Among objects in range, prefer the one most in front of the player: weight of facing vs distance. */
+    facingWeight: 0.6,
+  },
+
+  hud: {
+    /** Phone messages stay this long, then slide out (docs/11). */
+    toastSeconds: 5,
+    /** The street name shows for this long after entering a new street. */
+    streetSeconds: 4,
+    /** Radar radius in UI pixels and its world scale (docs/11: radius 38, about 0.13). */
+    radarRadius: 38,
+    radarScale: 0.13,
+    radarHz: 15,
+  },
+
   walker: {
     /** Walking speed in world units per second (1.4 m/s ≈ 1 tile per second). */
     walkSpeed: 32,
     /** Sprint multiplier (Shift). */
     sprintMultiplier: 1.9,
-    /** Walk-cycle frames per second (idle → walk1 → idle → walk2). */
-    walkFps: 7,
+    /** Walk-cycle frames per second for the 8-frame cycle (idle, step1, walk1, step1, idle, step2, walk2, step2). */
+    walkFps: 12,
+    /** The cycle runs faster while sprinting. */
+    sprintFpsMultiplier: 1.5,
     /** Collision radius of a person, in world units. */
     radius: 6,
+  },
+
+  dayNight: {
+    /** Full-night multiply tints (STYLE_GUIDE rainy dusk): objects, ground tiles, and usable objects (kept lighter). */
+    objectTint: [0.66, 0.66, 0.8] as readonly number[],
+    tileTint: [0.6, 0.62, 0.78] as readonly number[],
+    cueTint: [0.86, 0.86, 0.94] as readonly number[],
+    /** Street-lamp light pool strength at full night (0–1). */
+    lampGlow: 0.65,
   },
 
   render: {

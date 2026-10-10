@@ -789,6 +789,172 @@ def bank_sight_vault():
     return bank(sight=sight, vault_open=True, markers_on=False, legend_override=legend, viewer_char=(70, 150, 6))
 
 
+
+# ======================================================================= Phase 1: Pellridge Tower ground floor (lobby + server room)
+def tower_lobby():
+    W_t, D_t = 8, 6
+    W, D_ = W_t * T, D_t * T
+    walls = back_walls(W, D_, paper=('stone', 3.0),
+                       windows=[('B', 30, 70), ('B', 110, 150)],
+                       decals=[('painting', 'A', 60, 42, 30, 12, 'landscape'), ('clock', 'A', 150, 48, 3.6), ('painting', 'B', 90, 40, 12, 16, 'abstract'),
+                               ('fusebox', 'A', 236, 36), ('warning', 'A', 220, 48), ('exit', 'A', 20, 54),
+                               ('calendar', 'A', 250, 40)])
+    floor = lambda i, j: ('concrete_a' if (i >= 6 and j < 3) else 'marble_a')
+    parts_ = [('y', 192, 0, 96, []), ('x', 96, 192, 256, [(206, 228)])]
+    S = []
+    # lobby: elevator on wall A, reception facing the entrance, waiting chairs, plants
+    S.append(it(D.elevator_doors(), '+y', 128, 0, None, hl='idle', prompt=('E', 'ELEVATOR')))
+    S.append(it(D.rug(60, 36, ('navy', 2.2), 'stone'), '+y', 96, 132, None, z_bias=-300))
+    S.append(it(D.reception_desk(44), '+y', 96, 92, ('box', 22, 8, 22)))
+    S.append(it(D.office_chair(), '+y', 96, 78, ('blob', 5)))
+    S.append(it(D.waiting_chairs(3), '+x', 12, 140, ('box', 6, 16, 12)))
+    S.append(it(D.coffee_table(), '+x', 34, 140, ('box', 6, 10, 8)))
+    S.append(it(D.vase_flowers('red'), '+x', 34, 140, None, wz=9.6, z_bias=3))
+    S.append(it(D.plant_tall(3), '+y', 12, 12, ('blob', 6)))
+    S.append(it(D.plant_tall(7), '+y', 176, 12, ('blob', 6)))
+    S.append(it(D.ficus_tree(), '+y', 172, 178, ('blob', 10)))
+    S.append(it(D.plant_snake(), '+y', 12, 182, ('blob', 4)))
+    S.append(it(D.stanchions(3, 14), '+y', 150, 120, None))
+    S.append(it(D.trash_bin(), '+y', 150, 92, ('blob', 3)))
+    S.append(it(D.entrance_mat(), '+y', 96, 184, None, z_bias=-300))
+    S.append(it(D.plant_tall(11), '+y', 178, 148, ('blob', 6)))
+    S.append(it(D.waiting_chairs(2), '-y', 128, 178, ('box', 12, 6, 12)))
+    # server room (key card): racks along wall A, a terminal, alarm panel
+    S.append(it(D.door_leaf(True, ('lavlt', 2.4)), '+y', 217, 96, None, hl='idle', prompt=('E', 'KEY CARD'), z_bias=3))
+    S.append(it(D.keycard_reader(), '+y', 236, 96, None, wz=0, z_bias=4))
+    for k, x in enumerate((206, 222, 238)):
+        S.append(it(D.server_rack(), '+y', x, 9, ('box', 6, 7, 30)))
+    S.append(it(D.server_rack(), '-x', 248, 40, ('box', 6, 7, 30)))
+    S.append(it(D.ledger_desk(), '+x', 204, 56, ('box', 6, 10, 12)))
+    S.append(it(D.office_chair(), '-x', 216, 56, ('blob', 5)))
+    S.append(it(D.fire_extinguisher(), '+y', 250, 0))
+    S.append(it(D.cardboard_boxes(2, 3), '+y', 246, 78, ('box', 7, 6, 10)))
+    S.append(it(ch('char/civilian_b', 2, 0.0), 0, 98, 76, ('blob', 6)))
+    S.append(it(ch('char/office_worker', 4, 0.6), 0, 120, 150, ('blob', 6)))
+    return compose(W_t, D_t, floor, walls, S, partitions=parts_, stub_gaps=[('A', 78, 114)])
+
+
+# ======================================================================= Phase 1: Pellridge Tower office floor (open office + manager's office)
+def office_floor():
+    W_t, D_t = 9, 7
+    W, D_ = W_t * T, D_t * T
+    walls = back_walls(W, D_, paper=('lavlt', 3.3),
+                       windows=[('A', 22, 68), ('A', 92, 138), ('A', 162, 208), ('B', 20, 70)],
+                       decals=[('clock', 'A', 216, 52, 3.6), ('painting', 'A', 80, 54, 10, 6, 'abstract'),
+                               ('poster', 'A', 270, 48, 12, 12, 'teal'), ('painting', 'B', 168, 38, 22, 14, 'sea'), ('calendar', 'B', 100, 40)])
+    floor = lambda i, j: 'carpet_a'
+    parts_ = [('x', 112, 192, 288, []), ('y', 192, 112, 224, [(140, 162)])]
+    S = []
+    S.append(it(D.elevator_doors(), '+x', 0, 196, None, hl='idle', prompt=('E', 'ELEVATOR')))
+    S.append(it(D.plant_tall(2), '+y', 10, 10, ('blob', 6)))
+    fc = props2.filing_cabinet()
+    for k, y in enumerate((76, 92, 108)):
+        fl = dict(hl='idle', prompt=('E', 'FILE PAPERWORK')) if k == 1 else {}
+        S.append(it(fc, '+x', 8, y, ('box', 6, 6, 24), **fl))
+    S.append(it(D.whiteboard(), '+x', 0, 140))
+    S.append(it(D.bookshelf(5), '+x', 6, 168, ('box', 5, 11, 30)))
+    # cubicles (open side +y); chairs face -y toward the monitors; your desk is the front-left one
+    for k, (cx, cy) in enumerate(((76, 70), (124, 70), (76, 140), (124, 140))):
+        fl = dict(hl='idle', prompt=('E', 'DATA ENTRY')) if k == 2 else {}
+        S.append(it(I.cubicle(), '+y', cx, cy, ('box', 17, 9, 18), **fl))
+        S.append(it(D.office_chair(), '-y', cx - 2, cy + 10, ('blob', 5)))
+        S.append(it(D.desk_clutter(k), '+y', cx + 2, cy - 3, None, wz=17.3, z_bias=3))
+        S.append(it(D.plant_small(k), '+y', cx - 13, cy - 8, None, wz=17.3, z_bias=3))
+        S.append(it(D.trash_bin(), '+y', cx + 14, cy + 9, ('blob', 3)))
+    # break corner along wall A
+    S.append(it(I.copier(), '+y', 210, 12, ('box', 8, 7, 16)))
+    S.append(it(D.vending_machine('soda'), '+y', 236, 10, ('box', 8, 7, 30)))
+    S.append(it(I.water_cooler(), '+y', 256, 11, ('blob', 5)))
+    S.append(it(D.side_table(False), '+y', 276, 40, ('blob', 4)))
+    S.append(it(D.coffee_machine(), '+y', 276, 39, None, wz=12.1, z_bias=2))
+    S.append(it(D.armchair(('sage', 2.3)), '-y', 252, 70, ('box', 8, 8, 12)))
+    S.append(it(D.armchair(('sage', 2.3)), '-x', 274, 82, ('box', 8, 8, 12)))
+    S.append(it(D.corkboard(), '+y', 160, 0))
+    S.append(it(D.ficus_tree(), '+y', 150, 206, ('blob', 10)))
+    S.append(it(D.coat_rack(), '+y', 100, 210, ('blob', 3)))
+    S.append(it(I.table_chairs(), '+y', 56, 196, ('box', 11, 8, 10)))
+    S.append(it(D.bowl_fruit(), '+y', 54, 194, None, wz=16.8, z_bias=4))
+    # manager's office: desk faces +y (visitor side), manager's chair behind, visitor chairs face the desk
+    S.append(it(D.door_leaf(False, ('wood', 2.2)), '-x', 192, 151, None, z_bias=3))
+    S.append(it(D.rug(56, 40, ('navy', 2.2), 'stone'), '+y', 244, 176, None, z_bias=-300))
+    S.append(it(D.exec_desk(), '+y', 244, 160, ('box', 16, 8, 14), hl='idle', prompt=('E', 'CLOCK IN')))
+    S.append(it(D.office_chair(), '+y', 244, 143, ('blob', 5)))
+    S.append(it(D.wooden_chair(), '-y', 234, 182, ('blob', 4)))
+    S.append(it(D.wooden_chair(), '-y', 254, 182, ('blob', 4)))
+    S.append(it(D.bookshelf(2), '+y', 268, 122, ('box', 11, 5, 30)))
+    S.append(it(D.plant_tall(6), '+y', 206, 124, ('blob', 6)))
+    S.append(it(D.plant_snake(), '+y', 278, 212, ('blob', 4)))
+    S.append(it(ch('char/civilian_a', 2, 0.0), 0, 244, 141, ('blob', 6)))
+    S.append(it(ch('char/office_worker', 6, 0.0), 0, 22, 94, ('blob', 6)))
+    S.append(it(ch('char/civilian_b', 2, 0.6), 0, 160, 110, ('blob', 6)))
+    return compose(W_t, D_t, floor, walls, S, partitions=parts_)
+
+
+# ======================================================================= Phase 1: The Low Tide (bar + Dez's back room)
+def bar():
+    W_t, D_t = 10, 7
+    W, D_ = W_t * T, D_t * T
+    walls = back_walls(W, D_, paper=('brick', 2.5),
+                       windows=[('B', 150, 196)],
+                       decals=[('clock', 'A', 132, 50, 3.4), ('poster', 'A', 166, 44, 12, 16, 'red'),
+                               ('painting', 'B', 120, 40, 18, 12, 'sea'), ('mirror', 'B', 44, 40, 10, 14),
+                               ('calendar', 'A', 300, 40), ('fusebox', 'A', 210, 36), ('exit', 'B', 214, 54)])
+    # Dez's back room: 4 x 4 tiles in the corner behind the staff door
+    floor = lambda i, j: ('concrete_a' if (i >= 6 and j < 4) else 'woodfloor_x')
+    parts_ = [('y', 192, 0, 128, []), ('x', 128, 192, 320, [(226, 248)])]
+    S = []
+    # the bar: back bar on wall A, counter in front of it, stools face the counter
+    S.append(it(D.back_bar(96, 3), '+y', 72, 0))
+    S.append(it(D.bar_counter(104), '+y', 76, 44, ('box', 52, 8, 22)))
+    S.append(it(D.beer_taps(3), '+y', 52, 44, None, wz=21.5, z_bias=4))
+    S.append(it(D.vase_tall(), '+y', 112, 44, None, wz=21.5, z_bias=4))
+    for x in (38, 58, 78, 98, 118):
+        S.append(it(D.bar_stool(), '-y', x, 62, ('blob', 4)))
+    S.append(it(D.neon_sign('teal', 16, 6), '+y', 146, 0))
+    S.append(it(D.jukebox(), '+y', 174, 10, ('box', 8, 6, 32)))
+    S.append(it(D.dartboard(), '+x', 0, 76))
+    # booths along wall B, facing their tables
+    for ty in (124, 190):
+        S.append(it(D.booth(26), '+y', 24, ty - 20, ('box', 13, 8, 28)))
+        S.append(it(D.pub_table(22), '+y', 24, ty, ('box', 11, 7, 16)))
+        S.append(it(D.booth(26), '-y', 24, ty + 20, ('box', 13, 8, 28)) if ty + 20 < 214 else it(D.wooden_chair(), '-y', 24, ty + 14, ('blob', 4)))
+    S.append(it(D.neon_sign('red', 12, 5), '+x', 0, 150))
+    # standing table and the pool table
+    S.append(it(D.side_table(False), '+y', 150, 96, ('blob', 4)))
+    S.append(it(D.bar_stool(), '-x', 162, 96, ('blob', 4)))
+    S.append(it(D.bar_stool(), '+x', 138, 96, ('blob', 4)))
+    S.append(it(D.pool_table(), '+y', 120, 176, ('box', 22, 12, 18)))
+    S.append(it(D.plant_tall(5), '+y', 306, 146, ('blob', 6)))
+    S.append(it(D.plant_snake(), '+y', 306, 210, ('blob', 4)))
+    S.append(it(D.coat_rack(), '+y', 214, 206, ('blob', 3)))
+    S.append(it(D.trash_bin(), '+y', 176, 64, ('blob', 3)))
+    S.append(it(D.armchair(('plum', 2.4)), '-x', 296, 178, ('box', 8, 8, 12)))
+    S.append(it(D.entrance_mat(), '+y', 254, 214, None, z_bias=-300))
+    # Dez's back room: the laundering desk, a counting table, cash everywhere
+    S.append(it(D.door_leaf(True, ('wood', 1.8)), '+y', 237, 128, None, hl='idle', prompt=('E', 'STAFF ONLY'), z_bias=3))
+    S.append(it(D.ledger_desk(), '+y', 252, 48, ('box', 10, 6, 12), hl='idle', prompt=('E', 'LAUNDER')))
+    S.append(it(D.money_counter(), '-y', 246, 47, None, wz=15.8, z_bias=6))
+    S.append(it(D.cash_bundles(6, 1), '+y', 258, 47, None, wz=15.8, z_bias=7))
+    S.append(it(D.wooden_chair(), '-y', 252, 70, ('blob', 4)))
+    S.append(it(D.counting_table(), '+y', 284, 96, ('box', 15, 8, 16)))
+    S.append(it(D.cash_bundles(10, 3), '+y', 278, 95, None, wz=15.6, z_bias=6))
+    S.append(it(D.loose_bills(6, 9, 4), '+y', 290, 96, None, wz=15.6, z_bias=5))
+    S.append(it(D.wooden_chair(), '-y', 284, 114, ('blob', 4)))
+    S.append(it(props2.safe(), '+y', 300, 20, ('box', 9, 9, 18)))
+    S.append(it(D.cash_duffel(), '+y', 218, 96, ('box', 10, 6, 10)))
+    S.append(it(D.loose_bills(7, 14, 2), '+y', 236, 82, None, z_bias=-200))
+    S.append(it(D.loose_bills(4, 8, 9), '+y', 292, 64, None, z_bias=-200))
+    S.append(it(D.cardboard_boxes(3, 2), '+y', 210, 14, ('box', 7, 6, 14)))
+    S.append(it(D.cardboard_boxes(2, 5), '-x', 308, 112, ('box', 7, 6, 10)))
+    S.append(it(D.floor_lamp(), '+y', 204, 52, ('blob', 3)))
+    S.append(it(ch('char/civilian_b', 2, 0.0), 0, 254, 34, ('blob', 6), z_bias=20))
+    # people: bartender behind the counter, patrons
+    S.append(it(ch('char/civilian_a', 2, 0.0), 0, 86, 24, ('blob', 6)))
+    S.append(it(ch('char/office_worker', 6, 0.0), 0, 78, 74, ('blob', 6)))
+    S.append(it(ch('char/road_worker', 4, 0.0), 0, 150, 176, ('blob', 6)))
+    S.append(it(ch('char/civilian_b', 6, 0.0), 0, 150, 112, ('blob', 6)))
+    return compose(W_t, D_t, floor, walls, S, partitions=parts_, stub_gaps=[('A', 240, 270)])
+
 if __name__ == '__main__':
     os.makedirs('out/interiors_v2', exist_ok=True)
     which = sys.argv[1:] or ['apartment', 'store', 'office', 'bank', 'bank_sight_lobby', 'bank_sight_vault']

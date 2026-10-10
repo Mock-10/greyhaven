@@ -24,6 +24,7 @@ interface Chunk {
 export class GroundRenderer {
   private chunks: Chunk[] = [];
   private frameNo = 0;
+  private tint = 0xffffff;
   private readonly size = BALANCE.render.chunkTiles;
 
   constructor(
@@ -92,6 +93,12 @@ export class GroundRenderer {
     }
   }
 
+  /** Multiply tint for all ground (day/night); applied to chunks baked later too. */
+  setTint(tint: number): void {
+    this.tint = tint;
+    for (const c of this.chunks) c.rt?.setTint(tint);
+  }
+
   bakedCount(): number {
     return this.chunks.filter((c) => c.rt).length;
   }
@@ -107,6 +114,7 @@ export class GroundRenderer {
     }
     rt.endDraw();
     this.bakeShadows(c, rt);
+    rt.setTint(this.tint);
     this.layer.add(rt);
     c.rt = rt;
   }
