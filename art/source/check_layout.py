@@ -56,7 +56,7 @@ def capture(room):
     box = {}
 
     def fake_compose(W_t, D_t, floor, walls, items, partitions=(), stub_gaps=(), **kw):
-        box.update(W=W_t * rooms.T, D=D_t * rooms.T, items=items, partitions=partitions)
+        box.update(W=W_t * rooms.T, D=D_t * rooms.T, items=items, partitions=partitions, floor=floor, walls=walls, stub_gaps=stub_gaps)
         raise Captured
     real = rooms.compose
     rooms.compose = fake_compose

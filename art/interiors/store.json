@@ -1,0 +1,1265 @@
+{
+ "id": "store",
+ "image": "store.png",
+ "W": 256,
+ "D": 224,
+ "wallH": 62,
+ "wallT": 5,
+ "partH": 11,
+ "floorKinds": [
+  [
+   "concrete_a",
+   "concrete_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "concrete_a",
+   "concrete_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "concrete_a",
+   "concrete_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "concrete_a",
+   "concrete_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "concrete_a",
+   "concrete_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ]
+ ],
+ "partitions": [
+  {
+   "axis": "x",
+   "pos": 72,
+   "a0": 0,
+   "a1": 176,
+   "gaps": [
+    [
+     70,
+     92
+    ],
+    [
+     130,
+     152
+    ]
+   ]
+  },
+  {
+   "axis": "y",
+   "pos": 112,
+   "a0": 0,
+   "a1": 72,
+   "gaps": []
+  },
+  {
+   "axis": "y",
+   "pos": 176,
+   "a0": 0,
+   "a1": 72,
+   "gaps": []
+  }
+ ],
+ "stubGaps": [
+  [
+   "A",
+   150,
+   190
+  ]
+ ],
+ "segments": [
+  {
+   "frame": "seg_x72_0",
+   "x": 8.0,
+   "y": 72,
+   "axis": "x",
+   "pos": 72
+  },
+  {
+   "frame": "seg_x72_1",
+   "x": 24.0,
+   "y": 72,
+   "axis": "x",
+   "pos": 72
+  },
+  {
+   "frame": "seg_x72_2",
+   "x": 40.0,
+   "y": 72,
+   "axis": "x",
+   "pos": 72
+  },
+  {
+   "frame": "seg_x72_3",
+   "x": 56.0,
+   "y": 72,
+   "axis": "x",
+   "pos": 72
+  },
+  {
+   "frame": "seg_x72_4",
+   "x": 67.0,
+   "y": 72,
+   "axis": "x",
+   "pos": 72
+  },
+  {
+   "frame": "seg_x72_5",
+   "x": 94.0,
+   "y": 72,
+   "axis": "x",
+   "pos": 72
+  },
+  {
+   "frame": "seg_x72_6",
+   "x": 104.0,
+   "y": 72,
+   "axis": "x",
+   "pos": 72
+  },
+  {
+   "frame": "seg_x72_7",
+   "x": 120.0,
+   "y": 72,
+   "axis": "x",
+   "pos": 72
+  },
+  {
+   "frame": "seg_x72_8",
+   "x": 129.0,
+   "y": 72,
+   "axis": "x",
+   "pos": 72
+  },
+  {
+   "frame": "seg_x72_9",
+   "x": 156.0,
+   "y": 72,
+   "axis": "x",
+   "pos": 72
+  },
+  {
+   "frame": "seg_x72_10",
+   "x": 168.0,
+   "y": 72,
+   "axis": "x",
+   "pos": 72
+  },
+  {
+   "frame": "seg_y112_0",
+   "x": 112,
+   "y": 8.0,
+   "axis": "y",
+   "pos": 112
+  },
+  {
+   "frame": "seg_y112_1",
+   "x": 112,
+   "y": 24.0,
+   "axis": "y",
+   "pos": 112
+  },
+  {
+   "frame": "seg_y112_2",
+   "x": 112,
+   "y": 40.0,
+   "axis": "y",
+   "pos": 112
+  },
+  {
+   "frame": "seg_y112_3",
+   "x": 112,
+   "y": 56.0,
+   "axis": "y",
+   "pos": 112
+  },
+  {
+   "frame": "seg_y112_4",
+   "x": 112,
+   "y": 68.0,
+   "axis": "y",
+   "pos": 112
+  },
+  {
+   "frame": "seg_y176_0",
+   "x": 176,
+   "y": 8.0,
+   "axis": "y",
+   "pos": 176
+  },
+  {
+   "frame": "seg_y176_1",
+   "x": 176,
+   "y": 24.0,
+   "axis": "y",
+   "pos": 176
+  },
+  {
+   "frame": "seg_y176_2",
+   "x": 176,
+   "y": 40.0,
+   "axis": "y",
+   "pos": 176
+  },
+  {
+   "frame": "seg_y176_3",
+   "x": 176,
+   "y": 56.0,
+   "axis": "y",
+   "pos": 176
+  },
+  {
+   "frame": "seg_y176_4",
+   "x": 176,
+   "y": 68.0,
+   "axis": "y",
+   "pos": 176
+  }
+ ],
+ "items": [
+  {
+   "frame": "item_0_storage_shelf",
+   "kind": "storage_shelf",
+   "x": 56,
+   "y": 8,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 15,
+    "hy": 6,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_1_safe",
+   "kind": "safe",
+   "x": 14,
+   "y": 22,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 9,
+    "hy": 9,
+    "h": 18
+   },
+   "prompt": "CRACK SAFE"
+  },
+  {
+   "frame": "item_2_cardboard_boxes",
+   "kind": "cardboard_boxes",
+   "x": 96,
+   "y": 16,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 6,
+    "h": 14
+   }
+  },
+  {
+   "frame": "item_3_cardboard_boxes",
+   "kind": "cardboard_boxes",
+   "x": 98,
+   "y": 44,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 6,
+    "h": 10
+   }
+  },
+  {
+   "frame": "item_4_ledger_desk",
+   "kind": "ledger_desk",
+   "x": 56,
+   "y": 54,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "box",
+    "hx": 10,
+    "hy": 6,
+    "h": 12
+   }
+  },
+  {
+   "frame": "item_5_wooden_chair",
+   "kind": "wooden_chair",
+   "x": 56,
+   "y": 66,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_6_mop_bucket",
+   "kind": "mop_bucket",
+   "x": 82,
+   "y": 62,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_7_broom",
+   "kind": "broom",
+   "x": 0,
+   "y": 50,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966
+  },
+  {
+   "frame": "item_8_door_leaf",
+   "kind": "door_leaf",
+   "x": 81,
+   "y": 72,
+   "wz": 0.0,
+   "zBias": 3,
+   "ang": 0.0,
+   "prompt": "LOCKPICK DOOR",
+   "door": {
+    "axis": "x",
+    "pos": 72,
+    "g0": 70,
+    "g1": 92
+   }
+  },
+  {
+   "frame": "item_9_server_rack",
+   "kind": "server_rack",
+   "x": 121,
+   "y": 10,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 7,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_10_cctv_desk",
+   "kind": "cctv_desk",
+   "x": 152,
+   "y": 9,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 18,
+    "hy": 7,
+    "h": 16
+   },
+   "prompt": "DISABLE CAMERAS"
+  },
+  {
+   "frame": "item_11_office_chair",
+   "kind": "office_chair",
+   "x": 150,
+   "y": 30,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 5
+   }
+  },
+  {
+   "frame": "item_12_coffee_machine",
+   "kind": "coffee_machine",
+   "x": 165,
+   "y": 8,
+   "wz": 17.3,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_13_dvr_rack",
+   "kind": "dvr_rack",
+   "x": 168,
+   "y": 52,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 6,
+    "h": 14
+   },
+   "prompt": "WIPE FOOTAGE"
+  },
+  {
+   "frame": "item_14_trash_bin",
+   "kind": "trash_bin",
+   "x": 124,
+   "y": 60,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_15_drinks_fridge",
+   "kind": "drinks_fridge",
+   "x": 208,
+   "y": 9,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 24,
+    "hy": 7,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_16_plant_tall",
+   "kind": "plant_tall",
+   "x": 246,
+   "y": 12,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_17_shelf_unit",
+   "kind": "shelf_unit",
+   "x": 84,
+   "y": 116,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 28,
+    "hy": 5,
+    "h": 24
+   }
+  },
+  {
+   "frame": "item_18_shelf_unit",
+   "kind": "shelf_unit",
+   "x": 84,
+   "y": 158,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 28,
+    "hy": 5,
+    "h": 24
+   }
+  },
+  {
+   "frame": "item_19_news_rack",
+   "kind": "news_rack",
+   "x": 10,
+   "y": 104,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 5,
+    "hy": 7,
+    "h": 18
+   }
+  },
+  {
+   "frame": "item_20_item",
+   "kind": "item",
+   "x": 10,
+   "y": 136,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 7,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_21_fire_extinguisher",
+   "kind": "fire_extinguisher",
+   "x": 0,
+   "y": 168,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966
+  },
+  {
+   "frame": "item_22_chest_freezer",
+   "kind": "chest_freezer",
+   "x": 18,
+   "y": 196,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 14,
+    "h": 10
+   }
+  },
+  {
+   "frame": "item_23_chest_freezer",
+   "kind": "chest_freezer",
+   "x": 150,
+   "y": 104,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 14,
+    "hy": 7,
+    "h": 10
+   }
+  },
+  {
+   "frame": "item_24_counter_run",
+   "kind": "counter_run",
+   "x": 216,
+   "y": 150,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 32,
+    "h": 14
+   }
+  },
+  {
+   "frame": "item_25_item",
+   "kind": "item",
+   "x": 214,
+   "y": 136,
+   "wz": 20.5,
+   "zBias": 30,
+   "ang": 1.5707963267948966,
+   "prompt": "ROB REGISTER"
+  },
+  {
+   "frame": "item_26_vase_flowers",
+   "kind": "vase_flowers",
+   "x": 214,
+   "y": 176,
+   "wz": 20.5,
+   "zBias": 31,
+   "ang": 1.5707963267948966
+  },
+  {
+   "frame": "item_27_trash_bin",
+   "kind": "trash_bin",
+   "x": 186,
+   "y": 212,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_28_entrance_mat",
+   "kind": "entrance_mat",
+   "x": 170,
+   "y": 212,
+   "wz": 0.0,
+   "zBias": -300,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_29_plant_snake",
+   "kind": "plant_snake",
+   "x": 246,
+   "y": 212,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_30_wall_camera",
+   "kind": "wall_camera",
+   "x": 236,
+   "y": 8,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0
+  }
+ ],
+ "npcs": [
+  {
+   "costume": "civilian_b",
+   "dir": 4,
+   "walk": 0.0,
+   "x": 240,
+   "y": 150,
+   "zBias": 40
+  },
+  {
+   "costume": "masked_thief",
+   "dir": 0,
+   "walk": 0.0,
+   "x": 194,
+   "y": 150,
+   "zBias": 0
+  },
+  {
+   "costume": "civilian_a",
+   "dir": 6,
+   "walk": 0.6,
+   "x": 120,
+   "y": 186,
+   "zBias": 0
+  }
+ ],
+ "frames": {
+  "floor": {
+   "x": 0,
+   "y": 317,
+   "w": 488,
+   "h": 256,
+   "anchor": [
+    228.0,
+    4.0
+   ]
+  },
+  "walls": {
+   "x": 0,
+   "y": 0,
+   "w": 500,
+   "h": 316,
+   "anchor": [
+    234.0,
+    72.0
+   ]
+  },
+  "stubs": {
+   "x": 501,
+   "y": 0,
+   "w": 500,
+   "h": 261,
+   "anchor": [
+    234.0,
+    12.0
+   ]
+  },
+  "seg_x72_0": {
+   "x": 665,
+   "y": 574,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    81.0,
+    -18.0
+   ]
+  },
+  "seg_x72_1": {
+   "x": 700,
+   "y": 574,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    65.0,
+    -26.0
+   ]
+  },
+  "seg_x72_2": {
+   "x": 735,
+   "y": 574,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    49.0,
+    -34.0
+   ]
+  },
+  "seg_x72_3": {
+   "x": 770,
+   "y": 574,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    33.0,
+    -42.0
+   ]
+  },
+  "seg_x72_4": {
+   "x": 256,
+   "y": 642,
+   "w": 24,
+   "h": 27,
+   "anchor": [
+    17.0,
+    -50.0
+   ]
+  },
+  "seg_x72_5": {
+   "x": 281,
+   "y": 642,
+   "w": 22,
+   "h": 26,
+   "anchor": [
+    -11.0,
+    -64.0
+   ]
+  },
+  "seg_x72_6": {
+   "x": 805,
+   "y": 574,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -15.0,
+    -66.0
+   ]
+  },
+  "seg_x72_7": {
+   "x": 840,
+   "y": 574,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -31.0,
+    -74.0
+   ]
+  },
+  "seg_x72_8": {
+   "x": 304,
+   "y": 642,
+   "w": 20,
+   "h": 25,
+   "anchor": [
+    -47.0,
+    -82.0
+   ]
+  },
+  "seg_x72_9": {
+   "x": 175,
+   "y": 642,
+   "w": 26,
+   "h": 28,
+   "anchor": [
+    -71.0,
+    -94.0
+   ]
+  },
+  "seg_x72_10": {
+   "x": 875,
+   "y": 574,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -79.0,
+    -98.0
+   ]
+  },
+  "seg_y112_0": {
+   "x": 910,
+   "y": 574,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -87.0,
+    -38.0
+   ]
+  },
+  "seg_y112_1": {
+   "x": 945,
+   "y": 574,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -71.0,
+    -46.0
+   ]
+  },
+  "seg_y112_2": {
+   "x": 980,
+   "y": 574,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -55.0,
+    -54.0
+   ]
+  },
+  "seg_y112_3": {
+   "x": 0,
+   "y": 642,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -39.0,
+    -62.0
+   ]
+  },
+  "seg_y112_4": {
+   "x": 202,
+   "y": 642,
+   "w": 26,
+   "h": 28,
+   "anchor": [
+    -31.0,
+    -70.0
+   ]
+  },
+  "seg_y176_0": {
+   "x": 35,
+   "y": 642,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -151.0,
+    -70.0
+   ]
+  },
+  "seg_y176_1": {
+   "x": 70,
+   "y": 642,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -135.0,
+    -78.0
+   ]
+  },
+  "seg_y176_2": {
+   "x": 105,
+   "y": 642,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -119.0,
+    -86.0
+   ]
+  },
+  "seg_y176_3": {
+   "x": 140,
+   "y": 642,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -103.0,
+    -94.0
+   ]
+  },
+  "seg_y176_4": {
+   "x": 229,
+   "y": 642,
+   "w": 26,
+   "h": 28,
+   "anchor": [
+    -95.0,
+    -102.0
+   ]
+  },
+  "item_0_storage_shelf": {
+   "x": 716,
+   "y": 317,
+   "w": 52,
+   "h": 72,
+   "anchor": [
+    26.0,
+    58.0
+   ]
+  },
+  "item_1_safe": {
+   "x": 104,
+   "y": 574,
+   "w": 50,
+   "h": 49,
+   "anchor": [
+    25.0,
+    35.0
+   ]
+  },
+  "item_2_cardboard_boxes": {
+   "x": 229,
+   "y": 574,
+   "w": 40,
+   "h": 45,
+   "anchor": [
+    20.0,
+    34.0
+   ]
+  },
+  "item_3_cardboard_boxes": {
+   "x": 270,
+   "y": 574,
+   "w": 40,
+   "h": 45,
+   "anchor": [
+    20.0,
+    34.0
+   ]
+  },
+  "item_4_ledger_desk": {
+   "x": 186,
+   "y": 574,
+   "w": 42,
+   "h": 47,
+   "anchor": [
+    21.0,
+    35.0
+   ]
+  },
+  "item_5_wooden_chair": {
+   "x": 615,
+   "y": 574,
+   "w": 26,
+   "h": 38,
+   "anchor": [
+    13.0,
+    30.0
+   ]
+  },
+  "item_6_mop_bucket": {
+   "x": 155,
+   "y": 574,
+   "w": 30,
+   "h": 48,
+   "anchor": [
+    15.0,
+    39.0
+   ]
+  },
+  "item_7_broom": {
+   "x": 311,
+   "y": 574,
+   "w": 19,
+   "h": 44,
+   "anchor": [
+    8.0,
+    36.0
+   ]
+  },
+  "item_8_door_leaf": {
+   "x": 769,
+   "y": 317,
+   "w": 35,
+   "h": 68,
+   "anchor": [
+    18.0,
+    57.0
+   ]
+  },
+  "item_9_server_rack": {
+   "x": 941,
+   "y": 317,
+   "w": 38,
+   "h": 67,
+   "anchor": [
+    19.0,
+    56.0
+   ]
+  },
+  "item_10_cctv_desk": {
+   "x": 0,
+   "y": 574,
+   "w": 60,
+   "h": 67,
+   "anchor": [
+    30.0,
+    50.0
+   ]
+  },
+  "item_11_office_chair": {
+   "x": 549,
+   "y": 574,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_12_coffee_machine": {
+   "x": 325,
+   "y": 642,
+   "w": 24,
+   "h": 25,
+   "anchor": [
+    13.0,
+    17.0
+   ]
+  },
+  "item_13_dvr_rack": {
+   "x": 580,
+   "y": 574,
+   "w": 34,
+   "h": 41,
+   "anchor": [
+    17.0,
+    31.0
+   ]
+  },
+  "item_14_trash_bin": {
+   "x": 412,
+   "y": 642,
+   "w": 22,
+   "h": 23,
+   "anchor": [
+    11.0,
+    16.0
+   ]
+  },
+  "item_15_drinks_fridge": {
+   "x": 489,
+   "y": 317,
+   "w": 72,
+   "h": 84,
+   "anchor": [
+    36.0,
+    64.0
+   ]
+  },
+  "item_16_plant_tall": {
+   "x": 805,
+   "y": 317,
+   "w": 46,
+   "h": 68,
+   "anchor": [
+    23.0,
+    55.0
+   ]
+  },
+  "item_17_shelf_unit": {
+   "x": 562,
+   "y": 317,
+   "w": 76,
+   "h": 76,
+   "anchor": [
+    38.0,
+    56.0
+   ]
+  },
+  "item_18_shelf_unit": {
+   "x": 639,
+   "y": 317,
+   "w": 76,
+   "h": 76,
+   "anchor": [
+    38.0,
+    56.0
+   ]
+  },
+  "item_19_news_rack": {
+   "x": 331,
+   "y": 574,
+   "w": 32,
+   "h": 44,
+   "anchor": [
+    16.0,
+    34.0
+   ]
+  },
+  "item_20_item": {
+   "x": 61,
+   "y": 574,
+   "w": 42,
+   "h": 64,
+   "anchor": [
+    20.0,
+    52.0
+   ]
+  },
+  "item_21_fire_extinguisher": {
+   "x": 393,
+   "y": 642,
+   "w": 18,
+   "h": 24,
+   "anchor": [
+    7.0,
+    17.0
+   ]
+  },
+  "item_22_chest_freezer": {
+   "x": 364,
+   "y": 574,
+   "w": 52,
+   "h": 44,
+   "anchor": [
+    26.0,
+    30.0
+   ]
+  },
+  "item_23_chest_freezer": {
+   "x": 417,
+   "y": 574,
+   "w": 52,
+   "h": 44,
+   "anchor": [
+    26.0,
+    30.0
+   ]
+  },
+  "item_24_counter_run": {
+   "x": 852,
+   "y": 317,
+   "w": 88,
+   "h": 68,
+   "anchor": [
+    44.0,
+    44.0
+   ]
+  },
+  "item_25_item": {
+   "x": 501,
+   "y": 574,
+   "w": 47,
+   "h": 43,
+   "anchor": [
+    25.0,
+    30.0
+   ]
+  },
+  "item_26_vase_flowers": {
+   "x": 642,
+   "y": 574,
+   "w": 22,
+   "h": 33,
+   "anchor": [
+    11.0,
+    26.0
+   ]
+  },
+  "item_27_trash_bin": {
+   "x": 435,
+   "y": 642,
+   "w": 22,
+   "h": 23,
+   "anchor": [
+    11.0,
+    16.0
+   ]
+  },
+  "item_28_entrance_mat": {
+   "x": 350,
+   "y": 642,
+   "w": 42,
+   "h": 25,
+   "anchor": [
+    21.0,
+    13.0
+   ]
+  },
+  "item_29_plant_snake": {
+   "x": 470,
+   "y": 574,
+   "w": 30,
+   "h": 44,
+   "anchor": [
+    15.0,
+    35.0
+   ]
+  },
+  "item_30_wall_camera": {
+   "x": 458,
+   "y": 642,
+   "w": 24,
+   "h": 23,
+   "anchor": [
+    14.0,
+    58.0
+   ]
+  }
+ }
+}

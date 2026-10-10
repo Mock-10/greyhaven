@@ -1,0 +1,1464 @@
+{
+ "id": "office_floor",
+ "image": "office_floor.png",
+ "W": 288,
+ "D": 224,
+ "wallH": 62,
+ "wallT": 5,
+ "partH": 11,
+ "floorKinds": [
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ]
+ ],
+ "partitions": [
+  {
+   "axis": "x",
+   "pos": 112,
+   "a0": 192,
+   "a1": 288,
+   "gaps": []
+  },
+  {
+   "axis": "y",
+   "pos": 192,
+   "a0": 112,
+   "a1": 224,
+   "gaps": [
+    [
+     140,
+     162
+    ]
+   ]
+  }
+ ],
+ "stubGaps": [],
+ "segments": [
+  {
+   "frame": "seg_x112_0",
+   "x": 200.0,
+   "y": 112,
+   "axis": "x",
+   "pos": 112
+  },
+  {
+   "frame": "seg_x112_1",
+   "x": 216.0,
+   "y": 112,
+   "axis": "x",
+   "pos": 112
+  },
+  {
+   "frame": "seg_x112_2",
+   "x": 232.0,
+   "y": 112,
+   "axis": "x",
+   "pos": 112
+  },
+  {
+   "frame": "seg_x112_3",
+   "x": 248.0,
+   "y": 112,
+   "axis": "x",
+   "pos": 112
+  },
+  {
+   "frame": "seg_x112_4",
+   "x": 264.0,
+   "y": 112,
+   "axis": "x",
+   "pos": 112
+  },
+  {
+   "frame": "seg_x112_5",
+   "x": 280.0,
+   "y": 112,
+   "axis": "x",
+   "pos": 112
+  },
+  {
+   "frame": "seg_y192_0",
+   "x": 192,
+   "y": 120.0,
+   "axis": "y",
+   "pos": 192
+  },
+  {
+   "frame": "seg_y192_1",
+   "x": 192,
+   "y": 134.0,
+   "axis": "y",
+   "pos": 192
+  },
+  {
+   "frame": "seg_y192_2",
+   "x": 192,
+   "y": 169.0,
+   "axis": "y",
+   "pos": 192
+  },
+  {
+   "frame": "seg_y192_3",
+   "x": 192,
+   "y": 184.0,
+   "axis": "y",
+   "pos": 192
+  },
+  {
+   "frame": "seg_y192_4",
+   "x": 192,
+   "y": 200.0,
+   "axis": "y",
+   "pos": 192
+  },
+  {
+   "frame": "seg_y192_5",
+   "x": 192,
+   "y": 216.0,
+   "axis": "y",
+   "pos": 192
+  }
+ ],
+ "items": [
+  {
+   "frame": "item_0_elevator_doors",
+   "kind": "elevator_doors",
+   "x": 0,
+   "y": 196,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "prompt": "ELEVATOR"
+  },
+  {
+   "frame": "item_1_plant_tall",
+   "kind": "plant_tall",
+   "x": 10,
+   "y": 10,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_2_filing_cabinet",
+   "kind": "filing_cabinet",
+   "x": 8,
+   "y": 76,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 6,
+    "h": 24
+   }
+  },
+  {
+   "frame": "item_3_filing_cabinet",
+   "kind": "filing_cabinet",
+   "x": 8,
+   "y": 92,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 6,
+    "h": 24
+   },
+   "prompt": "FILE PAPERWORK"
+  },
+  {
+   "frame": "item_4_filing_cabinet",
+   "kind": "filing_cabinet",
+   "x": 8,
+   "y": 108,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 6,
+    "h": 24
+   }
+  },
+  {
+   "frame": "item_5_whiteboard",
+   "kind": "whiteboard",
+   "x": 0,
+   "y": 140,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966
+  },
+  {
+   "frame": "item_6_bookshelf",
+   "kind": "bookshelf",
+   "x": 6,
+   "y": 168,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 5,
+    "hy": 11,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_7_cubicle",
+   "kind": "cubicle",
+   "x": 76,
+   "y": 70,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 17,
+    "hy": 9,
+    "h": 18
+   }
+  },
+  {
+   "frame": "item_8_office_chair",
+   "kind": "office_chair",
+   "x": 74,
+   "y": 80,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 5
+   }
+  },
+  {
+   "frame": "item_9_desk_clutter",
+   "kind": "desk_clutter",
+   "x": 78,
+   "y": 67,
+   "wz": 17.3,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_10_plant_small",
+   "kind": "plant_small",
+   "x": 63,
+   "y": 62,
+   "wz": 17.3,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_11_trash_bin",
+   "kind": "trash_bin",
+   "x": 90,
+   "y": 79,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_12_cubicle",
+   "kind": "cubicle",
+   "x": 124,
+   "y": 70,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 17,
+    "hy": 9,
+    "h": 18
+   }
+  },
+  {
+   "frame": "item_13_office_chair",
+   "kind": "office_chair",
+   "x": 122,
+   "y": 80,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 5
+   }
+  },
+  {
+   "frame": "item_14_desk_clutter",
+   "kind": "desk_clutter",
+   "x": 126,
+   "y": 67,
+   "wz": 17.3,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_15_plant_small",
+   "kind": "plant_small",
+   "x": 111,
+   "y": 62,
+   "wz": 17.3,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_16_trash_bin",
+   "kind": "trash_bin",
+   "x": 138,
+   "y": 79,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_17_cubicle",
+   "kind": "cubicle",
+   "x": 76,
+   "y": 140,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 17,
+    "hy": 9,
+    "h": 18
+   },
+   "prompt": "DATA ENTRY"
+  },
+  {
+   "frame": "item_18_office_chair",
+   "kind": "office_chair",
+   "x": 74,
+   "y": 150,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 5
+   }
+  },
+  {
+   "frame": "item_19_desk_clutter",
+   "kind": "desk_clutter",
+   "x": 78,
+   "y": 137,
+   "wz": 17.3,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_20_plant_small",
+   "kind": "plant_small",
+   "x": 63,
+   "y": 132,
+   "wz": 17.3,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_21_trash_bin",
+   "kind": "trash_bin",
+   "x": 90,
+   "y": 149,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_22_cubicle",
+   "kind": "cubicle",
+   "x": 124,
+   "y": 140,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 17,
+    "hy": 9,
+    "h": 18
+   }
+  },
+  {
+   "frame": "item_23_office_chair",
+   "kind": "office_chair",
+   "x": 122,
+   "y": 150,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 5
+   }
+  },
+  {
+   "frame": "item_24_desk_clutter",
+   "kind": "desk_clutter",
+   "x": 126,
+   "y": 137,
+   "wz": 17.3,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_25_plant_small",
+   "kind": "plant_small",
+   "x": 111,
+   "y": 132,
+   "wz": 17.3,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_26_trash_bin",
+   "kind": "trash_bin",
+   "x": 138,
+   "y": 149,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_27_copier",
+   "kind": "copier",
+   "x": 210,
+   "y": 12,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 8,
+    "hy": 7,
+    "h": 16
+   }
+  },
+  {
+   "frame": "item_28_vending_machine",
+   "kind": "vending_machine",
+   "x": 236,
+   "y": 10,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 8,
+    "hy": 7,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_29_water_cooler",
+   "kind": "water_cooler",
+   "x": 256,
+   "y": 11,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 5
+   }
+  },
+  {
+   "frame": "item_30_side_table",
+   "kind": "side_table",
+   "x": 276,
+   "y": 40,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_31_coffee_machine",
+   "kind": "coffee_machine",
+   "x": 276,
+   "y": 39,
+   "wz": 12.1,
+   "zBias": 2,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_32_armchair",
+   "kind": "armchair",
+   "x": 252,
+   "y": 70,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "box",
+    "hx": 8,
+    "hy": 8,
+    "h": 12
+   }
+  },
+  {
+   "frame": "item_33_armchair",
+   "kind": "armchair",
+   "x": 274,
+   "y": 82,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 8,
+    "hy": 8,
+    "h": 12
+   }
+  },
+  {
+   "frame": "item_34_corkboard",
+   "kind": "corkboard",
+   "x": 160,
+   "y": 0,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_35_ficus_tree",
+   "kind": "ficus_tree",
+   "x": 150,
+   "y": 206,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 10
+   }
+  },
+  {
+   "frame": "item_36_coat_rack",
+   "kind": "coat_rack",
+   "x": 100,
+   "y": 210,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_37_table_chairs",
+   "kind": "table_chairs",
+   "x": 56,
+   "y": 196,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 11,
+    "hy": 8,
+    "h": 10
+   }
+  },
+  {
+   "frame": "item_38_bowl_fruit",
+   "kind": "bowl_fruit",
+   "x": 54,
+   "y": 194,
+   "wz": 16.8,
+   "zBias": 4,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_39_door_leaf",
+   "kind": "door_leaf",
+   "x": 192,
+   "y": 151,
+   "wz": 0.0,
+   "zBias": 3,
+   "ang": 1.5707963267948966,
+   "door": {
+    "axis": "y",
+    "pos": 192,
+    "g0": 140,
+    "g1": 162
+   }
+  },
+  {
+   "frame": "item_40_rug",
+   "kind": "rug",
+   "x": 244,
+   "y": 176,
+   "wz": 0.0,
+   "zBias": -300,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_41_exec_desk",
+   "kind": "exec_desk",
+   "x": 244,
+   "y": 160,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 16,
+    "hy": 8,
+    "h": 14
+   },
+   "prompt": "CLOCK IN"
+  },
+  {
+   "frame": "item_42_office_chair",
+   "kind": "office_chair",
+   "x": 244,
+   "y": 143,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 5
+   }
+  },
+  {
+   "frame": "item_43_wooden_chair",
+   "kind": "wooden_chair",
+   "x": 234,
+   "y": 182,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_44_wooden_chair",
+   "kind": "wooden_chair",
+   "x": 254,
+   "y": 182,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_45_bookshelf",
+   "kind": "bookshelf",
+   "x": 268,
+   "y": 122,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 11,
+    "hy": 5,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_46_plant_tall",
+   "kind": "plant_tall",
+   "x": 206,
+   "y": 124,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_47_plant_snake",
+   "kind": "plant_snake",
+   "x": 278,
+   "y": 212,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  }
+ ],
+ "npcs": [
+  {
+   "costume": "civilian_a",
+   "dir": 2,
+   "walk": 0.0,
+   "x": 244,
+   "y": 141,
+   "zBias": 0
+  },
+  {
+   "costume": "office_worker",
+   "dir": 6,
+   "walk": 0.0,
+   "x": 22,
+   "y": 94,
+   "zBias": 0
+  },
+  {
+   "costume": "civilian_b",
+   "dir": 2,
+   "walk": 0.6,
+   "x": 160,
+   "y": 110,
+   "zBias": 0
+  }
+ ],
+ "frames": {
+  "floor": {
+   "x": 0,
+   "y": 611,
+   "w": 520,
+   "h": 272,
+   "anchor": [
+    228.0,
+    4.0
+   ]
+  },
+  "walls": {
+   "x": 0,
+   "y": 0,
+   "w": 532,
+   "h": 332,
+   "anchor": [
+    234.0,
+    72.0
+   ]
+  },
+  "stubs": {
+   "x": 0,
+   "y": 333,
+   "w": 532,
+   "h": 277,
+   "anchor": [
+    234.0,
+    12.0
+   ]
+  },
+  "seg_x112_0": {
+   "x": 32,
+   "y": 950,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -71.0,
+    -134.0
+   ]
+  },
+  "seg_x112_1": {
+   "x": 67,
+   "y": 950,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -87.0,
+    -142.0
+   ]
+  },
+  "seg_x112_2": {
+   "x": 102,
+   "y": 950,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -103.0,
+    -150.0
+   ]
+  },
+  "seg_x112_3": {
+   "x": 137,
+   "y": 950,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -119.0,
+    -158.0
+   ]
+  },
+  "seg_x112_4": {
+   "x": 172,
+   "y": 950,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -135.0,
+    -166.0
+   ]
+  },
+  "seg_x112_5": {
+   "x": 207,
+   "y": 950,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -151.0,
+    -174.0
+   ]
+  },
+  "seg_y192_0": {
+   "x": 242,
+   "y": 950,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -55.0,
+    -134.0
+   ]
+  },
+  "seg_y192_1": {
+   "x": 415,
+   "y": 950,
+   "w": 30,
+   "h": 30,
+   "anchor": [
+    -43.0,
+    -142.0
+   ]
+  },
+  "seg_y192_2": {
+   "x": 382,
+   "y": 950,
+   "w": 32,
+   "h": 31,
+   "anchor": [
+    -7.0,
+    -159.0
+   ]
+  },
+  "seg_y192_3": {
+   "x": 277,
+   "y": 950,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    9.0,
+    -166.0
+   ]
+  },
+  "seg_y192_4": {
+   "x": 312,
+   "y": 950,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    25.0,
+    -174.0
+   ]
+  },
+  "seg_y192_5": {
+   "x": 347,
+   "y": 950,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    41.0,
+    -182.0
+   ]
+  },
+  "item_0_elevator_doors": {
+   "x": 580,
+   "y": 611,
+   "w": 42,
+   "h": 73,
+   "anchor": [
+    20.0,
+    60.0
+   ]
+  },
+  "item_1_plant_tall": {
+   "x": 754,
+   "y": 611,
+   "w": 46,
+   "h": 68,
+   "anchor": [
+    23.0,
+    55.0
+   ]
+  },
+  "item_2_filing_cabinet": {
+   "x": 220,
+   "y": 884,
+   "w": 38,
+   "h": 58,
+   "anchor": [
+    19.0,
+    47.0
+   ]
+  },
+  "item_3_filing_cabinet": {
+   "x": 259,
+   "y": 884,
+   "w": 38,
+   "h": 58,
+   "anchor": [
+    19.0,
+    47.0
+   ]
+  },
+  "item_4_filing_cabinet": {
+   "x": 298,
+   "y": 884,
+   "w": 38,
+   "h": 58,
+   "anchor": [
+    19.0,
+    47.0
+   ]
+  },
+  "item_5_whiteboard": {
+   "x": 687,
+   "y": 884,
+   "w": 41,
+   "h": 45,
+   "anchor": [
+    19.0,
+    55.0
+   ]
+  },
+  "item_6_bookshelf": {
+   "x": 668,
+   "y": 611,
+   "w": 42,
+   "h": 69,
+   "anchor": [
+    21.0,
+    57.0
+   ]
+  },
+  "item_7_cubicle": {
+   "x": 884,
+   "y": 611,
+   "w": 62,
+   "h": 65,
+   "anchor": [
+    26.0,
+    50.0
+   ]
+  },
+  "item_8_office_chair": {
+   "x": 760,
+   "y": 884,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_9_desk_clutter": {
+   "x": 471,
+   "y": 950,
+   "w": 30,
+   "h": 23,
+   "anchor": [
+    15.0,
+    14.0
+   ]
+  },
+  "item_10_plant_small": {
+   "x": 714,
+   "y": 950,
+   "w": 18,
+   "h": 19,
+   "anchor": [
+    9.0,
+    13.0
+   ]
+  },
+  "item_11_trash_bin": {
+   "x": 502,
+   "y": 950,
+   "w": 22,
+   "h": 23,
+   "anchor": [
+    11.0,
+    16.0
+   ]
+  },
+  "item_12_cubicle": {
+   "x": 947,
+   "y": 611,
+   "w": 62,
+   "h": 65,
+   "anchor": [
+    26.0,
+    50.0
+   ]
+  },
+  "item_13_office_chair": {
+   "x": 791,
+   "y": 884,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_14_desk_clutter": {
+   "x": 525,
+   "y": 950,
+   "w": 30,
+   "h": 23,
+   "anchor": [
+    15.0,
+    14.0
+   ]
+  },
+  "item_15_plant_small": {
+   "x": 733,
+   "y": 950,
+   "w": 18,
+   "h": 19,
+   "anchor": [
+    9.0,
+    13.0
+   ]
+  },
+  "item_16_trash_bin": {
+   "x": 556,
+   "y": 950,
+   "w": 22,
+   "h": 23,
+   "anchor": [
+    11.0,
+    16.0
+   ]
+  },
+  "item_17_cubicle": {
+   "x": 0,
+   "y": 884,
+   "w": 62,
+   "h": 65,
+   "anchor": [
+    26.0,
+    50.0
+   ]
+  },
+  "item_18_office_chair": {
+   "x": 822,
+   "y": 884,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_19_desk_clutter": {
+   "x": 579,
+   "y": 950,
+   "w": 30,
+   "h": 23,
+   "anchor": [
+    15.0,
+    14.0
+   ]
+  },
+  "item_20_plant_small": {
+   "x": 752,
+   "y": 950,
+   "w": 18,
+   "h": 19,
+   "anchor": [
+    9.0,
+    13.0
+   ]
+  },
+  "item_21_trash_bin": {
+   "x": 610,
+   "y": 950,
+   "w": 22,
+   "h": 23,
+   "anchor": [
+    11.0,
+    16.0
+   ]
+  },
+  "item_22_cubicle": {
+   "x": 63,
+   "y": 884,
+   "w": 62,
+   "h": 65,
+   "anchor": [
+    26.0,
+    50.0
+   ]
+  },
+  "item_23_office_chair": {
+   "x": 853,
+   "y": 884,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_24_desk_clutter": {
+   "x": 633,
+   "y": 950,
+   "w": 30,
+   "h": 23,
+   "anchor": [
+    15.0,
+    14.0
+   ]
+  },
+  "item_25_plant_small": {
+   "x": 771,
+   "y": 950,
+   "w": 18,
+   "h": 19,
+   "anchor": [
+    9.0,
+    13.0
+   ]
+  },
+  "item_26_trash_bin": {
+   "x": 664,
+   "y": 950,
+   "w": 22,
+   "h": 23,
+   "anchor": [
+    11.0,
+    16.0
+   ]
+  },
+  "item_27_copier": {
+   "x": 511,
+   "y": 884,
+   "w": 46,
+   "h": 49,
+   "anchor": [
+    22.0,
+    36.0
+   ]
+  },
+  "item_28_vending_machine": {
+   "x": 623,
+   "y": 611,
+   "w": 44,
+   "h": 70,
+   "anchor": [
+    22.0,
+    58.0
+   ]
+  },
+  "item_29_water_cooler": {
+   "x": 656,
+   "y": 884,
+   "w": 30,
+   "h": 48,
+   "anchor": [
+    15.0,
+    39.0
+   ]
+  },
+  "item_30_side_table": {
+   "x": 884,
+   "y": 884,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_31_coffee_machine": {
+   "x": 446,
+   "y": 950,
+   "w": 24,
+   "h": 25,
+   "anchor": [
+    13.0,
+    17.0
+   ]
+  },
+  "item_32_armchair": {
+   "x": 558,
+   "y": 884,
+   "w": 48,
+   "h": 49,
+   "anchor": [
+    24.0,
+    36.0
+   ]
+  },
+  "item_33_armchair": {
+   "x": 607,
+   "y": 884,
+   "w": 48,
+   "h": 49,
+   "anchor": [
+    24.0,
+    36.0
+   ]
+  },
+  "item_34_corkboard": {
+   "x": 0,
+   "y": 950,
+   "w": 31,
+   "h": 35,
+   "anchor": [
+    16.0,
+    51.0
+   ]
+  },
+  "item_35_ficus_tree": {
+   "x": 521,
+   "y": 611,
+   "w": 58,
+   "h": 82,
+   "anchor": [
+    29.0,
+    66.0
+   ]
+  },
+  "item_36_coat_rack": {
+   "x": 189,
+   "y": 884,
+   "w": 30,
+   "h": 61,
+   "anchor": [
+    15.0,
+    52.0
+   ]
+  },
+  "item_37_table_chairs": {
+   "x": 444,
+   "y": 884,
+   "w": 66,
+   "h": 57,
+   "anchor": [
+    33.0,
+    39.0
+   ]
+  },
+  "item_38_bowl_fruit": {
+   "x": 687,
+   "y": 950,
+   "w": 26,
+   "h": 21,
+   "anchor": [
+    13.0,
+    13.0
+   ]
+  },
+  "item_39_door_leaf": {
+   "x": 801,
+   "y": 611,
+   "w": 35,
+   "h": 68,
+   "anchor": [
+    18.0,
+    58.0
+   ]
+  },
+  "item_40_rug": {
+   "x": 337,
+   "y": 884,
+   "w": 106,
+   "h": 58,
+   "anchor": [
+    53.0,
+    30.0
+   ]
+  },
+  "item_41_exec_desk": {
+   "x": 126,
+   "y": 884,
+   "w": 62,
+   "h": 62,
+   "anchor": [
+    31.0,
+    45.0
+   ]
+  },
+  "item_42_office_chair": {
+   "x": 915,
+   "y": 884,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_43_wooden_chair": {
+   "x": 946,
+   "y": 884,
+   "w": 26,
+   "h": 38,
+   "anchor": [
+    13.0,
+    30.0
+   ]
+  },
+  "item_44_wooden_chair": {
+   "x": 973,
+   "y": 884,
+   "w": 26,
+   "h": 38,
+   "anchor": [
+    13.0,
+    30.0
+   ]
+  },
+  "item_45_bookshelf": {
+   "x": 711,
+   "y": 611,
+   "w": 42,
+   "h": 69,
+   "anchor": [
+    21.0,
+    57.0
+   ]
+  },
+  "item_46_plant_tall": {
+   "x": 837,
+   "y": 611,
+   "w": 46,
+   "h": 68,
+   "anchor": [
+    23.0,
+    55.0
+   ]
+  },
+  "item_47_plant_snake": {
+   "x": 729,
+   "y": 884,
+   "w": 30,
+   "h": 44,
+   "anchor": [
+    15.0,
+    35.0
+   ]
+  }
+ }
+}

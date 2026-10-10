@@ -53,6 +53,30 @@ export const BALANCE = {
     startDirty: 0,
   },
 
+  careers: {
+    /** docs/03: clock in between 08:00 and 10:00; after 09:00 the shift pays 80%. Shifts run Monday–Friday. */
+    clockInFrom: 8 * 60,
+    lateAfter: 9 * 60,
+    clockInUntil: 10 * 60,
+    lateMultiplier: 0.8,
+    workdays: [0, 1, 2, 3, 4] as readonly number[],
+    /** Pay per shift (clean) by rank 1–5. */
+    payByRank: [180, 260, 370, 510, 700] as readonly number[],
+    /** XP needed to reach the next rank, from rank 1–4. */
+    xpToNext: [40, 70, 110, 160] as readonly number[],
+    /** One-time bonus on reaching rank 2–5. */
+    promotionBonus: [250, 500, 900, 1500] as readonly number[],
+    /** Shift XP by its typical grade: mostly poor / OK / good / excellent. */
+    shiftXp: [6, 9, 11, 14] as readonly number[],
+    /** Office rank that gets the building key card (docs/03 perk). */
+    keyCardRank: 2,
+  },
+
+  minigames: {
+    filing: { papers: 8, startFall: 18, fallAccel: 2.2, misfilePenalty: 1 },
+    dataEntry: { rounds: 3, length: 5, seconds: 14 },
+  },
+
   player: {
     maxHealth: 100,
   },
