@@ -26,7 +26,7 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - [ ] HUD from `art/drafts/hud/`: vitals panel, stars, time and money panel, radar, objective line, phone message, key hints.
 
 ### Milestone 2: interiors and the office job
-- [ ] Drafts approved: the expanded office building (lobby, open office, manager's office, server room) and the bar (main room and Dez's back room).
+- [x] Drafts approved (2026-10-10, after one revision: a bigger back room for Dez with laundering clutter, and fixes from the new layout checker): `interior_tower_lobby.png`, `interior_office_floor.png`, `interior_bar.png`.
 - [ ] Interior scene with doors and the sight system (docs/19): apartment, office building, corner store (shopping), bar.
 - [ ] Office Worker job: clock in, 3 filing / data-entry tasks, pay, promotion XP, rank 1 → 2.
 - [ ] Sleep at the apartment.
