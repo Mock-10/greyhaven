@@ -25,7 +25,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
   - `src/data/interiors.ts`: what each interior means in the game (names, opening hours, what each draft prompt does, door rules, NPC roles and hours, entrances, elevator links).
   - `src/data/jobs.ts` and `src/systems/career.ts` (clock-in window, late penalty, tasks, pay, XP, promotion, key card), plus the `careers` and `minigames` numbers in `balance.ts`. Tests are in `tests/career.test.ts`.
   - `src/minigames/logic.ts`: the rules of the filing and data-entry minigames, with no drawing. Tests are in `tests/minigames.test.ts`.
-- To continue: `git fetch origin && git checkout claude/festive-allen-rw96zv`. If `main` has moved, merge it in first.
+- To continue: `git fetch origin && git checkout claude/festive-allen-rw96zv`. If `main` has moved, merge it in first. If your session is told to work on a different branch, create it from `main` and run `git merge origin/claude/festive-allen-rw96zv` so the WIP comes with you. Don't start milestone 2 from scratch.
 
 **Next steps (milestone 2, in order)**
 1. **Minigame overlay scene** (`MinigameScene`): it dims the world by 35%, shows a 176 × 128 panel matching `art/drafts/hud/` (the lockpick mockup) and a gold title at 2×. Draw the filing and data-entry panels with `src/ui/hudDraw.ts`. Job tasks pause the world.
