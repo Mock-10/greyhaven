@@ -59,6 +59,8 @@
 - **Collision:** the ground is a tile grid of walkable/blocked cells. Buildings and props have **footprint polygons in world units**, and vehicles use oriented boxes. Do collision in world space, never in screen space.
 - **Occlusion:** if the player is behind a tall sprite (screen overlap and smaller world depth), fade that sprite.
 - **Map size:** about 160 × 160 tiles. Render only tiles and objects inside the camera bounds plus a margin. Pool and reuse sprites.
+- **Ground (built in Phase 0):** tiles never move, so they are baked into 16 × 16-tile chunk textures together with the static ground shadows. Only chunks near the camera are kept (least recently used are dropped past a cap). Chunk textures have even sizes; an odd-sized render texture draws 1 px out of place.
+- **Pixel-perfect canvas (built in Phase 0):** the canvas runs at device resolution (CSS size × devicePixelRatio) with scale mode NONE, the camera origin is its top-left corner, and the scroll is a whole art pixel, so every sprite lands on whole screen pixels at any integer zoom.
 
 ## Performance targets
 - 60 fps on a mid-range laptop at 1080p with 35 pedestrians, 20 cars and 5 police.

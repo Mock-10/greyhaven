@@ -16,6 +16,7 @@ The art direction is **locked**. Read `art/STYLE_GUIDE.md` before touching anyth
 | `props.png/.json` | Trees, pine, bush, planter, lamp, bench, trash can, hydrant, mailbox, dumpster, crate, barrels, traffic light, street sign |
 | `interactables.png/.json` | ATM, safe, gold bars, cash stack, loot bag, loot crate, toolbox, filing cabinet, desk, cash register. Each comes as normal / idle0–2 / hover. |
 | `tiles.png/.json` | 24 ground tiles: asphalt, wet asphalt, road lanes (edge/centre/dashed for both axes), crosswalks, intersection, manhole, 2 sidewalks, 2 grass, dirt, planks, water, 2 lots |
+| `tiles_var.png/.json` | The same 26 ground tiles in all 7 seeded variants (`<kind>/s<seed>`). The game draws ground from this sheet. The reference scenes pick seed `(i·31 + j·17) % 7` per tile. Made by `source/tile_variants.py`. |
 | `scene_*.png` | Reference compositions: overcast day and rainy dusk. **Match these.** |
 | `drafts/hud/` | HUD mockups (street and lockpick) and the HUD kit (see 11) |
 | `drafts/interiors/` | Interior drafts v2: apartment, 3-room store, office, multi-room bank heist (see 18) |
