@@ -11,7 +11,10 @@ These lock in the look. Match them. Generate new drafts with `art/source/rooms.p
 | Corner store (3 rooms) | `art/drafts/interiors/interior_store.png` | Shop floor (register, clerk, shelves, freezers, ATM, news rack), **locked back room** (lockpick door, safe, stock shelves, ledger desk), **security room** (CCTV desk: disable cameras; DVR: wipe footage) |
 | Office floor | `art/drafts/interiors/interior_office.png` | Cubicles with chairs facing the monitors, desk clutter and small plants, filing cabinets (job task), whiteboard, bookshelf, manager's desk with visitor chairs facing it, break corner (vending, cooler, coffee, armchairs), big plants |
 | Bank heist (multi-room) | `art/drafts/interiors/interior_bank.png` | Lobby, manager's office, security room, corridor gate and vault, with the numbered heist steps and a legend (see `04_crime.md`) |
-| Decoration library | `art/drafts/decor_library.png` | All 58 furniture and decoration assets |
+| Pellridge Tower lobby (Phase 1) | `art/drafts/interiors/interior_tower_lobby.png` | Lobby (reception desk facing the entrance, elevator, waiting chairs, plants) and the key-card server room |
+| Pellridge Tower office floor (Phase 1) | `art/drafts/interiors/interior_office_floor.png` | Open office (cubicles, filing cabinets, your desk, break corner, meeting table, elevator) and Ms. Hollis's office (clock in) |
+| The Low Tide (Phase 1) | `art/drafts/interiors/interior_bar.png` | Bar counter with stools facing it, back bar, booths around tables, pool table, jukebox, dartboard, neon signs; Dez's back room (launder desk, safe, crates) |
+| Decoration library | `art/drafts/decor_library.png` | All 58 furniture and decoration assets, plus 12 added in Phase 1 (bar stool, bar counter, beer taps, back bar, booth, pub table, jukebox, dartboard, neon sign, reception desk, elevator doors, pool table) |
 
 ## Visual rules
 1. **Cutaway view (Project Zomboid style).** The two back walls (top-left and top-right edges of the room) are full height and show their inner faces. The two front walls are cut down to **stubs about 7 units tall** so the room is always visible. The **cut tops of all walls are dark plum** (`night` ramp), which reads as a section cut.
