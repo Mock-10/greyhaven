@@ -1031,6 +1031,83 @@ def pool_table():
         return np.array([RID['red'], RID['navy'], RID['white'], RID['night'], RID['clay'], RID['sage']])[(k * 6).astype(int) % 6], np.full(len(p), 3.4), np.full(len(p), 0.8)
     return M(parts, [solid('wood', 1.8), solid('wood', 2.2), solid('sage', 2.0), solid('wood', 2.6, 0.3), bm, solid('wood', 3.2)], (-24, 24, -14, 14, 0, 19))
 
+
+# ======================================================================= laundering clutter (Phase 1, Dez's back room)
+# Bills are sage/khaki paper with white bands. Gold stays reserved for interactables and loot cues.
+def _billm(seed=1):
+    def m(p, n):
+        k = hash3(np.floor(p[:, 0] / 3.2), np.floor(p[:, 1] / 2.2), np.floor(p[:, 2] / 1.1), seed)
+        band = np.abs(np.mod(p[:, 0] + 50, 6.4) - 3.2) < 0.55
+        r = np.where(band & (n[:, 2] > 0.3), RID['white'], np.where(k > 0.5, RID['sage'], RID['khaki']))
+        return r, np.where(band, 4.2, 3.0 + k * 0.6), np.zeros(len(p))
+    return m
+
+
+def cash_bundles(n=6, seed=1):
+    """Banded bundles of bills stacked in a small pile (stands on a surface or the floor)."""
+    def parts(P):
+        d = np.full(len(P), 1e3)
+        for k in range(n):
+            row, col, lay = k % 2, (k // 2) % 2, k // 4
+            d = np.minimum(d, rbox(P, (-3.4 + col * 6.8, -1.6 + row * 3.4, 0.8 + lay * 1.6), (3.2, 1.6, 0.75), 0.2))
+        return [d]
+    return M(parts, [_billm(seed)], (-8, 8, -4, 4, 0, 1.6 * (n // 4 + 1) + 1))
+
+
+def loose_bills(n=7, spread=14, seed=2):
+    """Bills scattered flat (on a floor or a table top)."""
+    rng = np.random.default_rng(seed)
+    pts = [(rng.uniform(-spread, spread), rng.uniform(-spread * 0.6, spread * 0.6), rng.uniform(0, np.pi)) for _ in range(n)]
+
+    def parts(P):
+        d = np.full(len(P), 1e3)
+        for x, y, a in pts:
+            c, s_ = np.cos(a), np.sin(a)
+            lx = (P[:, 0] - x) * c + (P[:, 1] - y) * s_
+            ly = -(P[:, 0] - x) * s_ + (P[:, 1] - y) * c
+            q = np.stack([lx, ly, P[:, 2] - 0.25], 1)
+            d = np.minimum(d, rbox(q, (0, 0, 0), (3.0, 1.4, 0.25), 0.1))
+        return [d]
+
+    def m(p, n_):
+        k = hash3(np.floor(p[:, 0]), np.floor(p[:, 1]), 1, seed)
+        return np.where(k > 0.5, RID['sage'], RID['khaki']), np.full(len(p), 3.3) + k * 0.4, np.zeros(len(p))
+    return M(parts, [m], (-spread - 4, spread + 4, -spread * 0.6 - 4, spread * 0.6 + 4, 0, 1))
+
+
+def money_counter():
+    """Desktop bill-counting machine with a stack in the hopper. FRONT (+y) faces the operator."""
+    def parts(P):
+        body = rbox(P, (0, 0, 3.0), (4.2, 3.6, 3.0), 0.8)
+        hopper = rbox(P, (0, -1.4, 6.6), (3.0, 1.4, 1.2), 0.3)
+        stack = rbox(P, (0, -1.4, 7.4), (2.6, 1.0, 0.8), 0.1)
+        tray = rbox(P, (0, 3.6, 1.2), (3.0, 1.4, 0.6), 0.2)
+        display = rbox(P, (0, 3.5, 4.4), (2.0, 0.2, 0.8), 0.1)
+        return [body, hopper, stack, tray, display]
+
+    def dm(p, n):
+        return np.full(len(p), RID['red']), np.full(len(p), 4.6), np.zeros(len(p))
+    return M(parts, [solid('lavlt', 3.0, 0.4), solid('night', 2.0), _billm(4), solid('night', 2.2), dm], (-6, 6, -5, 6, 0, 9))
+
+
+def cash_duffel():
+    """An open duffel bag on the floor with bundles showing. FRONT (+y) is the open side."""
+    def parts(P):
+        bag = np.maximum(smin(ell(P, (0, 0, 5), (10, 5.5, 5)), rbox(P, (0, 0, 3), (9, 5, 3), 2), 1.5), -rbox(P, (0, 1.0, 9.5), (7.5, 3.4, 3), 1))
+        cash = rbox(P, (0, 1.0, 7.0), (7.0, 3.0, 1.2), 0.3)
+        handles = np.minimum(capsule(P, (-4, -4.6, 8.5), (4, -4.6, 8.5), 0.5), capsule(P, (-4, 5.0, 7.8), (4, 5.0, 7.8), 0.5))
+        return [bag, cash, handles]
+    return M(parts, [solid('night', 2.4, 0.2), _billm(7), solid('night', 1.8)], (-12, 12, -7, 7, 0, 11))
+
+
+def counting_table():
+    """Folding table for counting cash: plain top on steel legs."""
+    def parts(P):
+        top = rbox(P, (0, 0, 15), (14, 7, 0.6), 0.3)
+        legs = np.minimum.reduce([capsule(P, (sx, sy, 0.5), (sx, sy, 14.5), 0.5) for sx in (-12.5, 12.5) for sy in (-5.5, 5.5)])
+        return [top, legs]
+    return M(parts, [solid('lavlt', 3.2), solid('lavlt', 2.2, 0.5)], (-15, 15, -8, 8, 0, 16))
+
 DECOR = {
     # plants
     'plant_tall': plant_tall, 'plant_snake': plant_snake, 'plant_small': plant_small, 'plant_hanging': plant_hanging, 'ficus_tree': ficus_tree,
@@ -1055,5 +1132,6 @@ DECOR = {
     # bar + office lobby (Phase 1)
     'bar_stool': bar_stool, 'bar_counter': bar_counter, 'beer_taps': beer_taps, 'back_bar': back_bar, 'booth': booth, 'pub_table': pub_table,
     'jukebox': jukebox, 'dartboard': dartboard, 'neon_sign': neon_sign, 'reception_desk': reception_desk, 'elevator_doors': elevator_doors,
-    'pool_table': pool_table,
+    'pool_table': pool_table, 'cash_bundles': cash_bundles, 'loose_bills': loose_bills, 'money_counter': money_counter,
+    'cash_duffel': cash_duffel, 'counting_table': counting_table,
 }
