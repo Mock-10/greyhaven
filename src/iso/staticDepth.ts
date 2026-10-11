@@ -12,6 +12,8 @@ export interface Sortable {
   fp: Box;
   /** Screen bounds of the sprite. */
   bounds: Rect;
+  /** An overhead object (a canopy roof on posts): it draws after anything standing under its footprint. */
+  over?: boolean;
 }
 
 const EPS = 0.01;
@@ -23,10 +25,12 @@ function behind(a: Box, b: Box): boolean {
 
 const sumKey = (f: Box) => f[0] + f[2] + f[1] + f[3];
 
-/** Which of two overlapping objects draws first: -1 for a, 1 for b. */
-export function firstOf(a: Box, b: Box): -1 | 1 {
+/** Which of two overlapping objects draws first: -1 for a, 1 for b. An overhead object draws after anything whose
+ *  footprint reaches under it. */
+export function firstOf(a: Box, b: Box, aOver = false, bOver = false): -1 | 1 {
   const ab = behind(a, b);
   const ba = behind(b, a);
+  if (aOver !== bOver && !ab && !ba) return aOver ? 1 : -1;
   if (ab && !ba) return -1;
   if (ba && !ab) return 1;
   return sumKey(a) <= sumKey(b) ? -1 : 1;
@@ -51,7 +55,8 @@ export function staticOrder(items: readonly Sortable[]): number[] {
       const bj = items[j]!.bounds;
       if (bj.x >= bi.x + bi.w) break;
       if (!overlaps(bi, bj)) continue;
-      const [first, second] = firstOf(items[i]!.fp, items[j]!.fp) < 0 ? [i, j] : [j, i];
+      const [first, second] =
+        firstOf(items[i]!.fp, items[j]!.fp, items[i]!.over, items[j]!.over) < 0 ? [i, j] : [j, i];
       out[first]!.push(second);
       indeg[second]!++;
     }
@@ -118,13 +123,13 @@ export function staticOrder(items: readonly Sortable[]): number[] {
  */
 export function depthAmong(
   fp: Box,
-  overlapping: readonly { fp: Box; depth: number }[],
+  overlapping: readonly { fp: Box; depth: number; over?: boolean }[],
   fallback: number,
 ): number {
   let lo = -Infinity;
   let hi = Infinity;
   for (const o of overlapping) {
-    if (firstOf(o.fp, fp) < 0) lo = Math.max(lo, o.depth);
+    if (firstOf(o.fp, fp, o.over) < 0) lo = Math.max(lo, o.depth);
     else hi = Math.min(hi, o.depth);
   }
   if (lo === -Infinity && hi === Infinity) return fallback;

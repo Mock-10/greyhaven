@@ -178,6 +178,21 @@ export function chopPrice(v: Pick<Vehicle, 'type' | 'health'>, roll: number, rep
   return Math.round(base * (0.4 + 0.6 * (v.health / stats(v).health)));
 }
 
+/** A car parked in a marked spot: its centre inside the rectangle (give or take `slack`) and stopped. */
+export function parkedIn(
+  v: Pick<Vehicle, 'x' | 'y' | 'speed'>,
+  r: { x0: number; y0: number; x1: number; y1: number },
+  slack = BALANCE.vehicles.spotSlack,
+): boolean {
+  return (
+    v.x >= r.x0 - slack &&
+    v.x <= r.x1 + slack &&
+    v.y >= r.y0 - slack &&
+    v.y <= r.y1 + slack &&
+    Math.abs(v.speed) < BALANCE.vehicles.saleMaxSpeed
+  );
+}
+
 /** Distance from a point to the car's body (0 inside it). */
 export function distToCar(v: Pick<Vehicle, 'x' | 'y' | 'heading' | 'type'>, x: number, y: number): number {
   const { halfLength, halfWidth } = stats(v);

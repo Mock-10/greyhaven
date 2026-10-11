@@ -247,26 +247,51 @@ def workshop(lit=0.0, seed=3):
     return Model(parts, [body_m, solid('lav', 2.0), solid('stone', 1.8)], (-hx - 2, hx + 2, -hy - 2, hy + 2, 0, H + 6))
 
 
+CANOPY_H = 36.0      # underside of Pump & Go's canopy roof, model units (about 94 world units: vans clear it easily)
+CANOPY_HX, CANOPY_HY = 30.0, 16.0
+
+
 def fuel_canopy(lit=0.0):
-    """Pump & Go's canopy: a flat roof on four posts with the name on its fascia (on the +y and +x faces)."""
-    hx, hy, H = 18.0, 18.0, 16.0
+    """Pump & Go's canopy roof, drawn on its own above whatever stands under it (the game sorts it as an overhead
+    object and fades it when you're under it). The posts are separate objects (canopy_post). The name is on the
+    fascia's +y and +x faces; the underside is bright, and lit at night."""
+    hx, hy, H = CANOPY_HX, CANOPY_HY, CANOPY_H
 
     def parts(P):
-        roof = rbox(P, (0, 0, H + 2.0), (hx, hy, 2.2), 0.4)
-        posts = np.minimum.reduce([rbox(P, (sx * (hx - 3), sy * (hy - 3), H / 2), (0.9, 0.9, H / 2), 0.3) for sx in (-1, 1) for sy in (-1, 1)])
-        return [roof, posts]
+        roof = rbox(P, (0, 0, H + 2.4), (hx, hy, 2.4), 0.4)
+        vents = np.minimum(rbox(P, (-14, -6, H + 5.6), (3.0, 2.2, 0.9), 0.3), rbox(P, (9, 4, H + 5.6), (2.2, 2.2, 0.9), 0.3))
+        return [roof, vents]
 
     def roof_m(p, n):
         front, right, back, left = _faces(n)
         u = np.where(front | back, p[:, 0], -p[:, 1])
         side = front | right
-        txt = side & sign_text(u, p[:, 2], 'PUMP & GO', 0.0, H + 2.0)
+        txt = side & sign_text(u, p[:, 2], 'PUMP & GO', 0.0, H + 2.4)
         band = (front | right | back | left)
+        stripe = band & (np.abs(p[:, 2] - (H + 0.6)) < 0.5)
         under = n[:, 2] < -0.5
-        r = np.where(txt, RID['white'], np.where(band, RID['red'], np.where(under, RID['white'], RID['lavlt'])))
-        t = np.where(txt, 4.4, np.where(band, 2.7, np.where(under, 4.0 if lit else 3.0, 2.6)))
+        top = n[:, 2] > 0.5
+        seam = top & ((np.abs(np.mod(p[:, 0] + 30, 10.0) - 5.0) < 0.35) | (np.abs(p[:, 1]) < 0.3))
+        r = np.where(txt, RID['white'], np.where(stripe, RID['white'], np.where(band, RID['red'], np.where(under, RID['white'], RID['lavlt']))))
+        t = np.where(txt, 4.4, np.where(stripe, 3.6, np.where(band, 2.7, np.where(under, 4.2 if lit else 3.0, np.where(seam, 2.0, 2.6)))))
         return r, t, np.zeros(len(p))
-    return Model(parts, [roof_m, solid('white', 3.0)], (-hx - 1, hx + 1, -hy - 1, hy + 1, 0, H + 5))
+    return Model(parts, [roof_m, solid('stone', 2.2)], (-hx - 1, hx + 1, -hy - 1, hy + 1, 0, H + 8))
+
+
+def canopy_post(lit=0.0):
+    """One of the canopy's tall steel posts, on a small concrete foot."""
+    H = CANOPY_H
+
+    def parts(P):
+        post = rbox(P, (0, 0, H / 2 + 1), (0.9, 0.9, H / 2), 0.3)
+        foot = rbox(P, (0, 0, 0.7), (1.8, 1.8, 0.7), 0.3)
+        return [post, foot]
+
+    def post_m(p, n):
+        z = p[:, 2]
+        band = (z > H - 5) | ((z > 5) & (z < 7))
+        return np.where(band, RID['red'], RID['white']), np.where(band, 2.6, 3.0), np.zeros(len(p))
+    return Model(parts, [post_m, solid('stone', 1.8)], (-3, 3, -3, 3, 0, H + 2))
 
 
 # name: (factory(lit) , footprint half extents in model units (hx, hy), height in model units)
@@ -288,7 +313,8 @@ _SPECS = {
     'midrise_blue': (lambda lit: midrise(9, 18, 18, 'render_blue', True, lit=lit, seed=8, crown='white'), (18, 18), 112),
     'midrise_brick': (lambda lit: midrise(6, 20, 16, 'darkbrick', False, lit=lit, seed=9), (20, 16), 76),
     'workshop': (lambda lit: workshop(lit), (16, 12), 15),
-    'fuel_canopy': (lambda lit: fuel_canopy(lit), (18, 18), 20),
+    'fuel_canopy': (lambda lit: fuel_canopy(lit), (CANOPY_HX, CANOPY_HY), 40),
+    'canopy_post': (lambda lit: canopy_post(lit), (1.8, 1.8), 37),
     'fuel_kiosk': (lambda lit: shop_building('PUMP & GO', 'render_lav', 1, 14, 10, awning=('red', 'white'), sign=('red', 'white'), lit=lit, seed=12, trim='white'), (14, 10), 13),
 }
 

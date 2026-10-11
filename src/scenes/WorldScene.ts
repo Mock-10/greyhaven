@@ -71,6 +71,7 @@ import {
   drive,
   exitSpots,
   parkedCar,
+  parkedIn,
   stats,
   pourCan,
   refuel,
@@ -131,6 +132,8 @@ interface Usable {
   blocked?: boolean;
   /** Key shown on the prompt (E unless said otherwise). */
   key?: string;
+  /** Not usable right now and not shown (Marlo's spot with no car in it). */
+  hidden?: boolean;
 }
 
 /** A drivable car on the street: its state lives in GameState.vehicles, this is how it is drawn. */
@@ -156,7 +159,7 @@ interface StreetSaved {
   footprints: { fp: Footprint; bounds: Rect; sprite: string }[];
   solids: Solid[];
   usables: Usable[];
-  statics: { fp: Box; depth: number; bounds: Rect }[];
+  statics: { fp: Box; depth: number; bounds: Rect; over?: boolean }[];
 }
 
 const INTERIOR_BG = 0x241c28;
@@ -193,7 +196,7 @@ export class WorldScene extends Phaser.Scene {
   private step = new FixedStep(BALANCE.sim.tickHz, BALANCE.sim.maxFrameSeconds);
   private ground!: GroundRenderer | VectorGroundRenderer;
   /** City maps: static objects with their footprints, for slotting moving objects into the depth order. */
-  private statics: { fp: Box; depth: number; bounds: Rect }[] = [];
+  private statics: { fp: Box; depth: number; bounds: Rect; over?: boolean }[] = [];
   private groundLayer!: Phaser.GameObjects.Layer;
   private objectLayer!: Phaser.GameObjects.Layer;
   private overlayLayer!: Phaser.GameObjects.Layer;
@@ -299,6 +302,16 @@ export class WorldScene extends Phaser.Scene {
     else {
       for (const d of this.map.doors ?? [])
         this.usables.push({ id: `door:${d.target}`, x: d.x, y: d.y, label: d.label, placed: null, door: d });
+      for (const z of this.map.zones ?? [])
+        this.usables.push({
+          id: `zone:${z.id}`,
+          x: (z.x0 + z.x1) / 2,
+          y: (z.y0 + z.y1) / 2,
+          label: 'SELL CAR TO MARLO',
+          placed: null,
+          door: null,
+          hidden: true,
+        });
       this.createPlayer();
       this.createCars();
       this.createLamps();
@@ -492,13 +505,17 @@ export class WorldScene extends Phaser.Scene {
 
   /** City maps: order every static object topologically (staticDepth.ts) and use the rank as its depth. */
   private sortStatics(): void {
-    const items = this.placed.map((pl) => ({ fp: footprintOf(pl.placement), bounds: pl.bounds }));
+    const items = this.placed.map((pl) => ({
+      fp: footprintOf(pl.placement),
+      bounds: pl.bounds,
+      over: pl.placement.over === true,
+    }));
     const rank = staticOrder(items);
     this.placed.forEach((pl, i) => {
       const d = rank[i] as number;
       pl.sprite.setDepth(d);
       pl.glow?.setDepth(d + 0.001);
-      this.statics.push({ fp: items[i]!.fp, depth: d, bounds: pl.bounds });
+      this.statics.push({ fp: items[i]!.fp, depth: d, bounds: pl.bounds, over: items[i]!.over });
     });
     const byKey = new Map(this.placed.map((pl, i) => [pl, rank[i] as number]));
     for (const f of this.footprints) {
@@ -585,8 +602,8 @@ export class WorldScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------- player
 
-  private createPlayer(): void {
-    const costume = this.state.player.costume;
+  /** The 8 walk animations of a costume, made once. */
+  private ensureWalkAnims(costume: string): void {
     for (let d = 0; d < 8; d++) {
       const key = `walk-${costume}-${DIRS[d]}`;
       if (this.anims.exists(key)) continue;
@@ -596,6 +613,11 @@ export class WorldScene extends Phaser.Scene {
       });
       this.anims.create({ key, frames, frameRate: BALANCE.walker.walkFps, repeat: -1 });
     }
+  }
+
+  private createPlayer(): void {
+    const costume = this.state.player.costume;
+    this.ensureWalkAnims(costume);
     const p = this.state.player;
     const ref = characterFrame(costume, 'idle', p.dir);
     this.player = this.add.sprite(0, 0, ref.atlas, ref.frame);
@@ -735,9 +757,10 @@ export class WorldScene extends Phaser.Scene {
     else this.refreshStreetLabels();
     // with sight lines on, nothing in a room you can't see can be used (doors stand between rooms: always)
     const view = this.inside?.view;
+    const shown = this.usables.filter((u) => !u.hidden);
     const usable = view
-      ? this.usables.filter((u) => u.spot?.kind === 'door' || view.stateAt(u.x, u.y) === VIS)
-      : this.usables;
+      ? shown.filter((u) => u.spot?.kind === 'door' || view.stateAt(u.x, u.y) === VIS)
+      : shown;
     const t = this.drivenCar()
       ? this.driveTarget()
       : selectTarget(
@@ -801,8 +824,10 @@ export class WorldScene extends Phaser.Scene {
     if (this.time.now - this.resumedAt < BALANCE.ui.keyGuardMs) return;
     const u = this.usables.find((x) => x.id === this.target);
     if (!u) return;
-    if (u.id === 'door:chop_shop' && this.carForMarlo()) this.sellToMarlo(this.carForMarlo() as CarView);
-    else if (u.door) this.tryEnter(u.door);
+    if (u.id === 'zone:marlo_spot') {
+      const car = this.carForMarlo();
+      if (car) this.sellToMarlo(car);
+    } else if (u.door) this.tryEnter(u.door);
     else if (u.spot) this.useSpot(u.spot);
     else if (u.id.startsWith('car:')) this.useCar(u.id.slice(4));
     else if (u.id.startsWith('pump')) this.usePump(u);
@@ -832,7 +857,11 @@ export class WorldScene extends Phaser.Scene {
     if (this.busy) return;
     const def = interiorForDoor(door.target);
     if (!def) {
-      this.toast('MARLO', 'COME BACK WITH A CAR.');
+      const withCar = this.drivenCar() ?? this.cars.find((c) => !c.v.locked);
+      this.toast(
+        'MARLO',
+        withCar ? 'ROUND THE SIDE. PARK IT IN THE DOTTED SPOT OFF GULLSWAY.' : 'COME BACK WITH A CAR.',
+      );
       return;
     }
     const open = isOpen(def.hours, this.minuteOfDay());
@@ -1433,8 +1462,8 @@ export class WorldScene extends Phaser.Scene {
         u.label = v.running ? 'GET IN' : 'HOTWIRE';
       }
     }
-    const marlo = this.usables.find((u) => u.id === 'door:chop_shop');
-    if (marlo) marlo.label = this.carForMarlo() ? 'SELL CAR TO MARLO' : (marlo.door?.label ?? '');
+    const spot = this.usables.find((u) => u.id === 'zone:marlo_spot');
+    if (spot) spot.hidden = this.marloWalker !== null || !this.carForMarlo();
   }
 
   /** While driving, E reaches the pumps and Marlo's yard from the car. */
@@ -1443,22 +1472,21 @@ export class WorldScene extends Phaser.Scene {
     const V = BALANCE.vehicles;
     let best: { id: string; d: number } | null = null;
     for (const u of this.usables) {
-      const reach = u.id.startsWith('pump') ? V.pumpReach : u.id === 'door:chop_shop' ? V.marloReach : -1;
+      if (u.hidden) continue;
+      const zone = u.id.startsWith('zone:');
+      const reach = u.id.startsWith('pump') ? V.pumpReach : zone ? 0 : -1;
       if (reach < 0) continue;
-      const d = distToCar(car.v, u.x, u.y);
+      const d = zone ? 0 : distToCar(car.v, u.x, u.y);
       if (d <= reach && (!best || d < best.d)) best = { id: u.id, d };
     }
     return { target: best?.id ?? null, inRange: best ? [best.id] : [] };
   }
 
-  /** The stolen car Marlo would buy: the one you're driving, or one left near his door. */
+  /** The stolen car Marlo would buy: one stopped in his dotted spot (docs/08, decided 2026-10-11). */
   private carForMarlo(): CarView | null {
-    const door = this.map.doors?.find((d) => d.target === 'chop_shop');
-    if (!door) return null;
-    const driven = this.drivenCar();
-    const reach = BALANCE.vehicles.marloReach;
-    if (driven) return distToCar(driven.v, door.x, door.y) <= reach ? driven : null;
-    return this.cars.find((c) => !c.v.locked && distToCar(c.v, door.x, door.y) <= reach) ?? null;
+    const z = this.map.zones?.find((q) => q.id === 'marlo_spot');
+    if (!z) return null;
+    return this.cars.find((c) => !c.v.locked && parkedIn(c.v, z)) ?? null;
   }
 
   private useCar(id: string): void {
@@ -1590,17 +1618,80 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** Marlo walking out to a car in his spot, and back: a road-worker sprite (his workwear) while it runs. */
+  private marloWalker: Phaser.GameObjects.Sprite | null = null;
+
+  /** E with a car in the dotted spot: Marlo walks out of his side door to the car, pays, and takes it away. */
   private sellToMarlo(c: CarView): void {
-    if (this.busy) return;
-    const door = this.map.doors?.find((d) => d.target === 'chop_shop') as Door;
+    if (this.busy || this.marloWalker) return;
+    const z = this.map.zones?.find((q) => q.id === 'marlo_spot');
+    if (!z?.npc) return;
+    const home = z.npc;
+    const to = exitSpots(c.v, BALANCE.walker.radius)
+      .slice(0, 2)
+      .sort((a, b) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(b.x - home.x, b.y - home.y))[0]!;
     const price = chopPrice(c.v, this.rng.next());
-    this.fade(() => {
-      if (this.state.driving === c.v.id) this.leaveCar({ x: door.x, y: door.y + 12 });
-      this.removeCar(c);
-      this.state.money.dirty += price;
+    const costume = 'road_worker';
+    this.ensureWalkAnims(costume);
+    const s = this.add.sprite(0, 0, 'characters', characterFrame(costume, 'idle', 0).frame);
+    this.objectLayer.add(s);
+    this.marloWalker = s;
+    this.refreshStreetLabels();
+    const walk = (from: { x: number; y: number }, dest: { x: number; y: number }, done: () => void) => {
+      const dist = Math.hypot(dest.x - from.x, dest.y - from.y);
+      const dir = facingFromWorld(dest.x - from.x, dest.y - from.y);
+      s.play(`walk-${costume}-${DIRS[dir]}`, true);
+      const pos = { x: from.x, y: from.y };
+      this.tweens.add({
+        targets: pos,
+        x: dest.x,
+        y: dest.y,
+        duration: (dist / BALANCE.vehicles.marloWalkSpeed) * 1000,
+        onUpdate: () => this.placeWalker(s, pos.x, pos.y),
+        onComplete: () => {
+          s.stop();
+          s.setFrame(characterFrame(costume, 'idle', dir).frame);
+          done();
+        },
+      });
+      this.placeWalker(s, pos.x, pos.y);
+    };
+    walk(home, to, () => {
+      if (!this.cars.includes(c) || !parkedIn(c.v, z)) {
+        this.toast('MARLO', 'MAKE UP YOUR MIND.');
+        walk(to, home, () => {
+          s.destroy();
+          this.marloWalker = null;
+        });
+        return;
+      }
       this.toast('MARLO', `$${price} DIRTY. NOW GET LOST.`);
-      this.objective('WASH THE CASH: DEZ, THE LOW TIDE BACK ROOM (18:00-02:00)');
+      this.fade(() => {
+        if (this.state.driving === c.v.id) {
+          const out = exitSpots(c.v, BALANCE.walker.radius).find(
+            (p) => !collides(p.x, p.y, this.solids, this.collisionRules),
+          );
+          this.leaveCar(out ?? { x: to.x + 12, y: to.y });
+        }
+        this.removeCar(c);
+        this.state.money.dirty += price;
+        this.objective('WASH THE CASH: DEZ, THE LOW TIDE BACK ROOM (18:00-02:00)');
+        walk(to, home, () => {
+          s.destroy();
+          this.marloWalker = null;
+        });
+      });
     });
+  }
+
+  /** Put an NPC walking on the street at a world point, sorted among the static objects. */
+  private placeWalker(s: Phaser.GameObjects.Sprite, x: number, y: number): void {
+    const p = worldToScreen(x, y);
+    s.setPosition(Math.round(p.x), Math.round(p.y));
+    const r = BALANCE.walker.radius;
+    const b = s.getBounds();
+    const near = this.statics.filter((o) => rectsOverlap(o.bounds, { x: b.x, y: b.y, w: b.width, h: b.height }));
+    s.setDepth(depthAmong([x - r, y - r, x + r, y + r], near, depthOf(x, y)));
   }
 
   private vehicleReadout(): HudSnapshot['vehicle'] {

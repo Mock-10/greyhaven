@@ -20,10 +20,11 @@ ROADLIKE = {'asphalt', 'asphalt_wet', 'paint_white', 'paint_gold', 'iron', 'lot'
 def material_grid(m):
     """Material per RES x RES world cell, sampled at the cell centre with the even-odd rule: the same grid as
     src/iso/vectorGround.ts worldGrid (used by the game's radar and the map tests)."""
-    n = m['width'] * T // RES
+    nx = m['width'] * T // RES
+    n = m.get('height', m['width']) * T // RES
     mats = ['asphalt'] + sorted({s['m'] for s in m['ground']['shapes']} - {'asphalt'})
     idx = {k: i for i, k in enumerate(mats)}
-    grid = np.full((n, n), idx[m['ground']['base']], np.int16)      # [i (x), j (y)]
+    grid = np.full((nx, n), idx[m['ground']['base']], np.int16)      # [i (x), j (y)]
     for s in m['ground']['shapes']:
         P = np.asarray(s['p'], float)
         if len(P) < 3:
@@ -39,7 +40,7 @@ def material_grid(m):
             with np.errstate(divide='ignore', invalid='ignore'):
                 xi = np.sort((ax + (yc - ay) * (bx - ax) / (by - ay))[c])
             for a_, b_ in zip(xi[0::2], xi[1::2]):
-                i0 = max(0, int(np.ceil(a_ / RES - 0.5))); i1 = min(n, int(np.ceil(b_ / RES - 0.5)))
+                i0 = max(0, int(np.ceil(a_ / RES - 0.5))); i1 = min(nx, int(np.ceil(b_ / RES - 0.5)))
                 if i1 > i0:
                     grid[i0:i1, j] = idx[s['m']]
     return grid, mats
@@ -64,6 +65,7 @@ def check(path):
 
 def check_dict(m):
     N = m['width']
+    NH = m.get('height', N)
     grid, mats = material_grid(m)
     issues = []
     # roofs on posts (the fuel canopy) aren't solid: cars and people go under them
@@ -92,13 +94,13 @@ def check_dict(m):
             if ox > 2 and oy > 2:
                 issues.append(f"prop in building: {p['sprite']} @({p['x']/T:.1f},{p['y']/T:.1f}) in {b['sprite']}")
     # density
-    walk = np.zeros((N, N), bool); dressed = np.zeros((N, N), bool)
-    occupied = np.zeros((N, N), bool)
+    walk = np.zeros((N, NH), bool); dressed = np.zeros((N, NH), bool)
+    occupied = np.zeros((N, NH), bool)
     kerb = mats.index('kerb') if 'kerb' in mats else -1
     road_ids = [mats.index(k) for k in ROADLIKE if k in mats]
     step = T // RES
     for i in range(N):
-        for j in range(N):
+        for j in range(NH):
             cell = grid[i * step:(i + 1) * step, j * step:(j + 1) * step]
             c = grid[(i * T + 16) // RES, (j * T + 16) // RES]
             walk[i, j] = c not in road_ids
@@ -106,7 +108,7 @@ def check_dict(m):
             dressed[i, j] = len(u) > 1
     for p, f in [(p, footprint(p)) for p in m['placements']]:
         i0, j0 = int(max(0, f[0] // T)), int(max(0, f[1] // T))
-        i1, j1 = int(min(N - 1, f[2] // T)), int(min(N - 1, f[3] // T))
+        i1, j1 = int(min(N - 1, f[2] // T)), int(min(NH - 1, f[3] // T))
         if p['sprite'].startswith('bld/'):
             # only tiles the building covers completely stop being walkable
             fi0, fj0 = int(np.ceil(f[0] / T)), int(np.ceil(f[1] / T))
@@ -118,7 +120,7 @@ def check_dict(m):
     bare = walk & ~dressed
     bad = []
     for i in range(N - 2):
-        for j in range(N - 2):
+        for j in range(NH - 2):
             if bare[i:i + 3, j:j + 3].all():
                 bad.append((i, j))
     return issues, bad, bare

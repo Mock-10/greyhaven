@@ -174,7 +174,11 @@ export const BALANCE = {
     /** How close (world units) you must stand to a car to use or enter it, or drive to a pump or Marlo. */
     reach: 40,
     pumpReach: 64,
-    marloReach: 96,
+    /** Marlo's dotted sale spot (decided 2026-10-11): the car's centre must be inside it, give or take this many
+     *  units, and the car stopped (slower than saleMaxSpeed). Marlo walks out at walking pace. */
+    spotSlack: 12,
+    saleMaxSpeed: 6,
+    marloWalkSpeed: 48,
     /** Fuel price (docs/02: $3 per unit) and a jerry can's contents (docs/08: 10 units). */
     fuelPrice: 3,
     canUnits: 10,

@@ -1,4 +1,4 @@
-"""The test Downtown ("The Ledger"), 48 x 48 tiles, authored as vector ground plus placements (Phase 1 milestone 1b).
+"""The test Downtown ("The Ledger"), 64 x 48 tiles (48 x 48 until 2026-10-11, widened east for Gullsway), authored as vector ground plus placements (Phase 1 milestone 1b).
 
 This one file is the source of truth for the map. It writes:
   - src/maps/downtown.json: ground shapes, placements, doors, street spans and spawn, read by the game;
@@ -6,6 +6,7 @@ This one file is the source of truth for the map. It writes:
 
 Layout (tiles): Overcast Avenue runs east-west at j = 18..22, Drizzle Row at j = 35..39. Pewter Street runs north-south
 at i = 18..22. Millwright Road runs north-south at i = 34..38, then bends east to i = 39..43 between j = 23 and 33.
+Gullsway (towards the Docks) runs north-south at i = 55..59 and bends east past Drizzle Row.
 Roads are 4 tiles wide with 2-tile sidewalks. Only faces pointing +x or +y can be seen, so every entrance that matters
 faces south or east; buildings across a street show their dressed backs.
 
@@ -22,8 +23,10 @@ import street
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 T = 32.0
-N = 48
-MAPW = N * T
+NW, NH = 64, 48     # map size in tiles: x (east) and y (south)
+N = NW
+MAPW = NW * T       # world width (x)
+MAPH = NH * T       # world height (y)
 HW = 2 * T          # road half width
 SWK = 2 * T         # sidewalk width
 KERB = 3.0          # kerbstone strip
@@ -46,10 +49,16 @@ def mill_x(y):
     return tc(36 + 5 * smooth((y / T - 23.0) / 10.0))
 
 
-Y_SAMPLES = np.linspace(-T, MAPW + T, 401)
+def gull_x(y):
+    """Gullsway's centre line x at world y: straight, then bending east toward the Docks past Drizzle Row."""
+    return tc(57 + 3 * smooth((y / T - 40.0) / 8.0))
+
+
+Y_SAMPLES = np.linspace(-T, MAPH + T, 401)
 ROADS_Y = {
     'PEWTER STREET': np.stack([np.full_like(Y_SAMPLES, tc(20)), Y_SAMPLES], 1),
     'MILLWRIGHT ROAD': np.stack([mill_x(Y_SAMPLES), Y_SAMPLES], 1),
+    'GULLSWAY': np.stack([gull_x(Y_SAMPLES), Y_SAMPLES], 1),
 }
 ROADS_X = {'OVERCAST AVENUE': tc(20), 'DRIZZLE ROW': tc(37)}
 
@@ -79,7 +88,7 @@ class Block:
 
     def y_range(self, d):
         y0 = ROADS_X[self.n] + HW + d if self.n else -2.0
-        y1 = ROADS_X[self.s] - HW - d if self.s else MAPW + 2.0
+        y1 = ROADS_X[self.s] - HW - d if self.s else MAPH + 2.0
         return y0, y1
 
     def poly(self, d=0.0, radius=None, sides=None):
@@ -88,7 +97,7 @@ class Block:
         dn = d if 'n' in sides else 0.0
         ds = d if 's' in sides else 0.0
         y0 = (ROADS_X[self.n] + HW + dn) if self.n else -2.0
-        y1 = (ROADS_X[self.s] - HW - ds) if self.s else MAPW + 2.0
+        y1 = (ROADS_X[self.s] - HW - ds) if self.s else MAPH + 2.0
         if self.e:
             east = y_edge_line(self.e, y0, y1, -1, HW + (d if 'e' in sides else 0.0))
         else:
@@ -131,18 +140,22 @@ class Block:
             return y_edge_line(self.w, y0, y1, +1, HW + d)[::-1]
 
 
-P, M = 'PEWTER STREET', 'MILLWRIGHT ROAD'
+P, M, G = 'PEWTER STREET', 'MILLWRIGHT ROAD', 'GULLSWAY'
 O, D = 'OVERCAST AVENUE', 'DRIZZLE ROW'
 BLOCKS = {
     'nw': Block('nw', None, P, None, O),
     'n': Block('n', P, M, None, O),
-    'ne': Block('ne', M, None, None, O),
+    'ne': Block('ne', M, G, None, O),
     'w': Block('w', None, P, O, D),
     'mid': Block('mid', P, M, O, D),
-    'e': Block('e', M, None, O, D, sidewalks={'n', 's'}),
+    'e': Block('e', M, G, O, D, sidewalks={'n', 's'}),
     'sw': Block('sw', None, P, D, None),
     's': Block('s', P, M, D, None),
-    'se': Block('se', M, None, D, None, sidewalks={'n'}),
+    'se': Block('se', M, G, D, None, sidewalks={'n'}),
+    # the far side of Gullsway: the town's eastern edge, an embankment toward The Works
+    'gn': Block('gn', G, None, None, O, sidewalks={'w', 's'}),
+    'gm': Block('gm', G, None, O, D, sidewalks={'w', 'n', 's'}),
+    'gs': Block('gs', G, None, D, None, sidewalks={'w', 'n'}),
 }
 
 # ------------------------------------------------------------------ output collections
@@ -309,16 +322,15 @@ def lay_blocks():
         ground('kerb', b.poly(0))
         ground('sidewalk', b.poly(KERB))
     # sidewalks only where the block has them: the yard by Millwright Road is fenced at the kerb
-    ground('gravel', BLOCKS['e'].poly(KERB + 2, radius=0, sides={'n', 's', 'w'}))
+    ground('gravel', BLOCKS['e'].poly(KERB + 2, radius=0, sides={'n', 's', 'w', 'e'}))
 
 
 def lay_markings():
     # x-roads: double centre line in gold, white edge lines, between the crossings
     xs = [tc(20), None]
     for name, cy in ROADS_X.items():
-        gaps = [(tc(20) - HW - 40, tc(20) + HW + 40)]
-        mx = mill_x(cy)
-        gaps.append((mx - HW - 40, mx + HW + 40))
+        cxs = [float(np.interp(cy, l[:, 1], l[:, 0])) for l in ROADS_Y.values()]
+        gaps = [(c - HW - 40, c + HW + 40) for c in cxs]
         spans = []
         x = 0.0
         for g0, g1 in sorted(gaps):
@@ -332,7 +344,7 @@ def lay_markings():
             for dy in (-HW + 4, HW - 4):
                 ground('paint_white', rect(a, cy + dy - 0.9, b, cy + dy + 0.9))
         # crosswalks across the x-road on both sides of each crossing
-        for c in (tc(20), mx):
+        for c in cxs:
             for x0 in (c - HW - 36, c + HW + 4):
                 for k in range(9):
                     yy = cy - HW + 8 + k * 14
@@ -343,7 +355,7 @@ def lay_markings():
     # y-roads, following the bend
     for name, line in ROADS_Y.items():
         gaps = [(ROADS_X[O] - HW - 40, ROADS_X[O] + HW + 40), (ROADS_X[D] - HW - 40, ROADS_X[D] + HW + 40)]
-        spans = [(-T, gaps[0][0]), (gaps[0][1], gaps[1][0]), (gaps[1][1], MAPW + T)]
+        spans = [(-T, gaps[0][0]), (gaps[0][1], gaps[1][0]), (gaps[1][1], MAPH + T)]
         for a, b in spans:
             sel = line[(line[:, 1] >= a) & (line[:, 1] <= b)]
             if len(sel) < 2:
@@ -551,7 +563,7 @@ def block_n():
     segments('wall_brick', [[tc(24.1), tc(4.4)], [tc(24.1), tc(7.3)]])
     for name, x, y, dr in (('sedan_lav', 24.9, 5.75, 2), ('sedan_teal', 27.7, 5.75, 2), ('van_white', 30.5, 5.8, 2),
                            ('sedan_clay', 26.3, 11.75, 6), ('taxi', 29.1, 11.75, 6)):
-        car(name, tc(x) + 0.0, tc(y), dr, parked=name.startswith('sedan'))
+        car(name, tc(x) + 0.0, tc(y), dr, parked=True)
     prop('lamp', tc(28.0), tc(9.0)); prop('trash_can', tc(31.5), tc(8.3))
     # north edge: a walk-up, the hardware store facing the lot, bins
     building('walkup_tan', tc(25.4), tc(2.0), 0)
@@ -560,31 +572,40 @@ def block_n():
 
 
 def block_ne():
-    """A row of shops on Overcast Avenue, a service alley behind, offices and walk-ups to the north."""
+    """A row of shops on Overcast Avenue, a service alley behind, offices and walk-ups to the north; a pocket lawn
+    along Gullsway."""
     b = BLOCKS['ne']
     ground('concrete', b.interior())
     fy = ROADS_X[O] - HW - SWK
     x0 = y_edge(M, fy, +1, HW + SWK) + 2
-    end = row(['shop_pharmacy', 'shop_noodles', 'shop_bakery'], x0, fy)
-    # corner pocket at the map edge: a phone booth and a bench under a tree
-    ground('brickpave', rect(end + 2, fy - tc(2.0), MAPW, fy))
+    xe = y_edge(G, fy, -1, HW + SWK)
+    end = row(['shop_pharmacy', 'shop_noodles', 'shop_bakery', 'shop_deli', 'shop_tailor'], x0, fy)
+    # corner pocket at Gullsway: a phone booth and a bench under a tree
+    ground('brickpave', rect(end + 2, fy - tc(2.0), xe, fy))
     tree_pit(end + 22, fy - 40, 'tree_b')
     prop('phone_booth', end + 14, fy - 10)
-    prop('bench', MAPW - 18, fy - 34, dir=6)
-    # the alley behind the shops
+    prop('bench', xe - 14, fy - 34, dir=6)
+    # the alley behind the shops, out to the Gullsway sidewalk
     ay0, ay1 = fy - tc(3.85), fy - tc(1.95)
-    ground('cobble', rect(x0, ay0, MAPW, ay1))
+    ground('cobble', rect(x0, ay0, xe, ay1))
     for x, kind in ((tc(41.0), 'dumpster'), (tc(42.3), 'bin_sage'), (tc(43.2), 'ac_unit'), (tc(44.4), 'pallets'), (tc(45.6), 'trash_bags'),
-                    (tc(46.6), 'boxes'), (tc(47.4), 'pipes')):
+                    (tc(46.6), 'boxes'), (tc(47.4), 'pipes'), (tc(48.8), 'bin_navy'), (tc(49.7), 'ac_unit'), (tc(51.0), 'dumpster'),
+                    (tc(52.2), 'trash_bags')):
         prop(kind, x, ay1 - 12, dir=0)
     building('walkup_stone', tc(41.25), tc(4.0), 0)
     building('walkup_red', tc(41.25), tc(9.2), 0)
     building('midrise_stone', tc(44.6), tc(8.7), 0)
     building('midrise_blue', tc(45.6), tc(3.1), 0)
-    lawn(rect(tc(42.55), tc(4.75), MAPW, tc(7.1)), 20)
-    lawn(rect(tc(46.55), tc(7.2), MAPW, tc(10.0)), 16)
+    building('walkup_tan', tc(49.3), tc(2.6), 0)
+    building('midrise_brick', tc(49.85), tc(8.75), 0)
+    lawn(rect(tc(42.55), tc(4.75), tc(51.2), tc(7.1)), 20)
+    lawn(rect(tc(46.55), tc(7.2), tc(48.05), tc(10.0)), 12)
+    lawn(rect(tc(51.7), tc(0.6), xe - 6, tc(11.9)), 24)
     prop('tree_a', tc(43.8), tc(5.9)); prop('bush', tc(46.0), tc(6.3)); prop('bench', tc(45.0), tc(6.6), dir=0)
     prop('bush', tc(47.3), tc(8.8)); tree_pit(tc(42.9), tc(1.0), 'pine')
+    prop('tree_b', tc(49.9), tc(5.9)); prop('bench', tc(48.4), tc(6.4), dir=0)
+    prop('pine', tc(52.3), tc(2.6)); prop('tree_a', tc(52.5), tc(7.2)); prop('bush', tc(52.1), tc(10.8)); prop('bush', tc(52.4), tc(4.9))
+    prop('bush', tc(47.6), tc(0.8)); prop('bush', tc(50.6), tc(0.6))
 
 
 def block_w():
@@ -660,23 +681,58 @@ def block_mid():
     prop('bench', gx + 30, gy1 - 16, dir=0)
 
 
+MARLO_SPOT = (tc(48.75), tc(30.75), tc(51.95), tc(32.55))   # the white dotted sale spot in Marlo's side yard
+ZONES = []
+
+
+def dotted_rect(x0, y0, x1, y1, dash=8.0, gap=4.0, w=2.6):
+    """A white dotted outline (painted dashes) around a rectangle."""
+    for (ax, ay, bx, by) in ((x0, y0, x1, y0), (x1, y0, x1, y1), (x1, y1, x0, y1), (x0, y1, x0, y0)):
+        L = math.hypot(bx - ax, by - ay)
+        t = 0.0
+        while t < L - 1:
+            t1 = min(L, t + dash)
+            px0, py0 = ax + (bx - ax) * t / L, ay + (by - ay) * t / L
+            px1, py1 = ax + (bx - ax) * t1 / L, ay + (by - ay) * t1 / L
+            ground('paint_white', rect(min(px0, px1) - w / 2, min(py0, py1) - w / 2, max(px0, px1) + w / 2, max(py0, py1) + w / 2))
+            t = t1 + gap
+
+
 def block_e():
-    """Marlo's Tow & Salvage: the yard runs up to Millwright Road behind a chain-link fence."""
+    """Marlo's Tow & Salvage. The yard runs between Millwright Road and Gullsway behind chain-link fences. Beside the
+    shop, Marlo's own fenced section holds the white dotted sale spot (it faces the camera, so it is never hidden
+    behind the building); a gate on Gullsway leads straight to it. Junk cars and the workshop fill the yard behind."""
     b = BLOCKS['e']
     fy = ROADS_X[D] - HW - SWK
     building('chop_shop', tc(45.6), front_y('chop_shop', fy), 0, door=(15.75, 'chop_shop', "MARLO'S TOW & SALVAGE"))
     keep_clear(DOORS[-1]['x'], DOORS[-1]['y'], 30)
-    ground('dirt', rect(tc(42.5), tc(24.2), MAPW, tc(29.0)))
-    ground('lot', rect(tc(44.6), tc(29.0), MAPW, fy))
-    # fence along the curved kerb, with a gate gap near the north
-    fence = y_edge_line(M, tc(26.4), fy - 4, +1, HW + 8)
-    segments('fence', fence)
-    segments('fence', [[y_edge(M, tc(24.2), +1, HW + 8) + 4, tc(24.25)], [MAPW, tc(24.25)]])
-    building('workshop', tc(46.4), tc(25.9), 0)
-    for name, x, y, dr in (('sedan_clay', 43.6, 27.0, 1), ('van_white', 47.0, 28.2, 0)):
+    gk = lambda y: y_edge(G, y, -1, HW + 8)
+    xe = gk(tc(28))
+    ground('dirt', rect(tc(42.5), tc(24.2), xe + 8, tc(30.1)))
+    ground('lot', rect(tc(43.4), tc(26.6), tc(48.0), tc(29.9)))
+    # Marlo's section: a concrete pad beside the shop with the dotted spot, fenced off from the yard to the north
+    sx0, sy0, sx1, sy1 = MARLO_SPOT
+    ground('concrete', rect(tc(47.95), tc(30.15), xe + 8, fy))
+    dotted_rect(sx0, sy0, sx1, sy1)
+    ZONES.append({'id': 'marlo_spot', 'x0': sx0, 'y0': sy0, 'x1': sx1, 'y1': sy1,
+                  'npc': {'x': tc(47.75), 'y': tc(31.6)}})
+    segments('fence', [[tc(48.0), tc(30.1)], [gk(tc(30.1)) - 2, tc(30.1)]])
+    prop('crate', tc(52.9), tc(32.7)); prop('barrel_brick', tc(48.4), tc(32.75)); prop('bin_navy', tc(48.35), tc(30.5))
+    # the gate from Gullsway: a lowered drive across the kerb into Marlo's section
+    gy0, gy1 = tc(30.4), tc(32.8)
+    ground('lot', [[xe - 4, gy0]] + y_edge_line(G, gy0, gy1, -1, HW - 1) + [[xe - 4, gy1]])
+    keep_clear(xe, (gy0 + gy1) / 2, 50)
+    # fences along both kerbs (gates near the north on Millwright, and the Gullsway gate) and across the north
+    segments('fence', y_edge_line(M, tc(26.4), fy - 4, +1, HW + 8))
+    segments('fence', [[y_edge(M, tc(24.2), +1, HW + 8) + 4, tc(24.25)], [gk(tc(24.25)), tc(24.25)]])
+    segments('fence', y_edge_line(G, tc(24.3), gy0 - 4, -1, HW + 8))
+    segments('fence', y_edge_line(G, gy1 + 4, fy - 4, -1, HW + 8))
+    building('workshop', tc(51.7), tc(25.75), 0)
+    for name, x, y, dr in (('sedan_clay', 44.6, 27.6, 1), ('van_white', 50.9, 28.6, 0), ('sedan_khaki', 46.8, 28.9, 3)):
         car(name, tc(x), tc(y), dr)
-    for x, y, kind in ((43.0, 25.0, 'barrel_teal'), (43.4, 25.4, 'barrel_brick'), (45.0, 28.6, 'crate'), (45.4, 29.1, 'crate'),
-                       (43.6, 29.2, 'pipes'), (42.9, 32.2, 'cones'), (44.4, 24.9, 'dumpster')):
+    for x, y, kind in ((43.0, 25.0, 'barrel_teal'), (43.4, 25.4, 'barrel_brick'), (53.4, 28.4, 'crate'), (53.6, 28.9, 'crate'),
+                       (46.0, 25.3, 'pipes'), (42.9, 32.2, 'cones'), (44.4, 24.9, 'dumpster'), (48.2, 25.1, 'pallets'),
+                       (53.6, 25.0, 'barrel_teal'), (53.5, 26.4, 'crate'), (49.2, 27.0, 'boxes'), (53.4, 29.6, 'trash_bags')):
         prop(kind, tc(x), tc(y))
 
 
@@ -717,29 +773,81 @@ def block_s():
     building('midrise_brick', tc(26.7), tc(44.2), 4)
     building('walkup_red', tc(29.4), tc(44.5), 4)
     building('walkup_stone', tc(31.7), tc(44.4), 4)
-    ground('cobble', rect(tc(33.3), ny, fx - tc(1.95), MAPW))
-    lawn(rect(tc(24.3), tc(46.35), tc(33.0), MAPW + 4), 20)
+    ground('cobble', rect(tc(33.3), ny, fx - tc(1.95), MAPH))
+    lawn(rect(tc(24.3), tc(46.35), tc(33.0), MAPH + 4), 20)
     prop('tree_b', tc(25.2), tc(47.2)); prop('bush', tc(28.0), tc(47.4)); prop('tree_a', tc(31.2), tc(47.3))
     for y, kind in ((ny + 20, 'dumpster'), (ny + 50, 'bin_navy'), (ny + 80, 'ac_unit'), (ny + 110, 'pallets'), (ny + 150, 'boxes'), (ny + 180, 'trash_bags')):
         prop(kind, tc(33.75), y, dir=6)
 
 
 def block_se():
-    """Pump & Go, the fuel station: a forecourt at road level off Millwright Road, two pumps under a canopy,
-    the kiosk behind them."""
+    """Pump & Go, the fuel station: a drive-through forecourt at road level between Millwright Road and Gullsway.
+    The kiosk stands at the back with its door and windows facing the pumps; two pumps on an island under a tall
+    canopy (the roof is an overhead object: it draws over cars under it and fades while you're under it)."""
     ny = ROADS_X[D] + HW + SWK
     xr = y_edge(M, tc(44), +1, HW) - 1
-    ground('lot', rect(xr, ny, MAPW + 4, MAPW + 4))
-    for x in (tc(44.6), tc(47.4)):
-        ground('paint_white', rect(x - 0.9, ny + tc(0.8), x + 0.9, ny + tc(4.6)))
-    building('fuel_canopy', tc(46.0), tc(43.6), 0, solid=False)   # a roof on posts: cars drive under it
-    prop('gas_pump', tc(45.2), tc(43.6))
-    prop('gas_pump', tc(46.8), tc(43.6))
+    gl = y_edge_line(G, ny, MAPH + 4, -1, HW - 1)
+    ground('lot', [[xr, ny]] + gl + [[xr, MAPH + 4]])
+    # the kiosk and its apron
+    kx = tc(44.45)
+    building('fuel_kiosk', kx, front_y('fuel_kiosk', ny + tc(1.75)), 0)
+    keep_clear(kx, ny + tc(2.0), 30)
+    ground('concrete', rect(tc(43.1), ny + 2, tc(46.6), ny + tc(2.45)))
+    ground('kerb', rect(tc(43.1), ny + tc(2.45), tc(46.6), ny + tc(2.55)))
+    prop('trash_can', tc(43.4), ny + tc(2.1)); prop('news_box', tc(46.2), ny + tc(2.1))
+    prop('sandwich_board', tc(45.6), ny + tc(2.25)); prop('boxes', tc(46.3), ny + tc(0.9), dir=2)
+    # the pump island under the canopy
+    cx, cy = tc(51.7), tc(45.0)
+    import infill as _inf
+    roof = building('fuel_canopy', cx, cy, 0, solid=False)
+    roof['over'] = True
+    phx, phy = (_inf.CANOPY_HX - 3) * B, (_inf.CANOPY_HY - 3) * B
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            building('canopy_post', cx + sx * phx, cy + sy * phy, 0)
+    ground('kerb', rect(cx - tc(1.55), cy - 9, cx + tc(1.55), cy + 9))
+    ground('concrete', rect(cx - tc(1.5), cy - 6.5, cx + tc(1.5), cy + 6.5))
+    prop('gas_pump', cx - tc(0.75), cy)
+    prop('gas_pump', cx + tc(0.75), cy)
     PL[-2]['interact'] = {'id': 'pump0', 'label': 'REFUEL'}
     PL[-1]['interact'] = {'id': 'pump1', 'label': 'REFUEL'}
-    building('fuel_kiosk', tc(46.75), front_y('fuel_kiosk', MAPW - 4), 0)
-    prop('bollard', tc(45.0), tc(46.2)); prop('trash_can', tc(44.6), tc(45.9)); prop('news_box', tc(44.6), tc(46.7))
-    prop('utility_box', MAPW - 10, ny + 14)
+    prop('bollard', cx - tc(1.35), cy); prop('bollard', cx + tc(1.35), cy)
+    # lane markings: stop bars before the island, arrows painted as dashes along the lanes
+    for ly in (cy - tc(1.05), cy + tc(1.05)):
+        for k in range(6):
+            x = tc(48.3) + k * tc(1.4)
+            ground('paint_white', rect(x, ly - 0.9, x + 16, ly + 0.9))
+    # parking bays for the kiosk along the north side, and the air and water post
+    for x in (tc(48.2), tc(49.7), tc(51.2), tc(52.7)):
+        ground('paint_white', rect(x - 0.9, ny + 6, x + 0.9, ny + tc(1.6)))
+    prop('utility_box', tc(54.2), ny + 14, dir=6); prop('bin_navy', tc(53.6), ny + 12)
+    # the south edge: a planting strip with a low wall, and the price sign corner
+    lawn(rect(tc(43.6), tc(47.25), gl[-1][0] - tc(1.2), MAPH + 4), 10)
+    segments('wall_brick', [[tc(43.7), tc(47.15)], [tc(53.5), tc(47.15)]])
+    for x in (44.6, 47.0, 49.4, 51.8):
+        prop('bush', tc(x), tc(47.7))
+    prop('ad_column', tc(43.9), tc(46.3))
+    prop('cones', tc(53.9), tc(46.6))
+
+
+def block_gullsway_edge():
+    """The far side of Gullsway is the town's eastern edge: a sidewalk, then a grass embankment with trees and a
+    chain-link fence toward The Works."""
+    for name in ('gn', 'gm', 'gs'):
+        b = BLOCKS[name]
+        inner = b.interior()
+        ground('grass', inner)
+        y0, y1 = b.y_range(SWK)
+        xs = [x for x, _ in inner]
+        x_in = max(xs) - 0.5
+        segments('fence', [[MAPW - 6, y0 + 10], [MAPW - 6, y1 - 10]])
+    for (x, y, k) in ((62.4, 2.0, 'pine'), (62.0, 6.0, 'tree_a'), (62.6, 10.4, 'pine'), (61.9, 13.8, 'bush'), (62.5, 25.0, 'tree_b'),
+                      (62.0, 28.4, 'bush'), (62.6, 31.0, 'pine'), (62.2, 34.0, 'bush'), (62.9, 43.6, 'bush'), (62.3, 12.2, 'bush'),
+                      (62.2, 4.2, 'bush'), (62.3, 8.3, 'bush'), (62.3, 26.8, 'bush'), (62.7, 29.7, 'tree_a')):
+        prop(k, tc(x), tc(y))
+    prop('bus_shelter', tc(61.6), tc(8.0), dir=6)
+    keep_clear(tc(61.6), tc(8.0), 50)
+    prop('bus_stop_sign', tc(61.4), tc(10.1))
 
 
 FILL = {
@@ -755,7 +863,7 @@ def autofill(max_rounds=200):
     import check_city
     counters = {k: 0 for k in FILL}
     for _ in range(max_rounds):
-        m = {'width': N, 'ground': {'base': 'asphalt', 'shapes': [{'m': a, 'p': b} for a, b in SHAPES]},
+        m = {'width': NW, 'height': NH, 'ground': {'base': 'asphalt', 'shapes': [{'m': a, 'p': b} for a, b in SHAPES]},
              'placements': [{k: v for k, v in p.items() if k != 'fp'} for p in PL]}
         issues, bad, bare = check_city.check_dict(m)
         if not bad:
@@ -802,20 +910,20 @@ def scatter_decals(seed=11):
     in the paving at the foot of walls, along kerbs, in alleys and in the rough yard."""
     import check_city
     rng = np.random.default_rng(seed)
-    m = {'width': N, 'ground': {'base': 'asphalt', 'shapes': [{'m': a, 'p': b} for a, b in SHAPES]}}
+    m = {'width': NW, 'height': NH, 'ground': {'base': 'asphalt', 'shapes': [{'m': a, 'p': b} for a, b in SHAPES]}}
     grid, mats = check_city.material_grid(m)
     R = check_city.RES
     blds = [p['fp'] for p in PL if p['sprite'].startswith('bld/')]
     solids = [p['fp'] for p in PL if not p['sprite'].startswith('bld/') and p.get('solid')]
-    G_ = grid.shape[0]
+    GX_, GY_ = grid.shape
 
     def mat(x, y):
         i, j = int(x // R), int(y // R)
-        return mats[grid[min(G_ - 1, max(0, i)), min(G_ - 1, max(0, j))]]
+        return mats[grid[min(GX_ - 1, max(0, i)), min(GY_ - 1, max(0, j))]]
 
     road = {'asphalt', 'asphalt_wet', 'paint_white', 'paint_gold', 'iron'}
     counts = {k: 0 for k in DECAL_KINDS}
-    for y in np.arange(4, MAPW - 4, 8.0):
+    for y in np.arange(4, MAPH - 4, 8.0):
         for x in np.arange(4, MAPW - 4, 8.0):
             x2, y2 = x + rng.uniform(-3, 3), y + rng.uniform(-3, 3)
             m0 = mat(x2, y2)
@@ -848,7 +956,7 @@ def scatter_decals(seed=11):
 def build():
     lay_blocks()
     paving_patches()
-    for f in (block_nw, block_n, block_ne, block_w, block_mid, block_e, block_sw, block_s, block_se):
+    for f in (block_nw, block_n, block_ne, block_w, block_mid, block_e, block_sw, block_s, block_se, block_gullsway_edge):
         f()
     corners_furniture()
     lay_markings()
@@ -865,7 +973,7 @@ def street_spans():
     for name, cy in ROADS_X.items():
         STREETS.append({'name': name, 'x0': 0, 'x1': MAPW, 'y0': cy - HW - SWK, 'y1': cy + HW + SWK})
     for name, line in ROADS_Y.items():
-        for y0 in np.arange(0, MAPW, T):
+        for y0 in np.arange(0, MAPH, T):
             xs = line[(line[:, 1] >= y0) & (line[:, 1] <= y0 + T)][:, 0]
             if len(xs) == 0:
                 continue
@@ -874,11 +982,11 @@ def street_spans():
 
 def export(path):
     out = {
-        'id': 'downtown', 'name': 'THE LEDGER', 'width': N, 'height': N,
+        'id': 'downtown', 'name': 'THE LEDGER', 'width': NW, 'height': NH,
         'ground': {'base': 'asphalt', 'shapes': [{'m': m, 'p': p} for m, p in SHAPES],
                    'decals': [{'k': k, 'x': x, 'y': y} for k, x, y in DECALS]},
         'placements': [{k: v for k, v in p.items() if k != 'fp'} for p in PL],
-        'doors': DOORS, 'streets': STREETS,
+        'doors': DOORS, 'streets': STREETS, 'zones': ZONES,
         'spawn': {'x': tc(9), 'y': ROADS_X[O] - HW - 20},
     }
     json.dump(out, open(path, 'w'), separators=(',', ':'))
@@ -892,4 +1000,4 @@ if __name__ == '__main__':
     export(os.path.join(ROOT, 'src', 'maps', 'downtown.json'))
     if '--no-render' not in sys.argv:
         import draft_city
-        draft_city.render_all(SHAPES, PL, DOORS, MAPW, 'downtown', decals=DECALS, procs=int(sys.argv[sys.argv.index('--procs') + 1]) if '--procs' in sys.argv else 4)
+        draft_city.render_all(SHAPES, PL, DOORS, (MAPW, MAPH), 'downtown', decals=DECALS, procs=int(sys.argv[sys.argv.index('--procs') + 1]) if '--procs' in sys.argv else 4)
