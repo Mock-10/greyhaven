@@ -45,7 +45,7 @@ export function parseCheat(line: string): Cheat | { error: string } {
         ? { kind: 'rank', rank: Math.floor(a[0]) }
         : { error: 'RANK 1-5' };
     case 'tp':
-      return a[0] != null && a[1] != null
+      return typeof a[0] === 'number' && typeof a[1] === 'number'
         ? { kind: 'tp', x: a[0], y: a[1] }
         : { error: 'TP X Y (WORLD UNITS)' };
     case 'car':
