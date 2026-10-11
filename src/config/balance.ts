@@ -232,6 +232,95 @@ export const BALANCE = {
     fuel_can: { price: 40, heal: 0 },
   },
 
+  /** Police and the wanted level (docs/05, docs/02 fines). Real seconds unless noted; distances in tiles. */
+  wanted: {
+    maxStars: 5,
+    /** Escape timer per star level: seconds out of sight and outside the search circle (docs/05). */
+    escapeSeconds: [30, 50, 80, 120, 160] as readonly number[],
+    /** Search circle radius per star level (docs/05: 12 tiles at 1★ up to 30 at 5★). */
+    searchTiles: [12, 16, 20, 25, 30] as readonly number[],
+    /** A witness's phone call takes 6–10 s (docs/05); an alarm reaches the police faster. */
+    callSeconds: [6, 10] as readonly number[],
+    alarmSeconds: 3,
+    /** Witness sight (docs/05): 10 tiles, 7.5 at night or in rain. Police see 12 tiles. */
+    witnessTiles: 10,
+    witnessNightTiles: 7.5,
+    policeSightTiles: 12,
+    /** Scaring a witness off the phone: within 2 tiles, press E (docs/05). */
+    scareTiles: 2,
+    /** Busting (docs/05): an officer within 1.5 tiles while you're on foot or in a stopped car, for this long. */
+    bustTiles: 1.5,
+    bustSeconds: 2.2,
+    stoppedCarSpeed: 12,
+    /** Stars by crime when detected (docs/04). */
+    crimeStars: { carjack: 1, alarm: 1, hotCar: 1 },
+    /** A hot stolen car seen by police is recognised with this chance per real minute (docs/08: 20%). */
+    hotCarChancePerMinute: 0.2,
+    /** Fines in clean dollars and jail days by stars at arrest (docs/02), the surrender discount (docs/05: −30%
+     *  fine, −1 jail day) and the window that makes an arrest a repeat offense (docs/05: 14 in-game days). */
+    fines: [200, 500, 1200, 3000, 6000] as readonly number[],
+    jailDays: [1, 1, 2, 3, 4] as readonly number[],
+    surrenderFineCut: 0.3,
+    recordDays: 14,
+  },
+
+  /** Police officers and their cruiser (milestone 4: one car and two officers at 1–2★, docs/15). */
+  police: {
+    officers: 2,
+    runSpeed: 92,
+    walkSpeed: 40,
+    /** The cruiser stops this close to where it's going and the officers get out (world units). */
+    arriveDistance: 90,
+    /** Officers search random points inside the circle; they give up a point after this long. */
+    searchPointSeconds: 6,
+    /** Steering look-ahead along the route, world units. */
+    lookAhead: 70,
+    /** Despawn when the stars are gone and they are this far off screen (art px). */
+    despawnMarginPx: 120,
+  },
+
+  /** The pedestrian crowd (docs/01, milestone 4), in world units and real seconds. */
+  crowd: {
+    walkSpeed: 34,
+    /** Each person walks this much faster or slower, at random. */
+    walkVariance: 0.25,
+    /** Fleeing from a crime or a speeding car. */
+    fleeSpeed: 95,
+    fleeSeconds: 4,
+    /** At the end of a sidewalk people cross to another sidewalk end within this reach, or turn back. */
+    linkReach: 170,
+    turnBackChance: 0.2,
+    /** How many people are about, by hour of day (docs/01: busy at commute times, sparse at night). The docs aim
+     *  at 20–35 on screen downtown; the test map is small, so these are for the whole area around the camera. */
+    byHour: [
+      6, 4, 3, 3, 4, 8, 14, 24, 30, 22, 18, 20, 24, 22, 20, 20, 22, 28, 30, 24, 18, 14, 10, 8,
+    ] as readonly number[],
+    /** People appear this far outside the view (art px) and go away this far outside it. */
+    spawnMarginPx: 80,
+    despawnMarginPx: 260,
+  },
+
+  /** Ambient traffic (docs/01, milestone 4): cars follow lanes, keep their distance and stop at red lights. */
+  traffic: {
+    cruise: 150,
+    accel: 90,
+    brake: 260,
+    /** Gap kept to the car (or anything) ahead, bumper to bumper. */
+    gap: 26,
+    /** Look this far ahead for obstacles across the lane's width. */
+    lookAhead: 150,
+    laneHalfWidth: 20,
+    byHour: [2, 1, 1, 1, 2, 4, 6, 9, 10, 8, 7, 7, 8, 8, 7, 7, 8, 10, 10, 8, 6, 5, 4, 3] as readonly number[],
+    /** Traffic lights: a green and a yellow per direction, in seconds; crossings are out of step by `offset`. */
+    green: 11,
+    yellow: 2,
+    offset: 7,
+    /** Cars stop this far before a crossing's centre (the stop line, downtown_map.py: road half width + 44). */
+    stopBack: 112,
+    /** The car body length used for gaps. */
+    length: 80,
+  },
+
   /** Sleeping at home skips to this minute of the next day (docs/01: 06:00). */
   sleep: { wakeMinute: 6 * 60 },
 

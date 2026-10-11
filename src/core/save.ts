@@ -46,7 +46,7 @@ export function checksum(state: unknown): string {
 /** A save of the current state. Active stars are always 0 in a save (docs/12). */
 export function makeSave(state: GameState, slot: SlotId, now: number, thumb?: string): SaveFile {
   const copy = JSON.parse(JSON.stringify(state)) as GameState;
-  copy.wanted = { ...copy.wanted, stars: 0 };
+  copy.wanted = { stars: 0, seen: false, lastKnown: null, escape: 0 };
   copy.driving = null;
   const meta: SaveMeta = {
     slot,

@@ -7,6 +7,7 @@ import { createCareer, type CareerState } from '../systems/career';
 import type { InteriorId } from '../data/interiors';
 import type { LaunderLog } from '../systems/laundering';
 import type { Vehicle } from '../systems/vehicle';
+import { emptyWanted, type WantedState } from '../systems/wanted';
 
 /** Where the player is: out on the street map, or inside an interior. */
 export type Area = { kind: 'street' } | { kind: 'interior'; id: InteriorId };
@@ -32,7 +33,7 @@ export interface GameState {
   map: string;
   player: PlayerState;
   money: { clean: number; dirty: number };
-  wanted: { stars: number };
+  wanted: WantedState;
   area: Area;
   /** Street position to return to when leaving an interior. */
   streetReturn: { x: number; y: number } | null;
@@ -90,7 +91,7 @@ export function createState(
       costume: 'office_worker',
     },
     money: { clean: BALANCE.economy.startClean, dirty: BALANCE.economy.startDirty },
-    wanted: { stars: 0 },
+    wanted: emptyWanted(),
     area: { kind: 'street' },
     streetReturn: null,
     career: createCareer(),

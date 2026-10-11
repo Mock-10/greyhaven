@@ -644,6 +644,61 @@ def shop_florist(lit=0.0):
     return Model(parts, mats, (-hx - 2, hx + 2, -hy - 2, hy + 7, 0, H + 6))
 
 
+# ------------------------------------------------------------------ police precinct
+def police_precinct(lit=0.0):
+    """Greyhaven PD, Precinct 1: a two-storey stone and navy station with a blue lamp, steps, a flag pole and a
+    garage door for the cruiser."""
+    hx, hy, H = 24.0, 13.0, 2 * FH + 4.0
+
+    def parts(P):
+        body = rbox(P, (0, 0, H / 2), (hx, hy, H / 2), 0.6)
+        cornice = rbox(P, (0, 0, H + 0.8), (hx + 0.9, hy + 0.9, 0.8), 0.3)
+        band = rbox(P, (0, hy + 0.4, FH + 2.4), (hx - 1.0, 0.7, 2.0), 0.3)
+        lamps = np.minimum(rbox(P, (-7.0, hy + 1.2, 10.5), (0.9, 0.9, 1.3), 0.4), rbox(P, (7.0, hy + 1.2, 10.5), (0.9, 0.9, 1.3), 0.4))
+        steps = np.minimum.reduce([rbox(P, (-2.0, hy + 1.0 + k * 1.2, 1.4 - k * 0.45), (6.0 + k, 1.2, 1.4 - k * 0.45), 0.1) for k in range(3)])
+        pole = capsule(P, (hx - 2.0, hy + 3.0, 0), (hx - 2.0, hy + 3.0, H + 14), 0.35)
+        flag = rbox(P, (hx - 2.0, hy + 5.4, H + 11.5), (0.15, 2.2, 1.6), 0.05)
+        return [body, cornice, band, lamps, steps, pole, flag]
+
+    def body_m(p, n):
+        u, span, front, right, back, left = _uv(p, n, hx, hy)
+        x, z = p[:, 0], p[:, 2]
+        ramp, base = _wall_texture('stone', u, z, 131)
+        win, r, t = _windows(u, span, z, FH + 4.5, H - 1.0, lit, 132, ramp, base, pitch=6.0, ww=3.0, wh=6.4, n=n)
+        # ground floor: a dark navy plinth with barred windows, double doors, and a garage door on the right
+        g = z < FH
+        r = np.where(g & ~(n[:, 2] > 0.5), RID['navy'], r); t = np.where(g & ~(n[:, 2] > 0.5), 1.9, t)
+        gw = g & ~front & (np.abs(np.mod(u + 40, 6.0) - 3.0) < 1.6) & (z > 4.5) & (z < 9.0) & ~(n[:, 2] > 0.5)
+        r = np.where(gw, RID['glass'], r); t = np.where(gw, 1.3, t)
+        bars = gw & (np.mod(u, 1.1) < 0.3)
+        r = np.where(bars, RID['night'], r); t = np.where(bars, 1.4, t)
+        doors = front & (np.abs(x + 2.0) < 3.6) & (z > 2.6) & (z < 10.5)
+        dlit = lit > 0
+        r = np.where(doors, RID['gold'] if dlit else RID['glass'], r); t = np.where(doors, 3.0 if dlit else 1.5, t)
+        dm = doors & (np.abs(x + 2.0) < 0.3)
+        r = np.where(dm, RID['night'], r)
+        gar = front & (np.abs(x - 15.0) < 6.0) & (z < 10.5)
+        r = np.where(gar, RID['lavlt'], r); t = np.where(gar, 2.2 + (np.mod(z, 1.5) < 0.5) * 0.5, t)
+        fw = front & g & ~doors & ~gar & (np.abs(np.mod(x + 40, 6.0) - 3.0) < 1.6) & (z > 4.5) & (z < 9.0) & (x < 7)
+        r = np.where(fw, RID['glass'], r); t = np.where(fw, 1.3, t)
+        return r, t, np.where(win | doors | gw | fw, 0.9, 0.0)
+
+    def band_m(p, n):
+        f = n[:, 1] > 0.5
+        txt = f & sign_text(p[:, 0], p[:, 2], 'GREYHAVEN PD  PRECINCT 1', 0.0, FH + 2.4)
+        return np.where(txt, RID['white'], RID['navy']), np.where(txt, 4.4, 1.6), np.zeros(len(p))
+
+    def lamp_m(p, n):
+        return np.full(len(p), RID['blueg']), np.full(len(p), 4.2 if lit > 0 else 3.0), np.full(len(p), 0.8)
+
+    def flag_m(p, n):
+        stripe = np.mod(np.floor((p[:, 2] - 30) / 0.8), 2) == 0
+        return np.where(stripe, RID['navy'], RID['white']), np.where(stripe, 2.0, 3.6), np.zeros(len(p))
+
+    mats = [body_m, solid('stone', 3.2), band_m, lamp_m, solid('stone', 2.7), solid('lavlt', 3.2, 0.5), flag_m]
+    return Model(parts, mats, (-hx - 2, hx + 2, -hy - 2, hy + 9, 0, H + 16))
+
+
 # name: (factory(lit), footprint half extents in model units (hx, hy), height in model units)
 SPECS = {
     'shop_diner': (shop_diner, (20, 10), 22),
@@ -658,4 +713,5 @@ SPECS = {
     'fire_station': (fire_station, (20, 14), 30),
     'corner_round': (corner_round, (16, 16), 62),
     'shop_florist': (shop_florist, (13, 12), 14),
+    'police_precinct': (police_precinct, (24, 13), 28),
 }
