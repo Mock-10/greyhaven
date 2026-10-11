@@ -6,7 +6,11 @@
 - Buildings are true scale relative to people. See `art/STYLE_GUIDE.md`.
 
 ## Town layout
-The town is called **Greyhaven**. It is compact and hand-authored. Target size is about **160 × 160 tiles**, with the main districts joined by a ring road and a highway spur out to the fields.
+The town is called **Greyhaven**. It is hand-authored. Target size is about **320 × 320 tiles** (raised from 160 × 160 on 2026-10-11), with the main districts joined by a ring road and a highway spur out to the fields.
+
+**The end goal is a massive, dense open world** (user direction, 2026-10-11): a vast Downtown with skyscrapers and many buildings to enter, suburbs on the outskirts, a hood district, the Docks and Industrial areas, and a range of housing options. Outside the detailed districts, the map is filled with **large plain areas of grass or unused ground** that can be built on later. The big open fields and the woods (for the lumber and farming jobs) stay part of the plan.
+
+**The Phase 1 Downtown is a test map, not the final city.** It packs one of each kind of place (tower, store, apartment block, bar, chop shop) close together for testing. Don't treat its size or layout as the final Downtown. The full city is laid out in Phase 6.
 
 | District | Feel | Contents | Main jobs and crimes |
 |----------|------|----------|------------------------|
@@ -14,6 +18,7 @@ The town is called **Greyhaven**. It is compact and hand-authored. Target size i
 | **Suburbs** | Gable roofs, lawns, mailboxes | Rentable and buyable houses, a small store, the starter apartment block | Delivery routes · house burglary, trunk looting |
 | **Industrial** | Warehouses, rust, dumpsters | Mechanic garage, legal scrap yard, chop shop (black market, behind the scrap yard), weapon dealer, warehouses for hideouts | Car mechanic, road worker, scrap yard worker · chop shop, smuggling pickups |
 | **Docks** | Containers, water, cranes | Container yard, piers, fishing shacks | Smuggling drops, armored truck route, product supplier |
+| **The hood** (added 2026-10-11; name and details decided at Phase 6 planning) | Dense, run-down blocks | Low-rise housing, corner shops, courts, alleys | To be decided with the user |
 | **Outskirts** | Fields, forest, dirt roads | Lumber camp, Old Pete's farm, open fields where planes airdrop product at night, highway, isolated barns | Lumberjack, farmer · airdrop pickups, remote smuggling drops, chop shop dumping |
 
 The starter apartment block, **Drizzle Row Residences**, stands on the edge of Downtown (decided 2026-10-10), so the Phase 1 vertical slice has a home. It stays there when the Suburbs are built.
@@ -22,10 +27,13 @@ The starter apartment block, **Drizzle Row Residences**, stands on the edge of D
 After playing the first Downtown build, the user found it too empty, too open and too boxy. These rules apply to every outdoor area:
 - **A real city, not open lots.** Close the space in. Blocks are tight, and buildings front onto the sidewalk with infill buildings, shopfronts and alleys between them. Parking lots are small and edged with planters, fences or low walls. Avoid wide strips of plain sidewalk or concrete, especially in front of stores.
 - **Dense decoration.** Every stretch of sidewalk is dressed: lamps, benches, bins, planters, trees in tree pits, hydrants, bus stops, newspaper boxes, phone booths, bike racks, café tables and awnings, kiosks, signage and posters. Alleys get dumpsters, pallets, crates, pipes and AC units. Plazas get fountains, seating and planters.
-  - **Working rule (proposed, open to review):** no walkable open patch larger than about 3 × 3 tiles without a prop or a change in paving, except roads and deliberately designed open spaces.
+  - **Density rule (approved 2026-10-11):** no walkable open patch larger than about 3 × 3 tiles without a prop or a change in paving, except roads and deliberately designed open spaces. The map tests check it.
 - **Varied surfaces.** Break up repeated paving with tile variants, paving patterns, kerb details, grates, cracks, puddles and painted markings.
 - **Curves, not a box grid.** Use rounded street corners, streets with curved bends, and curved spaces (curved plazas, a roundabout, curved planters and walls) wherever they suit the look. Downtown can stay mostly orthogonal, but not squared off. Outer districts can curve more.
-- **Faster on foot.** Walking and sprinting must feel quick for the size of the map, and driving comes later for longer trips. The speeds live in `BALANCE.walker`. The first build's sprint (about 1.9 tiles/s) was too slow.
+  - **How (decided 2026-10-11):** streets, sidewalks, plazas and paving are drawn as **vector shapes in world units** and baked into the ground chunks in the pixel style, so curves can have any radius. The ground textures come from `art/source/ground2d.py`. See 14 ("Ground").
+  - **In the test Downtown (decided 2026-10-11):** a curved plaza in front of Pellridge Tower and at least one bending street, plus rounded kerbs at every crossing and curved planters and low walls where they fit.
+- **Infill buildings** (decided 2026-10-11): the small buildings and shopfronts that close the gaps between the main buildings are facades only (signs, awnings, lit windows at night). Some can become enterable later, each with its own interior question round.
+- **Faster on foot.** Walking and sprinting must feel quick for the size of the map, and driving comes later for longer trips. The speeds live in `BALANCE.walker`. The first build's sprint (about 1.9 tiles/s) was too slow. Since 2026-10-11: walking 48 units/s (1.5 tiles/s), sprinting 2.3× (about 3.4 tiles/s), tuned by feel from there.
 
 ### Names (approved 2026-10-10)
 - **District nicknames:** Downtown "The Ledger", Suburbs "Hedgerow Park", Industrial "The Works", Docks "Saltgate", Outskirts "Far Acres".

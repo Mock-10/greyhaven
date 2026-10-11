@@ -100,14 +100,15 @@ export const BALANCE = {
   },
 
   walker: {
-    /** Walking speed in world units per second (1.4 m/s ≈ 1 tile per second). */
-    walkSpeed: 32,
-    /** Sprint multiplier (Shift). */
-    sprintMultiplier: 1.9,
-    /** Walk-cycle frames per second for the 8-frame cycle (idle, step1, walk1, step1, idle, step2, walk2, step2). */
-    walkFps: 12,
-    /** The cycle runs faster while sprinting. */
-    sprintFpsMultiplier: 1.5,
+    /** Walking speed in world units per second (1.5 tiles per second; raised from 32 after the milestone 1 playtest). */
+    walkSpeed: 48,
+    /** Sprint multiplier (Shift): about 110 units/s, 3.4 tiles per second. */
+    sprintMultiplier: 2.3,
+    /** Walk-cycle frames per second for the 8-frame cycle (idle, step1, walk1, step1, idle, step2, walk2, step2).
+     *  Kept in step with walkSpeed (12 fps at 32 units/s) so the feet don't slide. */
+    walkFps: 18,
+    /** The cycle runs faster while sprinting (longer strides, so less than the speed multiplier). */
+    sprintFpsMultiplier: 1.8,
     /** Collision radius of a person, in world units. */
     radius: 6,
   },

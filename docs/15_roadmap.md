@@ -38,7 +38,7 @@ All weapons, ammo, dealers, looting, armor · combat AI for police · all vehicl
 Houses, add-ons, stash · counterfeit press, chop bay, lab · operators and drivers · raids · smuggling in 3 tiers · airdrops · light rivals (ambushes and hideout hits).
 
 ## Phase 6: Full town
-Suburbs, Industrial, Docks and Outskirts districts plus interiors · traffic and crowd density by district and time · the security guard, road worker, farmer and scrap yard jobs.
+Lay out the full city at about 320 × 320 tiles (see 01): a vast Downtown, Suburbs, the hood, Industrial, Docks and Outskirts districts (open fields, woods) plus interiors, with plain ground left for later building · traffic and crowd density by district and time · the security guard, road worker, farmer and scrap yard jobs.
 
 ## Phase 7: Late game
 Front businesses · armored truck · the 3 heists · story mission chains (17) · Life Summary and goals.
