@@ -29,6 +29,27 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 4. **Chop shop yard sale spot:** Marlo gets his own yard section with a **white dotted rectangle** parking spot in the back yard. You sell a car by parking in that spot (not at the front door as now).
 5. **Each car type pays a different amount** at the chop shop, depending on the type of car (today every car uses the one $150–400 range, scaled by damage).
 
+6. **Camera and view system rework (your feedback, 2026-10-11).** The camera feels clunky and barebones, and the world feels cramped and narrow. Problems you saw:
+   - part of the car disappears behind a building with nothing to show it is there;
+   - at other times the car draws over a nearby object it should be behind, such as another car;
+   - the field of view is too small.
+   **Why it feels cramped today:** the default zoom is the largest whole number that fits 640 × 360 art pixels (`BALANCE.camera.fitWidth/fitHeight`). At 1080p that is 3×, so you see only about 10 tiles across. Ctrl + wheel steps 2× / 3× / 4×, a 48 × 32 px deadzone, a lead of up to 3 tiles in a car, and the occlusion fade only for tall objects in front of the player or the car.
+   **What comparable isometric games do** (research notes, to confirm before building):
+   - **Project Zomboid:**
+     - many zoom levels, chosen in the options;
+     - players zoom right out to drive, and the "auto-pan when driving" option puts the car near the screen edge so more road shows ahead;
+     - walls cut away near the player, or when aiming at the ground beyond them in combat stance, so what is behind a wall shows early.
+   - **Diablo IV:** fixed angle, a close and a wider camera distance, and a "far" distance added in Season 4 (2024) after players said the view was too close.
+   - **Car Park Capital:** I found no public details on its camera. Management and city-builder isometric games commonly offer free pan, wheel zoom across a wide range, and sometimes rotation in 90° steps.
+   **Proposed direction (to agree with you before building):**
+   - (a) A **wider default view**: show about 1.5–2× more world, for example fit 960 × 540 art pixels, so 1080p runs at 2× instead of 3×. Also allow 1× at large windows.
+   - (b) **Context zoom**: on foot near, driving far, stepping out further with speed. Only whole-number steps are allowed (hard rule 3), so each change is a short fade or a step rather than a smooth zoom.
+   - (c) A **velocity look-ahead** that places the car toward the trailing edge of the screen, like Zomboid's auto-pan, plus mouse look-ahead on foot.
+   - (d) **Occlusion**: a silhouette or outline of the player and car drawn through buildings, cutaway or fade for any building covering the car's footprint (not only tall ones), and cars sorted against cars by their turned footprints. Today cars use a box around the turned car, which causes the wrong overlap with nearby cars.
+   - (e) Smoother follow: critically damped, with no jitter at whole-pixel scroll.
+   Update docs/11 (camera) and the balance numbers, and screenshot each zoom level against the reference scenes.
+7. **Later, once everything is implemented: higher resolution / more pixels.** You're thinking of raising the pixel density, for example sprites at 2× detail, to go with the wider view. This is a large change: the art pipeline (`art/source/` renders at 64 × 32 tiles), `STYLE_GUIDE.md`, the atlases, the HUD scale and the reference-scene comparison all depend on today's pixel size. Plan it as its own phase after Phase 8 and decide it with you first. Until then, keep new art at the current scale.
+
 **Earlier tweaks still on hold**
 - Remembered-room dimming (docs/19): **switched off until the end (Phase 8)**, as you asked. `BALANCE.interiors.rememberedDimming = false`; the data is still recorded. Turn it back on in Phase 8.
 - Idle and interact animations: Phase 8 (decided 2026-10-11).
@@ -39,6 +60,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 - **Which cars can be stolen in Phase 1?** The roadmap says "one sedan model", so only the 3 sedans in the store lot can be stolen now; the taxi and the white van stay parked props. Should the taxi and van be stealable too (they'd need their own stats)?
 - **The bag minigame:** how should it be graded? Ideas: drag stacks of bills into the bag before a timer runs out; dropped or torn bills cost a %; dirty dye-stained bills must be left out. Click-drag only, or also keys?
 - **Chop yard sale:** park in the dotted spot and press E to sell (with Marlo walking up), or does stopping in the spot sell automatically? Should Marlo's yard open only at certain hours?
+- **Camera:** how much wider should the default view be (about 1.5× or 2× more world), should the zoom change by itself when you drive, and do you want a silhouette of the player and car through walls, walls cutting away, or both?
 - **Gas station placement:** keep it on the south-east block of the test map (cramped against the map edge) or move it to a bigger lot?
 - Still open from docs/16, **not needed yet:** names and looks for the rival crew (Phase 5), an outline of each story chain before it is written, the hood district's name and details (Phase 6).
 
