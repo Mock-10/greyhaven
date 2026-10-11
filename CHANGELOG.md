@@ -14,111 +14,233 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
-## Phase 2 — Economy and careers (planned; starts after Phase 1)
-- [ ] Test map grows: Torque & Sons garage block, a street of houses with the Swiftish Couriers depot, a patch of woods with Ashby Timber and a road (all reachable on foot or by car).
-- [ ] Bank account: carried vs banked clean cash, ATMs, pay into the bank.
-- [ ] Rent auto-paid on Monday 06:00, late fees, eviction after two missed weeks, shelter (sleep and save).
+## Phase 2 — Economy and careers (in progress)
+Status key: [x] done and playable on `main` · [~] code written on the branch `claude/p2-money-phone`, not playable yet · [ ] not started.
+
+**Standing rule from now on (user, 2026-10-11): every new street is at least two lanes in each direction (4 lanes in all).** The existing Downtown streets stay as they are: they have one lane each way, which suits a compact downtown. Everything built from now on follows the rule, starting with the Phase 2 map growth (the garage block road, the house row with the depot, the road through the woods) and later the Phase 6 city. See docs/01 ("Street width").
+
+- [ ] **Street width rule:** new streets are at least two lanes each way. The map script, the lane data and the traffic code must support several lanes per direction first (see the handover).
+- [ ] Test map grows: Torque & Sons garage block, a street of houses with the Swiftish Couriers depot, a patch of woods with Ashby Timber and a road (all reachable on foot or by car). All new roads are two lanes each way.
+- [~] Bank account: carried vs banked clean cash, ATMs, pay into the bank. (`systems/finance.ts`, ATM page in `world/phone.ts`.)
+- [~] Rent auto-paid on Monday 06:00, late fees, eviction after two missed weeks, shelter (sleep and save). (Rent and eviction are in `systems/finance.ts` and `systems/days.ts`; the shelter itself isn't built.)
 - [ ] Character creator (palette-swap sprites, as specced) before the first day.
 - [ ] Office: stamp-and-sign and meeting tasks (rank 3+).
 - [ ] Car mechanic: garage interior (bay, lift, spray booth, office), diagnose, bolt torque, tyre change, respray.
 - [ ] Lumberjack: chop, fell direction, load logs, haul with the log truck; site trailer to clock in.
 - [ ] Delivery: depot interior, load van, route, doorstep, signature; marked doors on the house row.
-- [ ] Rank ladders and perks for the 4 jobs (stub the perks that need later systems).
+- [~] Rank ladders and perks for the 4 jobs (stub the perks that need later systems). (All four jobs and their rank titles are in `data/jobs.ts`; the three new ones are marked "not hiring yet".)
 - [ ] Work uniforms and lockers (change by hand).
 - [ ] Weekend odd jobs: car wash and a bar shift at The Low Tide.
-- [ ] Shops: full corner store, clothing store, hardware store, car dealer (beater and sedan).
-- [ ] Arrest effects on careers (freeze, missed shifts, extra work, HR bribes on the phone), clean-record bonus.
-- [ ] Phone: job board, bank, contacts (first pass).
-- [ ] Trunk looting (brought forward).
+- [~] Shops: full corner store, clothing store, hardware store, car dealer (beater and sedan). (Corner store stock and hardware stock with icons are written; clothing, the car dealer and the shop buildings aren't.)
+- [~] Arrest effects on careers (freeze, missed shifts, extra work, HR bribes on the phone), clean-record bonus. (`systems/career.ts`, `systems/days.ts`, HR on the phone's contacts page.)
+- [~] Phone: job board, bank, contacts (first pass). (`world/phone.ts`, `scenes/ListScene.ts`, `ui/listPanel.ts`.)
+- [~] Trunk looting (brought forward). (`systems/loot.ts`, the search minigame `SearchGame` and its panel.)
 - [ ] Guided first day (no bus or taxi step; trunk looting in step 5).
 - [ ] Econ sim re-run, tests, screenshots, notes, PR.
 
-## Handover (updated 2026-10-11, end of session) — read this first in a new session
+## Handover (updated 2026-10-11, end of session 3) — read this first in a new session
 
 **Where things stand**
-- **Phase 1 (vertical slice) is done.** Milestones 1, 1b, 2 and **3 (driving and the carjack loop)** are built. Milestones 1–2 went through PRs #2, #4 and #5. Milestone 3 and the UI fixes of 2026-10-11 were **pushed straight to `main` at your request** (no PR), so `https://mock-10.github.io/greyhaven/` has everything once the deploy workflow finishes.
-- **Phase 1 is complete** (milestone 4 closed it on 2026-10-11). **Next: Phase 2** (economy and careers): see its checklist below.
+- **Phases 0 and 1 are done and live** at `https://mock-10.github.io/greyhaven/`. Milestone 4 (saves, crowd and traffic, police 1–2★, arrests) was merged in PR #9 on 2026-10-11, which closed Phase 1.
+- **Phase 2 (economy and careers) has started.** It is planned as four milestones, one PR each:
+  - **M5, money and phone (in progress):** bank and ATMs, rent and eviction with a shelter, the phone (P), the bag (I), the full corner store, trunk looting, arrest effects on careers, and the clean-record bonus.
+  - **M6, map growth and shops:**
+    - the garage block, the house row with the depot, and the woods with Ashby Timber, all with **two-lane-each-way roads**;
+    - clothing store, hardware store and car dealer (buildings, interiors, stock);
+    - the character creator.
+  - **M7, the three new jobs:**
+    - mechanic, lumberjack and delivery, with their interiors and minigames;
+    - the office stamp-and-sign and meeting tasks;
+    - uniforms and lockers, rank perks.
+  - **M8, the rest:** weekend odd jobs (car wash, bar shift), the guided first day, the econ sim re-run, and the phase close.
 - **The Downtown map is a test map, not the final city.** The final city is a dense open world of about 320 × 320 tiles with a hood district, open fields and woods (docs/01, built in Phase 6).
-- **Communication preference (2026-10-11):** you asked for fewer progress messages while I work. Still send images and important updates. You may switch back later.
+- **Autopilot is on** (CLAUDE.md): I merge my own PRs once CI is green, carry on from phase to phase, and send a short note with screenshots at each milestone. Heist interiors still need your approval first.
 
-**Milestone 3 follow-ups (your feedback, 2026-10-11) — done in milestone 3b (kept here for the record)**
-1. **Gas station canopy:** the roof clips into the car and sits too low. Rebuild `fuel_canopy` (`art/source/infill.py`) as a real station roof, high enough to drive under, on tall posts. When the player or the car is under it, it should fade (occlusion) so the pumps stay visible.
-2. **Gas station kiosk faces the wrong way:** its front faces away from the pumps. Turn it so the door and windows face the forecourt (`block_se` in `art/source/downtown_map.py`, `fuel_kiosk` in `infill.py`). The forecourt is also cramped against the south map edge, so consider giving the station more room (see the questions).
-3. **Replace the cash-count minigame** (Dez's laundering) with something else, such as **dragging bills into a bag**. Ask before building it (see the questions).
-4. **Chop shop yard sale spot:** Marlo gets his own yard section with a **white dotted rectangle** parking spot in the back yard. You sell a car by parking in that spot (not at the front door as now).
-5. **Each car type pays a different amount** at the chop shop, depending on the type of car (today every car uses the one $150–400 range, scaled by damage).
+**M5 work in progress: branch `claude/p2-money-phone` (pushed; it does not build yet)**
+Start the next session by checking out that branch: `git fetch origin claude/p2-money-phone && git checkout claude/p2-money-phone`, then merge `main` into it.
+- **Done there:**
+  - **Systems, all tested (`tests/finance.test.ts`, new cases in `career`, `shop` and `save`):**
+    - `src/systems/finance.ts`: bank, statement, deposit and withdraw, rent due, late fees, eviction, moving back in.
+    - `src/systems/days.ts`: `runCalendar` runs the calendar's fixed moments over any stretch of time:
+      - Monday 06:00: rent and the clean-record bonus;
+      - every day at 06:00: late fees and the eviction check;
+      - 10:00 on workdays: missed shifts;
+      - Sunday 20:00: the rent reminder.
+    - `src/systems/career.ts`: arrest effects (3-day freeze, 2 days of extra work with +1 task and a 10% higher XP bar), the missed-shift penalty, HR cover, the week's pay, and the bonus. `clockOut` now takes the current minute.
+    - `src/systems/loot.ts`: the trunk loot roll, and `takeLoot`.
+  - **Save version 2** with a v1 → v2 migration and its test. The migration adds:
+    - `money.bank`, `finance`, `calendarAt` and `messages`;
+    - on the career: `freezeUntil`, `extraUntil`, `missed`, `week`, `shift.tasks`, and entries for all four jobs;
+    - the fuller bag: `fuelCans`, `firstAid`, `repairKits`, `lockpicks` (uses left), `toolbox`, `phones`, `watches`.
+  - **Items:** the catalogue grows with the first-aid kit ($60), lockpicks ($40 for 10 uses), the toolbox ($120) and the repair kit ($150). Pixel icons for these and for the loot.
+  - **Shops:** `SHOP_STOCK` gains `hardware`. The shop panel is taller (3 rows).
+  - **Lockpick tool tolerance (docs/06):** basic tools widen the zones by 15%; pro tools by 30% with one check fewer. The toolbox adds 3 s to the hotwire timer.
+  - **`SearchGame`** (click the glinting items before the timer runs out; the watch is the gold item) and its panel `drawSearch`.
+  - **A generic list overlay:**
+    - `src/scenes/ListScene.ts`, registered in `main.ts`;
+    - `src/ui/listPanel.ts`, with the phone plate in lavender;
+    - page builders in `src/world/phone.ts`: phone (messages, bank and statement, job board, contacts with HR bribes, landlord, Dez, Marlo), the ATM, and the bag (use a first-aid kit).
+  - New debug-hook fields (`bank`, `rentOwed`, `evicted`, `inventory`, `listPage`) and a `^` glyph in the pixel font.
+- **Still to do for M5:**
+  1. **Wire `WorldScene.ts`.** `tsc` lists exactly these breakages:
+     - the shop request needs `shop: 'store'`;
+     - `clockOut(c, this.state.minutes)` must pay into the bank with `credit` (bonus too), and the toast should say "TO THE BANK";
+     - the lockpick request needs `tool: lockTool(inv)` and a `label`;
+     - the hotwire request needs `bonusSeconds` (toolbox).
+     Then:
+     - wear lockpicks after each attempt (`wearLockpicks`);
+     - `jobTask` uses `shift.tasks` instead of the hard-coded 3;
+     - call `runCalendar(state, state.calendarAt, state.minutes)` every tick and after sleep or jail time skips, toast the messages, then set `calendarAt`;
+     - after `arrest(...)` in `doArrest`, apply `arrestEffects(career, arrestMinute, releaseMinute)`;
+     - log toasts from `PHONE_SENDERS` into `state.messages` (keep the last 30);
+     - P opens the phone and I opens the bag through `scene.launch('list', { style, name, root })`, pausing the world and resuming on `'list:closed'`, like `openMenu`;
+     - the plaza ATM opens `atmPage`;
+     - fill the new hook fields.
+  2. **Trunk looting in the world:**
+     - a second usable per parked car, `trunk:<id>`, at the car's rear (heading × −0.45 car length), labelled LOOT TRUNK;
+     - it is hidden when `v.looted` is set (add `looted?: boolean` to `Vehicle`) and for your own car;
+     - flow: `crime(1★)` → lockpick (unless the car is already unlocked) → `rollTrunk` → the `search` minigame → `takeLoot`; mark the car looted.
+  3. **Repair kit and evicted door:**
+     - a USE REPAIR KIT prompt on a car under 50% health;
+     - the apartment door refuses you while evicted ("EVICTED: MOVE BACK IN FROM THE PHONE, BANK").
+  4. **Shelter:**
+     - add a `shelter` zone at the chapel on Pewter Street (St. Brine's Mission) in `art/source/downtown_map.py`, then re-run the map pipeline;
+     - in the world, a SLEEP (SHELTER) usable that sleeps to 06:00 and autosaves;
+     - `canSave()` allows saving at the shelter.
+  5. **Tests and checks:**
+     - list-panel layout tests in `tests/panels.test.ts` (search panel, phone, ATM, bag);
+     - e2e tests: ATM deposit and withdraw, open the phone, loot a trunk;
+     - screenshots, docs (02, 03, 06, 11, 12), the M5 notes here, a PR and the merge.
 
-6. **Camera and view system rework (your feedback, 2026-10-11).** The camera feels clunky and barebones, and the world feels cramped and narrow. Problems you saw:
-   - part of the car disappears behind a building with nothing to show it is there;
-   - at other times the car draws over a nearby object it should be behind, such as another car;
-   - the field of view is too small.
-   **Why it feels cramped today:** the default zoom is the largest whole number that fits 640 × 360 art pixels (`BALANCE.camera.fitWidth/fitHeight`). At 1080p that is 3×, so you see only about 10 tiles across. Ctrl + wheel steps 2× / 3× / 4×, a 48 × 32 px deadzone, a lead of up to 3 tiles in a car, and the occlusion fade only for tall objects in front of the player or the car.
-   **What comparable isometric games do** (research notes, to confirm before building):
-   - **Project Zomboid:**
-     - many zoom levels, chosen in the options;
-     - players zoom right out to drive, and the "auto-pan when driving" option puts the car near the screen edge so more road shows ahead;
-     - walls cut away near the player, or when aiming at the ground beyond them in combat stance, so what is behind a wall shows early.
-   - **Diablo IV:** fixed angle, a close and a wider camera distance, and a "far" distance added in Season 4 (2024) after players said the view was too close.
-   - **Car Park Capital:** I found no public details on its camera. Management and city-builder isometric games commonly offer free pan, wheel zoom across a wide range, and sometimes rotation in 90° steps.
-   **Proposed direction (to agree with you before building):**
-   - (a) A **wider default view**: show about 1.5–2× more world, for example fit 960 × 540 art pixels, so 1080p runs at 2× instead of 3×. Also allow 1× at large windows.
-   - (b) **Context zoom**: on foot near, driving far, stepping out further with speed. Only whole-number steps are allowed (hard rule 3), so each change is a short fade or a step rather than a smooth zoom.
-   - (c) A **velocity look-ahead** that places the car toward the trailing edge of the screen, like Zomboid's auto-pan, plus mouse look-ahead on foot.
-   - (d) **Occlusion**: a silhouette or outline of the player and car drawn through buildings, cutaway or fade for any building covering the car's footprint (not only tall ones), and cars sorted against cars by their turned footprints. Today cars use a box around the turned car, which causes the wrong overlap with nearby cars.
-   - (e) Smoother follow: critically damped, with no jitter at whole-pixel scroll.
-   Update docs/11 (camera) and the balance numbers, and screenshot each zoom level against the reference scenes.
-7. **Later, once everything is implemented: higher resolution / more pixels.** You're thinking of raising the pixel density, for example sprites at 2× detail, to go with the wider view. This is a large change: the art pipeline (`art/source/` renders at 64 × 32 tiles), `STYLE_GUIDE.md`, the atlases, the HUD scale and the reference-scene comparison all depend on today's pixel size. Plan it as its own phase after Phase 8 and decide it with you first. Until then, keep new art at the current scale.
+**Making the streets wider (your request, 2026-10-11): not done yet, applies to all new streets**
+- **Today:**
+  - Downtown roads are 4 tiles wide (`HW = 2 * T` in `art/source/downtown_map.py`), one lane each way.
+  - `lanes()` in `downtown_map.py` writes one lane per direction, and `systems/traffic.ts` and `world/streetLife.ts` assume a single lane per direction.
+  - These stay as they are.
+- **From now on:**
+  - Every new road has at least **two lanes in each direction**, about 8 tiles of asphalt at 2 tiles per lane, plus sidewalks.
+  - Before the M6 map growth:
+    - give the map script a per-road lane count;
+    - write one lane line per lane;
+    - let traffic pick a lane on spawn (lane changes can wait);
+    - draw lane dividers (dashed white between same-direction lanes, the centre line between directions).
+  - Police routing (`systems/roads.ts`) works on road centrelines and should only need the wider half-width.
 
-**Earlier tweaks still on hold**
-- Remembered-room dimming (docs/19): **switched off until the end (Phase 8)**, as you asked. `BALANCE.interiors.rememberedDimming = false`; the data is still recorded. Turn it back on in Phase 8.
-- Idle and interact animations: Phase 8 (decided 2026-10-11).
-- The 320 × 320 city: Phase 6.
+**Assumptions made in the M5 code (please review once it is playable)**
+- **Pay and bank:**
+  - Shift pay and promotion bonuses go to the bank.
+  - Shops take only carried clean cash.
+  - Rent, HR bribes and moving back in come from the bank.
+  - A fine larger than your carried clean cash still takes only what you carry (the "arrest only touches carried cash" decision).
+- **Rent:**
+  - If the bank can't cover all the rent owed, nothing is taken (no partial payments); the next morning tries again.
+  - Late fees start the day after rent falls due.
+  - **Eviction** happens 14 days after the first unpaid rent. It clears the debt. Your belongings go to "city storage", and moving back in costs a week's rent plus the $200 storage fee, from the phone's bank page. The apartment stash doesn't exist yet, so storage only matters from Phase 5.
+- **Missed shifts:**
+  - Any weekday with no shift started by 10:00 counts as missed (−5 XP, never below 0), except day 1 (the guided first day).
+  - The HR "cover a missed shift" bribe ($150) gives the 5 XP back but no pay, so it can't be used to earn money without working. It only covers misses from the last 7 days.
+- **Arrest effects:**
+  - The extra-work days run to the end of the day after release.
+  - An arrest also cancels a shift in progress.
+- **Weekly bonus:** the clean-record bonus is 15% of the week's job pay, paid Monday 06:00, before rent is taken.
+- **Items:**
+  - The first-aid kit restores full health.
+  - The toolbox costs $120 (not in the docs) and adds 3 s to hotwiring.
+  - Lockpicks are a basic set of 10 uses; a failure costs 2.
+- **Trunk loot:**
+  - Each trunk holds 2–4 valuables plus junk. Cash and wallets together give $20–120 dirty. Phones and watches wait in the bag for the fence (Phase 3). A found lockpick set adds 5 uses.
+  - The "sometimes product or a gun" part of the loot table comes with those systems in Phases 3–4.
+- **The phone's job board** lists all four starting jobs; the garage, the camp and the depot show "NOT HIRING YET" until M7.
 
-**Question round of 2026-10-11 (answered; autopilot from here)**
-All open questions for Phases 1–8 were asked and answered. The answers are in the docs under "Decisions (question round of 2026-10-11)" (docs 00–18) and in CLAUDE.md. The main ones:
-- **Autopilot:** I merge my own PRs once CI is green, carry on from phase to phase, and build from the recorded answers. You review afterwards. Heist interiors still need your approval first. Updates come per milestone, with images.
+**Art debt**
+- None in use. The new item icons are hand-placed pixel arrays in `src/ui/hudDraw.ts`, like the existing ones. When the bag gets a proper inventory grid (docs/11), consider moving them into an atlas made with `art/source/`.
+
+**Known bugs and limits (carried over from Phase 1)**
+- Traffic lights don't show their colour on the light sprites yet.
+- The cruiser follows the roads but can clip kerbs and props at sharp turns; it backs up when stuck.
+- Traffic drives straight along its road (no turns), doesn't stop for pedestrians, and pedestrians can't be hit yet.
+- Save thumbnails are stored but not shown anywhere.
+- The camera has no world bounds: panning can show the background past the map edge, within the 12-tile limit.
+- Headless Chromium renders at about 12 fps, so e2e runs and screenshots are slow (real GPUs are fine). The bundle is about 1.3 MB (mostly Phaser).
+- The parking garage's parked cars are simple shapes, readable only up close.
+
+**Tweaks you asked for that aren't done yet**
+- **Wider streets:** at least two lanes each way on every new street (above).
+- **Remembered-room dimming (docs/19):** off until Phase 8, as you asked. `BALANCE.interiors.rememberedDimming = false`; the data is still recorded.
+- **Idle and interact animations:** Phase 8.
+- **Higher resolution / more pixels:** its own Phase 9, after Phase 8. Keep new art at today's scale until then.
+- **The 320 × 320 city, the hood district and Marlo's move to Industrial:** Phase 6.
+- **Done this session, for the record:**
+  - the gas station canopy, kiosk and wider forecourt;
+  - the bag-it laundering minigame;
+  - Marlo's dotted spot and prices by car type;
+  - the camera rework;
+  - entrance outlines;
+  - 12 new Downtown building types;
+  - the precinct;
+  - saves, crowd, traffic and police.
+
+**Questions I still owe you**
+- None are blocking. All earlier questions were answered in the 2026-10-11 round (recorded under "Decisions (question round of 2026-10-11)" in docs 00–18 and in CLAUDE.md).
+- **Still to come from you:** the extras that aren't in the docs ("I'll tell you later").
+- **Still needs your approval when we get there:** the heist interiors (jewellery store, bank) before they are built (Phases 3 and 7).
+- **Worth a look once M5 is playable:** the assumptions above (bank and rent rules, the HR cover rule, the toolbox price).
+
+**Answered decisions, in short (full text in the docs)**
 - **Phase 1:**
-  - Chop pay is 15–30% of value by car type, with an early cap of about $300–500.
+  - Chop pay is 15–30% of value by car type, with an early cap.
   - The taxi and the van can be stolen.
-  - The bag minigame has a timer, and dye-stained stacks must be left out.
+  - Bag-it laundering has a timer, and dye-stained stacks must be left out.
   - Marlo: park in the dotted spot and press E; he walks over. Open 24 h.
-  - Camera: about 2× wider, one zoom step out when driving, look-ahead, silhouette plus cutaway.
-  - The gas station moves to a bigger lot.
-  - A small precinct goes on the test map. Arrests use a screen for now.
-  - Drizzle Row gets a parking spot where saved cars spawn.
+  - Camera about 2× wider.
+  - Precinct on the test map; arrests use a screen for now.
 - **Phase 2:**
-  - No bus or taxi. The test map grows with the garage block, a street of houses with the depot, and woods.
-  - Bank account with carried vs banked cash. Rent is auto-paid.
+  - No bus or taxi.
+  - The test map grows with the garage block, a street of houses with the depot, and woods.
+  - Bank account with carried vs banked cash. Rent is auto-paid on Monday 06:00.
   - A shelter after eviction, where you can still save.
+  - Your apartment has a parking spot where saved cars spawn.
   - Shops: corner store, clothing, hardware, car dealer.
   - Weekend odd jobs: car wash and a bar shift.
   - Uniforms are changed by hand.
   - Trunk looting moves forward for the first day.
+  - Creator as specced.
+  - Garage: bay + spray booth + office. Lumber: outdoor camp + site trailer. Delivery: depot + house row.
+  - I write the meeting dialogue.
 - **Later phases:**
-  - Blood is allowed.
-  - Masks at the fence (pawn shop, new character).
+  - Blood is allowed (no dismemberment).
+  - Masks at the clothing store and the fence (a pawn shop with a new character).
+  - The dealer works from a back-alley van.
   - Burglary: 3 layouts, sleeping owners, some alarms, occupancy read from the cars outside.
   - Rival crew: the Saltgate Union.
   - Hideouts: one big space with stations, plus locked rooms to buy.
   - The hood: hostile but no turf system.
   - Marlo moves to Industrial in Phase 6.
-  - Jewellery heist: 10 cases and a rooftop escape. Bank: a vault basement.
+  - 10–15 enterable buildings Downtown.
+  - All 6 story chain outlines in one doc.
+  - Jewellery heist: 10 cases and a rooftop escape. Bank: 2 guards and a vault basement.
   - Fronts are full interiors.
   - Procedural sound effects; music is a mix of CC0 and procedural.
   - Higher resolution becomes Phase 9.
-- **Still to come from you:** extras that aren't in the docs (you'll bring them up later).
 
 **Session notes for whoever picks this up**
 - npm goes through the proxy. Before `npm`, `npx vite preview` or Playwright, set `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1`. Playwright uses the pre-installed Chromium (`/opt/pw-browsers`) with `--use-gl=angle --use-angle=swiftshader`; don't run `playwright install`.
-- `npm run shots` starts and stops its own preview server. **Never** use `pkill -f "vite preview"` or `pgrep -f`: they kill the calling shell. Find the PID with `ps -eo pid,args | grep "[n]ode.*vite preview"`.
-- Debug hook (`window.__DL__`, read-only) now also exposes `dirty`, `driving`, `cars` (position, heading, speed, fuel, health, locked, running) and `minigameState` (the open minigame's logic, so tests can play it like a person: time the space bar to the needle, join wires by colour). Cheats are never read from the URL.
+- `npm run shots -- <names>` starts and stops its own preview server (presets in `tools/shots.ts`, with an optional `cheats: [...]`). **Never** use `pkill -f "vite preview"` or `pgrep -f`: they kill the calling shell. Find the PID with `ps -eo pid,args | grep "[n]ode.*vite preview"`.
+- Foreground `sleep` is blocked in the container. Wait on a background job with an until-loop instead.
+- Debug hook (`window.__DL__`, read-only): `dirty`, `stars`, `driving`, `cars`, `minigameState` (the open minigame's logic, so tests can play it like a person), and on the M5 branch `bank`, `rentOwed`, `evicted`, `inventory`, `listPage`. Cheats are never read from the URL. The cheat console (Ctrl + Shift + F1) is how tests and screenshots set things up.
 - Interior art pipeline: edit `art/source/rooms.py` → `python3 art/source/check_layout.py` (0 issues) → `python3 art/source/export_interiors.py` → commit `art/interiors/*`.
-- City map pipeline: edit `art/source/downtown_map.py` → `python3 downtown_map.py` (writes `src/maps/downtown.json` and the drafts, about a minute; `--no-render` writes only the JSON) → `python3 check_city.py` (0 issues) → `python3 pack_city.py` (city atlas + ground swatches). If `ground_vec.py` changes, re-run `python3 make_ground_fixture.py`. The sprite cache (`art/source/cache/`) isn't committed, so a fresh session renders sprites once (a few minutes).
-- The drafts in `art/drafts/downtown/` are up to date with the 64 × 48 map (re-rendered 2026-10-11, about 4 minutes with `--procs 4`).
-- The cheat console (Ctrl + Shift + F1) is the way tests and screenshots set things up (`tools/shots.ts` presets take `cheats: [...]`).
-- The simulation runs on `game.loop.rawDelta`, because Phaser's smoothed delta crawls in headless Chromium. In slow frames Phaser can hand the same key event over more than once; `MinigameScene` ignores repeats (a `WeakSet` of handled events).
+- City map pipeline, run in `art/source/`:
+  1. Edit `downtown_map.py`, then run `python3 downtown_map.py --no-render` (writes `src/maps/downtown.json`).
+  2. `python3 check_city.py` must report 0 issues.
+  3. `python3 pack_city.py` adds new sprites to the city atlas.
+  - Full drafts: `python3 downtown_map.py --procs 4` (about 4 minutes); delete `art/drafts/downtown/downtown_debug.png` afterwards (not committed).
+  - The sprite cache (`art/source/cache/`) is keyed by name and not committed. After editing a model, delete `cache/bld__<name>*`. A fresh session renders the sprites once.
+  - If `ground_vec.py` changes, re-run `python3 make_ground_fixture.py`.
+- The map is 70 × 48 tiles; the drafts in `art/drafts/downtown/` are current.
+- The simulation runs on `game.loop.rawDelta`, because Phaser's smoothed delta crawls in headless Chromium. In slow frames Phaser can hand the same key event over more than once; `MinigameScene` and `ListScene` ignore repeats (a `WeakSet` of handled events). `ListScene` also ignores keys for 300 ms after opening.
+- The carjack e2e test plays the lockpick by polling the needle (`minigameState`) and pressing inside the good zone. Keep that pattern for new skill-check tests, because fixed timings are frame-rate dependent in CI.
 
-## Phase 1 — Vertical slice (in progress)
+## Phase 1 — Vertical slice (done 2026-10-11)
 
 Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers"), docs/01 ("Names") and docs/16. Delivered in playable milestones, one PR each.
 
