@@ -13,9 +13,15 @@ export const MODEL_TYPE: Record<string, VehicleType> = {
   taxi: 'taxi',
   van_white: 'van',
   van_sage: 'van',
+  police_car: 'police',
 };
 
-export const TYPE_LABEL: Record<VehicleType, string> = { sedan: 'SEDAN', taxi: 'TAXI', van: 'VAN' };
+export const TYPE_LABEL: Record<VehicleType, string> = {
+  sedan: 'SEDAN',
+  taxi: 'TAXI',
+  van: 'VAN',
+  police: 'POLICE',
+};
 
 export function typeOfModel(model: string): VehicleType {
   return MODEL_TYPE[model] ?? 'sedan';

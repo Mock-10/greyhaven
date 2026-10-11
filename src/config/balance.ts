@@ -156,6 +156,22 @@ export const BALANCE = {
         fuelPerSecond: 40 / (15 * 60),
         value: 4500,
       },
+      /** docs/08 police cruiser: top speed 100, high acceleration, health 130. Not for sale. */
+      police: {
+        topSpeed: 282,
+        reverseSpeed: 80,
+        accel: 175,
+        brake: 360,
+        drag: 70,
+        turnRate: 2.5,
+        halfLength: 38,
+        halfWidth: 15,
+        shadowHeight: 22,
+        health: 130,
+        tank: 50,
+        fuelPerSecond: 0,
+        value: 0,
+      },
       /** docs/08 van: top speed 70, low acceleration and grip, health 140, tank 60. */
       van: {
         topSpeed: 198,
@@ -310,7 +326,9 @@ export const BALANCE = {
     /** Look this far ahead for obstacles across the lane's width. */
     lookAhead: 150,
     laneHalfWidth: 20,
-    byHour: [2, 1, 1, 1, 2, 4, 6, 9, 10, 8, 7, 7, 8, 8, 7, 7, 8, 10, 10, 8, 6, 5, 4, 3] as readonly number[],
+    byHour: [
+      4, 3, 2, 2, 4, 8, 12, 18, 20, 16, 14, 14, 16, 16, 14, 14, 16, 20, 20, 16, 12, 10, 8, 6,
+    ] as readonly number[],
     /** Traffic lights: a green and a yellow per direction, in seconds; crossings are out of step by `offset`. */
     green: 11,
     yellow: 2,

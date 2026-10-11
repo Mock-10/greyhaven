@@ -12,7 +12,7 @@ import { blend, clear, createSurface, type Surface } from '../ui/hudDraw';
 import { drawMenu, MENU_PANEL, menuRow, type MenuRow } from '../ui/menus';
 import type { WorldScene } from './WorldScene';
 
-type Mode = 'main' | 'save' | 'load' | 'export' | 'import';
+type Mode = 'main' | 'save' | 'load' | 'export' | 'import' | 'info';
 
 const TEX = 'menu-canvas';
 const SLOT_NAMES: Record<SlotId, string> = {
@@ -47,8 +47,12 @@ export class MenuScene extends Phaser.Scene {
     super('menu');
   }
 
-  init(): void {
-    this.mode = 'main';
+  /** A notice instead of the menu (the arrest screen): a title, lines, and CONTINUE. */
+  private info: { title: string; lines: string[] } | null = null;
+
+  init(data?: { info?: { title: string; lines: string[] } }): void {
+    this.info = data?.info ?? null;
+    this.mode = this.info ? 'info' : 'main';
     this.selected = 0;
     this.message = null;
     this.importing = null;
@@ -59,7 +63,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create(): void {
-    hook().minigame = 'menu';
+    hook().minigame = this.info ? 'arrest' : 'menu';
     this.image = this.add.image(0, 0, '__WHITE').setOrigin(0, 0);
     this.layout();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
@@ -73,6 +77,7 @@ export class MenuScene extends Phaser.Scene {
       this.input.off('pointerdown', this.onDown, this);
       this.input.off('pointermove', this.onMove, this);
     });
+    if (this.info) this.selected = this.rows().length - 1;
     void this.refresh();
   }
 
@@ -111,6 +116,11 @@ export class MenuScene extends Phaser.Scene {
       return { label: SLOT_NAMES[slot], detail: f ? saveSummary(f) : 'EMPTY', enabled: !!f || emptyOk };
     };
     switch (this.mode) {
+      case 'info':
+        return [
+          ...(this.info?.lines ?? []).map((label) => ({ label, enabled: false })),
+          { label: 'CONTINUE', enabled: true },
+        ];
       case 'main': {
         const can = this.world.canSave();
         return [
@@ -140,6 +150,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private get title(): string {
+    if (this.mode === 'info') return this.info?.title ?? '';
     return { main: 'PAUSED', save: 'SAVE', load: 'LOAD', export: 'EXPORT', import: 'IMPORT TO' }[this.mode];
   }
 
@@ -147,6 +158,10 @@ export class MenuScene extends Phaser.Scene {
 
   private onKey(e: KeyboardEvent): void {
     const n = this.rows().length;
+    if (this.mode === 'info' && (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ')) {
+      this.close();
+      return;
+    }
     if (e.key === 'Escape') {
       if (this.mode === 'main') this.close();
       else this.back();
@@ -187,6 +202,10 @@ export class MenuScene extends Phaser.Scene {
   private async choose(k: number): Promise<void> {
     const row = this.rows()[k];
     if (!row) return;
+    if (this.mode === 'info') {
+      if (row.enabled) this.close();
+      return;
+    }
     this.selected = k;
     if (!row.enabled) {
       this.message = row.detail || 'NOT AVAILABLE';

@@ -52,6 +52,14 @@ Stars stack: each new detected crime while wanted adds its stars, capped at 5.
 - Career effects: see 03.
 - Bribes: lawyer (−1 jail day) and judge (convert jail into a fine, Connected tier only) are offered on the jail screen.
 
+## Phase 1 build (milestone 4, 2026-10-11)
+- **Precinct 1** stands on Pewter Street, south of Drizzle Row. One cruiser with two officers answers at 1–2★: it drives the roads to the reported spot (or after the player's car), the officers get out, search random points in the circle and chase the player on sight. More cars, roadblocks and the higher star responses come in Phase 3.
+- Crimes that raise stars in Phase 1: lockpicking a car where a witness or an officer sees it (1★), a car alarm after a failed pick (1★, reaches the police after 3 s), a hot stolen car recognised by police (1★, 20% a minute).
+- **Witnesses** run and phone; a call takes 6–10 s. Walk up within 2 tiles and press E (SCARE OFF) to stop it.
+- **Busts:** an officer within 1.5 tiles while you're on foot or in a stopped car for 2.2 s arrests you; Y surrenders (−30% fine, −1 jail day). Police don't shoot until weapons arrive (Phase 4).
+- **After an arrest:** the stolen car you were in is impounded, you're released at Precinct 1, an hour later (first offense) or at 06:00 after the jail days. The career effects come in Phase 2.
+- Crime minigames (lockpick, hotwire) no longer pause the world (docs/06): witnesses and police keep moving.
+
 ## Death
 Wake at the nearest hospital at the next 06:00. Pay 10% of carried clean cash (min $100, max $1,500). **You keep your items.** Stars clear. Your offense record is unchanged. There are no other death penalties (decided).
 

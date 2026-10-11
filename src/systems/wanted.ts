@@ -39,7 +39,12 @@ export function addStars(w: WantedState, n: number, at: { x: number; y: number }
  * One step. While police see the player the circle follows them and the timer resets; out of sight the stars
  * flash, and the timer only runs while the player is outside the circle. Returns true when the stars just cleared.
  */
-export function tickWanted(w: WantedState, dt: number, seenNow: boolean, player: { x: number; y: number }): boolean {
+export function tickWanted(
+  w: WantedState,
+  dt: number,
+  seenNow: boolean,
+  player: { x: number; y: number },
+): boolean {
   if (w.stars <= 0) return false;
   w.seen = seenNow;
   if (seenNow) {

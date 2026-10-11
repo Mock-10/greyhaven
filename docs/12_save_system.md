@@ -32,6 +32,12 @@ Viewable in the dev panel (F1 cheat console → Stats) and exportable as JSON wi
 
 The NPC crowd and traffic are **not** saved. They respawn.
 
+## Phase 1 build (milestone 4)
+- SAVE_VERSION 1. Storage is IndexedDB, with localStorage when it's missing and export only when neither works.
+- Esc opens the pause menu: RESUME, SAVE GAME (in the apartment, not while wanted), LOAD GAME, EXPORT SAVE, IMPORT SAVE.
+- Autosave on sleep, rotating between two autosave slots. Clock-out, property purchase and the 06:00 autosave come with Phase 2.
+- After a load, the car you drove last waits in the apartment's street spot on Drizzle Row (decided 2026-10-11).
+
 ## Export and import
 - **Export:** download `doublelife-save-<slot>-<date>.json`. The file includes the version number and a checksum.
 - **Import:** pick a file, validate the schema and checksum, show the summary (day, cash, ranks), then pick the slot to load it into.

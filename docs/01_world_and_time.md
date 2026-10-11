@@ -66,6 +66,7 @@ Building interiors are separate small maps entered through doors: apartment, sto
 - Pedestrians spawn around the player within the camera bounds plus a margin, and despawn out of sight. Target **20–35 on screen** downtown, fewer elsewhere. Density follows the time of day: busy at commute times, sparse at night.
 - Traffic follows lane splines with simple car-following and stops at red lights.
 - NPCs **don't remember** the player, except for the "known face" heat state (see 05).
+- **Phase 1 build (milestone 4):** people walk paths along every sidewalk (written by `downtown_map.py`), cross to the next sidewalk at the corners, and get out of the way of a fast car. Cars follow one lane each way per road, keep their distance from whatever is ahead and stop at red lights (11 s green, 2 s yellow per direction). Numbers by hour of day live in `BALANCE.crowd` and `BALANCE.traffic`.
 - Reactions only matter around crime:
   - **Calm**: walk their route.
   - **Alarmed** (gunshot, crash, visible weapon within 12 tiles): flee away from the threat.

@@ -6,7 +6,7 @@ import { BALANCE } from '../config/balance';
 import type { Rng } from '../core/rng';
 import { makePath, nearestOn, pointAt, type Path } from './paths';
 
-export type PedMode = 'walk' | 'cross' | 'flee' | 'call';
+export type PedMode = 'walk' | 'cross' | 'flee';
 
 export interface Ped {
   id: number;
@@ -26,6 +26,8 @@ export interface Ped {
   /** Fleeing: from where, and for how much longer. */
   threat: { x: number; y: number } | null;
   fleeT: number;
+  /** A witness on the phone to the police (docs/05): seconds until the call gets through, and what they saw. */
+  call: { t: number; at: { x: number; y: number }; stars: number } | null;
 }
 
 export interface Link {
@@ -80,12 +82,12 @@ export function spawnPed(w: Walkways, id: number, costume: string, path: number,
     cross: null,
     threat: null,
     fleeT: 0,
+    call: null,
   };
 }
 
 /** Send someone running away from a threat (a crime, a crash, a car driving at them). */
 export function startFlee(ped: Ped, from: { x: number; y: number }): void {
-  if (ped.mode === 'call') return;
   ped.mode = 'flee';
   ped.threat = { ...from };
   ped.fleeT = BALANCE.crowd.fleeSeconds;
@@ -100,7 +102,6 @@ export function stepPed(
   blocked?: (x: number, y: number) => boolean,
 ): void {
   const C = BALANCE.crowd;
-  if (ped.mode === 'call') return;
   if (ped.mode === 'flee') {
     const t = ped.threat as { x: number; y: number };
     const dx = ped.x - t.x;
@@ -115,7 +116,8 @@ export function stepPed(
     ped.fx = dx / d;
     ped.fy = dy / d;
     ped.fleeT -= dt;
-    if (ped.fleeT <= 0) rejoin(ped, w);
+    // a witness keeps away until the call is done
+    if (ped.fleeT <= 0 && !ped.call) rejoin(ped, w);
     return;
   }
   if (ped.mode === 'cross' && ped.cross) {

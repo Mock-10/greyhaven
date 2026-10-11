@@ -272,3 +272,23 @@ test('saves at home and loads the save back (docs/12)', async ({ page }) => {
   });
   expect(problems).toEqual([]);
 });
+
+test('police: the cruiser comes from Precinct 1, an officer busts the player, a first offense costs the fine', async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  // stand on Pewter Street's sidewalk a little north of the precinct, in plain view
+  const problems = await boot(page, '?scene=world&zoom=2&time=12:00&x=560&y=1240');
+  await page.keyboard.press('Control+Shift+F1');
+  await page.keyboard.type('stars 1');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.stars === 1);
+  // the officers get out, run up and bust the player (no surrender: the full fine)
+  await page.waitForFunction(() => window.__DL__.minigame === 'arrest', null, { timeout: 120_000 });
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  expect(await page.evaluate(() => window.__DL__.stars)).toBe(0);
+  expect(await page.evaluate(() => window.__DL__.clean)).toBe(250 - 200);
+  expect(problems).toEqual([]);
+});

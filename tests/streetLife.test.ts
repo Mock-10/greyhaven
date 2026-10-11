@@ -99,3 +99,25 @@ describe('traffic', () => {
     expect(trafficTarget(17 * 60)).toBeGreaterThan(trafficTarget(3 * 60));
   });
 });
+
+describe('police routes', () => {
+  it('drives along the roads, turning at crossings, to the road point nearest the goal', async () => {
+    const { buildRoads, route, onRoad } = await import('../src/systems/roads');
+    const g = buildRoads(DOWNTOWN.lanes ?? [], DOWNTOWN.crossings ?? []);
+    expect(g.lines.length).toBe(5);
+    const from = { x: 19 * 32, y: 44 * 32 }; // the precinct on Pewter Street
+    const to = { x: 50 * 32, y: 30 * 32 }; // Marlo's yard
+    const r = route(g, from, to);
+    expect(r.length).toBeGreaterThan(10);
+    const end = r[r.length - 1]!;
+    const goal = onRoad(g, to.x, to.y);
+    const gp = g.lines[goal.line]!;
+    expect(Math.hypot(end.x - to.x, end.y - to.y)).toBeLessThan(goal.d + 30);
+    void gp;
+    // every waypoint is near a road
+    for (const p of r) expect(onRoad(g, p.x, p.y).d).toBeLessThan(40);
+    // consecutive waypoints are close together (no jumps across blocks)
+    for (let k = 1; k < r.length; k++)
+      expect(Math.hypot(r[k]!.x - r[k - 1]!.x, r[k]!.y - r[k - 1]!.y)).toBeLessThan(80);
+  });
+});
