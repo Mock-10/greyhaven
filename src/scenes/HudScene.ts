@@ -8,6 +8,7 @@ import { UI_BASE_H, UI_BASE_W } from '../config/constants';
 import { calendar, darkness, formatClock } from '../systems/clock';
 import {
   C,
+  CAR_PANEL,
   clear,
   createSurface,
   hintKeys,
@@ -21,6 +22,7 @@ import {
   toast,
   topLeft,
   topRight,
+  vehiclePanel,
   type Surface,
 } from '../ui/hudDraw';
 import type { HudSnapshot } from './WorldScene';
@@ -142,15 +144,23 @@ export class HudScene extends Phaser.Scene {
           })),
       });
       objective(s, Math.floor(W / 2), H - 20, snap.objective || this.objectiveText);
-      const hints: [string, string][] = snap.target
+      if (snap.vehicle) vehiclePanel(s, 6, 46, snap.vehicle);
+      const hints: [string, string][] = snap.vehicle
         ? [
-            ['E', 'USE'],
-            ['TAB', 'NEXT'],
+            ['W/S', 'DRIVE'],
+            ['A/D', 'STEER'],
+            ['SPACE', 'BRAKE'],
+            ['F', 'EXIT'],
           ]
-        : [
-            ['SHIFT', 'SPRINT'],
-            ['C', 'CAMERA'],
-          ];
+        : snap.target
+          ? [
+              ['E', 'USE'],
+              ['TAB', 'NEXT'],
+            ]
+          : [
+              ['SHIFT', 'SPRINT'],
+              ['C', 'CAMERA'],
+            ];
       hintKeys(s, W - 6 - hintKeysWidth(hints) + 8, H - 20, hints);
       let stackY = H - 52;
       if (this.toastMsg) {
@@ -181,8 +191,9 @@ export class HudScene extends Phaser.Scene {
         `CHUNKS ${st.chunks}`,
       ];
       const w = Math.max(...lines.map((l) => textWidthPx(l))) + 8;
-      plate(s, 6, 46, w, lines.length * 7 + 6, C.LAVLT2);
-      lines.forEach((l, k) => text(s, 10, 49 + k * 7, l, C.CREAM));
+      const dy = snap?.vehicle ? 46 + CAR_PANEL.h + 4 : 46;
+      plate(s, 6, dy, w, lines.length * 7 + 6, C.LAVLT2);
+      lines.forEach((l, k) => text(s, 10, dy + 3 + k * 7, l, C.CREAM));
     }
     const ctx = this.tex.getContext();
     const img = ctx.createImageData(s.width, s.height);

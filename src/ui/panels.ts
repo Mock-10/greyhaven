@@ -4,15 +4,14 @@
 
 import { BALANCE } from '../config/balance';
 import { ITEMS, type ItemId } from '../data/items';
-import {
+import type {
   DataEntryGame,
   FilingGame,
   HotwireGame,
   MoneyCountGame,
   SkillCheckGame,
-  TRAY_COLOURS,
-  type WireColour,
 } from '../minigames/logic';
+import { TRAY_COLOURS, type WireColour } from '../minigames/logic';
 import type { Grade } from '../systems/career';
 import {
   C,
@@ -46,7 +45,13 @@ export type PanelKind = keyof typeof PANEL_SIZE;
 /** Height of the strip along the top that drags the panel. */
 export const DRAG_STRIP = 20;
 
-const GRADE_TEXT: Record<Grade, string> = { fail: 'FAILED', poor: 'POOR', ok: 'OK', good: 'GOOD', excellent: 'EXCELLENT' };
+const GRADE_TEXT: Record<Grade, string> = {
+  fail: 'FAILED',
+  poor: 'POOR',
+  ok: 'OK',
+  good: 'GOOD',
+  excellent: 'EXCELLENT',
+};
 const TRAY_RGB: Record<(typeof TRAY_COLOURS)[number], RGB> = {
   red: [185, 94, 94],
   navy: [94, 114, 160],
@@ -83,7 +88,14 @@ export function frame(s: Surface, x: number, y: number, kind: PanelKind, title: 
 }
 
 /** The end-of-task card: drawn instead of the panel body once a minigame is done. */
-export function resultCard(s: Surface, x: number, y: number, kind: PanelKind, grade: Grade, caption: string): void {
+export function resultCard(
+  s: Surface,
+  x: number,
+  y: number,
+  kind: PanelKind,
+  grade: Grade,
+  caption: string,
+): void {
   const { w } = PANEL_SIZE[kind];
   const t = GRADE_TEXT[grade];
   const col = grade === 'fail' || grade === 'poor' ? C.RED3 : C.GOLD;
@@ -97,7 +109,12 @@ export interface FilingLayout {
   trays: { x: number; y: number; w: number; h: number }[];
 }
 
-export function filingLayout(x: number, y: number, f: FilingGame, drag: { x: number; y: number } | null): FilingLayout {
+export function filingLayout(
+  x: number,
+  y: number,
+  f: FilingGame,
+  drag: { x: number; y: number } | null,
+): FilingLayout {
   const paper = drag
     ? { x: Math.round(drag.x), y: Math.round(drag.y), w: 22, h: 26 }
     : { x: x + 38, y: Math.round(y + 24 + f.fall * 34), w: 22, h: 26 };
@@ -127,7 +144,8 @@ export function drawFiling(
     blend(s, r.y + 1, r.y + r.h + 1, r.x + 1, r.x + r.w + 1, C.INK, 0.6);
     blend(s, r.y, r.y + r.h, r.x, r.x + r.w, C.CREAM);
     blend(s, r.y, r.y + 6, r.x, r.x + r.w, TRAY_RGB[f.current]);
-    for (let k = 0; k < 5; k++) blend(s, r.y + 9 + k * 3, r.y + 10 + k * 3, r.x + 3, r.x + r.w - 3 - (k % 2) * 5, C.MUTED);
+    for (let k = 0; k < 5; k++)
+      blend(s, r.y + 9 + k * 3, r.y + 10 + k * 3, r.x + 3, r.x + r.w - 3 - (k % 2) * 5, C.MUTED);
   }
   const rx = x + 100;
   text(s, rx, y + 26, 'PROGRESS', C.MUTED);
@@ -176,9 +194,17 @@ export function drawEntry(s: Surface, x: number, y: number, e: DataEntryGame, ta
 }
 
 // ------------------------------------------------------------------ lockpick (the mockup)
-export function drawLockpick(s: Surface, x: number, y: number, g: SkillCheckGame, tier: number, tool: string): void {
+export function drawLockpick(
+  s: Surface,
+  x: number,
+  y: number,
+  g: SkillCheckGame,
+  tier: number,
+  tool: string,
+): void {
   frame(s, x, y, 'lockpick', 'LOCKPICK', `TIER ${tier}`);
-  if (g.done && g.grade) return resultCard(s, x, y, 'lockpick', g.grade, g.grade === 'fail' ? 'THE PICK SLIPPED' : 'UNLOCKED');
+  if (g.done && g.grade)
+    return resultCard(s, x, y, 'lockpick', g.grade, g.grade === 'fail' ? 'THE PICK SLIPPED' : 'UNLOCKED');
   const dcx = x + 54;
   const dcy = y + 70;
   const r = 32;
@@ -190,7 +216,12 @@ export function drawLockpick(s: Surface, x: number, y: number, g: SkillCheckGame
       if (d <= r - 12) px(s, dcx + i, dcy + j, C.PLATE);
       else if (d <= r - 9) px(s, dcx + i, dcy + j, C.PLATE_HI);
       else if (d <= r - 1)
-        px(s, dcx + i, dcy + j, off <= g.great / 2 ? C.GOLD : off <= g.good / 2 ? C.CREAM : ([80, 63, 88] as RGB));
+        px(
+          s,
+          dcx + i,
+          dcy + j,
+          off <= g.great / 2 ? C.GOLD : off <= g.good / 2 ? C.CREAM : ([80, 63, 88] as RGB),
+        );
       else if (d <= r + 1) px(s, dcx + i, dcy + j, C.INK);
     }
   const a = ((g.needle - 90) * Math.PI) / 180;
@@ -205,7 +236,8 @@ export function drawLockpick(s: Surface, x: number, y: number, g: SkillCheckGame
   text(s, rx, y + 30, 'PROGRESS', C.MUTED);
   bar(s, rx, y + 38, 66, 7, g.progress, C.GOLD, C.GOLD_LO);
   text(s, rx, y + 52, 'CHECKS', C.MUTED);
-  for (let k = 0; k < g.checks; k++) blend(s, y + 60, y + 66, rx + k * 10, rx + k * 10 + 7, k < g.passed ? C.GOLD : C.PLATE_HI);
+  for (let k = 0; k < g.checks; k++)
+    blend(s, y + 60, y + 66, rx + k * 10, rx + k * 10 + 7, k < g.passed ? C.GOLD : C.PLATE_HI);
   text(s, rx, y + 74, 'TOOL', C.MUTED);
   text(s, rx, y + 82, tool, C.CREAM);
   hintKeys(s, x + 8, y + 112, [
@@ -213,18 +245,31 @@ export function drawLockpick(s: Surface, x: number, y: number, g: SkillCheckGame
     ['ESC', 'ABORT'],
   ]);
   text(s, x + 104, y + 114, 'NOISE', C.MUTED);
-  for (let k = 0; k < 3; k++) blend(s, y + 114, y + 119, x + 128 + k * 6, x + 132 + k * 6, k < Math.round(g.noise * 3) ? C.HP : C.PLATE_HI);
+  for (let k = 0; k < 3; k++)
+    blend(
+      s,
+      y + 114,
+      y + 119,
+      x + 128 + k * 6,
+      x + 132 + k * 6,
+      k < Math.round(g.noise * 3) ? C.HP : C.PLATE_HI,
+    );
 }
 
 // ------------------------------------------------------------------ hotwire
-export function hotwireLayout(x: number, y: number, n: number): { left: { x: number; y: number }[]; right: { x: number; y: number }[] } {
+export function hotwireLayout(
+  x: number,
+  y: number,
+  n: number,
+): { left: { x: number; y: number }[]; right: { x: number; y: number }[] } {
   const rows = Array.from({ length: n }, (_, k) => y + 28 + k * 14);
   return { left: rows.map((ry) => ({ x: x + 20, y: ry })), right: rows.map((ry) => ({ x: x + 136, y: ry })) };
 }
 
 export function drawHotwire(s: Surface, x: number, y: number, g: HotwireGame): void {
   frame(s, x, y, 'hotwire', 'HOTWIRE', 'TIER 0');
-  if (g.done && g.grade) return resultCard(s, x, y, 'hotwire', g.grade, g.grade === 'fail' ? 'IT WONT START' : 'ENGINE RUNNING');
+  if (g.done && g.grade)
+    return resultCard(s, x, y, 'hotwire', g.grade, g.grade === 'fail' ? 'IT WONT START' : 'ENGINE RUNNING');
   const L = hotwireLayout(x, y, g.left.length);
   const keysR = ['A', 'S', 'D', 'F', 'G'];
   blend(s, y + 24, y + 28 + g.left.length * 14, x + 8, x + 168, C.INK, 0.7);
@@ -265,19 +310,23 @@ export function drawHotwire(s: Surface, x: number, y: number, g: HotwireGame): v
 }
 
 // ------------------------------------------------------------------ money count
+/** Bill rows that fit on the table drawn in the money-count panel. */
+export const MAX_PILE_ROWS = 12;
+
 export function drawMoneyCount(s: Surface, x: number, y: number, g: MoneyCountGame, right: string): void {
   frame(s, x, y, 'moneyCount', 'COUNT CASH', right);
   if (g.done && g.grade) return resultCard(s, x, y, 'moneyCount', g.grade, 'CASH COUNTED');
-  // the pile on the table: one bill per row, a band of khaki and sage
+  // the pile on the table: one bill per row, a band of khaki and sage; bills past ten turn red (over-count),
+  // and the stack stops growing at the top of the table
   blend(s, y + 24, y + 98, x + 8, x + 88, C.INK, 0.7);
-  for (let k = 0; k < g.pile; k++) {
+  for (let k = 0; k < Math.min(g.pile, MAX_PILE_ROWS); k++) {
     const by = y + 90 - k * 6;
-    blend(s, by, by + 5, x + 20, x + 76, C.KHAKI4);
-    blend(s, by + 1, by + 4, x + 42, x + 54, C.SAGE1);
+    blend(s, by, by + 5, x + 20, x + 76, k >= 10 ? C.DIRTY : C.KHAKI4);
+    blend(s, by + 1, by + 4, x + 42, x + 54, k >= 10 ? C.HP_LO : C.SAGE1);
   }
   for (let k = 0; k < g.bundles; k++) blend(s, y + 30 + k * 8, y + 36 + k * 8, x + 80, x + 86, C.SAGE4);
   const rx = x + 96;
-  text(s, rx, y + 28, `PILE ${g.pile}/10`, g.pile === 10 ? C.GOLD : C.CREAM);
+  text(s, rx, y + 28, `PILE ${g.pile}/10`, g.pile === 10 ? C.GOLD : g.pile > 10 ? C.RED3 : C.CREAM);
   text(s, rx, y + 40, `COUNTED ${g.counted}/${g.bills}`, C.MUTED);
   text(s, rx, y + 49, `BUNDLES ${g.bundles}`, C.CREAM);
   text(s, rx, y + 58, `MISCOUNTS ${g.miscounts}`, g.miscounts ? C.RED3 : C.MUTED);

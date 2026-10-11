@@ -24,7 +24,9 @@ The generator is `art/source/hud.py` (with `pixfont.py`), and the shapes, colour
 
 **Text:** the 3 × 5 pixel font in `pixfont.py` (caps, digits, punctuation). Use 2× scale only for the ammo count and minigame titles.
 
-**Minigame panels** (06): a framed plate over a dimmed world (35% dark overlay). The title is in 2× gold with the tier on the right. Show the main element (for example the lockpick dial: cream good zone, gold great zone, red needle), progress bar, checks, tool and durability, keycap hints and a noise meter. The panel sits beside the target, never covering it.
+**Minigame panels** (06): a framed plate over a dimmed world (35% dark overlay). The title is in 2× gold with the tier on the right. Show the main element (for example the lockpick dial: cream good zone, gold great zone, red needle), progress bar, checks, tool and durability, keycap hints and a noise meter. The panel sits beside the target, never covering it. **Every pop-up panel (job tasks, the shop, crime minigames) can be dragged by its top strip** and remembers where it was put for the session (user request, 2026-10-11). No text or icon in a panel may overlap another; `tests/panels.test.ts` checks every panel state. The shop shows a card per item: an icon (soda can, chips, sandwich, fuel can), the name, the effect, the price and a number key.
+
+**Car readout** (milestone 3): while driving, a 112 × 33 panel under the vitals shows SEDAN, the speed as a share of top speed, a fuel bar (pump icon) and a condition bar (wrench icon); both turn red when low. The key hints switch to W/S DRIVE · A/D STEER · SPACE BRAKE · F EXIT.
 
 ## Interaction prompts
 - In range (≤ 1.5 tiles) the object shows the **idle gold rim**. When targeted (nearest in the facing direction, or under the mouse) it shows the **hover rim** plus a prompt plate: `[E] LOCKPICK`.

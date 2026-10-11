@@ -5,6 +5,8 @@
 import { BALANCE } from '../config/balance';
 import { createCareer, type CareerState } from '../systems/career';
 import type { InteriorId } from '../data/interiors';
+import type { LaunderLog } from '../systems/laundering';
+import type { Vehicle } from '../systems/vehicle';
 
 /** Where the player is: out on the street map, or inside an interior. */
 export type Area = { kind: 'street' } | { kind: 'interior'; id: InteriorId };
@@ -38,6 +40,12 @@ export interface GameState {
   inventory: { fuelCans: number };
   /** Rooms seen per interior, for the remembered state (docs/19, saved with the game: docs/12 `sight`). */
   sight: Partial<Record<InteriorId, number[]>>;
+  /** Cars in the world that can be driven (docs/08); parked map cars join on first load. */
+  vehicles: Vehicle[];
+  /** Id of the car the player is driving, or null on foot. */
+  driving: string | null;
+  /** Dirty cash washed today, for the launderer's daily cap (docs/02). */
+  laundered: LaunderLog;
 }
 
 export interface Settings {
@@ -82,6 +90,9 @@ export function createState(
     career: createCareer(),
     inventory: { fuelCans: 0 },
     sight: {},
+    vehicles: [],
+    driving: null,
+    laundered: { day: 0, amount: 0 },
   };
 }
 

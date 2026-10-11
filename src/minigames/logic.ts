@@ -341,7 +341,8 @@ export class MoneyCountGame implements MinigameLogic {
     this.done = true;
     const target = this.bills / 10;
     if (this.bundles === 0) this.grade = 'fail';
-    else if (this.miscounts === 0 && this.bundles === target) this.grade = this.timeLeft / this.timeTotal > 0.3 ? 'excellent' : 'good';
+    else if (this.miscounts === 0 && this.bundles === target)
+      this.grade = this.timeLeft / this.timeTotal > 0.3 ? 'excellent' : 'good';
     else if (this.miscounts <= 1) this.grade = 'ok';
     else this.grade = 'poor';
   }

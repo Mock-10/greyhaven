@@ -69,7 +69,13 @@ export function topSpeed(v: Vehicle): number {
  * One simulation step. Returns the impact speed when the car hit something (0 otherwise). Out of fuel, the car
  * coasts; wrecked or not running, it only rolls to a stop.
  */
-export function drive(v: Vehicle, inp: DriveInput, dt: number, solids: readonly Solid[], rules: CollisionRules): number {
+export function drive(
+  v: Vehicle,
+  inp: DriveInput,
+  dt: number,
+  solids: readonly Solid[],
+  rules: CollisionRules,
+): number {
   const sp = S();
   const powered = v.running && !v.wrecked && v.fuel > 0;
   const th = powered ? inp.throttle : 0;
@@ -91,17 +97,39 @@ export function drive(v: Vehicle, inp: DriveInput, dt: number, solids: readonly 
   const grip = Math.min(1, Math.abs(v.speed) / 60);
   const turn = inp.steer * sp.turnRate * grip * (inp.handbrake ? 1.5 : 1) * Math.sign(v.speed || 1) * dt;
   const prev = { x: v.x, y: v.y, heading: v.heading };
-  v.heading += turn;
-  v.x += Math.cos(v.heading) * v.speed * dt;
-  v.y += Math.sin(v.heading) * v.speed * dt;
-  const hit = hullPoints(v).some((p) => collides(p.x, p.y, solids, { ...rules, radius: 1 }));
-  if (!hit) return 0;
+  const heading = v.heading + turn;
+  const mx = Math.cos(heading) * v.speed * dt;
+  const my = Math.sin(heading) * v.speed * dt;
+  const free = (x: number, y: number, h: number) =>
+    !hullPoints({ x, y, heading: h }).some((p) => collides(p.x, p.y, solids, { ...rules, radius: 1 }));
+  const V = BALANCE.vehicles;
+  if (free(prev.x + mx, prev.y + my, heading)) {
+    v.x += mx;
+    v.y += my;
+    v.heading = heading;
+    return 0;
+  }
+  // glancing blows slide along the wall (keeping the part of the speed along it); head-on hits bounce back
+  const slides: [number, number, number][] = [
+    [mx, 0, Math.abs(Math.cos(heading))],
+    [0, my, Math.abs(Math.sin(heading))],
+  ];
+  slides.sort((p, q) => q[2] - p[2]);
+  for (const [sx, sy, keep] of slides) {
+    if (keep < V.slideMinShare || !free(prev.x + sx, prev.y + sy, heading)) continue;
+    const lost = Math.abs(v.speed) * Math.sqrt(1 - keep * keep);
+    v.x += sx;
+    v.y += sy;
+    v.heading = heading;
+    v.speed *= keep;
+    if (lost > V.minImpactSpeed) damage(v, (lost - V.minImpactSpeed) * V.damagePerSpeed);
+    return lost;
+  }
   const impact = Math.abs(v.speed);
-  v.x = prev.x;
-  v.y = prev.y;
-  v.heading = prev.heading;
-  v.speed = -v.speed * BALANCE.vehicles.bounce;
-  damage(v, impact * BALANCE.vehicles.damagePerSpeed);
+  // turning on the spot is allowed when only the move is blocked
+  if (free(prev.x, prev.y, heading)) v.heading = heading;
+  v.speed = -v.speed * V.bounce;
+  if (impact > V.minImpactSpeed) damage(v, (impact - V.minImpactSpeed) * V.damagePerSpeed);
   return impact;
 }
 
@@ -136,4 +164,55 @@ export function pourCan(v: Vehicle, inv: { fuelCans: number }): boolean {
 export function chopPrice(v: Vehicle, roll: number): number {
   const [lo, hi] = BALANCE.crime.chopPayout as [number, number];
   return Math.round((lo + (hi - lo) * roll) * (0.4 + 0.6 * (v.health / S().health)));
+}
+
+/** Distance from a point to the car's body (0 inside it). */
+export function distToCar(v: Pick<Vehicle, 'x' | 'y' | 'heading'>, x: number, y: number): number {
+  const { halfLength, halfWidth } = S();
+  const c = Math.cos(v.heading);
+  const s = Math.sin(v.heading);
+  const dx = x - v.x;
+  const dy = y - v.y;
+  const u = Math.abs(dx * c + dy * s) - halfLength;
+  const w = Math.abs(-dx * s + dy * c) - halfWidth;
+  return Math.hypot(Math.max(0, u), Math.max(0, w));
+}
+
+/** Where the driver can step out: beside the doors first (left, then right), then behind and in front. */
+export function exitSpots(
+  v: Pick<Vehicle, 'x' | 'y' | 'heading'>,
+  radius: number,
+): { x: number; y: number }[] {
+  const { halfLength, halfWidth } = S();
+  const c = Math.cos(v.heading);
+  const s = Math.sin(v.heading);
+  const side = halfWidth + radius + 3;
+  const end = halfLength + radius + 3;
+  const local: [number, number][] = [
+    [0, -side],
+    [0, side],
+    [-end, 0],
+    [end, 0],
+    [halfLength * 0.6, -side],
+    [-halfLength * 0.6, side],
+  ];
+  return local.map(([u, w]) => ({ x: v.x + u * c - w * s, y: v.y + u * s + w * c }));
+}
+
+/** A parked car from the map: locked, engine off, part-full tank (docs/08). */
+export function parkedCar(id: string, model: string, x: number, y: number, dir: number): Vehicle {
+  return {
+    id,
+    model,
+    x,
+    y,
+    heading: (dir * Math.PI) / 4,
+    speed: 0,
+    fuel: S().tank * BALANCE.vehicles.parkedFuel,
+    health: S().health,
+    locked: true,
+    running: false,
+    hotUntil: 0,
+    wrecked: false,
+  };
 }

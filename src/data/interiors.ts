@@ -12,6 +12,7 @@ export type Action =
   | { kind: 'clock' }
   | { kind: 'elevator'; to: InteriorId }
   | { kind: 'shop' }
+  | { kind: 'launder' }
   | { kind: 'later'; who: string; text: string };
 
 /** How a door leaf behaves: always openable, locked, or open only under a condition. */
@@ -142,7 +143,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     actions: {
       LAUNDER: {
         label: 'LAUNDER',
-        action: { kind: 'later', who: 'DEZ', text: 'BRING ME SOMETHING TO WASH FIRST.' },
+        action: { kind: 'launder' },
       },
     },
     doors: [{ kind: 'staffHours', from: 18 * 60, to: 2 * 60, closedLabel: 'STAFF ONLY' }],

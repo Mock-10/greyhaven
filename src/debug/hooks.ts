@@ -21,6 +21,22 @@ export interface DebugHook {
   rank: number;
   tasksLeft: number;
   minigame: string | null;
+  /** The open minigame's logic object (needle, wires, bills), read by tests to play it like a person would. */
+  minigameState: unknown;
+  /** Dirty cash, the car being driven, and every drivable car (milestone 3). */
+  dirty: number;
+  driving: string | null;
+  cars: {
+    id: string;
+    x: number;
+    y: number;
+    locked: boolean;
+    running: boolean;
+    fuel: number;
+    heading: number;
+    speed: number;
+    health: number;
+  }[];
   /** Depth of a placed object by sprite key (first match). */
   depthOf: (sprite: string) => number | null;
   /** Current opacity of a placed object by sprite key (first match), for occlusion checks. */
@@ -50,6 +66,10 @@ export function installHook(): DebugHook {
     rank: 1,
     tasksLeft: -1,
     minigame: null,
+    minigameState: null,
+    dirty: 0,
+    driving: null,
+    cars: [],
     depthOf: () => null,
     alphaOf: () => null,
     errors: [],

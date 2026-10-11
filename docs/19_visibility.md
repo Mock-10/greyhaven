@@ -17,6 +17,8 @@ Players can switch this in **Settings → Gameplay → Sight lines**. **Default:
 - Remembered-room data keeps being recorded while the setting is off, so switching it back on shows the correct remembered state.
 
 ## The three states of a space
+> **On hold (user, 2026-10-11):** the dimming of remembered rooms is switched off (`BALANCE.interiors.rememberedDimming = false`) until Phase 8; remembered rooms draw like visible ones. The data is still recorded.
+
 | State | When | What is drawn |
 |---|---|---|
 | **Visible** | The player's current room, plus anything an unblocked line of sight reaches | Everything: furniture, decoration, people, loot, interactable rims and prompts |

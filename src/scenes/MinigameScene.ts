@@ -7,6 +7,7 @@
 import Phaser from 'phaser';
 import { UI_BASE_H, UI_BASE_W } from '../config/constants';
 import { Rng } from '../core/rng';
+import { hook } from '../debug/hooks';
 import { SHOP_STOCK } from '../data/items';
 import {
   DataEntryGame,
@@ -50,6 +51,7 @@ export interface MinigameResult {
 const TEX = 'minigame-canvas';
 /** Where each kind of panel was last dragged to, relative to its default spot (kept for the session). */
 const offsets = new Map<PanelKind, { x: number; y: number }>();
+const handled = new WeakSet<KeyboardEvent>();
 
 type Rect = { x: number; y: number; w: number; h: number };
 
@@ -98,6 +100,8 @@ export class MinigameScene extends Phaser.Scene {
       default:
         this.logic = null;
     }
+    // read-only, for the smoke test and the screenshot script
+    hook().minigameState = this.logic;
   }
 
   private get kind(): PanelKind {
@@ -152,6 +156,10 @@ export class MinigameScene extends Phaser.Scene {
   // ---------------------------------------------------------------- input
 
   private onKey(e: KeyboardEvent): void {
+    // Phaser can hand the same DOM event over more than once when several arrive in one slow frame; a fast
+    // money count or lockpick tap must count once
+    if (handled.has(e)) return;
+    handled.add(e);
     if (e.key === 'Escape') {
       this.close(null);
       return;
@@ -209,7 +217,8 @@ export class MinigameScene extends Phaser.Scene {
     const g = this.logic;
     if (g instanceof FilingGame && !g.done) {
       const L = filingLayout(x, y, g, null);
-      if (this.inRect(q, L.paper)) this.paperDrag = { dx: q.x - L.paper.x, dy: q.y - L.paper.y, x: q.x, y: q.y };
+      if (this.inRect(q, L.paper))
+        this.paperDrag = { dx: q.x - L.paper.x, dy: q.y - L.paper.y, x: q.x, y: q.y };
       else
         L.trays.forEach((t, k) => {
           if (this.inRect(q, t)) g.file(k);
@@ -308,7 +317,8 @@ export class MinigameScene extends Phaser.Scene {
       const d = this.paperDrag;
       drawFiling(s, x, y, g, req.task, d ? { x: d.x - d.dx, y: d.y - d.dy } : null);
     } else if (req.kind === 'dataEntry' && g instanceof DataEntryGame) drawEntry(s, x, y, g, req.task);
-    else if (req.kind === 'lockpick' && g instanceof SkillCheckGame) drawLockpick(s, x, y, g, req.tier, req.tool);
+    else if (req.kind === 'lockpick' && g instanceof SkillCheckGame)
+      drawLockpick(s, x, y, g, req.tier, req.tool);
     else if (req.kind === 'hotwire' && g instanceof HotwireGame) drawHotwire(s, x, y, g);
     else if (req.kind === 'moneyCount' && g instanceof MoneyCountGame) drawMoneyCount(s, x, y, g, req.label);
     else if (req.kind === 'shop')

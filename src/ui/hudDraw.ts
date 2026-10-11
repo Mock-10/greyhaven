@@ -426,6 +426,32 @@ export function hintKeysWidth(items: readonly [string, string][]): number {
   return items.reduce((w, [k, l]) => w + textWidthPx(k) + 4 + 6 + textWidthPx(l) + 8, 0);
 }
 
+// ------------------------------------------------------------------ car readout (milestone 3)
+export const PUMP = ['###.', '#.#.', '####', '###.', '###.'];
+export const WRENCH = ['#.#..', '###..', '.##..', '..##.', '...##'];
+export const GAUGE = ['.###.', '#...#', '#.#.#', '#..##', '.###.'];
+export const CAR_PANEL = { w: 112, h: 33 };
+
+/** Fuel, condition and speed under the vitals panel while driving. Low fuel and heavy damage turn red. */
+export function vehiclePanel(
+  s: Surface,
+  x: number,
+  y: number,
+  o: { fuel: number; health: number; speed: number },
+): void {
+  plate(s, x, y, CAR_PANEL.w, CAR_PANEL.h);
+  text(s, x + 5, y + 4, 'SEDAN', C.CREAM);
+  const pct = `${Math.round(o.speed * 100)}%`;
+  sprite(s, x + CAR_PANEL.w - 12 - textWidthPx(pct), y + 4, GAUGE, { '#': C.MUTED });
+  text(s, x + CAR_PANEL.w - 5 - textWidthPx(pct), y + 4, pct, C.MUTED);
+  const fuelLow = o.fuel < 0.15;
+  sprite(s, x + 5, y + 13, PUMP, { '#': fuelLow ? C.RED3 : C.GLASS4 });
+  bar(s, x + 13, y + 13, 94, 5, o.fuel, fuelLow ? C.RED3 : C.GLASS4, C.ARM_LO, 4);
+  const hurt = o.health < 0.25;
+  sprite(s, x + 5, y + 22, WRENCH, { '#': hurt ? C.RED3 : C.SAGE4 });
+  bar(s, x + 13, y + 22, 94, 5, o.health, hurt ? C.RED3 : C.SAGE4, C.SAGE1);
+}
+
 // ------------------------------------------------------------------ radar (hud.py draw_radar)
 export interface RadarInput {
   px: number;

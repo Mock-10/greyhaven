@@ -17,6 +17,8 @@
 | Armored SUV | 85 | mid | mid | 250 | 4 | 70 | $40,000 |
 | Police cruiser | 100 | high | mid | 130 | — | — | stealing one gives +1★ |
 
+**Phase 1 tuning (sedan, `BALANCE.vehicles`):** in world units per second, top speed 240 (about 7.5 tiles/s), reverse 70, acceleration 140, braking 320, rolling drag 70, steering 2.4 rad/s at speed. Glancing hits slide along walls; head-on hits bounce back at 25% speed. Impacts below 40 units/s do no damage, above that damage is 0.12 per unit/s. Parked cars start with 35% fuel. The camera leads by up to 3 tiles at top speed.
+
 ## Damage
 - Vehicle health from 0 to 100%. Below 50%, smoke appears. Below 25%, top speed −30% and fire risk. At 0, it explodes after 3 s.
 - Damage reduces the value of shipments being carried (see 04).

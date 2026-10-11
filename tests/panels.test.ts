@@ -14,12 +14,14 @@ import {
   createSurface,
   endAudit,
   hintKeys,
+  hintKeysWidth,
   objective,
   overlaps,
   toast,
   topLeft,
   topRight,
   stars,
+  vehiclePanel,
   type DrawnRect,
   type Surface,
 } from '../src/ui/hudDraw';
@@ -34,6 +36,12 @@ import {
   type PanelKind,
 } from '../src/ui/panels';
 
+const DRIVE_HINTS: [string, string][] = [
+  ['W/S', 'DRIVE'],
+  ['A/D', 'STEER'],
+  ['SPACE', 'BRAKE'],
+  ['F', 'EXIT'],
+];
 const X = 40;
 const Y = 30;
 
@@ -48,7 +56,10 @@ function check(kind: PanelKind | 'hud', draw: (s: Surface) => void): DrawnRect[]
   if (kind !== 'hud') {
     const P = PANEL_SIZE[kind];
     for (const r of rects) {
-      expect(r.x >= X && r.y >= Y && r.x + r.w <= X + P.w && r.y + r.h <= Y + P.h, `${kind}: ${r.what} leaves the panel`).toBe(true);
+      expect(
+        r.x >= X && r.y >= Y && r.x + r.w <= X + P.w && r.y + r.h <= Y + P.h,
+        `${kind}: ${r.what} leaves the panel`,
+      ).toBe(true);
     }
   }
   return rects;
@@ -98,6 +109,15 @@ describe('panel layouts never overlap', () => {
         message: 'NOT ENOUGH CLEAN CASH',
       }),
     );
+  });
+
+  it('the car readout and the driving hints', () => {
+    check('hud', (s) => {
+      topLeft(s, 6, 6, { ammo: '-/-', label: 'UNARMED', hp: 1, armor: 0 });
+      vehiclePanel(s, 6, 46, { fuel: 0.1, health: 0.2, speed: 1 });
+      objective(s, 320, 340, "SELL THE CAR AT MARLO'S TOW & SALVAGE");
+      hintKeys(s, 634 - hintKeysWidth(DRIVE_HINTS) + 8, 340, DRIVE_HINTS);
+    });
   });
 
   it('the HUD panels with long values', () => {

@@ -14,86 +14,42 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
-## Handover (updated 2026-10-11) — read this first in a new session
+## Handover (updated 2026-10-11, end of session) — read this first in a new session
 
 **Where things stand**
-- **The current phase is still Phase 1 (vertical slice).** Milestones 1 and 1b are merged (PR #2, #4). **Milestone 2 (interiors, the office job, sleep, the corner store) is built** on branch `claude/sweet-albattani-4dbzox` with a PR waiting for the user. **Next: milestone 3** (driving and the carjack loop) once the user says go. Phase 2 is parked until Phase 1 is finished.
-- Communication preference (2026-10-11): the user asked for fewer progress messages in chat while working; still send images and important updates. They may switch back later.
-- **`main`** has Phase 0, Phase 1 milestone 1 and the milestone 2 WIP logic (PR #1, #2 and #3, all merged). It is live at `https://mock-10.github.io/greyhaven/`.
-- **Milestone 2 WIP logic is already on `main`** (PR #3 merged it), not wired into the game yet:
-  - `art/source/export_interiors.py` → `art/interiors/` (game-ready interior sheets and geometry);
-  - `src/systems/sight.ts` (docs/19 rules, tests in `tests/sight.test.ts`);
-  - `src/data/interiors.ts` (hours, door rules, prompt actions, NPC schedules);
-  - `src/data/jobs.ts` + `src/systems/career.ts` (tests in `tests/career.test.ts`);
-  - `src/minigames/logic.ts` (filing and data-entry rules, tests in `tests/minigames.test.ts`).
-- **The Downtown map is a test map, not the final city** (user, 2026-10-11). The final city is a massive, dense open world at about 320 × 320 tiles (docs/01), laid out in Phase 6.
+- **The current phase is still Phase 1 (vertical slice).** Milestones 1, 1b, 2 and **3 (driving and the carjack loop)** are built. Milestones 1–2 went through PRs #2, #4 and #5. Milestone 3 and the UI fixes of 2026-10-11 were **pushed straight to `main` at your request** (no PR), so `https://mock-10.github.io/greyhaven/` has everything once the deploy workflow finishes.
+- **Next:** first the **milestone 3 follow-ups** you asked for (list below), then **milestone 4** (police 1–2★, saves, a few pedestrians and traffic), which closes Phase 1. Phase 2 stays parked until Phase 1 is done.
+- **The Downtown map is a test map, not the final city.** The final city is a dense open world of about 320 × 320 tiles with a hood district, open fields and woods (docs/01, built in Phase 6).
+- **Communication preference (2026-10-11):** you asked for fewer progress messages while I work. Still send images and important updates. You may switch back later.
 
-**Decisions of 2026-10-11 (question round before milestone 1b)**
-- Walk 48 units/s, sprint 2.3× (about 3.4 tiles/s), tuned by feel. *Done.*
-- Curves are built as **vector-baked ground** (docs/14 "Vector ground").
-- Curved features in the test Downtown: a **curved plaza at Pellridge Tower** and a **bending street**, plus rounded kerbs and curved planters and walls.
-- Infill buildings and shopfronts are **facades only**.
-- The **3 × 3 density rule** is approved and binding (docs/01).
-- Idle and interact animations stay single poses until **Phase 8 (Polish)**.
-- The corner store **sells a few basics** in Phase 1: snacks that heal and a fuel can, clean cash only (docs/18).
-- **All milestone 1 and milestone 2 assumptions are approved** (start Monday 07:00 with $250, opening hours, STAFF ONLY door, shift XP rounding, XP carry-over, filing and data-entry sizes).
-- Town target raised to **320 × 320 tiles**, with a **hood district** and large plain grass areas to fill in later; open fields and woods stay (docs/01, docs/15 Phase 6).
+**Milestone 3 follow-ups (your feedback, 2026-10-11) — not done yet, do these first**
+1. **Gas station canopy:** the roof clips into the car and sits too low. Rebuild `fuel_canopy` (`art/source/infill.py`) as a real station roof, high enough to drive under, on tall posts. When the player or the car is under it, it should fade (occlusion) so the pumps stay visible.
+2. **Gas station kiosk faces the wrong way:** its front faces away from the pumps. Turn it so the door and windows face the forecourt (`block_se` in `art/source/downtown_map.py`, `fuel_kiosk` in `infill.py`). The forecourt is also cramped against the south map edge, so consider giving the station more room (see the questions).
+3. **Replace the cash-count minigame** (Dez's laundering) with something else, such as **dragging bills into a bag**. Ask before building it (see the questions).
+4. **Chop shop yard sale spot:** Marlo gets his own yard section with a **white dotted rectangle** parking spot in the back yard. You sell a car by parking in that spot (not at the front door as now).
+5. **Each car type pays a different amount** at the chop shop, depending on the type of car (today every car uses the one $150–400 range, scaled by damage).
 
-**Milestone 1b, the Downtown rework (your feedback, 2026-10-10) — built 2026-10-11, see the milestone 1b notes below**
-Your words, after playing milestone 1: *"The player when sprinting feels still too slow for such a vast and open world. Driving will be a portion implemented later on of course. The entire map feels lackluster and desolate with a lot of empty space. For example stores have huge portions of repeated sidewalk/concrete and the design feels very open space but lacks any level of details with decorations. Implement a lot more decorations, close the space, and process it like an actual city as opposed to such vast empty spaces. The map also feels very squared off and boxed like although this is only a small section being drafted and shown right now. I'd like for rounded corners or streets with more curved turns and an increased addition of curved spaces and geometry as seen fit going with the look and feel of the game."*
+**Earlier tweaks still on hold**
+- Remembered-room dimming (docs/19): **switched off until the end (Phase 8)**, as you asked. `BALANCE.interiors.rememberedDimming = false`; the data is still recorded. Turn it back on in Phase 8.
+- Idle and interact animations: Phase 8 (decided 2026-10-11).
+- The 320 × 320 city: Phase 6.
 
-The binding rules are now in `docs/01_world_and_time.md` ("Street layout and density"), `CLAUDE.md` (hard rule 7) and the street art list in `docs/13`. The work:
-1. **Faster on foot.** Done 2026-10-11: walking 48 units/s, sprinting 2.3×, walk cycle 18 fps (×1.8 sprinting) so the feet don't slide.
-2. **Close the space.**
-   - Rework `src/maps/downtown.ts` into a real city block pattern:
-     - tighter blocks, with buildings fronting the sidewalk;
-     - infill buildings and shopfronts, plus alleys between them;
-     - parking lots smaller and edged with planters, fences or low walls;
-     - no wide strips of plain concrete in front of the stores.
-   - Keep the approved names and the five buildings with doors, plus the Phase 1 needs: a parking lot with cars to steal, the chop shop at the edge, and room for police and traffic later.
-3. **Decorate densely.** Add many more street props, made with `art/source` (`decor.py` / `env.py`). Examples: bus stops, newspaper boxes, phone booths, bike racks, café tables with awnings, kiosks, alley clutter (dumpsters, pallets, crates, pipes, AC units), wall posters, fences, tree pits and grates. Break up the repeated paving with variants, patterns, cracks, puddles and kerb details.
-4. **Curves.** Round the street corners, add the curved Pellridge plaza and a bending street, plus curved planters and walls where they fit. Built as vector-baked ground (decided): material swatches from `art/source/ground2d.py`, shapes in world units. Collision for curves uses footprint polygons in world units (docs/14).
-5. **Draft first.** This is a big visual change. Before building it in the game, render a draft of the new Downtown with `art/source` (like the reference scenes and the interior drafts) and get your approval.
-6. Then check it in the game with Playwright screenshots (day and night), compare them with the reference scenes and the approved draft, update tests and the smoke test (the building positions change), open a PR, and check the Pages build after merge.
-
-Then continue with milestone 2 below (on a branch from `main` once 1b is merged).
-
-**Next steps (milestone 2, in order)**
-1. **Minigame overlay scene** (`MinigameScene`): it dims the world by 35%, shows a 176 × 128 panel matching `art/drafts/hud/` (the lockpick mockup) and a gold title at 2×. Draw the filing and data-entry panels with `src/ui/hudDraw.ts`. Job tasks pause the world.
-2. **Interior area:** split `WorldScene` into the shared parts (player, camera, interaction, HUD feed) and two area views, street and interior, with a fade between them.
-   - Loading and depth: load `art/interiors/<id>.json`. The floor goes in the ground layer, walls at the back, stubs on top, segments at depth x + y − 2, items at x + y + zBias. Use footprint-aware depth for the player against box-shadow items and wall segments.
-   - Collision: the room edges, partitions minus their gaps, closed doors, and furniture footprints.
-   - Doors: OPEN / CLOSE DOOR prompts, and LOCKED shown in red. Door rules follow `data/interiors.ts` (open, locked, key card at rank 2, staff hours).
-   - Moving between areas: the exit at the entrance, elevator links between the lobby and floor 4, and opening hours on street doors. After hours, the tower needs the key card. The chop shop says "MARLO: COME BACK WITH A CAR."
-   - NPCs appear according to their hours.
-3. **Sight rendering** (docs/19):
-   - dithered lids over unseen cells;
-   - remembered cells dimmed;
-   - back walls darkened above rooms you can't see;
-   - lavender NPC "ghosts" at 40%;
-   - 150 ms fades;
-   - the **sight lines** setting turns all of this off;
-   - remembered rooms kept in the game state.
-4. **Office job in game:** clock in with Ms. Hollis, then 3 tasks at the filing cabinets and your desk, then clock out for pay, XP and rank, with objective lines and phone toasts. Rank 2 gives the key card (after-hours lobby and the server room).
-5. **Sleep** in the apartment: skip to 06:00 the next day. Autosave arrives with saves in milestone 4.
-6. Unit and e2e tests for the above, screenshots in `docs/screenshots/phase1_m2/` compared with the drafts, the milestone 2 notes below, a PR, and a Pages check after merge.
-
-**Tweaks you asked for**
-- "Animations are a bit stiff" (after Phase 0): **done in milestone 1**. There is now an 8-frame walk and sprint cycle, with new in-between poses. Idle and interact poses: deferred to Phase 8 (decided 2026-10-11).
-- Dez's back room made bigger, with bills and laundering clutter on the floor and tables: **done**, and the draft was approved.
-- Check every draft for furniture facing the right way and for overlaps or clipping: **done**. `art/source/check_layout.py` now checks this automatically, and all three drafts pass with 0 issues.
-- **Outstanding (2026-10-10, after milestone 1): sprinting too slow, Downtown too empty and open, too boxy. Wanted: more decoration, a closed-in city feel, rounded corners and curved streets.** Not done yet. It is milestone 1b above.
-
-**Questions**
-- Answered 2026-10-11: corner store basics (yes), assumptions (all approved).
-- Still open from docs/16, but **not needed yet**: names and looks for the rival crew (3 options, needed by Phase 5), an outline of each story chain before it is written, and the hood district's name and details (Phase 6).
+**Questions I owe you (ask before building the follow-ups)**
+- **Chop prices:** docs/04 says a parked car is worth **$150–400** at the chop shop, but docs/08 says the chop shop pays **15–30% of the car's value** (a $5,000 sedan would then fetch $750–1,500). Which rule wins, and what should each Phase 1 type pay (sedan, taxi, van)?
+- **Which cars can be stolen in Phase 1?** The roadmap says "one sedan model", so only the 3 sedans in the store lot can be stolen now; the taxi and the white van stay parked props. Should the taxi and van be stealable too (they'd need their own stats)?
+- **The bag minigame:** how should it be graded? Ideas: drag stacks of bills into the bag before a timer runs out; dropped or torn bills cost a %; dirty dye-stained bills must be left out. Click-drag only, or also keys?
+- **Chop yard sale:** park in the dotted spot and press E to sell (with Marlo walking up), or does stopping in the spot sell automatically? Should Marlo's yard open only at certain hours?
+- **Gas station placement:** keep it on the south-east block of the test map (cramped against the map edge) or move it to a bigger lot?
+- Still open from docs/16, **not needed yet:** names and looks for the rival crew (Phase 5), an outline of each story chain before it is written, the hood district's name and details (Phase 6).
 
 **Session notes for whoever picks this up**
-- npm goes through the proxy. Before `npm`, `npx vite preview` or Playwright, set `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1`. Playwright uses the pre-installed Chromium (`/opt/pw-browsers`), so don't run `playwright install` locally.
-- `npm run shots` starts its own preview server and kills it afterwards. Don't use `pkill -f "vite preview"`, because it also kills the calling shell.
-- Interior art pipeline: edit `art/source/rooms.py` → `python3 art/source/check_layout.py` (must report 0 issues) → `python3 art/source/export_interiors.py` → commit `art/interiors/*`.
-- The simulation runs on `game.loop.rawDelta`, because Phaser's smoothed delta crawls in headless Chromium.
-- City map pipeline (milestone 1b): edit `art/source/downtown_map.py` → `python3 downtown_map.py` (writes `src/maps/downtown.json` and the drafts; takes about a minute) → `python3 check_city.py` (must report 0 issues) → `python3 pack_city.py` (city atlas + ground swatches). If the ground rules in `ground_vec.py` change, re-run `python3 make_ground_fixture.py` so the parity test follows. The sprite cache (`art/source/cache/`) is not committed, so a fresh session renders sprites once (a few minutes).
+- npm goes through the proxy. Before `npm`, `npx vite preview` or Playwright, set `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1`. Playwright uses the pre-installed Chromium (`/opt/pw-browsers`) with `--use-gl=angle --use-angle=swiftshader`; don't run `playwright install`.
+- `npm run shots` starts and stops its own preview server. **Never** use `pkill -f "vite preview"` or `pgrep -f`: they kill the calling shell. Find the PID with `ps -eo pid,args | grep "[n]ode.*vite preview"`.
+- Debug hook (`window.__DL__`, read-only) now also exposes `dirty`, `driving`, `cars` (position, heading, speed, fuel, health, locked, running) and `minigameState` (the open minigame's logic, so tests can play it like a person: time the space bar to the needle, join wires by colour). Cheats are never read from the URL.
+- Interior art pipeline: edit `art/source/rooms.py` → `python3 art/source/check_layout.py` (0 issues) → `python3 art/source/export_interiors.py` → commit `art/interiors/*`.
+- City map pipeline: edit `art/source/downtown_map.py` → `python3 downtown_map.py` (writes `src/maps/downtown.json` and the drafts, about a minute; `--no-render` writes only the JSON) → `python3 check_city.py` (0 issues) → `python3 pack_city.py` (city atlas + ground swatches). If `ground_vec.py` changes, re-run `python3 make_ground_fixture.py`. The sprite cache (`art/source/cache/`) isn't committed, so a fresh session renders sprites once (a few minutes).
+- **The drafts in `art/drafts/downtown/` were not re-rendered** after the gas station went in. Run `python3 downtown_map.py --procs 4` once the station is redone.
+- The simulation runs on `game.loop.rawDelta`, because Phaser's smoothed delta crawls in headless Chromium. In slow frames Phaser can hand the same key event over more than once; `MinigameScene` ignores repeats (a `WeakSet` of handled events).
 
 ## Phase 1 — Vertical slice (in progress)
 
@@ -160,7 +116,7 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - [x] Corner store basics: chips, sandwich (heal), fuel can, clean cash only.
 - [x] Tests (114 unit, 9 e2e), screenshots in `docs/screenshots/phase1_m2/`, notes, PR.
 
-### Milestone 2 notes (in progress)
+### Milestone 2 notes (merged in PR #5)
 **Assumptions (approved 2026-10-11):**
 - Opening hours: corner store 07:00–21:00, Pellridge Tower 08:00–18:00, The Low Tide 16:00–02:00, with Dez in the back room 18:00–02:00 (all from docs/18). Outside opening hours the street door is locked. The tower lets you in after hours only with the rank 2 key card.
 - Dez's back-room door opens only while Dez is in (18:00–02:00). At other times it shows "STAFF ONLY". The store's back-room door stays locked in Phase 1, because robbery comes in Phase 3.
@@ -188,9 +144,51 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - Camera fades are slow in headless Chromium (the e2e tests wait for them); real browsers are fine.
 - No save yet (milestone 4): sleeping says so.
 
-### Milestone 3: driving and the carjack loop
-- [ ] One sedan with arcade handling, fuel and basic damage; enter and exit (F).
-- [ ] Carjacking a parked car: lockpick and hotwire minigames; sell it at the chop shop for dirty money; launder at Dez's.
+### Milestone 3: driving and the carjack loop (built 2026-10-11, pushed to `main`)
+- [x] One sedan with arcade handling, fuel and basic damage; enter and exit (F).
+- [x] Carjacking a parked car: lockpick and hotwire minigames; sell it at the chop shop for dirty money; launder at Dez's.
+- [x] Fuel station (your request): Pump & Go on Millwright Road with two pumps (REFUEL, clean cash, $3 a unit), the jerry can from the store works on foot (E USE FUEL CAN).
+- [x] UI fixes (your request): remembered-room dimming put on hold; filing panel re-laid out (no overlapping text); shop redesigned as item cards with icons (soda can, chips, sandwich, fuel can); every pop-up panel draggable by its top strip; an automatic overlap check for every panel and the HUD.
+- [x] Tests (134 unit, 10 e2e including a full lockpick → hotwire → drive run), screenshots in `docs/screenshots/phase1_m3/`, notes.
+- [ ] Follow-ups from your review (see the handover): taller gas station canopy that fades, kiosk facing the pumps, a bag minigame instead of the cash count, a dotted sale spot in Marlo's back yard, prices by car type.
+
+### Milestone 3 notes
+**How to try:** walk to the parking lot behind Open Most Hours (`?scene=world&x=841&y=184`). Stand by a sedan: **E LOCKPICK** opens the dial (space when the needle is in the zone). Then **F** hotwires it (press a wire 1–4, then its colour A/S/D/F). Drive with **W/S** (throttle and brake or reverse), **A/D** to steer, **Space** for the handbrake, **F** to get out (below walking pace). Fill up at **Pump & Go** in the south-east (E REFUEL beside a pump). Drive to **Marlo's Tow & Salvage** on Drizzle Row: **E SELL CAR TO MARLO** pays dirty cash. After 18:00, take it to Dez in the back room of **The Low Tide** (E LAUNDER, then count the bills: space counts, B bands each 10). Panels can be dragged by their top strip.
+
+**Built:**
+- `src/systems/vehicle.ts`: the car model (heading, speed, fuel, health, locked, running, hot until, wrecked), arcade driving with steering that tightens at low speed and flips in reverse, handbrake, collision against the street and other cars (slides along walls on glancing hits, bounces on head-on hits, damage by impact speed, limping below 25%, wrecked at 0), refuel, fuel can, chop price, exit spots.
+- `src/systems/laundering.ts`: Dez's 35% cut plus the money-count penalty, the $1,500 daily cap.
+- In the world: the 3 sedans in the store lot are real cars with moving shadows, depth among the static objects, the gold rim and prompts (LOCKPICK, HOTWIRE, GET IN, USE FUEL CAN, WRECKED). The camera leads ahead of the car by up to 3 tiles. Tall things in front of the car fade. Pumps and Marlo's door can be used from the driver's seat.
+- New HUD car readout (fuel, condition, speed) and driving key hints.
+- Minigame panels: lockpick dial (matches the mockup), hotwire wires, money count, shop cards with item icons, all in `src/ui/panels.ts` (pure code, layout-tested) and draggable in `MinigameScene`.
+- New art made with `art/source/`: `gas_pump` (street.py), `fuel_canopy` and `fuel_kiosk` with night variants (infill.py), item icons (hud.py).
+
+**Assumptions (please review):**
+- Lockpicking a parked car is tier 0 and needs no tool (docs/04 tier 0). A failed pick sets off the alarm 30% of the time (docs/05); until the police exist (milestone 4) the alarm is only a phone message. Otherwise you can try again.
+- A failed hotwire only costs the attempt (sparks); you can try again. A hotwired car stays running.
+- Crime minigames pause the world, like job tasks, until the police arrive in milestone 4.
+- F gets into the nearest unlocked car within 40 units. You can only get out below 40 units/s, beside the doors first.
+- E on an unlocked car pours a fuel can when you have one and the tank has room for 10 units; otherwise the prompt is F GET IN.
+- A pump fills as much as the tank takes and your clean cash allows (no amount choice). Pumps reach a car within 64 units; Marlo buys a stolen car within 96 units of his door, while you drive it or parked there.
+- Chop price: $150–400 (docs/04) times a condition factor of 40%–100%. The car is removed after the sale.
+- Laundering washes all your dirty cash up to the day's remaining cap in one count. Extra cut by grade: excellent 0, good 2%, OK 5%, poor 10%, fail 15%. Quitting with Esc washes nothing.
+- Bumps under 40 units/s do no damage; glancing hits slide along walls.
+- Parked cars start with 35% fuel. Stolen cars are marked hot for 2 days (used by the police in milestone 4).
+- Keys pressed in a panel are ignored by the world for 300 ms after it closes (the hotwire's F terminal would otherwise also get you out of the car).
+- Soda added to the store ($3, +5 HP) so the shop has four cards.
+
+**Art debt:** none. All new art was generated with `art/source/`. (The gas station canopy and kiosk need a rework, see the follow-ups.)
+
+**Known issues:**
+- **Gas station:** the canopy roof is too low and clips into the car; the kiosk faces away from the pumps; the forecourt is cramped against the south map edge, so a car parked at the pumps can hide one of them. (Follow-ups 1–2.)
+- The money count is to be replaced (follow-up 3). Before the fix this session, fast key presses in slow frames could count several times; that is fixed.
+- No smoke below 50%, no fire below 25% and no explosion at 0 health yet (docs/08); a wrecked car just stops and stays.
+- The car alarm and the hot status have no effect until the police exist (milestone 4).
+- Cars, the car you drive and the day's laundering live in the game state (`vehicles`, `driving`, `laundered`), but there are no saves yet (milestone 4). SAVE_VERSION starts with milestone 4, so no migration was needed.
+- Only the 3 sedans can be stolen; the lot's taxi and van and Marlo's junk cars are props (see the questions).
+- The key-hint labels at the bottom right are hard to read over light pavement (muted text without a plate).
+- World prompts near the screen edge can sit under a HUD panel.
+- The `art/drafts/downtown/` drafts don't show the gas station yet.
 
 ### Milestone 4: police, saves, crowd
 - [ ] Wanted 1–2★: witnesses with the call delay, one police car and officers, search circle, escape timer, arrest with surrender, fine, first-offense rule.

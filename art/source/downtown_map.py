@@ -273,11 +273,14 @@ def segments(kind, pts, closed=False):
                    'fp': _fp_box(p[0], p[1], hx, hy)})
 
 
-def car(name, x, y, dir, interact=None):
+def car(name, x, y, dir, interact=None, parked=False):
+    """A car. `parked` cars can be stolen and driven (milestone 3): the game turns them into vehicles."""
     along_y = dir in (2, 6)
     hx, hy = (16, 40) if along_y else (40, 16)
     p = {'sprite': f'veh/{name}', 'dir': dir, 'x': x, 'y': y, 'shadow': {'kind': 'box', 'hx': hx, 'hy': hy, 'h': 22},
          'solid': True, 'fp': _fp_box(x, y, hx, hy)}
+    if parked:
+        p['parked'] = True
     PL.append(p)
     return p
 
@@ -548,7 +551,7 @@ def block_n():
     segments('wall_brick', [[tc(24.1), tc(4.4)], [tc(24.1), tc(7.3)]])
     for name, x, y, dr in (('sedan_lav', 24.9, 5.75, 2), ('sedan_teal', 27.7, 5.75, 2), ('van_white', 30.5, 5.8, 2),
                            ('sedan_clay', 26.3, 11.75, 6), ('taxi', 29.1, 11.75, 6)):
-        car(name, tc(x) + 0.0, tc(y), dr)
+        car(name, tc(x) + 0.0, tc(y), dr, parked=name.startswith('sedan'))
     prop('lamp', tc(28.0), tc(9.0)); prop('trash_can', tc(31.5), tc(8.3))
     # north edge: a walk-up, the hardware store facing the lot, bins
     building('walkup_tan', tc(25.4), tc(2.0), 0)

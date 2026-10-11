@@ -8,6 +8,9 @@ export const KEYS = {
   recenter: 'C',
   use: 'E',
   cycle: 'TAB',
+  /** Get in and out of cars (docs/11). */
+  vehicle: 'F',
+  handbrake: 'SPACE',
   debugOverlay: 'F3',
   /** Sight lines on/off (docs/19) until the settings menu exists. */
   sightLines: 'L',

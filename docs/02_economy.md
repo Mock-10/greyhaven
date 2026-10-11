@@ -39,7 +39,7 @@ Fronts launder automatically each night from the hideout stash, up to their capa
 |---|---|---|---|---|---|
 | $1,500 | $5,000 | $9,000 | $7,000 | $25,000 | $40,000 |
 
-**Corner store basics (Phase 1, decided 2026-10-11)**, clean cash only: chips $6 (+10 HP), sandwich $12 (+25 HP), fuel can $40 (10 units, docs/08). Food is eaten on the spot. The full shop catalogue arrives in Phase 2.
+**Corner store basics (Phase 1, decided 2026-10-11)**, clean cash only: soda $3 (+5 HP), chips $6 (+10 HP), sandwich $12 (+25 HP), fuel can $40 (10 units, docs/08). Food is eaten on the spot. The full shop catalogue arrives in Phase 2.
 
 **Property and hideout add-ons**: see 09.
 **Weapons and ammo**: see 07.

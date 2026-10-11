@@ -26,6 +26,8 @@ export interface Placement {
   solid?: boolean;
   /** The sprite has a lit-window `_night` variant that glows after dark. */
   night?: boolean;
+  /** A car that can be stolen and driven (milestone 3); the game makes it a vehicle instead of a static sprite. */
+  parked?: boolean;
   /** Something the player can use with E (shows the gold rim in range and a prompt when targeted). */
   interact?: { id: string; label: string };
 }

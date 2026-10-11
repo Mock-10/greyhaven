@@ -116,6 +116,8 @@ export const BALANCE = {
       /** Half length and half width of the body for collision. */
       halfLength: 38,
       halfWidth: 15,
+      /** Height of the body for its moving ground shadow. */
+      shadowHeight: 22,
       health: 100,
       /** docs/08: a sedan tank holds 40 units, about 15 real minutes of full throttle. */
       tank: 40,
@@ -123,6 +125,10 @@ export const BALANCE = {
     },
     /** Damage per unit of impact speed; below these healths the car smokes / loses 30% top speed (docs/08). */
     damagePerSpeed: 0.12,
+    /** Bumps slower than this do no damage (parking, scraping a wall). */
+    minImpactSpeed: 40,
+    /** A blocked car slides along a wall when at least this share of its heading runs along it. */
+    slideMinShare: 0.5,
     smokeBelow: 50,
     limpBelow: 25,
     limpFactor: 0.7,
@@ -137,6 +143,12 @@ export const BALANCE = {
     canUnits: 10,
     /** Camera leads the car by up to this many tiles in its direction of travel (docs/11). */
     cameraLeadTiles: 3,
+    /** How fast the look-ahead catches up (per second). */
+    cameraLeadRate: 2,
+    /** Getting out only below this speed (units per second). */
+    exitMaxSpeed: 40,
+    /** A crash this fast or harder gets a phone message when it wrecks the car. */
+    crashToastSpeed: 30,
     /** Starting fuel of a parked car, as a share of the tank. */
     parkedFuel: 0.35,
   },
@@ -196,6 +208,9 @@ export const BALANCE = {
     /** Among objects in range, prefer the one most in front of the player: weight of facing vs distance. */
     facingWeight: 0.6,
   },
+
+  /** Input: keys pressed inside a minigame panel are ignored by the world this long after it closes. */
+  ui: { keyGuardMs: 300 },
 
   hud: {
     /** Phone messages stay this long, then slide out (docs/11). */
