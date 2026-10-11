@@ -325,6 +325,9 @@ export const BALANCE = {
     /** The silhouette drawn where the player or car is hidden (2026-10-11): muted lavender (docs/19's ghost colour),
      *  and the size of its mask texture in art px (bigger than any car or person sprite cell). */
     silhouette: { colour: 0x8a82a8, alpha: 0.6, maskSize: 192 },
+    /** Enterable buildings (2026-10-11): a gold 1 px outline, shown faintly within `nearTiles` of the door and
+     *  brightly when the door is targeted. A door belongs to the building whose footprint is within `doorReach`. */
+    entrance: { nearTiles: 7, idleAlpha: 0.45, hoverAlpha: 0.95, fadeRate: 6, doorReach: 24 },
     /** Interactable idle shimmer frame rate (STYLE_GUIDE: about 6 fps). */
     shimmerFps: 6,
     /** Ground chunks are baked in blocks of this many tiles per side. */

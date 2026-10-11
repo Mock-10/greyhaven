@@ -73,6 +73,7 @@ The generator is `art/source/hud.py` (with `pixfont.py`), and the shapes, colour
 - **Occlusion (reworked 2026-10-11):** anything in front of the player (or the car you drive) whose pixels hide at least 12% of them fades to 35% opacity, whatever its height (kerb-high things excepted); thin lamp posts and the empty corners of a tree's sprite don't count. Where the player or car is still hidden, a **silhouette** in muted lavender shows through (WebGL). This is essential for the Project Zomboid feel.
 - **Overhead roofs** (the fuel canopy) draw over whatever stands under them and fade as you get close.
 - **Sorting of moving things:** cars, the player and NPCs are sorted against each other by their turned footprints (the one on the far side of a separating line draws first), within the order of the static objects around them.
+- **Enterable buildings** get a 1 px gold outline (gold because doors are interactables): faint within about 7 tiles of the door, bright when the door is targeted.
 - **World prompts** stay clear of the HUD: below the top panels, above the objective and hint strip, off the radar. The key hints sit on a plate.
 
 ## Character creator (new game)

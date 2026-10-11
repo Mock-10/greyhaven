@@ -11,6 +11,7 @@ import { createState, loadSettings, saveSettings, type GameState, type Settings 
 import { framePixels, frameInfo, opaqueAt } from '../assets/atlasLoader';
 import type { AtlasKey } from '../assets/manifest';
 import { highlight, HIGHLIGHT_PAD } from '../assets/highlight';
+import { outlinePixels } from '../assets/outline';
 import { addPixelsTexture } from '../assets/runtimeTextures';
 import {
   buildingFrame,
@@ -316,6 +317,7 @@ export class WorldScene extends Phaser.Scene {
           door: null,
           hidden: true,
         });
+      this.createEntranceOutlines();
       this.createPlayer();
       this.createCars();
       this.createLamps();
@@ -868,7 +870,64 @@ export class WorldScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------- interaction
 
+  /** Buildings you can enter, each with the door that leads in and a gold 1 px outline around its sprite. */
+  private entrances: { id: string; door: Door; pl: Placed; img: Phaser.GameObjects.Image }[] = [];
+
+  /**
+   * Mark enterable buildings (user request, 2026-10-11): a subtle gold outline that fades in as you come near the
+   * building and brightens when its door is the one E would use.
+   */
+  private createEntranceOutlines(): void {
+    for (const d of this.map.doors ?? []) {
+      let best: { pl: Placed; dist: number } | null = null;
+      for (const pl of this.placed) {
+        if (!pl.placement.sprite.startsWith('bld/')) continue;
+        const [x0, y0, x1, y1] = footprintOf(pl.placement);
+        const dx = Math.max(x0 - d.x, 0, d.x - x1);
+        const dy = Math.max(y0 - d.y, 0, d.y - y1);
+        const dist = Math.hypot(dx, dy);
+        if (dist <= BALANCE.render.entrance.doorReach && (!best || dist < best.dist)) best = { pl, dist };
+      }
+      if (!best) continue;
+      const pl = best.pl;
+      const ref = pl.dayFrame;
+      const key = `outline:${ref.atlas}:${ref.frame}`;
+      if (!this.textures.exists(key)) {
+        const f = frameInfo(ref.atlas as AtlasKey, ref.frame);
+        const src = framePixels(this.textures, ref.atlas as AtlasKey, ref.frame);
+        addPixelsTexture(
+          this.textures,
+          key,
+          outlinePixels(src, [(PAL.goldMid >> 16) & 255, (PAL.goldMid >> 8) & 255, PAL.goldMid & 255]),
+          { ax: f.ax + 1, ay: f.ay + 1 },
+        );
+      }
+      const img = this.add
+        .image(pl.sprite.x, pl.sprite.y, key)
+        .setAlpha(0)
+        .setDepth(pl.sprite.depth + 0.0004);
+      this.objectLayer.add(img);
+      this.entrances.push({ id: `door:${d.target}`, door: d, pl, img });
+    }
+  }
+
+  private updateEntranceOutlines(dt: number): void {
+    const E = BALANCE.render.entrance;
+    const p = this.state.player;
+    for (const e of this.entrances) {
+      let want = 0;
+      if (!this.inside) {
+        if (this.target === e.id) want = E.hoverAlpha;
+        else if (Math.hypot(p.x - e.door.x, p.y - e.door.y) <= E.nearTiles * TILE) want = E.idleAlpha;
+      }
+      const a = e.img.alpha + (want - e.img.alpha) * Math.min(1, dt * E.fadeRate);
+      e.img.setAlpha(Math.min(Math.abs(a - want) < 0.01 ? want : a, e.pl.sprite.alpha));
+      e.img.setVisible(e.img.alpha > 0.01);
+    }
+  }
+
   private updateInteraction(dt: number): void {
+    this.updateEntranceOutlines(dt);
     if (!this.player || !this.playing) return;
     const p = this.state.player;
     const ang = (p.dir * Math.PI) / 4;

@@ -299,6 +299,24 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - The canopy roof also fades when you stand just behind it, not only under it (it covers you on screen there).
 - The money-count minigame is kept for counterfeit printing (Phase 5) but no longer used.
 
+### Milestone 3c: city variety, a wider gas station, entrance outlines (your requests, 2026-10-11)
+- [x] At least 10 new, diverse buildings: 12 made with `art/source/infill2.py` (diner, cinema, chapel, art-deco office, glass tower, brownstones, parking garage, hotel, library, fire station, round-cornered corner block, flower shop), each with a lit-window night variant, placed in place of repeated walk-ups and mid-rises.
+- [x] A wider Pump & Go: Gullsway moved 5 tiles east (map 70 × 48); two pump islands with four pumps under one wide canopy, a lane each side of each island; parking bays and an air post east of the canopy.
+- [x] Enterable buildings marked with a subtle gold outline (faint near the door, bright when the door is targeted).
+- [x] Tests (150 unit, 11 e2e), drafts re-rendered, screenshots in `docs/screenshots/phase1_m3c/`.
+
+**How to try:** walk Downtown: the cinema, the diner and the flower shop on Overcast Avenue, the round-cornered block and the glass tower at Gullsway, the hotel on Ledger Lane, the library on Drizzle Row, the chapel on Pewter Street, the brownstones by the plaza, the parking garage and fire station south of Drizzle Row. Walk up to The Low Tide or Open Most Hours: a thin gold edge appears around the building. Drive into Pump & Go: four pumps now, room for a car at each.
+
+**Assumptions (please review):**
+- The new buildings are facades (not enterable), like the other infill. Their signs use plain words (DINER, CINEMA, NOW SHOWING, HOTEL, LIBRARY, FIRE STATION, FLOWERS, P), so no new names needed approval.
+- Buildings across a street still show their backs (the fire station and parking garage face Drizzle Row, so you see their backs from the south).
+- The outline is gold, the interactable colour; the door hotspot keeps its prompt as before. Marlo's shop is outlined too (its door talks).
+
+**Art debt:** none.
+
+**Known issues:**
+- The parking garage's parked cars are simple shapes, readable only up close.
+
 ### Milestone 4: police, saves, crowd
 - [ ] A small Greyhaven PD precinct on the test map.
 - [ ] Wanted 1–2★: witnesses with the call delay, one police car and officers from the precinct, search circle, escape timer, arrest with surrender, fine, first-offense rule, arrest screen.

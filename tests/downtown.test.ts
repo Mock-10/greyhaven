@@ -8,7 +8,7 @@ import { groundSampler } from '../src/maps/groundQuery';
 import type { Placement } from '../src/maps/types';
 
 const T = 32;
-const NW = 64;
+const NW = 70;
 const NH = 48;
 const ground = groundSampler(DOWNTOWN);
 const ROAD = new Set(['asphalt', 'asphalt_wet', 'paint_white', 'paint_gold', 'iron']);
@@ -39,7 +39,7 @@ const solidsHit = (x: number, y: number, r = 6) =>
   });
 
 describe('Downtown map (vector ground)', () => {
-  it('is 64 x 48 tiles of known ground materials', () => {
+  it('is 70 x 48 tiles of known ground materials', () => {
     expect(DOWNTOWN.width).toBe(NW);
     expect(DOWNTOWN.height).toBe(NH);
     const known = new Set(groundJson.materials.map((m) => m.name));
@@ -168,7 +168,7 @@ describe('Downtown map (vector ground)', () => {
     expect(roof.solid).toBe(false);
     expect(DOWNTOWN.placements.filter((p) => p.sprite === 'bld/canopy_post').length).toBe(4);
     const pumps = DOWNTOWN.placements.filter((p) => p.interact?.id.startsWith('pump'));
-    expect(pumps.length).toBe(2);
+    expect(pumps.length).toBe(4);
     const kiosk = DOWNTOWN.placements.find((p) => p.sprite === 'bld/fuel_kiosk')!;
     // the kiosk's front (+y) faces the pumps
     expect(kiosk.dir).toBe(0);
