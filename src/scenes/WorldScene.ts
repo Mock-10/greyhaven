@@ -14,6 +14,7 @@ import { addPixelsTexture } from '../assets/runtimeTextures';
 import {
   buildingFrame,
   characterFrame,
+  cityFrame,
   hasNightVariant,
   interactableFrame,
   poseFromWalk,
@@ -35,6 +36,8 @@ import {
 } from '../iso/projection';
 import { rasterizeShadows, shadowAlpha, shadowShape, type Rect } from '../iso/shadows';
 import { GroundRenderer } from '../iso/tilemap';
+import { VectorGroundRenderer } from '../iso/vectorGroundRenderer';
+import { depthAmong, staticOrder, type Box } from '../iso/staticDepth';
 import { DOWNTOWN } from '../maps/downtown';
 import { tileSeed as referenceSeed, TEST_MAP } from '../maps/testMap';
 import type { Door, MapData, Placement } from '../maps/types';
@@ -60,12 +63,27 @@ interface Placed {
 }
 
 interface Solid {
-  kind: 'box' | 'circle';
+  kind: 'box' | 'circle' | 'obox';
   x: number;
   y: number;
   hx: number;
   hy: number;
   r: number;
+  /** Rotation of an 'obox' (radians). */
+  ang?: number;
+}
+
+/** Ground footprint used for depth sorting (art/source/downtown_map.py `fp`): trees sort by their trunk. */
+export function footprintOf(p: Placement): Box {
+  const s = p.shadow;
+  if (s.kind === 'box') return [p.x - s.hx, p.y - s.hy, p.x + s.hx, p.y + s.hy];
+  if (s.kind === 'obox') {
+    const ex = Math.abs(s.hx * Math.cos(s.ang)) + Math.abs(s.hy * Math.sin(s.ang));
+    const ey = Math.abs(s.hx * Math.sin(s.ang)) + Math.abs(s.hy * Math.cos(s.ang));
+    return [p.x - ex, p.y - ey, p.x + ex, p.y + ey];
+  }
+  const r = /^prop\/(tree|pine)/.test(p.sprite) ? 4 : s.r;
+  return [p.x - r, p.y - r, p.x + r, p.y + r];
 }
 
 /** Something E can be used on: a placed object or a street door. */
@@ -105,12 +123,14 @@ export class WorldScene extends Phaser.Scene {
   private map!: MapData;
   private state!: GameState;
   private step = new FixedStep(BALANCE.sim.tickHz, BALANCE.sim.maxFrameSeconds);
-  private ground!: GroundRenderer;
+  private ground!: GroundRenderer | VectorGroundRenderer;
+  /** City maps: static objects with their footprints, for slotting moving objects into the depth order. */
+  private statics: { fp: Box; depth: number; bounds: Rect }[] = [];
   private groundLayer!: Phaser.GameObjects.Layer;
   private objectLayer!: Phaser.GameObjects.Layer;
   private overlayLayer!: Phaser.GameObjects.Layer;
   private placed: Placed[] = [];
-  private footprints: { fp: Footprint; bounds: Rect }[] = [];
+  private footprints: { fp: Footprint; bounds: Rect; sprite: string }[] = [];
   private solids: Solid[] = [];
   private usables: Usable[] = [];
   private lamps: { halo: Phaser.GameObjects.Image; pool: Phaser.GameObjects.Image }[] = [];
@@ -151,6 +171,7 @@ export class WorldScene extends Phaser.Scene {
       params.minute ?? undefined,
     );
     this.placed = [];
+    this.statics = [];
     this.footprints = [];
     this.solids = [];
     this.usables = [];
@@ -171,11 +192,14 @@ export class WorldScene extends Phaser.Scene {
 
     const shapes = this.map.placements.map((p) => shadowShape(p.x, p.y, p.shadow, SHADOW_VALUES));
     const seedFor = this.isReference ? referenceSeed : (i: number, j: number) => (i * 31 + j * 17) % 7;
-    this.ground = new GroundRenderer(this, this.map, seedFor, shapes, this.groundLayer);
+    this.ground = this.map.ground
+      ? new VectorGroundRenderer(this, this.map, shapes, this.groundLayer)
+      : new GroundRenderer(this, this.map, seedFor, shapes, this.groundLayer);
 
     for (const p of this.map.placements) this.place(p);
+    if (this.map.ground) this.sortStatics();
     this.radarBuildings = this.footprints
-      .filter((f) => f.fp.maxX - f.fp.minX > 80)
+      .filter((f) => (this.map.ground ? f.sprite.startsWith('bld/') : f.fp.maxX - f.fp.minX > 80))
       .map((f) => ({
         x: (f.fp.minX + f.fp.maxX) / 2,
         y: (f.fp.minY + f.fp.maxY) / 2,
@@ -200,6 +224,8 @@ export class WorldScene extends Phaser.Scene {
       : () => this.playerScreen();
     this.camCtl = new CameraController(this, target, {
       zoom: this.params.zoom || this.settings.zoom || (this.isReference ? 1 : 0),
+      // the view stays over the map (open since Phase 0); the reference view is free
+      bounds: this.isReference ? undefined : this.ground.bounds,
     });
     this.scale.on(Phaser.Scale.Events.RESIZE, () => this.camCtl.onResize());
 
@@ -255,13 +281,15 @@ export class WorldScene extends Phaser.Scene {
 
   private frameFor(p: Placement, night = false): FrameRef {
     const [kind, name] = p.sprite.split('/') as [string, string];
+    const city = cityFrame(kind, night ? `${name}_night` : name, p.dir);
+    if (city) return city;
     switch (kind) {
       case 'bld':
         return buildingFrame(night ? `${name}_night` : name, p.dir);
       case 'prop':
         return propFrame(name);
       case 'char':
-        return characterFrame(name, poseFromWalk(p.walk), p.dir);
+        return characterFrame(name, poseFromWalk(p.walk ?? 0), p.dir);
       case 'veh':
         return vehicleFrame(name, p.dir);
       case 'int':
@@ -299,7 +327,7 @@ export class WorldScene extends Phaser.Scene {
     };
     const name = p.sprite.split('/')[1] as string;
     const nightFrame =
-      p.night && p.sprite.startsWith('bld/') && hasNightVariant(name) ? this.frameFor(p, true) : null;
+      p.night && p.sprite.startsWith('bld/') && hasNightVariant(name, p.dir) ? this.frameFor(p, true) : null;
     let glow: Phaser.GameObjects.Image | null = null;
     if (nightFrame) {
       const key = windowGlowTexture(this.textures, ref.atlas, ref.frame, nightFrame.frame, {
@@ -331,10 +359,31 @@ export class WorldScene extends Phaser.Scene {
       this.footprints.push({
         fp: { minX: p.x - hx, minY: p.y - hy, maxX: p.x + hx, maxY: p.y + hy, depth: depthOf(p.x, p.y) },
         bounds,
+        sprite: p.sprite,
       });
       if (p.solid) this.solids.push({ kind: 'box', x: p.x, y: p.y, hx, hy, r: 0 });
+    } else if (p.shadow.kind === 'obox') {
+      const { hx, hy, ang } = p.shadow;
+      if (p.solid) this.solids.push({ kind: 'obox', x: p.x, y: p.y, hx, hy, r: 0, ang });
     } else if (p.solid) {
       this.solids.push({ kind: 'circle', x: p.x, y: p.y, hx: 0, hy: 0, r: p.shadow.r });
+    }
+  }
+
+  /** City maps: order every static object topologically (staticDepth.ts) and use the rank as its depth. */
+  private sortStatics(): void {
+    const items = this.placed.map((pl) => ({ fp: footprintOf(pl.placement), bounds: pl.bounds }));
+    const rank = staticOrder(items);
+    this.placed.forEach((pl, i) => {
+      const d = rank[i] as number;
+      pl.sprite.setDepth(d);
+      pl.glow?.setDepth(d + 0.001);
+      this.statics.push({ fp: items[i]!.fp, depth: d, bounds: pl.bounds });
+    });
+    const byKey = new Map(this.placed.map((pl, i) => [pl, rank[i] as number]));
+    for (const f of this.footprints) {
+      const pl = this.placed.find((q) => q.bounds === f.bounds);
+      if (pl) f.fp.depth = byKey.get(pl) as number;
     }
   }
 
@@ -395,8 +444,10 @@ export class WorldScene extends Phaser.Scene {
     const tex = lampTextures(this.textures);
     for (const p of this.map.placements) {
       if (!p.lamp) continue;
-      // scene.py: the bulb sits 91 units up, 16.5 units along +y from the post's anchor; the pool is below it.
-      const bulb = worldToScreen(p.x, p.y + 16.5, 91);
+      // scene.py: the bulb sits 91 units up, 16.5 units along the lamp's local +y from the post; the pool is
+      // below it. The arm turns with the lamp's direction.
+      const a = (p.dir * Math.PI) / 4;
+      const bulb = worldToScreen(p.x - 16.5 * Math.sin(a), p.y + 16.5 * Math.cos(a), 91);
       const pool = this.add
         .image(Math.round(bulb.x), Math.round(bulb.y + 91), tex.pool)
         .setBlendMode(Phaser.BlendModes.ADD);
@@ -462,6 +513,15 @@ export class WorldScene extends Phaser.Scene {
         const cx = Math.max(s.x - s.hx, Math.min(x, s.x + s.hx));
         const cy = Math.max(s.y - s.hy, Math.min(y, s.y + s.hy));
         if ((x - cx) ** 2 + (y - cy) ** 2 < r * r) return true;
+      } else if (s.kind === 'obox') {
+        // into the box's own frame, then the same closest-point test
+        const ca = Math.cos(s.ang ?? 0);
+        const sa = Math.sin(s.ang ?? 0);
+        const u = (x - s.x) * ca + (y - s.y) * sa;
+        const v = -(x - s.x) * sa + (y - s.y) * ca;
+        const cu = Math.max(-s.hx, Math.min(u, s.hx));
+        const cv = Math.max(-s.hy, Math.min(v, s.hy));
+        if ((u - cu) ** 2 + (v - cv) ** 2 < r * r) return true;
       } else if ((x - s.x) ** 2 + (y - s.y) ** 2 < (r + s.r) ** 2) return true;
     }
     return false;
@@ -527,8 +587,15 @@ export class WorldScene extends Phaser.Scene {
         this.player.setTexture(ref.atlas, ref.frame);
     }
     const bounds = this.playerBounds();
-    const near = this.footprints.filter((f) => rectsOverlap(f.bounds, bounds)).map((f) => f.fp);
-    this.player.setDepth(depthAgainstFootprints(p.x, p.y, near));
+    if (this.map.ground) {
+      const r = BALANCE.walker.radius;
+      const fp: Box = [p.x - r, p.y - r, p.x + r, p.y + r];
+      const near = this.statics.filter((o) => rectsOverlap(o.bounds, bounds));
+      this.player.setDepth(depthAmong(fp, near, -1));
+    } else {
+      const near = this.footprints.filter((f) => rectsOverlap(f.bounds, bounds)).map((f) => f.fp);
+      this.player.setDepth(depthAgainstFootprints(p.x, p.y, near));
+    }
   }
 
   private playerBounds(): Rect {
@@ -624,8 +691,9 @@ export class WorldScene extends Phaser.Scene {
     const cueTint = tintAt(d, N.cueTint);
     this.ground.setTint(tintAt(d, N.tileTint));
     const lit = d >= BALANCE.clock.lightsOnDarkness;
+    const K = BALANCE.clock;
     const lightAlpha = lit
-      ? Math.min(1, (d - BALANCE.clock.lightsOnDarkness) / (1 - BALANCE.clock.lightsOnDarkness))
+      ? Math.min(1, K.lightsStartAlpha + (d - K.lightsOnDarkness) / K.lightsRampDarkness)
       : 0;
     for (const pl of this.placed) {
       pl.sprite.setTint(pl.cue && this.inRange.has(pl.placement.interact?.id ?? '') ? cueTint : objTint);
@@ -695,6 +763,20 @@ export class WorldScene extends Phaser.Scene {
           { x: s.x + s.hx, y: s.y + s.hy },
           { x: s.x - s.hx, y: s.y + s.hy },
         ].map((q) => worldToScreen(q.x, q.y));
+        g.strokePoints(pts, true);
+      } else if (s.kind === 'obox') {
+        const ca = Math.cos(s.ang ?? 0);
+        const sa = Math.sin(s.ang ?? 0);
+        const pts = [
+          [-1, -1],
+          [1, -1],
+          [1, 1],
+          [-1, 1],
+        ].map(([a, b]) => {
+          const u = (a as number) * s.hx;
+          const v = (b as number) * s.hy;
+          return worldToScreen(s.x + ca * u - sa * v, s.y + sa * u + ca * v);
+        });
         g.strokePoints(pts, true);
       } else {
         const c = worldToScreen(s.x, s.y);

@@ -61,7 +61,7 @@ export class GroundRenderer {
   }
 
   private tileFrameName(i: number, j: number): string {
-    const kind = this.map.tiles[i]?.[j];
+    const kind = this.map.tiles?.[i]?.[j];
     if (!kind) throw new Error(`no tile at ${i},${j}`);
     return tileFrame(kind, this.seedFor(i, j)).frame;
   }

@@ -31,6 +31,17 @@ for (const key of Object.keys(ATLASES.props.json.frames)) {
   if (name) propIndex.set(name, key);
 }
 
+const cityFrames = new Set(Object.keys(ATLASES.city.json.frames));
+
+/**
+ * City art (art/source/pack_city.py): street props in any direction, wall and fence segments in 16 directions,
+ * infill buildings and ground decals, keyed '<kind>/<name>/<dir>'. Null when the city atlas doesn't hold it.
+ */
+export function cityFrame(kind: string, name: string, dir: number): FrameRef | null {
+  const frame = `${kind}/${name}/${dir}`;
+  return cityFrames.has(frame) ? { atlas: 'city', frame } : null;
+}
+
 export function dirName(index: number): Dir {
   return DIRS[((index % 8) + 8) % 8] as Dir;
 }
@@ -46,8 +57,10 @@ export function buildingFrame(name: string, dir: number): FrameRef {
   return { atlas: buildings2.has(name) ? 'buildings2' : 'buildings', frame: `${name}/${dirName(dir)}` };
 }
 
-export function hasNightVariant(name: string): boolean {
-  return buildings2.has(`${name}_night`) || name === 'office_tower';
+export function hasNightVariant(name: string, dir = 0): boolean {
+  return (
+    buildings2.has(`${name}_night`) || name === 'office_tower' || cityFrames.has(`bld/${name}_night/${dir}`)
+  );
 }
 
 export function propFrame(name: string): FrameRef {

@@ -376,7 +376,7 @@ def lay_markings():
 def paving_patches():
     """Break the sidewalk paving up: cracked slabs, a few stains."""
     for b in BLOCKS.values():
-        for side in b.sidewalks:
+        for side in sorted(b.sidewalks):
             line = b.side_line(side, SWK / 2)
             for (p, d, t) in along(line, 72, start=30):
                 if RNG.random() < 0.55:

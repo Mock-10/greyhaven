@@ -24,19 +24,22 @@ const SHOTS: Shot[] = [
   { name: 'title', query: '?seed=1', width: 1280, height: 720 },
   { name: 'downtown_2x', query: '?scene=world&seed=1&zoom=2', width: 1280, height: 720 },
   { name: 'downtown_3x_1080p', query: '?scene=world&seed=1', width: 1920, height: 1080 },
-  { name: 'downtown_overview', query: '?scene=world&zoom=1&x=760&y=700', width: 2400, height: 1500 },
-  { name: 'downtown_dusk', query: '?scene=world&zoom=2&time=19:45&x=860&y=1180', width: 1280, height: 720 },
-  { name: 'downtown_night', query: '?scene=world&zoom=2&time=23:30&x=860&y=1180', width: 1280, height: 720 },
+  { name: 'downtown_overview', query: '?scene=world&zoom=1&x=768&y=768', width: 2400, height: 1500 },
+  { name: 'plaza_3x', query: '?scene=world&zoom=3&x=300&y=420', width: 1920, height: 1080 },
+  { name: 'bend_3x', query: '?scene=world&zoom=3&x=1180&y=900', width: 1920, height: 1080 },
+  { name: 'drizzle_row_2x', query: '?scene=world&zoom=2&x=700&y=1110', width: 1280, height: 720 },
+  { name: 'downtown_dusk', query: '?scene=world&zoom=2&time=19:45&x=860&y=1110', width: 1280, height: 720 },
+  { name: 'downtown_night', query: '?scene=world&zoom=2&time=23:30&x=300&y=440', width: 1280, height: 720 },
   {
     name: 'atm_target',
-    query: '?scene=world&zoom=3&x=432&y=410',
+    query: '?scene=world&zoom=3&x=300&y=318',
     width: 1280,
     height: 720,
-    hold: [['KeyD', 120]],
+    hold: [['KeyW', 120]],
   },
   {
     name: 'door_target',
-    query: '?scene=world&zoom=3&x=930&y=1095',
+    query: '?scene=world&zoom=3&x=862&y=1100',
     width: 1280,
     height: 720,
     hold: [['KeyW', 120]],
@@ -50,7 +53,8 @@ const SHOTS: Shot[] = [
     wait: 200,
   },
   { name: 'reference_1x', query: '?scene=reference', width: 1900, height: 1280 },
-  { name: 'depth_behind_tower', query: '?scene=world&zoom=3&x=150&y=130&debug=1', width: 1280, height: 720 },
+  { name: 'depth_behind_tower', query: '?scene=world&zoom=3&x=150&y=200&debug=1', width: 1280, height: 720 },
+  { name: 'camera_edge', query: '?scene=world&zoom=2&x=40&y=40', width: 1280, height: 720 },
 ];
 
 async function waitForServer(url: string, ms: number): Promise<void> {

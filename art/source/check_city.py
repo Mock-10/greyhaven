@@ -13,21 +13,36 @@ from PIL import Image, ImageDraw
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 T = 32
-RES = 4                     # world units per raster pixel
+RES = 8                     # world units per grid cell (src/maps/groundQuery.ts GROUND_GRID_RES)
 ROADLIKE = {'asphalt', 'asphalt_wet', 'paint_white', 'paint_gold', 'iron', 'lot'}
 
 
 def material_grid(m):
+    """Material per RES x RES world cell, sampled at the cell centre with the even-odd rule: the same grid as
+    src/iso/vectorGround.ts worldGrid (used by the game's radar and the map tests)."""
     n = m['width'] * T // RES
-    mats = ['asphalt'] + sorted({s['m'] for s in m['ground']['shapes']})
+    mats = ['asphalt'] + sorted({s['m'] for s in m['ground']['shapes']} - {'asphalt'})
     idx = {k: i for i, k in enumerate(mats)}
-    im = Image.new('L', (n, n), idx[m['ground']['base']])
-    d = ImageDraw.Draw(im)
+    grid = np.full((n, n), idx[m['ground']['base']], np.int16)      # [i (x), j (y)]
     for s in m['ground']['shapes']:
-        pts = [(x / RES, y / RES) for x, y in s['p']]
-        if len(pts) >= 3:
-            d.polygon(pts, fill=idx[s['m']])
-    return np.array(im).T, mats       # [x, y]
+        P = np.asarray(s['p'], float)
+        if len(P) < 3:
+            continue
+        ax, ay = P[:, 0], P[:, 1]
+        bx, by = np.roll(ax, -1), np.roll(ay, -1)
+        j0 = max(0, int(np.floor(ay.min() / RES - 0.5))); j1 = min(n - 1, int(np.ceil(ay.max() / RES - 0.5)))
+        for j in range(j0, j1 + 1):
+            yc = (j + 0.5) * RES
+            c = ((ay <= yc) & (by > yc)) | ((by <= yc) & (ay > yc))
+            if c.sum() < 2:
+                continue
+            with np.errstate(divide='ignore', invalid='ignore'):
+                xi = np.sort((ax + (yc - ay) * (bx - ax) / (by - ay))[c])
+            for a_, b_ in zip(xi[0::2], xi[1::2]):
+                i0 = max(0, int(np.ceil(a_ / RES - 0.5))); i1 = min(n, int(np.ceil(b_ / RES - 0.5)))
+                if i1 > i0:
+                    grid[i0:i1, j] = idx[s['m']]
+    return grid, mats
 
 
 def footprint(p):
@@ -84,7 +99,7 @@ def check_dict(m):
     for i in range(N):
         for j in range(N):
             cell = grid[i * step:(i + 1) * step, j * step:(j + 1) * step]
-            c = cell[step // 2, step // 2]
+            c = grid[(i * T + 16) // RES, (j * T + 16) // RES]
             walk[i, j] = c not in road_ids
             u = set(np.unique(cell).tolist()) - {kerb}
             dressed[i, j] = len(u) > 1
@@ -92,11 +107,9 @@ def check_dict(m):
         i0, j0 = int(max(0, f[0] // T)), int(max(0, f[1] // T))
         i1, j1 = int(min(N - 1, f[2] // T)), int(min(N - 1, f[3] // T))
         if p['sprite'].startswith('bld/'):
-            occupied[i0:i1 + 1, j0:j1 + 1] |= True
-            # only tiles fully covered count as occupied
+            # only tiles the building covers completely stop being walkable
             fi0, fj0 = int(np.ceil(f[0] / T)), int(np.ceil(f[1] / T))
             fi1, fj1 = int(f[2] // T), int(f[3] // T)
-            occupied[i0:i1 + 1, j0:j1 + 1] = False
             occupied[max(0, fi0):fi1, max(0, fj0):fj1] = True
         else:
             dressed[i0:i1 + 1, j0:j1 + 1] = True

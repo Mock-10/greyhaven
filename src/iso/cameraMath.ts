@@ -53,3 +53,22 @@ export function applyDeadzone(focus: Vec2, target: Vec2, w: number, h: number): 
 export function approach(from: number, to: number, rate: number, dt: number): number {
   return from + (to - from) * (1 - Math.exp(-rate * dt));
 }
+
+/**
+ * Keep a view of viewW × viewH art pixels centred on `center` inside `bounds` grown by `margin`. When the view is
+ * larger than the bounds on an axis, it is centred on them.
+ */
+export function clampCenter(
+  center: Vec2,
+  viewW: number,
+  viewH: number,
+  bounds: { x: number; y: number; w: number; h: number },
+  margin: number,
+): Vec2 {
+  const axis = (c: number, view: number, b0: number, size: number) => {
+    const lo = b0 - margin + view / 2;
+    const hi = b0 + size + margin - view / 2;
+    return lo > hi ? b0 + size / 2 : Math.min(hi, Math.max(lo, c));
+  };
+  return { x: axis(center.x, viewW, bounds.x, bounds.w), y: axis(center.y, viewH, bounds.y, bounds.h) };
+}

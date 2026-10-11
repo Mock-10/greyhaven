@@ -10,6 +10,8 @@ export const BALANCE = {
   },
 
   camera: {
+    /** The view may show this many art pixels of background past the map edge, no more. */
+    boundsMarginPx: 48,
     /** Integer zoom levels the player can step through with Ctrl + wheel (docs/11). ?zoom=1 also works for debugging. */
     zoomLevels: [2, 3, 4] as readonly number[],
     /** Default zoom is the largest whole number that fits this many art pixels on screen. */
@@ -45,6 +47,10 @@ export const BALANCE = {
     duskEnd: 21 * 60 + 30,
     /** Street lamps and lit windows switch on above this darkness. */
     lightsOnDarkness: 0.35,
+    /** ...and reach full strength this much darkness later (they were faint for most of dusk before). */
+    lightsRampDarkness: 0.2,
+    /** Lamp and window glow strength the moment they switch on. */
+    lightsStartAlpha: 0.35,
   },
 
   economy: {
@@ -138,5 +144,8 @@ export const BALANCE = {
     chunkTiles: 16,
     /** Most baked ground chunks kept in video memory at once. */
     maxChunks: 24,
+    /** Vector-ground chunks are screen-aligned blocks of this many art pixels (a multiple of the swatch size). */
+    vectorChunkW: 512,
+    vectorChunkH: 256,
   },
 } as const;

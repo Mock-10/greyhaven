@@ -17,7 +17,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 ## Handover (updated 2026-10-11) — read this first in a new session
 
 **Where things stand**
-- **The current phase is still Phase 1 (vertical slice).** It is delivered in milestones, one PR each. Milestone 1 is done; **milestone 1b (the Downtown rework) is in progress** on branch `claude/sweet-albattani-4dbzox`. Phase 2 is parked until Phase 1 is finished and the user says go.
+- **The current phase is still Phase 1 (vertical slice).** It is delivered in milestones, one PR each. Milestone 1 is done. **Milestone 1b (the Downtown rework) is built** on branch `claude/sweet-albattani-4dbzox`, with a PR waiting for the user to merge and play. **Next: milestone 2** (interiors and the office job), once the user has played 1b and says go. Phase 2 is parked until Phase 1 is finished.
 - **`main`** has Phase 0, Phase 1 milestone 1 and the milestone 2 WIP logic (PR #1, #2 and #3, all merged). It is live at `https://mock-10.github.io/greyhaven/`.
 - **Milestone 2 WIP logic is already on `main`** (PR #3 merged it), not wired into the game yet:
   - `art/source/export_interiors.py` → `art/interiors/` (game-ready interior sheets and geometry);
@@ -38,7 +38,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 - **All milestone 1 and milestone 2 assumptions are approved** (start Monday 07:00 with $250, opening hours, STAFF ONLY door, shift XP rounding, XP carry-over, filing and data-entry sizes).
 - Town target raised to **320 × 320 tiles**, with a **hood district** and large plain grass areas to fill in later; open fields and woods stay (docs/01, docs/15 Phase 6).
 
-**Milestone 1b, the Downtown rework (your feedback, 2026-10-10)**
+**Milestone 1b, the Downtown rework (your feedback, 2026-10-10) — built 2026-10-11, see the milestone 1b notes below**
 Your words, after playing milestone 1: *"The player when sprinting feels still too slow for such a vast and open world. Driving will be a portion implemented later on of course. The entire map feels lackluster and desolate with a lot of empty space. For example stores have huge portions of repeated sidewalk/concrete and the design feels very open space but lacks any level of details with decorations. Implement a lot more decorations, close the space, and process it like an actual city as opposed to such vast empty spaces. The map also feels very squared off and boxed like although this is only a small section being drafted and shown right now. I'd like for rounded corners or streets with more curved turns and an increased addition of curved spaces and geometry as seen fit going with the look and feel of the game."*
 
 The binding rules are now in `docs/01_world_and_time.md` ("Street layout and density"), `CLAUDE.md` (hard rule 7) and the street art list in `docs/13`. The work:
@@ -55,7 +55,7 @@ The binding rules are now in `docs/01_world_and_time.md` ("Street layout and den
 5. **Draft first.** This is a big visual change. Before building it in the game, render a draft of the new Downtown with `art/source` (like the reference scenes and the interior drafts) and get your approval.
 6. Then check it in the game with Playwright screenshots (day and night), compare them with the reference scenes and the approved draft, update tests and the smoke test (the building positions change), open a PR, and check the Pages build after merge.
 
-Then merge `main` into the milestone 2 branch and continue below.
+Then continue with milestone 2 below (on a branch from `main` once 1b is merged).
 
 **Next steps (milestone 2, in order)**
 1. **Minigame overlay scene** (`MinigameScene`): it dims the world by 35%, shows a 176 × 128 panel matching `art/drafts/hud/` (the lockpick mockup) and a gold title at 2×. Draw the filing and data-entry panels with `src/ui/hudDraw.ts`. Job tasks pause the world.
@@ -92,6 +92,7 @@ Then merge `main` into the milestone 2 branch and continue below.
 - `npm run shots` starts its own preview server and kills it afterwards. Don't use `pkill -f "vite preview"`, because it also kills the calling shell.
 - Interior art pipeline: edit `art/source/rooms.py` → `python3 art/source/check_layout.py` (must report 0 issues) → `python3 art/source/export_interiors.py` → commit `art/interiors/*`.
 - The simulation runs on `game.loop.rawDelta`, because Phaser's smoothed delta crawls in headless Chromium.
+- City map pipeline (milestone 1b): edit `art/source/downtown_map.py` → `python3 downtown_map.py` (writes `src/maps/downtown.json` and the drafts; takes about a minute) → `python3 check_city.py` (must report 0 issues) → `python3 pack_city.py` (city atlas + ground swatches). If the ground rules in `ground_vec.py` change, re-run `python3 make_ground_fixture.py` so the parity test follows. The sprite cache (`art/source/cache/`) is not committed, so a fresh session renders sprites once (a few minutes).
 
 ## Phase 1 — Vertical slice (in progress)
 
@@ -105,7 +106,7 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - [x] Clock: the 20-minute day (setting stored for 15 / 20 / 30), Monday 07:00 start, darkness ramps at dawn and dusk, night tints from the style guide (objects, ground and usable objects separately), lit windows that ignore the tint, warm dithered lamp pools, a darker sky.
 - [x] HUD drawn with the `hud.py` primitives at UI resolution and scaled by whole numbers: vitals panel, stars, day/clock/clean/dirty panel, radar (iso-oriented, buildings, home and shop blips, the arrow points where you face), objective line, phone messages (Ms. Hollis at the start, Dez at 17:30), street name and district when you enter a street, key hints. The F3 readout moved into the HUD.
 
-### Milestone 1b: Downtown rework (your feedback, 2026-10-10; plan of 2026-10-11)
+### Milestone 1b: Downtown rework (your feedback, 2026-10-10; built 2026-10-11)
 - [x] Question round and decisions recorded in the docs (2026-10-11).
 - [x] Faster walking and sprinting (`BALANCE.walker`: 48 units/s, sprint 2.3×, walk cycle in step).
 - [x] New street props made with `art/source` (`street.py`): bus shelter, newspaper boxes, phone booth, bike rack, café tables with an awning, kiosk, tree pits and grates, bollards, fences, straight and curved low walls, curved planters, wall posters, fountain, and alley clutter (pallets, pipes, AC units, crates, bins).
@@ -114,10 +115,33 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - [x] Downtown authored as one data file shared by the draft renderer and the game: tighter blocks, buildings fronting the sidewalk, infill and alleys, smaller lots edged with planters, fences or low walls, the curved Pellridge plaza and a bending street, rounded kerbs. Keeps the five buildings with doors, a lot of stealable cars, the chop shop at the edge, and room for police and traffic.
 - [x] **Draft rendered (day and dusk) and approved by you before building it in the game.** Approved 2026-10-11 with one change: more greenery (lawns in courtyards and back yards, planting strips along Drizzle Row's residential stretch, a lawn behind the tower, a few corners), while staying mostly paved. `art/drafts/downtown/` holds the full map day and dusk and close-ups.
   - Draft pipeline: `art/source/downtown_map.py` (the map, writes `src/maps/downtown.json` and the drafts), `ground_vec.py` (swatches, rasterising, kerb faces), `citygeo.py` (curves and rounded blocks), `draft_city.py` (renderer with topological depth order), `check_city.py` (overlaps, buildings on roads, the 3 × 3 density rule: 0 issues).
-- [ ] In game: vector ground baking, the new map, polygon collision for curved walls, the radar drawn from the new layout.
-- [ ] Leftovers fixed on the way: camera world bounds (open since Phase 0), faint lamp pools early in dusk.
-- [ ] Tests: the density rule (no bare patch over 3 × 3 tiles), vector ground rasterising, collision, updated smoke test.
-- [ ] Screenshots (day and night) compared with the reference scenes and the approved draft, notes, PR.
+- [x] Grass blades and tufts (your request, 2026-10-11): blade strokes in the grass texture; grass tufts, dry tufts and flowering weeds baked into the ground along lawn edges, in tree pits, at wall bases, along kerbs, in alleys and in the yard.
+- [x] In game: vector ground baking (`src/iso/vectorGround.ts`, `vectorGroundRenderer.ts`), the new map, collision for turned wall and fence segments, the radar drawn from the new layout, topological depth order for dense streets (`src/iso/staticDepth.ts`).
+- [x] Leftovers fixed on the way: camera world bounds (open since Phase 0), lamp pools and lit windows now reach full strength soon after they switch on.
+- [x] Tests: the density rule, vector ground parity with the Python compositor, depth order, camera bounds, turned-box shadows, the new map's doors, lot and streets; smoke test updated (100 unit tests, 6 e2e).
+- [x] Screenshots (day, dusk and night) compared with the reference scenes and the approved draft (`docs/screenshots/phase1_m1b/`), notes, PR.
+
+### Milestone 1b notes
+**How to try:** `https://mock-10.github.io/greyhaven/` after the PR is merged. Walk and sprint (Shift) around: it's faster now. Visit the fountain plaza in front of Pellridge Tower, Ledger Lane behind The Low Tide, the bend in Millwright Road past Marlo's, and the lawns and planting strips on Drizzle Row. Watch the street lamps come on at dusk (`?scene=world&time=19:45`). The camera now stops at the map edge. Overview: `?scene=world&zoom=1&x=768&y=768`.
+
+**Built:**
+- The test Downtown rebuilt as vector ground: rounded kerbs at every corner, the bending Millwright Road, the curved Pellridge plaza with ring paving, a fountain, curved planting beds and benches facing the fountain, a curved garden at the bend, Ledger Lane (cobbles, bollards), a smaller walled parking lot with 5 cars, Marlo's yard behind a chain-link fence along the curve.
+- 17 infill buildings close the gaps; all five Phase 1 entrances still face the camera; the five doors work as before.
+- About 470 objects (street furniture, alley clutter, trees in grates, walls, fences, hedges), about 850 grass tufts and weeds, lane markings, crosswalks, stop lines, drains, manholes and puddles, paving variety (cracked slabs, brick, cobbles, terrazzo, plaza slabs, gravel).
+- The map, its drafts and the game share one data file. A checker and a unit test enforce the density rule.
+
+**Assumptions (please review):**
+- Infill shop signs use plain trade words (DELI, PAWN, BARBER, NOODLES, PHARMACY, BOOKS, CAFE, TAILOR, HARDWARE, BAKERY, NEWS) rather than new business names, so no new names needed approval.
+- Buildings across a street from the camera show their dressed backs (windows, fire escapes, back doors), the usual isometric trade-off.
+- Wall, fence and bed segments are drawn at 16 directions (22.5° steps), so very tight curves look slightly stepped up close.
+- Road centre lines stay gold, as in the approved reference scene, even though gold is otherwise reserved.
+
+**Art debt:** none. Everything was generated with `art/source/`.
+
+**Known issues:**
+- A tree crown fades when you stand just behind or beside its trunk (the occlusion fade working as designed, but it can look early).
+- The bundle grew to about 1.6 MB of JS (the map data is about 280 KB of it) and 0.8 MB of ground swatches. Still well under the 5 s load target.
+- No pedestrians or traffic yet (milestone 4), parked cars can't be used yet (milestone 3).
 
 ### Milestone 2: interiors and the office job
 - [x] Drafts approved (2026-10-10, after one revision: a bigger back room for Dez with laundering clutter, and fixes from the new layout checker): `interior_tower_lobby.png`, `interior_office_floor.png`, `interior_bar.png`.

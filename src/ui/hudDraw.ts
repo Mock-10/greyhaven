@@ -316,7 +316,8 @@ export interface RadarInput {
   py: number;
   /** Player facing as an on-screen angle (radians, y down); the arrow points this way. */
   heading?: number;
-  tileAt: (i: number, j: number) => string | undefined;
+  /** Ground kind at a world point: a tile kind or a vector-ground material name (maps/groundQuery.ts). */
+  groundAt: (x: number, y: number) => string | undefined;
   buildings: readonly { x: number; y: number; hx: number; hy: number }[];
   blips: readonly { kind: 'police' | 'objective' | 'home' | 'shop'; x: number; y: number }[];
   search?: { x: number; y: number; r: number } | null;
@@ -341,11 +342,19 @@ export function radarTileColour(k: string | undefined): RGB {
     k.startsWith('asphalt') ||
     k.startsWith('cross') ||
     k.startsWith('inter') ||
-    k.startsWith('manhole')
+    k.startsWith('manhole') ||
+    k.startsWith('paint') ||
+    k === 'iron'
   )
     return RADAR_COL.road;
-  if (k.startsWith('sidewalk')) return RADAR_COL.walk;
-  if (k.startsWith('grass')) return RADAR_COL.grass;
+  if (
+    k.startsWith('sidewalk') ||
+    k.startsWith('plaza') ||
+    ['kerb', 'brickpave', 'cobble', 'terrazzo', 'concrete', 'grate'].includes(k)
+  )
+    return RADAR_COL.walk;
+  if (k.startsWith('grass') || k === 'soil') return RADAR_COL.grass;
+  if (k === 'gravel') return RADAR_COL.dirt;
   if (k.startsWith('water')) return RADAR_COL.water;
   if (k.startsWith('planks')) return RADAR_COL.plank;
   if (k.startsWith('dirt')) return RADAR_COL.dirt;
@@ -361,7 +370,7 @@ export function radar(s: Surface, cx: number, cy: number, r: number, scale: numb
       const Y = j / scale;
       const wx = inp.px + Y + X / 2;
       const wy = inp.py + Y - X / 2;
-      let c = radarTileColour(inp.tileAt(Math.floor(wx / 32), Math.floor(wy / 32)));
+      let c = radarTileColour(inp.groundAt(wx, wy));
       for (const b of inp.buildings) {
         if (Math.abs(wx - b.x) <= b.hx && Math.abs(wy - b.y) <= b.hy) {
           c =
