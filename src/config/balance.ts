@@ -87,6 +87,33 @@ export const BALANCE = {
     maxHealth: 100,
   },
 
+  /** Corner-store basics (docs/02 "Phase 1 shop"): price in clean dollars, health restored when eaten. */
+  shop: {
+    chips: { price: 6, heal: 10 },
+    sandwich: { price: 12, heal: 25 },
+    /** docs/08: a jerry can costs $40 and holds 10 fuel units. */
+    fuel_can: { price: 40, heal: 0 },
+  },
+
+  /** Sleeping at home skips to this minute of the next day (docs/01: 06:00). */
+  sleep: { wakeMinute: 6 * 60 },
+
+  interiors: {
+    /** Fade between the street and an interior (docs/18: about 0.3 s), in milliseconds. */
+    fadeMs: 300,
+    /** Sight is recomputed when the player has moved this far (docs/19: about 4 units). */
+    sightMoveUnits: 4,
+    /** Sight state changes fade over this long (docs/19: about 150 ms), in seconds. */
+    sightFadeSeconds: 0.15,
+    /** Remembered rooms: floor dim overlay strength and the tint on static furniture (docs/19: about 50%, cooler). */
+    rememberedDim: 0.5,
+    rememberedTint: 0x8a82a8,
+    /** Last-seen NPC ghosts: opacity (docs/19: about 40%). */
+    ghostAlpha: 0.4,
+    /** Indoor sight range in world units (docs/19: about 13 tiles). */
+    sightRange: 420,
+  },
+
   interact: {
     /** Objects within this range show the idle rim (docs/11: 1.5 tiles). */
     rangeTiles: 1.5,
@@ -106,7 +133,8 @@ export const BALANCE = {
   },
 
   walker: {
-    /** Walking speed in world units per second (1.5 tiles per second; raised from 32 after the milestone 1 playtest). */
+    /** Walking speed in world units per second along a tile edge (1.5 tiles per second; raised from 32 after the
+     *  milestone 1 playtest). Every key direction covers the same screen distance per second (systems/movement.ts). */
     walkSpeed: 48,
     /** Sprint multiplier (Shift): about 110 units/s, 3.4 tiles per second. */
     sprintMultiplier: 2.3,
@@ -117,6 +145,12 @@ export const BALANCE = {
     sprintFpsMultiplier: 1.8,
     /** Collision radius of a person, in world units. */
     radius: 6,
+    /** Small decoration (bollards, hydrants, lamp posts, meters, bins): hit circle scale, and how much the
+     *  walker's own radius shrinks against it, so brushing past one at a run doesn't stop you (2026-10-11). */
+    smallPropScale: 0.6,
+    smallPropSlack: 2,
+    /** A prop counts as small when its footprint radius (or half width) is at most this, in world units. */
+    smallPropMaxRadius: 9,
   },
 
   dayNight: {

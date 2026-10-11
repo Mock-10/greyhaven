@@ -55,6 +55,43 @@ const SHOTS: Shot[] = [
   { name: 'reference_1x', query: '?scene=reference', width: 1900, height: 1280 },
   { name: 'depth_behind_tower', query: '?scene=world&zoom=3&x=150&y=200&debug=1', width: 1280, height: 720 },
   { name: 'camera_edge', query: '?scene=world&zoom=2&x=40&y=40', width: 1280, height: 720 },
+  // interiors (milestone 2)
+  {
+    name: 'in_office',
+    query: '?scene=world&zoom=3&area=office_floor&time=08:30',
+    width: 1920,
+    height: 1080,
+    wait: 600,
+  },
+  {
+    name: 'in_lobby',
+    query: '?scene=world&zoom=3&area=tower_lobby&time=09:00',
+    width: 1920,
+    height: 1080,
+    wait: 600,
+  },
+  { name: 'in_bar', query: '?scene=world&zoom=3&area=bar&time=20:00', width: 1920, height: 1080, wait: 600 },
+  {
+    name: 'in_bar_sight_off',
+    query: '?scene=world&zoom=3&area=bar&time=20:00&sight=0',
+    width: 1920,
+    height: 1080,
+    wait: 600,
+  },
+  {
+    name: 'in_store',
+    query: '?scene=world&zoom=3&area=store&time=10:00',
+    width: 1920,
+    height: 1080,
+    wait: 600,
+  },
+  {
+    name: 'in_apartment',
+    query: '?scene=world&zoom=3&area=apartment&time=22:00',
+    width: 1920,
+    height: 1080,
+    wait: 600,
+  },
 ];
 
 async function waitForServer(url: string, ms: number): Promise<void> {

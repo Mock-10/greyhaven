@@ -141,7 +141,7 @@ export class HudScene extends Phaser.Scene {
             y: d.y,
           })),
       });
-      objective(s, Math.floor(W / 2), H - 20, this.objectiveText);
+      objective(s, Math.floor(W / 2), H - 20, snap.objective || this.objectiveText);
       const hints: [string, string][] = snap.target
         ? [
             ['E', 'USE'],

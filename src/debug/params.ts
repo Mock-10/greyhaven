@@ -5,6 +5,8 @@
 //   ?debug=1                       start with the F3 overlay on
 //   ?x=<world>&y=<world>           start the player here (world units)
 //   ?time=HH:MM                    start the clock at this time (for screenshots of dusk and night)
+//   ?area=<interior id>            start inside an interior (apartment, store, tower_lobby, office_floor, bar)
+//   ?sight=0                       start with sight lines off (docs/19)
 // Cheats are never read from the URL.
 
 export type SceneParam = 'title' | 'world' | 'reference';
@@ -17,6 +19,10 @@ export interface Params {
   spawn: { x: number; y: number } | null;
   /** Start minute of the day from ?time=HH:MM, or null. */
   minute: number | null;
+  /** Interior to start in, or null for the street. */
+  area: string | null;
+  /** Sight lines override from ?sight=0|1, or null to use the setting. */
+  sight: boolean | null;
 }
 
 export function parseParams(search: string): Params {
@@ -37,5 +43,7 @@ export function parseParams(search: string): Params {
     debug: q.get('debug') === '1',
     spawn: x !== null && y !== null ? { x, y } : null,
     minute,
+    area: /^[a-z_]{1,20}$/.test(q.get('area') ?? '') ? q.get('area') : null,
+    sight: q.get('sight') === '0' ? false : q.get('sight') === '1' ? true : null,
   };
 }

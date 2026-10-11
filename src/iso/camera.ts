@@ -33,7 +33,7 @@ export class CameraController {
   private readonly cam: Phaser.Cameras.Scene2D.Camera;
   private userZoom: number;
   /** The view is kept over this screen rect (plus a margin), when given. */
-  private readonly bounds: Rect | null;
+  private bounds: Rect | null;
   private readonly canvas: HTMLCanvasElement;
   private readonly onWheel: (e: WheelEvent) => void;
   private readonly onEnter = () => (this.pointerInside = true);
@@ -99,6 +99,12 @@ export class CameraController {
   onResize(): void {
     if (!this.userZoom) this.zoom = this.fit();
     this.apply();
+  }
+
+  /** Keep the view over another area (entering or leaving an interior). */
+  setBounds(bounds: Rect | null): void {
+    this.bounds = bounds;
+    this.pan = { x: 0, y: 0 };
   }
 
   recenter(): void {

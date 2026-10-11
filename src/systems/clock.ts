@@ -54,3 +54,11 @@ export function tintAt(d: number, night: readonly number[]): number {
   const ch = (k: number) => Math.round(255 * (1 - d + d * (night[k] as number)));
   return (ch(0) << 16) | (ch(1) << 8) | ch(2);
 }
+
+/** Total minutes after sleeping: the next morning at `wakeMinute` (docs/01: sleep skips to 06:00 the next day).
+ *  Going to bed after midnight but before the wake time still wakes you the same morning. */
+export function sleepUntil(totalMinutes: number, wakeMinute: number): number {
+  const day = Math.floor(totalMinutes / MINUTES_PER_DAY);
+  const minute = totalMinutes - day * MINUTES_PER_DAY;
+  return (minute < wakeMinute ? day : day + 1) * MINUTES_PER_DAY + wakeMinute;
+}

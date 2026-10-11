@@ -3,6 +3,11 @@
 // (milestone 4) serialises exactly this object, together with SAVE_VERSION and its migrations.
 
 import { BALANCE } from '../config/balance';
+import { createCareer, type CareerState } from '../systems/career';
+import type { InteriorId } from '../data/interiors';
+
+/** Where the player is: out on the street map, or inside an interior. */
+export type Area = { kind: 'street' } | { kind: 'interior'; id: InteriorId };
 
 export interface PlayerState {
   x: number;
@@ -26,6 +31,13 @@ export interface GameState {
   player: PlayerState;
   money: { clean: number; dirty: number };
   wanted: { stars: number };
+  area: Area;
+  /** Street position to return to when leaving an interior. */
+  streetReturn: { x: number; y: number } | null;
+  career: CareerState;
+  inventory: { fuelCans: number };
+  /** Rooms seen per interior, for the remembered state (docs/19, saved with the game: docs/12 `sight`). */
+  sight: Partial<Record<InteriorId, number[]>>;
 }
 
 export interface Settings {
@@ -65,6 +77,11 @@ export function createState(
     },
     money: { clean: BALANCE.economy.startClean, dirty: BALANCE.economy.startDirty },
     wanted: { stars: 0 },
+    area: { kind: 'street' },
+    streetReturn: null,
+    career: createCareer(),
+    inventory: { fuelCans: 0 },
+    sight: {},
   };
 }
 

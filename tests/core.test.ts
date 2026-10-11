@@ -73,6 +73,8 @@ describe('state and params', () => {
       debug: false,
       spawn: null,
       minute: null,
+      area: null,
+      sight: null,
     });
     expect(parseParams('?scene=world&seed=9&zoom=3&debug=1&x=10&y=20&time=21:30')).toEqual({
       scene: 'world',
@@ -81,7 +83,11 @@ describe('state and params', () => {
       debug: true,
       spawn: { x: 10, y: 20 },
       minute: 21 * 60 + 30,
+      area: null,
+      sight: null,
     });
+    expect(parseParams('?area=office_floor&sight=0')).toMatchObject({ area: 'office_floor', sight: false });
+    expect(parseParams('?area=../x').area).toBeNull();
     expect(parseParams('?time=25:00').minute).toBeNull();
     expect(parseParams('?scene=cheat&zoom=9&seed=-4').scene).toBe('title');
     expect(parseParams('?zoom=9').zoom).toBe(0);
