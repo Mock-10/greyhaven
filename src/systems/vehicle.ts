@@ -107,7 +107,9 @@ export function drive(
   const mx = Math.cos(heading) * v.speed * dt;
   const my = Math.sin(heading) * v.speed * dt;
   const free = (x: number, y: number, h: number) =>
-    !hullPoints({ x, y, heading: h, type: v.type }).some((p) => collides(p.x, p.y, solids, { ...rules, radius: 1 }));
+    !hullPoints({ x, y, heading: h, type: v.type }).some((p) =>
+      collides(p.x, p.y, solids, { ...rules, radius: 1 }),
+    );
   const V = BALANCE.vehicles;
   if (free(prev.x + mx, prev.y + my, heading)) {
     v.x += mx;

@@ -133,7 +133,7 @@ describe('Downtown map (vector ground)', () => {
     expect(stealable).toContain('veh/van_white');
   });
 
-  it("gives Marlo a dotted sale spot in plain view, reachable from Gullsway", () => {
+  it('gives Marlo a dotted sale spot in plain view, reachable from Gullsway', () => {
     const z = DOWNTOWN.zones?.find((q) => q.id === 'marlo_spot');
     expect(z).toBeDefined();
     const cx = (z!.x0 + z!.x1) / 2;

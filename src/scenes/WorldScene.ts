@@ -1497,10 +1497,7 @@ export class WorldScene extends Phaser.Scene {
     else if (v.locked) {
       this.pendingCar = id;
       this.openMinigame({ kind: 'lockpick', seed: this.rng.int(1, 2 ** 30), tier: 0, tool: 'NO TOOL' });
-    } else if (
-      this.state.inventory.fuelCans > 0 &&
-      v.fuel <= stats(v).tank - BALANCE.vehicles.canUnits
-    ) {
+    } else if (this.state.inventory.fuelCans > 0 && v.fuel <= stats(v).tank - BALANCE.vehicles.canUnits) {
       pourCan(v, this.state.inventory);
       this.toldOutOfFuel = false;
       this.toast(
@@ -1690,7 +1687,9 @@ export class WorldScene extends Phaser.Scene {
     s.setPosition(Math.round(p.x), Math.round(p.y));
     const r = BALANCE.walker.radius;
     const b = s.getBounds();
-    const near = this.statics.filter((o) => rectsOverlap(o.bounds, { x: b.x, y: b.y, w: b.width, h: b.height }));
+    const near = this.statics.filter((o) =>
+      rectsOverlap(o.bounds, { x: b.x, y: b.y, w: b.width, h: b.height }),
+    );
     s.setDepth(depthAmong([x - r, y - r, x + r, y + r], near, depthOf(x, y)));
   }
 
