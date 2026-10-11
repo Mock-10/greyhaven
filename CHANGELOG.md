@@ -108,11 +108,12 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 ### Milestone 1b: Downtown rework (your feedback, 2026-10-10; plan of 2026-10-11)
 - [x] Question round and decisions recorded in the docs (2026-10-11).
 - [x] Faster walking and sprinting (`BALANCE.walker`: 48 units/s, sprint 2.3×, walk cycle in step).
-- [ ] New street props made with `art/source`: bus shelter, newspaper boxes, phone booth, bike rack, café tables with an awning, kiosk, tree pits and grates, bollards, fences, straight and curved low walls, curved planters, wall posters, fountain, and alley clutter (pallets, pipes, AC units, crates, bins).
-- [ ] Infill buildings and shopfronts (facades with signs, awnings and `_night` lit windows), in 4 orientations.
-- [ ] Ground material swatches from `ground2d.py` (asphalt, sidewalk, plaza paving and rings, cobbles, brick paving, lot, grass, dirt, painted markings) and the vector street format.
-- [ ] Downtown authored as one data file shared by the draft renderer and the game: tighter blocks, buildings fronting the sidewalk, infill and alleys, smaller lots edged with planters, fences or low walls, the curved Pellridge plaza and a bending street, rounded kerbs. Keeps the five buildings with doors, a lot of stealable cars, the chop shop at the edge, and room for police and traffic.
-- [ ] **Draft rendered (day and dusk) and approved by you before building it in the game.**
+- [x] New street props made with `art/source` (`street.py`): bus shelter, newspaper boxes, phone booth, bike rack, café tables with an awning, kiosk, tree pits and grates, bollards, fences, straight and curved low walls, curved planters, wall posters, fountain, and alley clutter (pallets, pipes, AC units, crates, bins).
+- [x] Infill buildings and shopfronts (`infill.py`: 10 shopfronts, 3 walk-ups, 3 mid-rise offices, a workshop), facades with signs, awnings and `_night` lit windows, every side dressed.
+- [x] Ground material swatches from `ground2d.py` (asphalt, sidewalk, plaza paving and rings, cobbles, brick paving, lot, grass, dirt, painted markings) and the vector street format.
+- [x] Downtown authored as one data file shared by the draft renderer and the game: tighter blocks, buildings fronting the sidewalk, infill and alleys, smaller lots edged with planters, fences or low walls, the curved Pellridge plaza and a bending street, rounded kerbs. Keeps the five buildings with doors, a lot of stealable cars, the chop shop at the edge, and room for police and traffic.
+- [ ] **Draft rendered (day and dusk) and approved by you before building it in the game.** Rendered 2026-10-11: `art/drafts/downtown/` (full map day and dusk, close-ups of the plaza, the bend and Drizzle Row). *Waiting for your approval.*
+  - Draft pipeline: `art/source/downtown_map.py` (the map, writes `src/maps/downtown.json` and the drafts), `ground_vec.py` (swatches, rasterising, kerb faces), `citygeo.py` (curves and rounded blocks), `draft_city.py` (renderer with topological depth order), `check_city.py` (overlaps, buildings on roads, the 3 × 3 density rule: 0 issues).
 - [ ] In game: vector ground baking, the new map, polygon collision for curved walls, the radar drawn from the new layout.
 - [ ] Leftovers fixed on the way: camera world bounds (open since Phase 0), faint lamp pools early in dusk.
 - [ ] Tests: the density rule (no bare patch over 3 × 3 tiles), vector ground rasterising, collision, updated smoke test.
