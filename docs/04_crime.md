@@ -20,11 +20,11 @@ Tiers unlock contacts and services (see 10). They **do not** lock crimes.
 | Crime | Tier | Minigame(s) | Payout | Base stars if seen | Notes |
 |---|---|---|---|---|---|
 | Trunk looting | 0 | Lockpick (easy) → quick search | $20–120 plus items | 1★ | Loot table: phone, wallet, tools, sometimes product or a gun |
-| Carjacking a parked car | 0 | Lockpick → hotwire | Car worth $150–400 at the chop shop | 1★ (alarm 30% chance) | Car is "hot" for 2 days. Respray at a mechanic or chop it. |
+| Carjacking a parked car | 0 | Lockpick → hotwire | 15–30% of the car's value at the chop shop, at an early rate below tier 2 (about $260–600; decided 2026-10-11) | 1★ (alarm 30% chance) | Car is "hot" for 2 days. Respray at a mechanic or chop it. |
 | Carjacking an occupied car | 0 | Pull out (button mash) | Same as above | 2★ | The driver becomes a witness |
 | Store robbery | 0–1 | Intimidate (hold meter) → register grab; optional back room (lockpick door → crack safe) and security room (disable cameras / wipe footage) | Register $250–600; back-room safe +$600–1,500 | 2★ | Clerk may hit the silent alarm: +1★ after 20 s. Cameras identify unmasked robbers unless disabled or wiped. See *Store layout* below. |
 | House burglary | 1 | Lockpick → search rooms (timed) → fence goods | $200–900 in goods | 1★ (2★ if the owner is home) | Best at night or when the house is empty (delivery perk) |
-| Chop shop / scrap sale | 0 | — | 15–30% of the car's value | — | Industrial chop shop. Pays dirty money. |
+| Chop shop / scrap sale | 0 | — | 15–30% of the car's value (below rep tier 2: 35% of that, capped at $600) | — | Marlo's Tow & Salvage (Industrial from Phase 6). Park in the white dotted spot in his side yard and press E: Marlo walks out and pays dirty money. |
 | ATM robbery | 2 | ATM hack (memory) **or** drill (hold) | $800–1,500 | 2★ (3★ downtown) | ATM drill tool $900 from a fence (Known tier) |
 | Smuggling, tier 1 product | 1 | Drive to the drop on a timer | Buy $300 → sell $650 | 2★ if stopped and searched | Supplier at the Docks |
 | Smuggling, tier 2 product | 2 | Drive, drop guarded by NPCs | Buy $1,500 → sell $3,200 | 3★ | — |

@@ -59,14 +59,21 @@ The generator is `art/source/hud.py` (with `pixfont.py`), and the shapes, colour
 | Camera pan | hold middle mouse and drag, or push the mouse to the screen edge |
 | Camera recenter | C |
 | Sight lines on/off (until the settings menu exists) | L |
-| Zoom | Ctrl + mouse wheel (integer steps: 2×, 3×, 4×) |
+| Zoom | Ctrl + mouse wheel (integer steps: 1×, 2×, 3×, 4×) |
+| Cheat console (playtesting, also on Pages) | Ctrl + Shift + F1 |
 
 ## Camera
 - Isometric and fixed angle (no rotation, matching the pre-rendered sprites).
-- Follows the player with a soft deadzone. In a car, it leads in the direction of travel by up to 3 tiles.
+- **Default view (reworked 2026-10-11):** the largest whole-number zoom that still shows 960 × 540 art pixels, about 2× more world than the first build. 1080p runs at 2×, 720p at 1×, 4K at 4×. Ctrl + wheel steps through 1×–4×.
+- **Follow:** a soft deadzone and a critically damped spring (no overshoot, no wobble); the scroll is always a whole art pixel.
+- **Look-ahead:** in a car the view leads in the direction of travel, up to 55% of the half view at top speed, so the car sits toward the trailing edge and more road shows ahead. On foot the view leans up to 40 art px toward the mouse.
+- **Context zoom:** getting into a car steps the zoom out one level (never below 1×); getting out steps back in.
 - **Mouse pan:** drag with the middle mouse, or edge-scroll. It can move up to 12 tiles from the player and springs back on C or after 3 s idle.
 - **Zoom** is **integer only** so pixels stay crisp. Rendering is pixel-perfect (`pixelArt: true`, `roundPixels`).
-- **Occlusion:** when the player is behind a tall building, that building fades to 35% opacity, or its top floors are cut away. This is essential for the Project Zomboid feel.
+- **Occlusion (reworked 2026-10-11):** anything in front of the player (or the car you drive) whose pixels hide at least 12% of them fades to 35% opacity, whatever its height (kerb-high things excepted); thin lamp posts and the empty corners of a tree's sprite don't count. Where the player or car is still hidden, a **silhouette** in muted lavender shows through (WebGL). This is essential for the Project Zomboid feel.
+- **Overhead roofs** (the fuel canopy) draw over whatever stands under them and fade as you get close.
+- **Sorting of moving things:** cars, the player and NPCs are sorted against each other by their turned footprints (the one on the far side of a separating line draws first), within the order of the static objects around them.
+- **World prompts** stay clear of the HUD: below the top panels, above the objective and hint strip, off the radar. The key hints sit on a plate.
 
 ## Character creator (new game)
 A simple creator, shown before the guided first day:

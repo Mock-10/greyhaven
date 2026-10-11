@@ -37,11 +37,11 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 **Where things stand**
 - **The current phase is still Phase 1 (vertical slice).** Milestones 1, 1b, 2 and **3 (driving and the carjack loop)** are built. Milestones 1–2 went through PRs #2, #4 and #5. Milestone 3 and the UI fixes of 2026-10-11 were **pushed straight to `main` at your request** (no PR), so `https://mock-10.github.io/greyhaven/` has everything once the deploy workflow finishes.
-- **Next:** the **milestone 3 follow-ups** (list below, with your answers), then **milestone 4** (police 1–2★, saves, pedestrians and traffic), which closes Phase 1, then Phase 2. See the checklists under each phase.
+- **Next:** **milestone 4** (police 1–2★ with a small precinct, saves, pedestrians and traffic), which closes Phase 1, then Phase 2. The milestone 3 follow-ups are done (milestone 3b notes below). See the checklists under each phase.
 - **The Downtown map is a test map, not the final city.** The final city is a dense open world of about 320 × 320 tiles with a hood district, open fields and woods (docs/01, built in Phase 6).
 - **Communication preference (2026-10-11):** you asked for fewer progress messages while I work. Still send images and important updates. You may switch back later.
 
-**Milestone 3 follow-ups (your feedback, 2026-10-11) — not done yet, do these first**
+**Milestone 3 follow-ups (your feedback, 2026-10-11) — done in milestone 3b (kept here for the record)**
 1. **Gas station canopy:** the roof clips into the car and sits too low. Rebuild `fuel_canopy` (`art/source/infill.py`) as a real station roof, high enough to drive under, on tall posts. When the player or the car is under it, it should fade (occlusion) so the pumps stay visible.
 2. **Gas station kiosk faces the wrong way:** its front faces away from the pumps. Turn it so the door and windows face the forecourt (`block_se` in `art/source/downtown_map.py`, `fuel_kiosk` in `infill.py`). The forecourt is also cramped against the south map edge, so consider giving the station more room (see the questions).
 3. **Replace the cash-count minigame** (Dez's laundering) with something else, such as **dragging bills into a bag**. Ask before building it (see the questions).
@@ -114,7 +114,8 @@ All open questions for Phases 1–8 were asked and answered. The answers are in 
 - Debug hook (`window.__DL__`, read-only) now also exposes `dirty`, `driving`, `cars` (position, heading, speed, fuel, health, locked, running) and `minigameState` (the open minigame's logic, so tests can play it like a person: time the space bar to the needle, join wires by colour). Cheats are never read from the URL.
 - Interior art pipeline: edit `art/source/rooms.py` → `python3 art/source/check_layout.py` (0 issues) → `python3 art/source/export_interiors.py` → commit `art/interiors/*`.
 - City map pipeline: edit `art/source/downtown_map.py` → `python3 downtown_map.py` (writes `src/maps/downtown.json` and the drafts, about a minute; `--no-render` writes only the JSON) → `python3 check_city.py` (0 issues) → `python3 pack_city.py` (city atlas + ground swatches). If `ground_vec.py` changes, re-run `python3 make_ground_fixture.py`. The sprite cache (`art/source/cache/`) isn't committed, so a fresh session renders sprites once (a few minutes).
-- **The drafts in `art/drafts/downtown/` were not re-rendered** after the gas station went in. Run `python3 downtown_map.py --procs 4` once the station is redone.
+- The drafts in `art/drafts/downtown/` are up to date with the 64 × 48 map (re-rendered 2026-10-11, about 4 minutes with `--procs 4`).
+- The cheat console (Ctrl + Shift + F1) is the way tests and screenshots set things up (`tools/shots.ts` presets take `cheats: [...]`).
 - The simulation runs on `game.loop.rawDelta`, because Phaser's smoothed delta crawls in headless Chromium. In slow frames Phaser can hand the same key event over more than once; `MinigameScene` ignores repeats (a `WeakSet` of handled events).
 
 ## Phase 1 — Vertical slice (in progress)
@@ -216,13 +217,14 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - [x] Fuel station (your request): Pump & Go on Millwright Road with two pumps (REFUEL, clean cash, $3 a unit), the jerry can from the store works on foot (E USE FUEL CAN).
 - [x] UI fixes (your request): remembered-room dimming put on hold; filing panel re-laid out (no overlapping text); shop redesigned as item cards with icons (soda can, chips, sandwich, fuel can); every pop-up panel draggable by its top strip; an automatic overlap check for every panel and the HUD.
 - [x] Tests (134 unit, 10 e2e including a full lockpick → hotwire → drive run), screenshots in `docs/screenshots/phase1_m3/`, notes.
-- [ ] Follow-ups from your review (answers of 2026-10-11 in the docs):
-  - [ ] Gas station moved to a bigger lot; tall canopy you can drive under that fades when you're under it; kiosk facing the forecourt; Downtown drafts re-rendered.
-  - [ ] Duffel minigame replaces the money count: drag stacks into the bag before the timer runs out; leave dye-stained stacks out.
-  - [ ] Marlo's back yard with a white dotted sale spot: park, press E, Marlo walks up. Open 24 h.
-  - [ ] Chop pay by car type: 15–30% of value, scaled by damage, with an early cap of about $300–500. The taxi and the van become stealable, each with its own stats.
-  - [ ] Camera rework: about 2× wider default view, one zoom step out when driving, velocity look-ahead, critically damped follow, a silhouette through buildings plus cutaway or fade of the covering building, car-vs-car sorting by turned footprints. docs/11 numbers and screenshots at each zoom level.
-  - [ ] Handover leftovers: key hints on a plate, prompts kept clear of HUD panels, tree crowns fading too early.
+- [x] Follow-ups from your review (answers of 2026-10-11 in the docs), built 2026-10-11 (milestone 3b, see the notes below):
+  - [x] Gas station moved to a bigger lot; tall canopy you can drive under that fades when you're under it; kiosk facing the forecourt; Downtown drafts re-rendered.
+  - [x] Duffel minigame replaces the money count: drag stacks into the bag before the timer runs out; leave dye-stained stacks out.
+  - [x] Marlo's yard with a white dotted sale spot: park, press E, Marlo walks up. Open 24 h.
+  - [x] Chop pay by car type: 15–30% of value, scaled by damage, at an early rate with a $600 cap. The taxi and the van are stealable, each with its own stats.
+  - [x] Camera rework: about 2× wider default view, one zoom step out when driving, velocity look-ahead, critically damped follow, a silhouette through buildings plus fade of whatever covers you, car-vs-car sorting by turned footprints. docs/11 updated, screenshots taken.
+  - [x] Handover leftovers: key hints on a plate, prompts kept clear of HUD panels, tree crowns fading too early (fixed by pixel-accurate occlusion).
+  - [x] Brought forward from milestone 4: the cheat console (Ctrl + Shift + F1, on Pages too).
 
 ### Milestone 3 notes
 **How to try:** walk to the parking lot behind Open Most Hours (`?scene=world&x=841&y=184`). Stand by a sedan: **E LOCKPICK** opens the dial (space when the needle is in the zone). Then **F** hotwires it (press a wire 1–4, then its colour A/S/D/F). Drive with **W/S** (throttle and brake or reverse), **A/D** to steer, **Space** for the handbrake, **F** to get out (below walking pace). Fill up at **Pump & Go** in the south-east (E REFUEL beside a pump). Drive to **Marlo's Tow & Salvage** on Drizzle Row: **E SELL CAR TO MARLO** pays dirty cash. After 18:00, take it to Dez in the back room of **The Low Tide** (E LAUNDER, then count the bills: space counts, B bands each 10). Panels can be dragged by their top strip.
@@ -262,11 +264,46 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - World prompts near the screen edge can sit under a HUD panel.
 - The `art/drafts/downtown/` drafts don't show the gas station yet.
 
+### Milestone 3b notes (the follow-ups, 2026-10-11)
+**How to try:** `https://mock-10.github.io/greyhaven/` once the PR is merged.
+- **Pump & Go** moved to the south-east corner, between Millwright Road and the new street **Gullsway**: drive in from either side, stop beside the pump island under the tall canopy, press E. The roof fades as you get close; the kiosk at the back faces the pumps.
+- **Marlo:** drive a stolen car through the gate on Gullsway into the white dotted spot beside his shop, stop, and press E (also from the driver's seat). Marlo walks out of his side door and pays. Knocking on his front door tells you where to park.
+- **Stealable:** the three sedans, the taxi and the white van in the store lot. Each type drives differently (the van is slower and heavier) and pays differently.
+- **Dez:** after 18:00 with dirty cash, LAUNDER opens *Bag it*: drag the clean stacks into the duffel; leave the red-dyed ones on the table.
+- **Camera:** 1080p now shows 2× more of the city. Get in a car: the view steps out one level and leads ahead of you. Walk behind the tower or a tree: whatever hides you fades, and your hidden parts show as a lavender silhouette. Ctrl + wheel still zooms 1×–4×.
+- **Cheat console:** Ctrl + Shift + F1, then e.g. `dirty 800`, `time 18:30`, `car taxi`, `tp 1600 1000`, `rank 2`, `help`. Esc closes it.
+
+**Built:**
+- Map: the test map is now 64 × 48 tiles. Gullsway runs along the east side, with a sidewalk and a grass embankment and fence on the far side (the town's edge toward The Works), a bus shelter, more shops (DELI, TAILOR) and walk-ups in the north-east block. Map tools (`check_city.py`, `draft_city.py`) handle non-square maps.
+- New art from `art/source/infill.py`: the canopy roof (`fuel_canopy`, now an overhead object with roof seams and vents) and `canopy_post`. Drafts re-rendered (`art/drafts/downtown/`), city atlas repacked.
+- Overhead objects: a placement flag `over` that sorts a roof after anything standing under it (`staticDepth.ts`, `draft_city.py`).
+- Map zones: Marlo's spot is a `zone` in the map data with where Marlo comes out; `parkedIn()` tests whether a car is stopped in it.
+- Vehicle types (`BALANCE.vehicles.types`, `src/data/vehicles.ts`): sedan, taxi and van stats, the HUD car readout shows the type.
+- The duffel minigame (`DuffelGame`, `drawDuffel`), the cheat console (`src/debug/cheats.ts`, `cheatConsole.ts`).
+- Camera: `springStep`, `offsetZoom`, context zoom and pointer look-ahead in `CameraController`; pixel coverage (`coverage()`, `opaqueAt()`), the silhouette (`src/world/silhouette.ts`), turned-box ordering for movers (`obbFirst()`, `orderMovers()`).
+- Tests: 149 unit (car types and chop pay, the duffel, the cheat parser, the spring and zoom maths, pixel coverage, turned-box order, the new map: Gullsway, Marlo's spot in plain view, the overhead canopy), 11 e2e including selling a car to Marlo. Screenshots in `docs/screenshots/phase1_m3b/`.
+
+**Assumptions (please review):**
+- Chop pay: value × 15–30% (rolled) × condition (40–100%); below reputation tier 2 Marlo pays 35% of that, capped at $600. Sedan ($5,000) about $263–525, taxi ($4,500, no docs price) a bit less, van ($9,000) mostly the $600 cap. The econ sim's tier-0 night income (about $400) still holds, so the pacing table didn't change.
+- Van stats from docs/08 scaled like the sedan (top speed 70 → 198 units/s, health 140, tank 60); the taxi drives like a sedan.
+- Marlo uses the road-worker sprite (work clothes and a vest) until the story characters get their own art.
+- The sale spot is beside Marlo's shop rather than strictly behind it: in this view the area behind a building is hidden by it, so the spot faces the camera, fenced off from the rest of the yard with its own gate on Gullsway.
+- Bag it: 8 stacks, 2 dye-stained, 14 seconds. A dyed stack in the bag counts against the grade, as do clean stacks left behind. The grade adds to Dez's cut as the money count did (excellent 0% … fail 15%).
+- On foot the camera leans up to 40 art px toward the mouse. Driving at 1080p shows the city at 1× (a wide view).
+- The cheat console accepts CASH, DIRTY, TIME, DAY, RANK, TP, CAR, HEAL and HELP. Stars come with the police in milestone 4.
+
+**Art debt:** none. All new art was generated with `art/source/`.
+
+**Known issues:**
+- The silhouette needs WebGL; on the Canvas fallback only the fade shows.
+- The canopy roof also fades when you stand just behind it, not only under it (it covers you on screen there).
+- The money-count minigame is kept for counterfeit printing (Phase 5) but no longer used.
+
 ### Milestone 4: police, saves, crowd
 - [ ] A small Greyhaven PD precinct on the test map.
 - [ ] Wanted 1–2★: witnesses with the call delay, one police car and officers from the precinct, search circle, escape timer, arrest with surrender, fine, first-offense rule, arrest screen.
 - [ ] Saves: 3 slots, autosave on sleep, export and import, SAVE_VERSION and migrations. A parking spot outside Drizzle Row where saved cars (bought or stolen) spawn.
-- [ ] Cheat console behind a hidden key combo, on Pages too.
+- [x] Cheat console behind a hidden key combo, on Pages too (built early, in milestone 3b).
 - [ ] A few pedestrians and ambient traffic.
 - [ ] **Done when:** a full day loop can be played (work → evening carjack → escape or arrest → launder → sleep → reload the save), all unit tests pass, and the frame rate holds.
 
