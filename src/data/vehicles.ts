@@ -1,7 +1,7 @@
 // Vehicle catalogue (docs/08): which car type each sprite model is, and its name on the HUD. Stats live in
 // BALANCE.vehicles.types.
 
-import { BALANCE } from '../config/balance';
+import type { BALANCE } from '../config/balance';
 
 export type VehicleType = keyof typeof BALANCE.vehicles.types;
 
