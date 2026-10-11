@@ -282,6 +282,18 @@ def car(name, x, y, dir, interact=None):
     return p
 
 
+def lawn(poly, radius=24.0, edge=2.5, mat='grass'):
+    """A patch of grass with a stone edging and rounded corners."""
+    P = np.asarray(poly, float)
+    if radius > 0 and len(P) == 4:
+        x0, y0 = P.min(0); x1, y1 = P.max(0)
+        ground('kerb', round_corners(rect(x0 - edge, y0 - edge, x1 + edge, y1 + edge), radius + edge))
+        ground(mat, round_corners(rect(x0, y0, x1, y1), radius))
+    else:
+        ground('kerb', poly)
+        ground(mat, poly)
+
+
 def tree_pit(x, y, kind='tree_a'):
     ground('grate', rect(x - 14, y - 14, x + 14, y + 14))
     ground('soil', rect(x - 8, y - 8, x + 8, y + 8))
@@ -486,9 +498,10 @@ def block_nw():
     # the ATM by the tower door, a bus shelter and a kiosk on the plaza's edge
     PL.append({'sprite': 'int/atm', 'dir': 0, 'x': door_x + 52, 'y': tc(9.0), 'shadow': {'kind': 'box', 'hx': 7, 'hy': 7, 'h': 34},
                'solid': True, 'interact': {'id': 'atm_plaza', 'label': 'USE ATM'}, 'fp': _fp_box(door_x + 52, tc(9.0), 7, 7)})
+    lawn(rect(tc(3.15), tc(8.75), tc(4.6), tc(10.6)), 16)
     prop('kiosk', tc(14.6), tc(11.2), dir=6)
     prop('ad_column', tc(11.9), tc(15.2))
-    prop('planter', tc(3.6), tc(9.2)); prop('planter', tc(11.2), tc(9.2))
+    prop('bush', tc(3.7), tc(9.4)); prop('planter', tc(11.2), tc(9.2))
     prop('trash_can', tc(10.3), tc(9.3))
     # west and north: the skyline behind the tower, a service alley behind it
     building('midrise_stone', tc(1.5), tc(12.2), 6)
@@ -500,8 +513,11 @@ def block_nw():
     ground('cobble', rect(tc(10.1), tc(3.7), tc(13.6), tc(8.4)))
     prop('dumpster', tc(11.0), tc(4.3)); prop('pallets', tc(12.6), tc(4.4)); prop('ac_unit', tc(10.6), tc(5.6), dir=6)
     prop('bin_sage', tc(12.9), tc(5.6)); prop('trash_bags', tc(11.6), tc(5.4)); prop('boxes', tc(10.7), tc(7.4))
-    tree_pit(tc(4.4), tc(2.5), 'pine'); prop('bush', tc(4.4), tc(4.0)); prop('bush', tc(0.9), tc(6.6))
-    prop('planter', tc(15.0), tc(1.3)); tree_pit(tc(9.8), tc(1.4), 'tree_a')
+    lawn(rect(tc(3.8), tc(0.4), tc(10.0), tc(3.75)), 30)
+    lawn(rect(tc(3.65), tc(5.25), tc(5.0), tc(8.3)), 14)
+    prop('pine', tc(4.4), tc(2.5)); prop('bush', tc(4.3), tc(6.2)); prop('bush', tc(0.9), tc(6.6))
+    prop('tree_a', tc(7.0), tc(1.5)); prop('bush', tc(8.9), tc(2.9)); prop('bush', tc(5.6), tc(3.2))
+    prop('planter', tc(15.0), tc(1.3))
 
 
 def block_n():
@@ -562,7 +578,10 @@ def block_ne():
     building('walkup_red', tc(41.25), tc(9.2), 0)
     building('midrise_stone', tc(44.6), tc(8.7), 0)
     building('midrise_blue', tc(45.6), tc(3.1), 0)
-    prop('planter', tc(43.0), tc(5.6)); tree_pit(tc(42.9), tc(1.0), 'pine')
+    lawn(rect(tc(42.55), tc(4.75), MAPW, tc(7.1)), 20)
+    lawn(rect(tc(46.55), tc(7.2), MAPW, tc(10.0)), 16)
+    prop('tree_a', tc(43.8), tc(5.9)); prop('bush', tc(46.0), tc(6.3)); prop('bench', tc(45.0), tc(6.6), dir=0)
+    prop('bush', tc(47.3), tc(8.8)); tree_pit(tc(42.9), tc(1.0), 'pine')
 
 
 def block_w():
@@ -584,7 +603,15 @@ def block_w():
     for x, kind in ((tc(1.6), 'bin_navy'), (tc(3.0), 'trash_bags'), (tc(6.0), 'ac_unit'), (tc(8.4), 'pallets'), (tc(11.2), 'bin_sage'),
                     (tc(12.6), 'boxes'), (tc(14.6), 'dumpster')):
         prop(kind, x, ny + tc(2.65) + 14)
-    tree_pit(tc(9.9), ny + tc(3.2), 'tree_a')
+    lawn(rect(tc(0.6), ny + tc(3.1), tc(15.4), fy - tc(3.05)), 20)
+    prop('tree_a', tc(4.5), ny + tc(3.9)); prop('tree_b', tc(11.8), ny + tc(4.1)); prop('bench', tc(8.0), ny + tc(3.9), dir=0)
+    prop('bush', tc(14.6), ny + tc(4.3)); prop('bush', tc(1.6), ny + tc(4.2))
+    # a pocket lawn at the corner where the avenue row ends
+    lawn(rect(tc(11.0), ny + 8, tc(15.85), ny + tc(2.5)), 20)
+    prop('tree_b', tc(13.4), ny + tc(1.2)); prop('bush', tc(11.8), ny + tc(1.9)); prop('bench', tc(14.6), ny + tc(1.6), dir=6)
+    # planting strips along the kerb of Drizzle Row's residential stretch
+    for xa, xb in ((0.4, 3.2), (6.6, 10.4), (11.4, 14.2)):
+        lawn(rect(tc(xa), fy + 30, tc(xb), fy + 52), 8, 2.0)
 
 
 def block_mid():
@@ -613,7 +640,11 @@ def block_mid():
     prop('sandwich_board', tc(25.6), ly0 + 8)
     prop('planter', tc(27.1), ly0 + 10); prop('planter', tc(30.4), ly0 + 10)
     prop('lamp', tc(29.5), ly1 - 4, dir=4)
-    prop('bin_sage', tc(33.2), ly0 + 10); prop('cones', tc(34.0), ly1 - 10)
+    wy0, wy1 = ROADS_X[O] + HW + SWK + 6, ly0 - 8
+    wedge = [[tc(33.0), wy0]] + y_edge_line(M, wy0, wy1, -1, HW + SWK + 4) + [[tc(33.0), wy1]]
+    lawn(wedge, 0)
+    prop('bush', tc(33.6), wy0 + 30); prop('tree_a', tc(34.2), (wy0 + wy1) / 2 + 6)
+    prop('cones', tc(34.0), ly1 - 10)
     # a curved garden where the block meets the bend: it follows the kerb line of Millwright Road
     gy0, gy1 = ly1 + 10, fy - 6
     edge = y_edge_line(M, gy0, gy1, -1, HW + SWK + 4)
@@ -684,6 +715,8 @@ def block_s():
     building('walkup_red', tc(29.4), tc(44.5), 4)
     building('walkup_stone', tc(31.7), tc(44.4), 4)
     ground('cobble', rect(tc(33.3), ny, fx - tc(1.95), MAPW))
+    lawn(rect(tc(24.3), tc(46.35), tc(33.0), MAPW + 4), 20)
+    prop('tree_b', tc(25.2), tc(47.2)); prop('bush', tc(28.0), tc(47.4)); prop('tree_a', tc(31.2), tc(47.3))
     for y, kind in ((ny + 20, 'dumpster'), (ny + 50, 'bin_navy'), (ny + 80, 'ac_unit'), (ny + 110, 'pallets'), (ny + 150, 'boxes'), (ny + 180, 'trash_bags')):
         prop(kind, tc(33.75), y, dir=6)
 
@@ -694,8 +727,9 @@ def block_se():
     ny = ROADS_X[D] + HW + SWK
     xw = y_edge(M, tc(44), +1, HW + SWK)
     building('walkup_tan', xw + half('walkup_tan', 4)[0] + 2, tc(45.0), 4)
-    prop('dumpster', MAPW - 20, ny + 22)
-    prop('planter', xw + 20, ny + 20)
+    prop('dumpster', MAPW - 18, ny + tc(2.25))
+    lawn(rect(xw + 6, ny + 8, MAPW + 4, ny + tc(1.9)), 18)
+    prop('bush', xw + 24, ny + 30); prop('tree_b', MAPW - 40, ny + 30)
 
 
 FILL = {
