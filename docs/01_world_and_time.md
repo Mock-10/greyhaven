@@ -69,3 +69,11 @@ Building interiors are separate small maps entered through doors: apartment, sto
   - **Alarmed** (gunshot, crash, visible weapon within 12 tiles): flee away from the threat.
   - **Witness** (saw a crime with line of sight within 10 tiles, 7.5 at night or in rain): start the phone-call timer described in 05.
 - Clerks, guards and bank tellers are named-role NPCs with fixed behaviour. A clerk hands over the till, hits the silent alarm when your back is turned, or hides.
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- **Phase 2 job sites grow the test map** with small slices next to Downtown, reached on foot or by car: a garage block (Torque & Sons), a street of houses with the Swiftish Couriers depot, and a patch of woods with a road (Ashby Timber). The full districts come in Phase 6.
+- **A small police precinct** (Greyhaven PD, Precinct 1) goes on the test map in Phase 1 milestone 4. Cruisers leave from it.
+- **The hood** is simply called **"the hood"**: run-down homes, barred corner stores, houses with boarded or blocked-off windows, crime on the streets, basketball courts and corner shops, and locals dressed to fit. It holds cheap housing, the fence and dealer base, and contacts for buying product. Police are fewer and slower there. It feels like **hostile territory**: some locals confront or attack outsiders who flash weapons or hang around, but there is **no turf system** (no gang control).
+- **Marlo's chop shop moves to Industrial** (behind the scrap yard) when the full city is built in Phase 6.
+- **Full Downtown, first pass:** about 10–15 enterable buildings.

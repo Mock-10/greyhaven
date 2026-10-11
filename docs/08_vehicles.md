@@ -46,3 +46,10 @@
 - **Trunks:** every car has trunk slots. The player can loot other cars' trunks (lockpick) or store items in their own (product, weapons, loot).
 - **Selling:** the legal dealer pays 50% of value (clean money, owned cars only). The chop shop pays 15–30% of value (dirty money, any car, no questions).
 - **Pulling drivers out:** press E at the door of an occupied car. Some drivers fight back or flee. The driver becomes a witness.
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- The catalogue and upgrades stay as specced.
+- **Phase 1 stealable cars:** the sedans, the taxi and the white van, each with its own stats and chop price.
+- **Selling to Marlo:** park in the white dotted spot in his back yard and press E; Marlo walks over and pays. Open 24 hours.
+- **Home parking:** Drizzle Row Residences has a parking spot outside. Saved vehicles, bought or stolen, spawn there on load.

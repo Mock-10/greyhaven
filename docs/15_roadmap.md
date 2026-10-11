@@ -19,14 +19,14 @@ Development runs in Claude Code on the web, and the user plays every phase in th
 - **Job:** Office Worker. Clock in, 3 filing/data-entry tasks, get paid, earn promotion XP, rank 1→2.
 - **Crime:** carjacking a parked car: lockpick + hotwire minigames, then sell it at the chop shop for dirty money. Then launder it at the NPC launderer.
 - **Driving:** one sedan model with arcade handling, fuel, basic damage.
-- **Wanted:** 1–2★ only. Witnesses with the call delay, one police car plus officers, search circle, escape timer, arrest with surrender, fine, and the first-offense rule.
+- **Wanted:** 1–2★ only, with a small precinct on the test map. Witnesses with the call delay, one police car plus officers, search circle, escape timer, arrest with surrender, fine, and the first-offense rule.
 - **HUD:** radar (simple), stars, clean and dirty cash, clock, HP.
 - **Save:** 3 slots plus autosave on sleep, plus export/import.
 - **Crowd:** a few pedestrians and ambient traffic, minimal.
 - **Done when:** a full day loop can be played (work → evening carjack → escape or arrest → launder → sleep → reload the save), all unit tests pass, and the frame rate holds.
 
 ## Phase 2: Economy and careers
-Character creator · all 4 starting jobs and their minigames · rank ladders and perks (stub any perk that needs a later system) · rent, late fees, eviction · shops · arrest effects on the career · clean-record bonus · the guided first day.
+Grow the test map with the garage block, a street of houses with the delivery depot, and a patch of woods (01) · bank account and ATMs · character creator · all 4 starting jobs and their minigames · weekend odd jobs (car wash, bar shift) · trunk looting (brought forward for the guided first day) · rank ladders and perks (stub any perk that needs a later system) · rent, late fees, eviction · shops · arrest effects on the career · clean-record bonus · the guided first day.
 
 ## Phase 3: Crime breadth and police
 Trunk looting, store robbery, house burglary, ATM · reputation tiers and contacts · full 1–5★ police response (the helicopter and military units can be simple versions first) · cameras and identification · masks and outfits · bribes · jail and seizure.
@@ -45,6 +45,9 @@ Front businesses · armored truck · the 3 heists · story mission chains (17) �
 
 ## Phase 8: Polish
 Audio pass (SFX → music) · rain and weather · accessibility options · balancing with `tools/econ_sim.py` and playtest data · performance · bug fixing.
+
+## Phase 9 (after Phase 8, to decide with the user then)
+Higher resolution: sprites at 2× detail to go with the wider view (art pipeline, style guide, atlases, HUD scale).
 
 ## Later / not now
 World events (the user decided against them for now) · more heists (the user decided three is enough).

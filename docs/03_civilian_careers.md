@@ -73,3 +73,12 @@ You are **never fired** from any job, however many arrests you have (decided). A
 **Scrap Yard Worker** — legal scrap yard, Industrial. Ranks: Sorter → Crane Operator → Crusher Operator → Yard Lead → Yard Manager.
 - Tasks: *Crane magnet* (position and drop), *Crush* (timing), *Sort metal* (sorting by type), *Weigh-in* (read the scale and enter the value).
 - Insider perks: rank 1 lets you **hear about chop shop deals**: the chop shop pays +15%. Rank 2 lets you **crush a hot car legally**: it is destroyed, its "hot" status is cleared, and if unseen it clears 1★ (once per chase). Rank 3 gives **−25% on used parts** for upgrades. Rank 4 lets you run the **chop bay at the yard** without owning a hideout add-on.
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- **Weekend side gigs** are separate odd jobs open to everyone: car wash and a bar shift at The Low Tide (see 02).
+- **Work uniforms** come off only when you change at a wardrobe or a work locker. Forgetting is the risk (100% identification during crimes, docs/04).
+- **Mechanic garage (Torque & Sons):** one bay with a lift and a toolbench, a spray booth, a small office to clock in. 08:00–18:00, 1–2 coworkers.
+- **Lumber camp (Ashby Timber):** outdoors (trees, loading yard, the log truck to the mill), plus a site trailer to clock in.
+- **Delivery (Swiftish Couriers):** a depot interior (loading bay and counter), then drive the van to marked doors on a short row of houses.
+- **Office Meeting task:** Claude writes the dialogue in the dry office tone; the user reviews it afterwards.
