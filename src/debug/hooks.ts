@@ -27,6 +27,12 @@ export interface DebugHook {
   dirty: number;
   /** Wanted stars (milestone 4). */
   stars: number;
+  /** Phase 2: banked clean cash, rent owed, eviction, the bag, and the open list page (phone, ATM, bag). */
+  bank: number;
+  rentOwed: number;
+  evicted: boolean;
+  inventory: Record<string, number>;
+  listPage: { title: string; lines?: string[]; rows: { label: string; detail?: string; enabled?: boolean }[] } | null;
   driving: string | null;
   cars: {
     id: string;
@@ -71,6 +77,11 @@ export function installHook(): DebugHook {
     minigameState: null,
     dirty: 0,
     stars: 0,
+    bank: 0,
+    rentOwed: 0,
+    evicted: false,
+    inventory: {},
+    listPage: null,
     driving: null,
     cars: [],
     depthOf: () => null,

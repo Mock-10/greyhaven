@@ -4,7 +4,7 @@
 import type { GameState } from './store';
 
 /** Bump whenever the save shape changes, and add a migration below plus its test (CLAUDE.md rule 5). */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export const SLOTS = ['slot1', 'slot2', 'slot3'] as const;
 export const AUTO_SLOTS = ['auto1', 'auto2'] as const;
@@ -61,17 +61,58 @@ export function makeSave(state: GameState, slot: SlotId, now: number, thumb?: st
   return { game: 'doublelife', version: SAVE_VERSION, meta, state: copy, checksum: checksum(copy) };
 }
 
-/** Migrations: MIGRATIONS[n] turns a version-n state into a version n+1 state. None yet: version 1 is the first. */
-export const MIGRATIONS: Record<number, (state: Record<string, unknown>) => Record<string, unknown>> = {};
+type Obj = Record<string, unknown>;
+
+/** Migrations: MIGRATIONS[n] turns a version-n state into a version n+1 state. */
+export const MIGRATIONS: Record<number, (state: Obj) => Obj> = {
+  /** 1 → 2 (Phase 2 money and phone): a bank balance, the statement and rent, calendar progress, arrest effects and
+   *  the week on the career, a fuller bag, and the phone's message log. */
+  1: (s) => {
+    const money = s.money as Obj;
+    const career = s.career as Obj;
+    const shift = career.shift as Obj | null;
+    const inv = (s.inventory ?? {}) as Obj;
+    return {
+      ...s,
+      money: { ...money, bank: 0 },
+      finance: { ledger: [], rent: { owed: 0, unpaidSince: null, evicted: false, storage: false } },
+      calendarAt: s.minutes,
+      career: {
+        ...career,
+        jobs: {
+          mechanic: { rank: 1, xp: 0 },
+          lumberjack: { rank: 1, xp: 0 },
+          delivery: { rank: 1, xp: 0 },
+          ...(career.jobs as Obj),
+        },
+        shift: shift ? { ...shift, tasks: 3 } : null,
+        freezeUntil: 0,
+        extraUntil: 0,
+        missed: [],
+        week: { pay: 0, offense: false },
+      },
+      inventory: {
+        fuelCans: typeof inv.fuelCans === 'number' ? inv.fuelCans : 0,
+        firstAid: 0,
+        repairKits: 0,
+        lockpicks: 0,
+        toolbox: 0,
+        phones: 0,
+        watches: 0,
+      },
+      messages: [],
+    };
+  },
+};
 
 /** Bring a save up to SAVE_VERSION, one migration at a time. Throws for saves from a newer game. */
 export function migrate(
   file: SaveFile,
-  migrations: Record<number, (s: Record<string, unknown>) => Record<string, unknown>> = MIGRATIONS,
+  migrations: Record<number, (s: Obj) => Obj> = MIGRATIONS,
   target = SAVE_VERSION,
 ): SaveFile {
   if (file.version > target) throw new Error('This save comes from a newer version of the game.');
-  let state = file.state as unknown as Record<string, unknown>;
+  let state = file.state as unknown as Obj;
   for (let v = file.version; v < target; v++) {
     const step = migrations[v];
     if (!step) throw new Error(`No migration from save version ${v}.`);

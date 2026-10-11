@@ -10,17 +10,28 @@ import type {
   FilingGame,
   HotwireGame,
   MoneyCountGame,
+  SearchGame,
   SkillCheckGame,
 } from '../minigames/logic';
+import { glints, type LootKind } from '../systems/loot';
 import { TRAY_COLOURS, type WireColour } from '../minigames/logic';
 import type { Grade } from '../systems/career';
 import {
   C,
+  ITEM_CASH,
   ITEM_CHIPS,
+  ITEM_FIRST_AID,
   ITEM_FUEL,
+  ITEM_JUNK,
+  ITEM_LOCKPICKS,
   ITEM_PAL,
+  ITEM_PHONE,
+  ITEM_REPAIR,
   ITEM_SANDWICH,
   ITEM_SODA,
+  ITEM_TOOLBOX,
+  ITEM_WALLET,
+  ITEM_WATCH,
   bar,
   blend,
   hintKeys,
@@ -40,7 +51,8 @@ export const PANEL_SIZE = {
   hotwire: { w: 176, h: 128 },
   moneyCount: { w: 176, h: 128 },
   duffel: { w: 176, h: 128 },
-  shop: { w: 208, h: 140 },
+  shop: { w: 208, h: 180 },
+  search: { w: 176, h: 136 },
 } as const;
 export type PanelKind = keyof typeof PANEL_SIZE;
 
@@ -71,6 +83,10 @@ export const ITEM_ICON: Record<ItemId, readonly string[]> = {
   chips: ITEM_CHIPS,
   sandwich: ITEM_SANDWICH,
   fuel_can: ITEM_FUEL,
+  first_aid: ITEM_FIRST_AID,
+  lockpicks: ITEM_LOCKPICKS,
+  toolbox: ITEM_TOOLBOX,
+  repair_kit: ITEM_REPAIR,
 };
 
 /** The frame every panel shares: plate, gold 2× title, a muted label on the right, and a grip in the drag strip. */
@@ -491,8 +507,7 @@ export function drawShop(s: Surface, x: number, y: number, v: ShopView): void {
     blend(s, c.y + 4, c.y + 32, c.x + 4, c.x + 26, C.INK, 0.8);
     sprite(s, c.x + 8, c.y + 11, ITEM_ICON[id], ITEM_PAL);
     text(s, c.x + 30, c.y + 6, ITEMS[id].name, can ? C.CREAM : C.MUTED);
-    const eff = BALANCE.shop[id].heal ? `+${BALANCE.shop[id].heal} HP` : '10 FUEL';
-    text(s, c.x + 30, c.y + 15, eff, C.MUTED);
+    text(s, c.x + 30, c.y + 15, ITEMS[id].effect, C.MUTED);
     text(s, c.x + 30, c.y + 25, `$${price}`, can ? C.CREAM : C.RED3);
     // number key
     const key = String(k + 1);
@@ -500,13 +515,67 @@ export function drawShop(s: Surface, x: number, y: number, v: ShopView): void {
     blend(s, c.y + 30, c.y + 31, c.x + c.w - 13, c.x + c.w - 4, C.GOLD_LO);
     text(s, c.x + c.w - 11, c.y + 24, key, C.PLATE);
   });
-  text(s, x + 8, y + 106, `CLEAN CASH $${v.clean}`, C.CREAM);
+  const fy = y + 146;
+  text(s, x + 8, fy, `CLEAN CASH $${v.clean}`, C.CREAM);
   const dirty = 'DIRTY CASH NOT ACCEPTED';
-  text(s, x + PANEL_SIZE.shop.w - 8 - textWidthPx(dirty), y + 106, dirty, C.MUTED);
-  if (v.message) text(s, x + 8, y + 116, v.message, C.SAGE4);
-  hintKeys(s, x + 8, y + 126, [
-    ['1-4', 'BUY'],
+  text(s, x + PANEL_SIZE.shop.w - 8 - textWidthPx(dirty), fy, dirty, C.MUTED);
+  if (v.message) text(s, x + 8, fy + 10, v.message, C.SAGE4);
+  hintKeys(s, x + 8, fy + 20, [
+    [`1-${v.stock.length}`, 'BUY'],
     ['CLICK', 'BUY'],
     ['ESC', 'LEAVE'],
+  ]);
+}
+
+// ------------------------------------------------------------------ search (trunks)
+const LOOT_ICON: Record<LootKind, readonly string[]> = {
+  cash: ITEM_CASH,
+  wallet: ITEM_WALLET,
+  phone: ITEM_PHONE,
+  lockpicks: ITEM_LOCKPICKS,
+  watch: ITEM_WATCH,
+  junk: ITEM_JUNK,
+};
+
+export function searchCell(x: number, y: number, k: number, cols: number): Box {
+  return { x: x + 8 + (k % cols) * 40, y: y + 24 + Math.floor(k / cols) * 28, w: 38, h: 26 };
+}
+
+/** The open trunk: a carpeted grid; valuables glint (a travelling sparkle), junk doesn't; grabbed cells empty. */
+export function drawSearch(s: Surface, x: number, y: number, g: SearchGame, right: string, t: number): void {
+  frame(s, x, y, 'search', 'SEARCH', right);
+  if (g.done && g.grade)
+    return resultCard(s, x, y, 'search', g.grade, `GRABBED ${g.taken} OF ${g.valuables}`);
+  const CARPET: RGB = [58, 50, 62];
+  const CARPET_LO: RGB = [46, 39, 50];
+  g.cells.forEach((c, k) => {
+    const r = searchCell(x, y, k, g.cols);
+    blend(s, r.y, r.y + r.h, r.x, r.x + r.w, (k + Math.floor(k / g.cols)) % 2 ? CARPET : CARPET_LO);
+    const flash = g.flash && g.flash.cell === k && g.flash.t < 0.3;
+    if (k === g.cursor || flash) {
+      const col = flash ? C.SAGE4 : C.LAVLT2;
+      blend(s, r.y, r.y + 1, r.x, r.x + r.w, col);
+      blend(s, r.y + r.h - 1, r.y + r.h, r.x, r.x + r.w, col);
+      blend(s, r.y, r.y + r.h, r.x, r.x + 1, col);
+      blend(s, r.y, r.y + r.h, r.x + r.w - 1, r.x + r.w, col);
+    }
+    if (!c.item || c.grabbed) return;
+    sprite(s, r.x + 12, r.y + 7, LOOT_ICON[c.item.kind], ITEM_PAL);
+    if (glints(c.item.kind)) {
+      // a sparkle that walks around the icon; gold (a valuable, CLAUDE.md rule 2)
+      const ph = (t * 3 + k * 0.37) % 1;
+      const sx = r.x + 10 + Math.round(ph * 18);
+      const sy = r.y + 5 + Math.round(Math.abs(Math.sin(ph * Math.PI)) * 3);
+      px(s, sx, sy, C.GOLD);
+      px(s, sx - 1, sy + 1, C.GOLD_LO);
+      px(s, sx + 1, sy + 1, C.GOLD_LO);
+      px(s, sx, sy + 2, C.GOLD_LO);
+    }
+  });
+  bar(s, x + 8, y + 110, 160, 5, g.timeLeft / g.timeTotal, C.GOLD, C.GOLD_LO);
+  hintKeys(s, x + 8, y + 121, [
+    ['CLICK', 'GRAB'],
+    ['ARROWS', 'MOVE'],
+    ['SPACE', 'GRAB'],
   ]);
 }

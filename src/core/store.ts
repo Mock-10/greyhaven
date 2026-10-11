@@ -4,6 +4,7 @@
 
 import { BALANCE } from '../config/balance';
 import { createCareer, type CareerState } from '../systems/career';
+import { createFinance, type Finance, type Money } from '../systems/finance';
 import type { InteriorId } from '../data/interiors';
 import type { LaunderLog } from '../systems/laundering';
 import type { Vehicle } from '../systems/vehicle';
@@ -25,6 +26,24 @@ export interface PlayerState {
   costume: string;
 }
 
+/** What the player carries (docs/11 bag). Tools count uses left (docs/06 durability). */
+export interface Inventory {
+  fuelCans: number;
+  firstAid: number;
+  repairKits: number;
+  /** Uses left on the basic lockpick set (0 = no lockpicks). */
+  lockpicks: number;
+  /** A toolbox: the basic tool for hotwiring (0 or 1). */
+  toolbox: number;
+  /** Stolen goods from trunks (phones, watches), for the fence (Phase 3). */
+  phones: number;
+  watches: number;
+}
+
+export function emptyInventory(): Inventory {
+  return { fuelCans: 0, firstAid: 0, repairKits: 0, lockpicks: 0, toolbox: 0, phones: 0, watches: 0 };
+}
+
 export interface GameState {
   seed: number;
   /** In-game minutes since 00:00 on day 1 (Monday). */
@@ -32,13 +51,20 @@ export interface GameState {
   /** Map the player is on. */
   map: string;
   player: PlayerState;
-  money: { clean: number; dirty: number };
+  /** Carried clean, dirty, and banked clean cash (docs/02). */
+  money: Money;
+  /** Bank statement and rent (systems/finance.ts). */
+  finance: Finance;
+  /** The calendar's fixed moments (rent, missed shifts, the weekly bonus) have run up to this minute. */
+  calendarAt: number;
   wanted: WantedState;
   area: Area;
   /** Street position to return to when leaving an interior. */
   streetReturn: { x: number; y: number } | null;
   career: CareerState;
-  inventory: { fuelCans: number };
+  inventory: Inventory;
+  /** Phone messages, newest first (the phone's MESSAGES app). */
+  messages: { at: number; who: string; text: string }[];
   /** Rooms seen per interior, for the remembered state (docs/19, saved with the game: docs/12 `sight`). */
   sight: Partial<Record<InteriorId, number[]>>;
   /** Cars in the world that can be driven (docs/08); parked map cars join on first load. */
@@ -76,9 +102,10 @@ export function createState(
   spawn: { x: number; y: number },
   startMinute?: number,
 ): GameState {
+  const minutes = startMinute ?? BALANCE.clock.startMinute;
   return {
     seed,
-    minutes: startMinute ?? BALANCE.clock.startMinute,
+    minutes,
     map,
     player: {
       x: spawn.x,
@@ -90,12 +117,15 @@ export function createState(
       armor: 0,
       costume: 'office_worker',
     },
-    money: { clean: BALANCE.economy.startClean, dirty: BALANCE.economy.startDirty },
+    money: { clean: BALANCE.economy.startClean, dirty: BALANCE.economy.startDirty, bank: BALANCE.economy.startBank },
+    finance: createFinance(),
+    calendarAt: minutes,
     wanted: emptyWanted(),
     area: { kind: 'street' },
     streetReturn: null,
     career: createCareer(),
-    inventory: { fuelCans: 0 },
+    inventory: emptyInventory(),
+    messages: [],
     sight: {},
     vehicles: [],
     driving: null,

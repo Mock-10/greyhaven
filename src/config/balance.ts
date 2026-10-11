@@ -67,6 +67,24 @@ export const BALANCE = {
     /** Cash at the start of a new game (docs/02 is silent; assumption logged in CHANGELOG). */
     startClean: 250,
     startDirty: 0,
+    startBank: 0,
+    /** Bank statement lines kept for the phone (newest first). */
+    ledgerSize: 24,
+    /** ATM buttons (clean cash only; docs/02 decision 2026-10-11). */
+    atmSteps: [20, 50, 100, 500] as readonly number[],
+  },
+
+  /** Rent on the starter apartment (docs/02 living costs; decided 2026-10-11: taken from the bank). */
+  rent: {
+    weekly: 350,
+    /** Due on this weekday (0 = Monday) at this minute. Late fees and eviction checks also run daily then. */
+    dueWeekday: 0,
+    dueMinute: 6 * 60,
+    lateFeePerDay: 50,
+    /** Two missed weekly payments: evicted once rent has been unpaid this many days. */
+    evictDays: 14,
+    /** Belongings go to city storage on eviction; getting them back costs this (paid when moving back in). */
+    storageFee: 200,
   },
 
   careers: {
@@ -86,6 +104,21 @@ export const BALANCE = {
     shiftXp: [6, 9, 11, 14] as readonly number[],
     /** Office rank that gets the building key card (docs/03 perk). */
     keyCardRank: 2,
+    /** docs/03: a missed workday costs this much promotion XP (never below 0) and pays nothing. Day 1 (the guided
+     *  first day) never counts as missed. */
+    missedXp: 5,
+    missedFromDay: 2,
+    /** Arrest effects (docs/03): a promotion freeze, then extra work after release. */
+    freezeDays: 3,
+    extraDays: 2,
+    extraTasks: 1,
+    extraXpFactor: 1.1,
+    /** Weekly clean-record bonus: this share of the week's pay, paid Monday 06:00 if the week had no arrest. */
+    cleanRecordShare: 0.15,
+    /** HR bribes (docs/02), clean money from the bank: cover a missed shift (within this many days), lift a freeze. */
+    hrCoverShift: 150,
+    hrLiftFreeze: 600,
+    hrCoverWindowDays: 7,
   },
 
   minigames: {
@@ -101,6 +134,9 @@ export const BALANCE = {
     ],
     /** Lockpick: misses allowed before the pick slips (fail), and progress lost per miss. */
     lockpick: { maxMisses: 3 },
+    /** docs/06: tools widen the zones (basic +15%, pro +30% and one check fewer) and wear out: a set lasts 10 uses,
+     *  a failed attempt costs 2. */
+    tools: { basicWiden: 0.15, proWiden: 0.3, proFewerChecks: 1, uses: 10, failUses: 2 },
     /** Hotwire (docs/06): 3–5 wire pairs before the timer runs out; a wrong pair sparks (noise). */
     hotwire: { pairs: 4, seconds: 12, maxSparks: 3 },
     /** Money count (docs/06): count bills into bundles of 10; miscounts cost a share of the wash. */
@@ -108,6 +144,8 @@ export const BALANCE = {
     /** Duffel (Dez's laundering since 2026-10-11): stacks on the table, how many are dye-stained, the timer, and the
      *  share of time that must be left for an excellent grade. */
     duffel: { stacks: 8, dyed: 2, seconds: 14, excellentTimeShare: 0.3 },
+    /** Search (docs/06 register grab / search): click glinting items in a grid before the timer runs out. */
+    search: { cols: 4, rows: 3, seconds: 6, excellentTimeShare: 0.35 },
   },
 
   player: {
@@ -221,6 +259,15 @@ export const BALANCE = {
 
   /** Crime (docs/04): carjacking a parked car and the chop shop. */
   crime: {
+    /** Trunk looting (docs/04): valuables per trunk, the cash total spread over bills and wallets, junk filler,
+     *  what each valuable is (weights), and the uses on a found lockpick set. */
+    trunk: {
+      valuables: [2, 4] as readonly [number, number],
+      cash: [20, 120] as readonly [number, number],
+      junk: [2, 4] as readonly [number, number],
+      weights: { cash: 34, wallet: 26, phone: 18, lockpicks: 12, watch: 10 },
+      lockpickUses: 5,
+    },
     /** Chop shop pay (decided 2026-10-11): 15–30% of the car type's value (docs/08), scaled by condition. Below
      *  reputation tier `fullRateTier` Marlo pays only `earlyFactor` of that, capped at `earlyCap`, so an early car
      *  fetches about $250–600 (docs/04's $150–400 range, nudged up). */
@@ -241,12 +288,22 @@ export const BALANCE = {
 
   /** Corner-store basics (docs/02 "Phase 1 shop"): price in clean dollars, health restored when eaten. */
   shop: {
-    soda: { price: 3, heal: 5 },
-    chips: { price: 6, heal: 10 },
-    sandwich: { price: 12, heal: 25 },
+    soda: { price: 3, heal: 5, adds: 0 },
+    chips: { price: 6, heal: 10, adds: 0 },
+    sandwich: { price: 12, heal: 25, adds: 0 },
     /** docs/08: a jerry can costs $40 and holds 10 fuel units. */
-    fuel_can: { price: 40, heal: 0 },
+    fuel_can: { price: 40, heal: 0, adds: 1 },
+    /** docs/07: a first-aid kit costs $60; used from the bag it restores full health. */
+    first_aid: { price: 60, heal: 0, adds: 1 },
+    /** docs/06: basic lockpicks $40, a set of 10 uses. */
+    lockpicks: { price: 40, heal: 0, adds: 10 },
+    /** A toolbox: the basic tool for hotwiring (+3 s on the timer). Price assumed (docs are silent). */
+    toolbox: { price: 120, heal: 0, adds: 1 },
+    /** docs/08: a repair kit costs $150 and repairs a car to 50%. */
+    repair_kit: { price: 150, heal: 0, adds: 1 },
   },
+  /** Toolbox bonus on the hotwire timer, in seconds; a repair kit restores a car to this share of its health. */
+  tools: { toolboxHotwireSeconds: 3, repairKitTo: 0.5 },
 
   /** Police and the wanted level (docs/05, docs/02 fines). Real seconds unless noted; distances in tiles. */
   wanted: {
