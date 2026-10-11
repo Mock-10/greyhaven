@@ -57,7 +57,7 @@ Never hand-draw placeholder rectangles in the shipped game. If an asset is missi
 - **Streets (user direction 2026-10-10, see 01 "Street layout and density"):**
   - Ground (decided 2026-10-11: baked from a vector street layout, see 14): repeating material swatches from `ground2d.py` (asphalt, sidewalk, plaza paving patterns, cobbles, lot, grass, dirt, painted markings), plus grates, cracks and puddles.
   - Props (made in milestone 1b, `source/street.py`): bus shelter, phone booth, café sets, kiosk, advertising column, sandwich board, parking meter, utility box, bollard, fountain, wheelie bins, pallets, pipes, AC units, bags, boxes, cones; segments for brick and stone walls, railings, chain-link fences, hedges and planting beds; grass tufts and weeds. Still wanted later: posters on building walls, awnings over cafés as separate props.
-  - Infill buildings and shopfronts (made in milestone 1b, `source/infill.py`): 10 shopfronts, 3 walk-ups, 3 mid-rise offices, a workshop.
+  - Infill buildings and shopfronts (made in milestone 1b, `source/infill.py`): 10 shopfronts, 3 walk-ups, 3 mid-rise offices, a workshop. Twelve more types for variety (2026-10-11, `source/infill2.py`): diner, cinema, chapel, art-deco office, glass tower, brownstones, parking garage, hotel, library, fire station, round-cornered corner block, flower shop.
 - **Effects:** muzzle flash, tracer, smoke, fire, explosion, blood-free hit spark, rain splash, siren light glow.
 - **UI:** the phone screens, inventory grid, shop screens, pause menu, Life Summary. (The HUD, prompts and the lockpick panel are drafted in `drafts/hud/`.)
 

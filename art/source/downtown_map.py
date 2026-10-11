@@ -1,4 +1,4 @@
-"""The test Downtown ("The Ledger"), 64 x 48 tiles (48 x 48 until 2026-10-11, widened east for Gullsway), authored as vector ground plus placements (Phase 1 milestone 1b).
+"""The test Downtown ("The Ledger"), 70 x 48 tiles (48 x 48 until 2026-10-11, then widened east for Gullsway), authored as vector ground plus placements (Phase 1 milestone 1b).
 
 This one file is the source of truth for the map. It writes:
   - src/maps/downtown.json: ground shapes, placements, doors, street spans and spawn, read by the game;
@@ -6,7 +6,7 @@ This one file is the source of truth for the map. It writes:
 
 Layout (tiles): Overcast Avenue runs east-west at j = 18..22, Drizzle Row at j = 35..39. Pewter Street runs north-south
 at i = 18..22. Millwright Road runs north-south at i = 34..38, then bends east to i = 39..43 between j = 23 and 33.
-Gullsway (towards the Docks) runs north-south at i = 55..59 and bends east past Drizzle Row.
+Gullsway (towards the Docks) runs north-south at i = 60..64 and bends east past Drizzle Row.
 Roads are 4 tiles wide with 2-tile sidewalks. Only faces pointing +x or +y can be seen, so every entrance that matters
 faces south or east; buildings across a street show their dressed backs.
 
@@ -23,7 +23,7 @@ import street
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 T = 32.0
-NW, NH = 64, 48     # map size in tiles: x (east) and y (south)
+NW, NH = 70, 48     # map size in tiles: x (east) and y (south)
 N = NW
 MAPW = NW * T       # world width (x)
 MAPH = NH * T       # world height (y)
@@ -51,7 +51,7 @@ def mill_x(y):
 
 def gull_x(y):
     """Gullsway's centre line x at world y: straight, then bending east toward the Docks past Drizzle Row."""
-    return tc(57 + 3 * smooth((y / T - 40.0) / 8.0))
+    return tc(62 + 3 * smooth((y / T - 40.0) / 8.0))
 
 
 Y_SAMPLES = np.linspace(-T, MAPH + T, 401)
@@ -522,9 +522,8 @@ def block_nw():
     building('midrise_stone', tc(1.5), tc(12.2), 6)
     building('shop_books', tc(1.0), front_y('shop_books', tc(16)), 0)
     building('midrise_blue', tc(2.0), tc(3.6), 0)
-    building('midrise_brick', tc(12.6), tc(2.3), 0)
-    building('walkup_stone', tc(14.85), tc(6.5), 6)
-    building('walkup_red', tc(14.8), tc(9.05), 6)
+    building('deco_office', tc(12.4), tc(2.2), 0)
+    building('brownstones', tc(14.85), tc(7.8), 6)
     ground('cobble', rect(tc(10.1), tc(3.7), tc(13.6), tc(8.4)))
     prop('dumpster', tc(11.0), tc(4.3)); prop('pallets', tc(12.6), tc(4.4)); prop('ac_unit', tc(10.6), tc(5.6), dir=6)
     prop('bin_sage', tc(12.9), tc(5.6)); prop('trash_bags', tc(11.6), tc(5.4)); prop('boxes', tc(10.7), tc(7.4))
@@ -579,12 +578,14 @@ def block_ne():
     fy = ROADS_X[O] - HW - SWK
     x0 = y_edge(M, fy, +1, HW + SWK) + 2
     xe = y_edge(G, fy, -1, HW + SWK)
-    end = row(['shop_pharmacy', 'shop_noodles', 'shop_bakery', 'shop_deli', 'shop_tailor'], x0, fy)
-    # corner pocket at Gullsway: a phone booth and a bench under a tree
-    ground('brickpave', rect(end + 2, fy - tc(2.0), xe, fy))
-    tree_pit(end + 22, fy - 40, 'tree_b')
+    end = row(['shop_pharmacy', 'shop_noodles', 'cinema', 'shop_tailor', 'shop_bakery', 'shop_deli'], x0, fy)
+    # the corner building on Gullsway has a rounded corner facing the crossing
+    building('corner_round', xe - half('corner_round')[0], front_y('corner_round', fy), 0)
+    cr0 = xe - 2 * half('corner_round')[0]
+    ground('brickpave', rect(end + 2, fy - tc(2.0), cr0 - 2, fy))
     prop('phone_booth', end + 14, fy - 10)
-    prop('bench', xe - 14, fy - 34, dir=6)
+    if cr0 - end > 60:
+        tree_pit((end + cr0) / 2, fy - 40, 'tree_b')
     # the alley behind the shops, out to the Gullsway sidewalk
     ay0, ay1 = fy - tc(3.85), fy - tc(1.95)
     ground('cobble', rect(x0, ay0, xe, ay1))
@@ -600,12 +601,20 @@ def block_ne():
     building('midrise_brick', tc(49.85), tc(8.75), 0)
     lawn(rect(tc(42.55), tc(4.75), tc(51.2), tc(7.1)), 20)
     lawn(rect(tc(46.55), tc(7.2), tc(48.05), tc(10.0)), 12)
-    lawn(rect(tc(51.7), tc(0.6), xe - 6, tc(11.9)), 24)
+    # the glass tower on its own plaza, the tallest thing in the Ledger
+    ground('plaza', rect(tc(51.7), tc(0.4), xe - 4, tc(11.95)))
+    building('glass_tower', tc(55.3), tc(5.0), 0)
+    ground('terrazzo', rect(tc(54.1), tc(6.75), tc(56.5), tc(8.0)))
+    lawn(rect(tc(51.9), tc(9.0), tc(53.6), tc(11.6)), 14)
+    lawn(rect(xe - tc(1.6), tc(0.8), xe - 8, tc(4.0)), 14)
     prop('tree_a', tc(43.8), tc(5.9)); prop('bush', tc(46.0), tc(6.3)); prop('bench', tc(45.0), tc(6.6), dir=0)
     prop('bush', tc(47.3), tc(8.8)); tree_pit(tc(42.9), tc(1.0), 'pine')
     prop('tree_b', tc(49.9), tc(5.9)); prop('bench', tc(48.4), tc(6.4), dir=0)
-    prop('pine', tc(52.3), tc(2.6)); prop('tree_a', tc(52.5), tc(7.2)); prop('bush', tc(52.1), tc(10.8)); prop('bush', tc(52.4), tc(4.9))
+    prop('tree_a', tc(52.6), tc(10.2)); prop('bush', tc(53.1), tc(11.0)); prop('pine', xe - tc(0.9), tc(2.2))
     prop('bush', tc(47.6), tc(0.8)); prop('bush', tc(50.6), tc(0.6))
+    for x in (tc(53.6), tc(57.0)):
+        prop('planter', x, tc(9.4))
+    prop('bench', tc(55.3), tc(10.4), dir=0); prop('ad_column', tc(57.6), tc(11.0)); prop('bike_rack', tc(52.6), tc(8.3), dir=2)
 
 
 def block_w():
@@ -616,7 +625,7 @@ def block_w():
     building('walkup_stone', tc(1.25), front_y('walkup_stone', fy), 0)
     building('apartment_block', tc(4.55), front_y('apartment_block', fy) - 2, 0, door=(-6, 'apartment', 'DRIZZLE ROW RESIDENCES'))
     keep_clear(DOORS[-1]['x'], DOORS[-1]['y'], 30)
-    row(['walkup_tan', 'walkup_red', 'shop_deli'], tc(6.6), fy)
+    row(['walkup_tan', 'library'], tc(6.6), fy)
     building('shop_barber', y_edge(P, fy, -1, HW + SWK) - half('shop_barber', 6)[0], fy - half('shop_barber', 6)[1], 6)
     # the north side: backs of the Overcast Avenue shops (their fronts face the avenue)
     ny = ROADS_X[O] + HW + SWK
@@ -659,7 +668,7 @@ def block_mid():
     # north of the lane, fronts facing it
     ny = ROADS_X[O] + HW + SWK
     building('shop_books', tc(25.1), front_y('shop_books', ly0 - 2), 0)
-    building('midrise_stone', tc(28.75), front_y('midrise_stone', ly0 - 2), 0)
+    building('hotel', tc(28.7), front_y('hotel', ly0 - 2), 0)
     building('walkup_stone', tc(31.75), front_y('walkup_stone', ly0 - 2), 0)
     prop('sandwich_board', tc(25.6), ly0 + 8)
     prop('planter', tc(27.1), ly0 + 10); prop('planter', tc(30.4), ly0 + 10)
@@ -728,6 +737,10 @@ def block_e():
     segments('fence', y_edge_line(G, tc(24.3), gy0 - 4, -1, HW + 8))
     segments('fence', y_edge_line(G, gy1 + 4, fy - 4, -1, HW + 8))
     building('workshop', tc(51.7), tc(25.75), 0)
+    building('workshop', tc(56.4), tc(25.75), 0)
+    for x, y, kind in ((55.0, 28.6, 'crate'), (55.6, 29.2, 'barrel_brick'), (58.4, 28.2, 'pallets'), (57.6, 31.4, 'pipes'),
+                       (58.6, 33.2, 'boxes'), (54.8, 33.0, 'barrel_teal')):
+        prop(kind, tc(x), tc(y))
     for name, x, y, dr in (('sedan_clay', 44.6, 27.6, 1), ('van_white', 50.9, 28.6, 0), ('sedan_khaki', 46.8, 28.9, 3)):
         car(name, tc(x), tc(y), dr)
     for x, y, kind in ((43.0, 25.0, 'barrel_teal'), (43.4, 25.4, 'barrel_brick'), (53.4, 28.4, 'crate'), (53.6, 28.9, 'crate'),
@@ -756,7 +769,7 @@ def block_sw():
     prop('bus_shelter', tc(12.8), ny - 22, dir=4)
     prop('bus_stop_sign', tc(14.4), ny - tc(1.6))
     keep_clear(tc(12.8), ny - 22, 60)
-    col(['walkup_red', 'walkup_tan'], tc(16.0), ny + 2, dir=6)
+    col(['chapel', 'walkup_tan'], tc(16.0), ny + 2, dir=6)
     building('shop_tailor', tc(11.4), tc(46.7), 4)
 
 
@@ -766,13 +779,12 @@ def block_s():
     ground('concrete', b.interior())
     ny = ROADS_X[D] + HW + SWK
     fx = y_edge(M, tc(44), -1, HW + SWK)
-    col(['shop_cafe', 'shop_noodles', 'shop_bakery'], fx, ny, dir=6)
+    col(['shop_diner', 'shop_florist'], fx, ny, dir=6)
     ground('brickpave', rect(fx, ny + 4, fx + 38, ny + tc(2.0)))
     prop('cafe_set_red', fx + 18, ny + 30)
     keep_clear(fx + 18, ny + 30, 34)
-    building('midrise_brick', tc(26.7), tc(44.2), 4)
-    building('walkup_red', tc(29.4), tc(44.5), 4)
-    building('walkup_stone', tc(31.7), tc(44.4), 4)
+    building('parking_garage', tc(26.25), tc(44.25), 4)
+    building('fire_station', tc(30.15), tc(44.6), 4)
     ground('cobble', rect(tc(33.3), ny, fx - tc(1.95), MAPH))
     lawn(rect(tc(24.3), tc(46.35), tc(33.0), MAPH + 4), 20)
     prop('tree_b', tc(25.2), tc(47.2)); prop('bush', tc(28.0), tc(47.4)); prop('tree_a', tc(31.2), tc(47.3))
@@ -796,38 +808,39 @@ def block_se():
     ground('kerb', rect(tc(43.1), ny + tc(2.45), tc(46.6), ny + tc(2.55)))
     prop('trash_can', tc(43.4), ny + tc(2.1)); prop('news_box', tc(46.2), ny + tc(2.1))
     prop('sandwich_board', tc(45.6), ny + tc(2.25)); prop('boxes', tc(46.3), ny + tc(0.9), dir=2)
-    # the pump island under the canopy
-    cx, cy = tc(51.7), tc(45.0)
+    # two pump islands under one wide canopy (widened 2026-10-11): a lane each side of each island, so four cars
+    # fill up at once; the canopy rests on posts standing on the islands
+    cx, cy = tc(53.4), tc(45.0)
     import infill as _inf
     roof = building('fuel_canopy', cx, cy, 0, solid=False)
     roof['over'] = True
-    phx, phy = (_inf.CANOPY_HX - 3) * B, (_inf.CANOPY_HY - 3) * B
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            building('canopy_post', cx + sx * phx, cy + sy * phy, 0)
-    ground('kerb', rect(cx - tc(1.55), cy - 9, cx + tc(1.55), cy + 9))
-    ground('concrete', rect(cx - tc(1.5), cy - 6.5, cx + tc(1.5), cy + 6.5))
-    prop('gas_pump', cx - tc(0.75), cy)
-    prop('gas_pump', cx + tc(0.75), cy)
-    PL[-2]['interact'] = {'id': 'pump0', 'label': 'REFUEL'}
-    PL[-1]['interact'] = {'id': 'pump1', 'label': 'REFUEL'}
-    prop('bollard', cx - tc(1.35), cy); prop('bollard', cx + tc(1.35), cy)
-    # lane markings: stop bars before the island, arrows painted as dashes along the lanes
-    for ly in (cy - tc(1.05), cy + tc(1.05)):
-        for k in range(6):
-            x = tc(48.3) + k * tc(1.4)
-            ground('paint_white', rect(x, ly - 0.9, x + 16, ly + 0.9))
-    # parking bays for the kiosk along the north side, and the air and water post
-    for x in (tc(48.2), tc(49.7), tc(51.2), tc(52.7)):
+    k = 0
+    for ix in (cx - tc(2.2), cx + tc(2.2)):
+        ground('kerb', rect(ix - tc(1.85), cy - 9, ix + tc(1.85), cy + 9))
+        ground('concrete', rect(ix - tc(1.8), cy - 6.5, ix + tc(1.8), cy + 6.5))
+        for px in (ix - tc(1.55), ix + tc(1.55)):
+            building('canopy_post', px, cy, 0)
+        for px in (ix - tc(0.6), ix + tc(0.6)):
+            prop('gas_pump', px, cy)
+            PL[-1]['interact'] = {'id': f'pump{k}', 'label': 'REFUEL'}
+            k += 1
+        prop('bin_sage', ix, cy - 4)
+    # lane markings: dashes along both lanes and stop bars at the island ends
+    for ly in (cy - tc(1.45), cy + tc(1.45)):
+        for j in range(9):
+            x = tc(48.6) + j * tc(1.1)
+            ground('paint_white', rect(x, ly - 0.9, x + 14, ly + 0.9))
+    # two parking bays for the kiosk east of the canopy, the air and water post
+    for x in (tc(58.4), tc(59.8)):
         ground('paint_white', rect(x - 0.9, ny + 6, x + 0.9, ny + tc(1.6)))
-    prop('utility_box', tc(54.2), ny + 14, dir=6); prop('bin_navy', tc(53.6), ny + 12)
+    prop('utility_box', tc(57.9), ny + 14, dir=6); prop('bin_navy', tc(57.3), ny + 12)
     # the south edge: a planting strip with a low wall, and the price sign corner
-    lawn(rect(tc(43.6), tc(47.25), gl[-1][0] - tc(1.2), MAPH + 4), 10)
-    segments('wall_brick', [[tc(43.7), tc(47.15)], [tc(53.5), tc(47.15)]])
-    for x in (44.6, 47.0, 49.4, 51.8):
-        prop('bush', tc(x), tc(47.7))
+    lawn(rect(tc(43.6), tc(47.7), gl[-1][0] - tc(1.2), MAPH + 4), 10)
+    segments('wall_brick', [[tc(43.7), tc(47.62)], [tc(58.5), tc(47.62)]])
+    for x in (44.6, 47.4, 50.2, 53.0, 55.8, 58.6):
+        prop('bush', tc(x), tc(47.95))
     prop('ad_column', tc(43.9), tc(46.3))
-    prop('cones', tc(53.9), tc(46.6))
+    prop('cones', tc(60.2), tc(46.9))
 
 
 def block_gullsway_edge():
@@ -838,16 +851,15 @@ def block_gullsway_edge():
         inner = b.interior()
         ground('grass', inner)
         y0, y1 = b.y_range(SWK)
-        xs = [x for x, _ in inner]
-        x_in = max(xs) - 0.5
         segments('fence', [[MAPW - 6, y0 + 10], [MAPW - 6, y1 - 10]])
-    for (x, y, k) in ((62.4, 2.0, 'pine'), (62.0, 6.0, 'tree_a'), (62.6, 10.4, 'pine'), (61.9, 13.8, 'bush'), (62.5, 25.0, 'tree_b'),
-                      (62.0, 28.4, 'bush'), (62.6, 31.0, 'pine'), (62.2, 34.0, 'bush'), (62.9, 43.6, 'bush'), (62.3, 12.2, 'bush'),
-                      (62.2, 4.2, 'bush'), (62.3, 8.3, 'bush'), (62.3, 26.8, 'bush'), (62.7, 29.7, 'tree_a')):
+    for (x, y, k) in ((67.6, 2.0, 'pine'), (67.2, 6.0, 'tree_a'), (67.8, 10.4, 'pine'), (67.1, 13.8, 'bush'), (67.7, 25.0, 'tree_b'),
+                      (67.2, 28.4, 'bush'), (67.8, 31.0, 'pine'), (67.4, 34.0, 'bush'), (68.6, 43.6, 'bush'), (67.5, 12.2, 'bush'),
+                      (67.4, 4.2, 'bush'), (67.5, 8.3, 'bush'), (67.5, 26.8, 'bush'), (67.9, 29.7, 'tree_a'), (68.6, 15.0, 'tree_b'),
+                      (68.8, 22.5, 'bush')):
         prop(k, tc(x), tc(y))
-    prop('bus_shelter', tc(61.6), tc(8.0), dir=6)
-    keep_clear(tc(61.6), tc(8.0), 50)
-    prop('bus_stop_sign', tc(61.4), tc(10.1))
+    prop('bus_shelter', tc(66.6), tc(8.0), dir=6)
+    keep_clear(tc(66.6), tc(8.0), 50)
+    prop('bus_stop_sign', tc(66.4), tc(10.1))
 
 
 FILL = {

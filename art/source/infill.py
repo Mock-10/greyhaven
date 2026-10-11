@@ -248,7 +248,7 @@ def workshop(lit=0.0, seed=3):
 
 
 CANOPY_H = 36.0      # underside of Pump & Go's canopy roof, model units (about 94 world units: vans clear it easily)
-CANOPY_HX, CANOPY_HY = 30.0, 16.0
+CANOPY_HX, CANOPY_HY = 50.0, 24.0   # widened 2026-10-11: two pump islands, a lane each side
 
 
 def fuel_canopy(lit=0.0):
@@ -259,7 +259,8 @@ def fuel_canopy(lit=0.0):
 
     def parts(P):
         roof = rbox(P, (0, 0, H + 2.4), (hx, hy, 2.4), 0.4)
-        vents = np.minimum(rbox(P, (-14, -6, H + 5.6), (3.0, 2.2, 0.9), 0.3), rbox(P, (9, 4, H + 5.6), (2.2, 2.2, 0.9), 0.3))
+        vents = np.minimum.reduce([rbox(P, (-28, -8, H + 5.6), (3.0, 2.2, 0.9), 0.3), rbox(P, (9, 6, H + 5.6), (2.2, 2.2, 0.9), 0.3),
+                                   rbox(P, (30, -6, H + 5.6), (2.6, 2.6, 0.9), 0.3)])
         return [roof, vents]
 
     def roof_m(p, n):
@@ -271,7 +272,7 @@ def fuel_canopy(lit=0.0):
         stripe = band & (np.abs(p[:, 2] - (H + 0.6)) < 0.5)
         under = n[:, 2] < -0.5
         top = n[:, 2] > 0.5
-        seam = top & ((np.abs(np.mod(p[:, 0] + 30, 10.0) - 5.0) < 0.35) | (np.abs(p[:, 1]) < 0.3))
+        seam = top & ((np.abs(np.mod(p[:, 0] + 50, 10.0) - 5.0) < 0.35) | (np.abs(p[:, 1]) < 0.3))
         r = np.where(txt, RID['white'], np.where(stripe, RID['white'], np.where(band, RID['red'], np.where(under, RID['white'], RID['lavlt']))))
         t = np.where(txt, 4.4, np.where(stripe, 3.6, np.where(band, 2.7, np.where(under, 4.2 if lit else 3.0, np.where(seam, 2.0, 2.6)))))
         return r, t, np.zeros(len(p))
@@ -323,4 +324,14 @@ FOOTPRINTS = {}
 for _k, (_f, _fp, _h) in _SPECS.items():
     BUILDINGS[_k] = (lambda f: (lambda: f(0.0)))(_f)
     BUILDINGS[_k + '_night'] = (lambda f, k: (lambda: f(0.42 if k.startswith(('walkup', 'midrise')) else 1.0)))(_f, _k)
+    FOOTPRINTS[_k] = (_fp[0], _fp[1], _h)
+
+
+# more Downtown buildings for variety (2026-10-11), from infill2.py
+import infill2 as _i2  # noqa: E402  (infill2 uses this module's helpers)
+
+_MANY_WINDOWS = {'deco_office', 'glass_tower', 'hotel', 'brownstones', 'corner_round', 'cinema', 'parking_garage'}
+for _k, (_f, _fp, _h) in _i2.SPECS.items():
+    BUILDINGS[_k] = (lambda f: (lambda: f(0.0)))(_f)
+    BUILDINGS[_k + '_night'] = (lambda f, k: (lambda: f(0.42 if k in _MANY_WINDOWS else 1.0)))(_f, _k)
     FOOTPRINTS[_k] = (_fp[0], _fp[1], _h)
