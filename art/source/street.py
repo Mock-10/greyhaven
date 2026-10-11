@@ -392,6 +392,45 @@ def puddle_cones():
     return M(parts, [m], (-8, 8, -4, 4, 0, 12))
 
 
+# ------------------------------------------------------------------ grass tufts and weeds (ground decals)
+def tuft(n=7, h=7.0, spread=3.0, seed=1, flowers=None, ramp='sage'):
+    """A small clump of grass blades leaning out from a common root. Baked into the ground as a decal, so it is
+    rendered without the outer outline (render(..., outline=False)), like the floor clutter in the drafts."""
+    rng = np.random.default_rng(seed)
+    blades = []
+    for k in range(n):
+        a = rng.uniform(0, 2 * np.pi)
+        r0 = rng.uniform(0, spread * 0.4)
+        lean = rng.uniform(0.25, 0.7) * spread
+        hh = h * rng.uniform(0.55, 1.0)
+        x0, y0 = r0 * np.cos(a), r0 * np.sin(a)
+        blades.append(((x0, y0, 0.0), (x0 + lean * np.cos(a), y0 + lean * np.sin(a), hh)))
+    fl = []
+    if flowers:
+        for k in range(3):
+            a = rng.uniform(0, 2 * np.pi)
+            fl.append((spread * 0.6 * np.cos(a), spread * 0.6 * np.sin(a), h * rng.uniform(0.7, 1.0)))
+
+    def parts(P):
+        bl = np.minimum.reduce([capsule(P, a, b, 0.6, 0.32) for a, b in blades])
+        out = [bl]
+        out.append(np.minimum.reduce([ell(P, c, (0.6, 0.6, 0.6)) for c in fl]) if fl else np.full(len(P), 1e3))
+        return out
+
+    def bm(p, n_):
+        t = 1.2 + p[:, 2] / max(h, 1) * 2.8
+        hh = hash3(np.floor(p[:, 0] * 2), np.floor(p[:, 1] * 2), 1, seed)
+        return np.where(hh > 0.8, RID['khaki'], RID[ramp]), t, np.zeros(len(p))
+    return M(parts, [bm, solid(flowers or 'white', 3.9)], (-spread - 2, spread + 2, -spread - 2, spread + 2, 0, h + 1.5))
+
+
+DECALS = {
+    'tuft_a': lambda: tuft(11, 7.0, 3.0, 1), 'tuft_b': lambda: tuft(7, 5.0, 2.2, 2), 'tuft_tall': lambda: tuft(14, 10.0, 3.4, 3),
+    'tuft_dry': lambda: tuft(9, 6.0, 2.8, 4, ramp='khaki'), 'weeds_white': lambda: tuft(9, 6.5, 3.0, 5, 'white'),
+    'weeds_plum': lambda: tuft(9, 6.0, 3.0, 6, 'plum'),
+}
+
+
 PROPS = {
     'bus_shelter': bus_shelter, 'phone_booth': phone_booth, 'parking_meter': parking_meter, 'utility_box': utility_box,
     'bollard': bollard, 'ad_column': ad_column, 'sandwich_board': sandwich_board,

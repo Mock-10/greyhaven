@@ -779,6 +779,62 @@ def _mat_at(x, y):
     return 'asphalt'
 
 
+DECALS = []          # grass tufts and weeds baked into the ground: (kind, x, y)
+DECAL_KINDS = {
+    'lawn': ['tuft_a', 'tuft_tall', 'tuft_a', 'weeds_white', 'tuft_b', 'weeds_plum'],
+    'paved': ['tuft_b', 'tuft_a', 'tuft_dry', 'tuft_b', 'weeds_white'],
+    'rough': ['tuft_dry', 'tuft_b', 'tuft_dry', 'tuft_a'],
+}
+
+
+def scatter_decals(seed=11):
+    """Grass tufts and weeds: thick along lawn edges and in tree pits, a few in the open lawn, and here and there
+    in the paving at the foot of walls, along kerbs, in alleys and in the rough yard."""
+    import check_city
+    rng = np.random.default_rng(seed)
+    m = {'width': N, 'ground': {'base': 'asphalt', 'shapes': [{'m': a, 'p': b} for a, b in SHAPES]}}
+    grid, mats = check_city.material_grid(m)
+    R = check_city.RES
+    blds = [p['fp'] for p in PL if p['sprite'].startswith('bld/')]
+    solids = [p['fp'] for p in PL if not p['sprite'].startswith('bld/') and p.get('solid')]
+    G_ = grid.shape[0]
+
+    def mat(x, y):
+        i, j = int(x // R), int(y // R)
+        return mats[grid[min(G_ - 1, max(0, i)), min(G_ - 1, max(0, j))]]
+
+    road = {'asphalt', 'asphalt_wet', 'paint_white', 'paint_gold', 'iron'}
+    counts = {k: 0 for k in DECAL_KINDS}
+    for y in np.arange(4, MAPW - 4, 8.0):
+        for x in np.arange(4, MAPW - 4, 8.0):
+            x2, y2 = x + rng.uniform(-3, 3), y + rng.uniform(-3, 3)
+            m0 = mat(x2, y2)
+            if m0 in road or m0 == 'kerb' or m0 == 'grate':
+                continue
+            if any(f[0] - 3 < x2 < f[2] + 3 and f[1] - 3 < y2 < f[3] + 3 for f in blds):
+                continue
+            near = {mat(x2 + dx, y2 + dy) for dx, dy in ((7, 0), (-7, 0), (0, 7), (0, -7))}
+            near_wall = any(f[0] - 12 < x2 < f[2] + 12 and f[1] - 12 < y2 < f[3] + 12 for f in blds)
+            if m0 in ('grass', 'grass_b'):
+                p, group = (0.32 if near - {'grass', 'grass_b'} else 0.05), 'lawn'
+            elif m0 == 'soil':
+                p, group = 0.45, 'lawn'
+            elif m0 in ('dirt', 'gravel'):
+                p, group = 0.09, 'rough'
+            elif m0 == 'lot':
+                p, group = (0.12 if near - {'lot', 'paint_white'} else 0.0), 'rough'
+            else:
+                p = 0.10 if near_wall else (0.035 if near & (road | {'kerb'}) else (0.03 if m0 in ('cobble', 'concrete') else 0.006))
+                group = 'paved'
+            if rng.random() >= p:
+                continue
+            if any(f[0] - 1 < x2 < f[2] + 1 and f[1] - 1 < y2 < f[3] + 1 for f in solids):
+                continue
+            kinds = DECAL_KINDS[group]
+            DECALS.append((kinds[counts[group] % len(kinds)], round(float(x2), 1), round(float(y2), 1)))
+            counts[group] += 1 + int(rng.integers(0, 2))
+
+
 def build():
     lay_blocks()
     paving_patches()
@@ -788,6 +844,7 @@ def build():
     lay_markings()
     dress_sidewalks()
     autofill()
+    scatter_decals()
 
 
 # ------------------------------------------------------------------ export
@@ -808,7 +865,8 @@ def street_spans():
 def export(path):
     out = {
         'id': 'downtown', 'name': 'THE LEDGER', 'width': N, 'height': N,
-        'ground': {'base': 'asphalt', 'shapes': [{'m': m, 'p': p} for m, p in SHAPES]},
+        'ground': {'base': 'asphalt', 'shapes': [{'m': m, 'p': p} for m, p in SHAPES],
+                   'decals': [{'k': k, 'x': x, 'y': y} for k, x, y in DECALS]},
         'placements': [{k: v for k, v in p.items() if k != 'fp'} for p in PL],
         'doors': DOORS, 'streets': STREETS,
         'spawn': {'x': tc(9), 'y': ROADS_X[O] - HW - 20},
@@ -824,4 +882,4 @@ if __name__ == '__main__':
     export(os.path.join(ROOT, 'src', 'maps', 'downtown.json'))
     if '--no-render' not in sys.argv:
         import draft_city
-        draft_city.render_all(SHAPES, PL, DOORS, MAPW, 'downtown', procs=int(sys.argv[sys.argv.index('--procs') + 1]) if '--procs' in sys.argv else 4)
+        draft_city.render_all(SHAPES, PL, DOORS, MAPW, 'downtown', decals=DECALS, procs=int(sys.argv[sys.argv.index('--procs') + 1]) if '--procs' in sys.argv else 4)

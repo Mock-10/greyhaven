@@ -157,7 +157,32 @@ def swatch(name, seed=3):
     u = np.mod(x, PERIOD); v = np.mod(y, PERIOD)
     with _periodic():
         ramp, t = _tex(name, u, v, seed)
-    return G._quant(ramp, t, px, py)
+    rgb = G._quant(ramp, t, px, py)
+    if name in ('grass', 'grass_b'):
+        rgb = _blades(rgb, seed)
+    return rgb
+
+
+def _blades(rgb, seed):
+    """Short grass blades drawn in screen space: a dark root, a mid stem and a light tip, leaning left or right.
+    Positions come from a hash of the swatch pixel, and the strokes wrap at the swatch edges so it still tiles."""
+    out = rgb.copy()
+    py, px = np.mgrid[0:SH, 0:SW]
+    h = hash3(px, py, 11, seed)
+    roots = np.argwhere(h > 0.972)
+    sage = RAMP_RGB[RID['sage']]; khaki = RAMP_RGB[RID['khaki']]
+    for y, x in roots:
+        hh = hash3(x, y, 12, seed)
+        tall = hh > 0.6
+        lean = 1 if hash3(x, y, 13, seed) > 0.5 else -1
+        out[y, x] = sage[0]
+        out[(y - 1) % SH, x] = sage[2]
+        tip = khaki[5] if hh > 0.85 else sage[5]
+        if tall:
+            out[(y - 2) % SH, (x + lean) % SW] = tip
+        else:
+            out[(y - 2) % SH, x] = tip
+    return out
 
 
 def write_swatches(out_png, out_json, seed=3):

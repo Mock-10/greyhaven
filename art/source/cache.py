@@ -34,6 +34,8 @@ def factories():
     for k in ('news_box', 'bike_rack', 'street_planter', 'bus_stop_sign'):
         f['prop/' + k] = decor.DECOR[k]
     f['prop/news_box_blue'] = lambda: decor.news_box('navy')
+    for k, v in street.DECALS.items():
+        f['dec/' + k] = v
     for k, v in street.SEGMENTS.items():
         f['seg/' + k] = v
     for k, v in infill.BUILDINGS.items():
@@ -58,7 +60,7 @@ def get(key, ang_idx=0, walk=0.0, ang=None):
     fac = factories()[key]
     model = fac(walk) if key.startswith('char/') else fac()
     a = ang if ang is not None else ang_idx * np.pi / 4
-    img, ox, oy = render(model, ang=a)
+    img, ox, oy = render(model, ang=a, outline=not key.startswith('dec/'))   # ground decals have no outline
     Image.fromarray(img, 'RGBA').save(png)
     json.dump({'ox': ox, 'oy': oy}, open(meta, 'w'))
     return img, ox, oy

@@ -128,7 +128,7 @@ def _hull(pts):
     return lo[:-1] + up[:-1]
 
 
-def render(SHAPES, PL, mapw, night=False, debug=False, procs=4):
+def render(SHAPES, PL, mapw, night=False, debug=False, procs=4, decals=()):
     nn = night_names()
     x0, y0 = int(-mapw - 40), -520
     W, H = int(2 * mapw + 80), int(mapw + 560)
@@ -142,6 +142,16 @@ def render(SHAPES, PL, mapw, night=False, debug=False, procs=4):
 
     def scr(wx, wy, wz=0.0):
         return wx - wy - x0, (wx + wy) / 2 - wz - y0
+
+    # ground decals (grass tufts, weeds) are part of the ground: drawn before the shadows, tinted like the ground
+    for k, wx, wy in decals:
+        img, ox, oy = cache.get('dec/' + k, 0, 0.0)
+        x, y = scr(wx, wy)
+        xi, yi = int(round(x - ox)), int(round(y - oy))
+        h, w = img.shape[:2]
+        sub = img.astype(float)
+        al = sub[..., 3:4] / 255.0
+        canvas[yi:yi + h, xi:xi + w] = sub[..., :3] * gtint * al + canvas[yi:yi + h, xi:xi + w] * (1 - al)
 
     # static shadows, multiplied onto the ground only
     sh = Image.new('L', (W, H), 0)
@@ -191,7 +201,8 @@ def render(SHAPES, PL, mapw, night=False, debug=False, procs=4):
         al = sub[..., 3:4] / 255.0
         canvas[ya:yb, xa:xb] = rgb * al + canvas[ya:yb, xa:xb] * (1 - al)
         if p.get('lamp'):
-            lamps.append(scr(p['x'], p['y'] + 16.5, 91.0))
+            a = p['dir'] * math.pi / 4      # the arm points along the lamp's local +y
+            lamps.append(scr(p['x'] - 16.5 * math.sin(a), p['y'] + 16.5 * math.cos(a), 91.0))
     if night:
         canvas = _lamps(canvas, lamps)
     if debug:
@@ -233,16 +244,16 @@ def crop(im):
     return im.crop((max(0, xs.min() - 12), max(0, ys.min() - 12), min(im.width, xs.max() + 12), min(im.height, ys.max() + 12)))
 
 
-def render_all(SHAPES, PL, DOORS, mapw, name, procs=4):
+def render_all(SHAPES, PL, DOORS, mapw, name, procs=4, decals=()):
     out = os.path.join(HERE, '..', 'drafts', name)
     os.makedirs(out, exist_ok=True)
     nn = night_names()
-    warm(PL, nn, procs)
+    warm(PL + [{'sprite': 'dec/' + k, 'dir': 0} for k in sorted({k for k, _, _ in decals})], nn, procs)
     for night, tag in ((False, 'day'), (True, 'dusk')):
-        im, _ = render(SHAPES, PL, mapw, night)
+        im, _ = render(SHAPES, PL, mapw, night, decals=decals)
         im = crop(im)
         im.save(os.path.join(out, f'{name}_{tag}_1x.png'), optimize=True)
         im.resize((im.width * 2, im.height * 2), Image.NEAREST).save(os.path.join(out, f'{name}_{tag}.png'), optimize=True)
         print('saved', tag, im.size, flush=True)
-    im, _ = render(SHAPES, PL, mapw, False, debug=True)
+    im, _ = render(SHAPES, PL, mapw, False, debug=True, decals=decals)
     crop(im).save(os.environ.get('DRAFT_DEBUG', os.path.join(out, f'{name}_debug.png')))
