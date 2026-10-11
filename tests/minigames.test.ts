@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Rng } from '../src/core/rng';
-import { DataEntryGame, FilingGame, TRAY_COLOURS } from '../src/minigames/logic';
+import { BALANCE } from '../src/config/balance';
+import { DataEntryGame, DuffelGame, FilingGame, TRAY_COLOURS } from '../src/minigames/logic';
 
 describe('filing minigame', () => {
   it('grades a perfect run excellent', () => {
@@ -50,5 +51,43 @@ describe('data entry minigame', () => {
     g.update(100);
     expect(g.done).toBe(true);
     expect(g.grade).toBe('fail');
+  });
+});
+
+describe('duffel minigame (Dez)', () => {
+  it('grades a quick clean bagging excellent and ends when the last clean stack goes in', () => {
+    const g = new DuffelGame(new Rng(5));
+    expect(g.stacks.filter((s) => s.dyed).length).toBe(BALANCE.minigames.duffel.dyed);
+    g.stacks.forEach((s, k) => {
+      if (!s.dyed) g.bag(k);
+    });
+    expect(g.done).toBe(true);
+    expect(g.grade).toBe('excellent');
+  });
+
+  it('is good when slow, ok with one dyed stack in the bag, and fails when time runs out early', () => {
+    const slow = new DuffelGame(new Rng(6));
+    slow.update(slow.timeTotal * 0.8);
+    slow.stacks.forEach((s, k) => !s.dyed && slow.bag(k));
+    expect(slow.grade).toBe('good');
+
+    const dyed = new DuffelGame(new Rng(7));
+    dyed.bag(dyed.stacks.findIndex((s) => s.dyed));
+    dyed.stacks.forEach((s, k) => !s.dyed && dyed.bag(k));
+    expect(dyed.dyedBagged).toBe(1);
+    expect(dyed.grade).toBe('ok');
+
+    const late = new DuffelGame(new Rng(8));
+    late.bag(late.stacks.findIndex((s) => !s.dyed));
+    late.update(999);
+    expect(late.grade).toBe('fail');
+  });
+
+  it('ignores a stack bagged twice', () => {
+    const g = new DuffelGame(new Rng(9));
+    const k = g.stacks.findIndex((s) => !s.dyed);
+    g.bag(k);
+    g.bag(k);
+    expect(g.cleanBagged).toBe(1);
   });
 });

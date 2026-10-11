@@ -95,6 +95,9 @@ export const BALANCE = {
     hotwire: { pairs: 4, seconds: 12, maxSparks: 3 },
     /** Money count (docs/06): count bills into bundles of 10; miscounts cost a share of the wash. */
     moneyCount: { bills: 30, seconds: 16 },
+    /** Duffel (Dez's laundering since 2026-10-11): stacks on the table, how many are dye-stained, the timer, and the
+     *  share of time that must be left for an excellent grade. */
+    duffel: { stacks: 8, dyed: 2, seconds: 14, excellentTimeShare: 0.3 },
   },
 
   player: {
@@ -206,11 +209,11 @@ export const BALANCE = {
     hotMinutes: 2 * 24 * 60,
   },
 
-  /** Laundering with Dez (docs/02): cut, daily cap; a sloppy money count adds to the cut. */
+  /** Laundering with Dez (docs/02): cut, daily cap; a sloppy bagging (the duffel minigame) adds to the cut. */
   laundering: {
     cut: 0.35,
     dailyCap: 1500,
-    /** Extra cut by money-count grade. */
+    /** Extra cut by duffel grade (dropped and dye-stained cash). */
     miscountCut: { excellent: 0, good: 0.02, ok: 0.05, poor: 0.1, fail: 0.15 },
   },
 

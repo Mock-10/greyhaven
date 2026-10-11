@@ -1300,7 +1300,7 @@ export class WorldScene extends Phaser.Scene {
     // keys pressed in the panel (the hotwire's F terminal, E) must not also act in the world
     this.resumedAt = this.time.now;
     if (r.kind === 'lockpick' || r.kind === 'hotwire') this.carMinigameDone(r);
-    if (r.kind === 'moneyCount') this.launderDone(r);
+    if (r.kind === 'duffel') this.launderDone(r);
     if ((r.kind === 'filing' || r.kind === 'dataEntry') && this.pendingTask) {
       const task = this.pendingTask;
       this.pendingTask = null;
@@ -1803,7 +1803,7 @@ export class WorldScene extends Phaser.Scene {
       this.toast('DEZ', "THAT'S ENOUGH FOR TODAY. COME BACK TOMORROW.");
     else {
       this.launderPending = true;
-      this.openMinigame({ kind: 'moneyCount', label: 'DEZ' });
+      this.openMinigame({ kind: 'duffel', seed: this.rng.int(1, 2 ** 30), label: 'DEZ' });
     }
   }
 

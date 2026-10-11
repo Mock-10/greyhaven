@@ -354,3 +354,72 @@ export class MoneyCountGame implements MinigameLogic {
     if (this.timeLeft === 0) this.finish();
   }
 }
+
+// ------------------------------------------------------------------ duffel (Dez's laundering, decided 2026-10-11)
+export interface CashStack {
+  /** Slot on the table, 0-based (row-major). */
+  slot: number;
+  /** Dye-stained by a bank dye pack: Dez won't take it, so it must stay out of the bag. */
+  dyed: boolean;
+  bagged: boolean;
+}
+
+/**
+ * Bag the cash (replaces the money count for laundering): drag every clean stack off the table into Dez's duffel
+ * before the timer runs out, and leave the dye-stained stacks out. Mouse only.
+ */
+export class DuffelGame implements MinigameLogic {
+  readonly stacks: CashStack[];
+  timeLeft: number;
+  readonly timeTotal: number;
+  /** Dyed stacks that went into the bag by mistake. */
+  dyedBagged = 0;
+  /** Feedback for the last stack dropped in the bag. */
+  flash: { ok: boolean; t: number } | null = null;
+  done = false;
+  grade: Grade | null = null;
+
+  constructor(rng: Rng) {
+    const D = BALANCE.minigames.duffel;
+    const dyed = new Set(rng.shuffle([...Array(D.stacks).keys()]).slice(0, D.dyed));
+    this.stacks = [...Array(D.stacks).keys()].map((slot) => ({ slot, dyed: dyed.has(slot), bagged: false }));
+    this.timeTotal = D.seconds;
+    this.timeLeft = D.seconds;
+  }
+
+  get cleanTotal(): number {
+    return this.stacks.filter((s) => !s.dyed).length;
+  }
+
+  get cleanBagged(): number {
+    return this.stacks.filter((s) => !s.dyed && s.bagged).length;
+  }
+
+  /** Drop the stack in table slot `slot` into the bag. */
+  bag(slot: number): void {
+    const s = this.stacks[slot];
+    if (this.done || !s || s.bagged) return;
+    s.bagged = true;
+    if (s.dyed) this.dyedBagged++;
+    this.flash = { ok: !s.dyed, t: 0 };
+    if (this.cleanBagged === this.cleanTotal) this.finish();
+  }
+
+  private finish(): void {
+    this.done = true;
+    const share = this.cleanBagged / this.cleanTotal;
+    if (share === 1 && this.dyedBagged === 0)
+      this.grade =
+        this.timeLeft / this.timeTotal > BALANCE.minigames.duffel.excellentTimeShare ? 'excellent' : 'good';
+    else if (share >= 0.75 && this.dyedBagged <= 1) this.grade = 'ok';
+    else if (share >= 0.5) this.grade = 'poor';
+    else this.grade = 'fail';
+  }
+
+  update(dt: number): void {
+    if (this.flash) this.flash.t += dt;
+    if (this.done) return;
+    this.timeLeft = Math.max(0, this.timeLeft - dt);
+    if (this.timeLeft === 0) this.finish();
+  }
+}

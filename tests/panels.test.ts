@@ -6,6 +6,7 @@ import {
   DataEntryGame,
   FilingGame,
   HotwireGame,
+  DuffelGame,
   MoneyCountGame,
   SkillCheckGame,
 } from '../src/minigames/logic';
@@ -31,6 +32,7 @@ import {
   drawFiling,
   drawHotwire,
   drawLockpick,
+  drawDuffel,
   drawMoneyCount,
   drawShop,
   type PanelKind,
@@ -97,6 +99,10 @@ describe('panel layouts never overlap', () => {
     for (let k = 0; k < 10; k++) m.count();
     m.miscounts = 3;
     check('moneyCount', (s) => drawMoneyCount(s, X, Y, m, 'DEZ'));
+    const d = new DuffelGame(new Rng(5));
+    d.bag(d.stacks.findIndex((q) => q.dyed));
+    d.bag(d.stacks.findIndex((q) => !q.dyed));
+    check('duffel', (s) => drawDuffel(s, X, Y, d, 'DEZ', 2));
   });
 
   it('the shop, with every card, a long message and big numbers', () => {
