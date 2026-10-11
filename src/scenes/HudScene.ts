@@ -24,6 +24,7 @@ import {
   type Surface,
 } from '../ui/hudDraw';
 import type { HudSnapshot } from './WorldScene';
+import { groundSampler } from '../maps/groundQuery';
 import { money } from './hudFormat';
 import type { Params } from '../debug/params';
 
@@ -126,12 +127,11 @@ export class HudScene extends Phaser.Scene {
         dirty: money(snap.money.dirty),
         night: darkness(cal.minute) > 0.5,
       });
-      const tiles = snap.map.tiles;
       radar(s, 46, H - 46, BALANCE.hud.radarRadius, BALANCE.hud.radarScale, {
         px: snap.px,
         py: snap.py,
         heading: snap.heading,
-        tileAt: (i, j) => tiles[i]?.[j],
+        groundAt: groundSampler(snap.map),
         buildings: snap.buildings,
         blips: snap.doors
           .filter((d) => d.target === 'apartment' || d.target === 'store')

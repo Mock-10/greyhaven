@@ -51,17 +51,17 @@ describe('atlas format', () => {
 
 describe('test map', () => {
   it('is the 28 × 28 reference district', () => {
-    expect(TEST_MAP.tiles).toHaveLength(28);
-    expect(TEST_MAP.tiles.every((c) => c.length === 28)).toBe(true);
-    expect(TEST_MAP.tiles[13]?.[14]).toBe('manhole');
-    expect(TEST_MAP.tiles[27]?.[20]).toBe('water_a');
-    expect(TEST_MAP.tiles[27]?.[5]).toBe('lot_a');
+    expect(TEST_MAP.tiles!).toHaveLength(28);
+    expect(TEST_MAP.tiles!.every((c) => c.length === 28)).toBe(true);
+    expect(TEST_MAP.tiles![13]?.[14]).toBe('manhole');
+    expect(TEST_MAP.tiles![27]?.[20]).toBe('water_a');
+    expect(TEST_MAP.tiles![27]?.[5]).toBe('lot_a');
     expect(TEST_MAP.placements).toHaveLength(50);
   });
 
   it('only uses tiles that exist in the variant atlas', () => {
     const frames = parseAtlas(ATLASES.tiles.json);
-    TEST_MAP.tiles.forEach((col, i) =>
+    TEST_MAP.tiles!.forEach((col, i) =>
       col.forEach((k, j) => expect(frames.has(`${k}/s${tileSeed(i, j)}`), `${k} at ${i},${j}`).toBe(true)),
     );
   });

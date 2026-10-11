@@ -791,8 +791,8 @@ def bollard():
         return [smin(cyl_z(P, (0, 0, 5), 1.8, 5, 0.6), ell(P, (0, 0, 10), (1.8, 1.8, 1.2)), 0.6)]
 
     def m(p, n):
-        band = np.abs(p[:, 2] - 8) < 0.8
-        return np.where(band, RID['gold'], RID['night']), np.where(band, 3.4, 2.2), np.full(len(p), 0.3)
+        band = np.abs(p[:, 2] - 8) < 0.8   # white, not gold: gold is reserved for valuables and interactables
+        return np.where(band, RID['white'], RID['night']), np.where(band, 3.8, 2.2), np.full(len(p), 0.3)
     return M(parts, [m], (-3, 3, -3, 3, 0, 12))
 
 

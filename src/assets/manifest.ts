@@ -5,6 +5,9 @@ import buildingsPng from '../../art/buildings.png';
 import buildingsJson from '../../art/buildings.json';
 import buildings2Png from '../../art/buildings2.png';
 import buildings2Json from '../../art/buildings2.json';
+import cityPng from '../../art/city.png';
+import cityJson from '../../art/city.json';
+import groundPng from '../../art/ground.png';
 import charactersPng from '../../art/characters.png';
 import charactersJson from '../../art/characters.json';
 import stepsPng from '../../art/characters_steps.png';
@@ -28,7 +31,11 @@ export const ATLASES = {
   steps: { url: stepsPng, json: stepsJson as unknown as AtlasJson },
   vehicles: { url: vehiclesPng, json: vehiclesJson as unknown as AtlasJson },
   interactables: { url: interactablesPng, json: interactablesJson as unknown as AtlasJson },
+  city: { url: cityPng, json: cityJson as unknown as AtlasJson },
 } as const;
+
+/** Ground material swatches for vector-ground maps (art/ground.png, read as pixels, not drawn as frames). */
+export const GROUND_SWATCHES_URL: string = groundPng;
 
 export type AtlasKey = keyof typeof ATLASES;
 export const ATLAS_KEYS = Object.keys(ATLASES) as AtlasKey[];

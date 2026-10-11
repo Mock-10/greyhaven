@@ -18,6 +18,8 @@ The art direction is **locked**. Read `art/STYLE_GUIDE.md` before touching anyth
 | `tiles.png/.json` | 24 ground tiles: asphalt, wet asphalt, road lanes (edge/centre/dashed for both axes), crosswalks, intersection, manhole, 2 sidewalks, 2 grass, dirt, planks, water, 2 lots |
 | `tiles_var.png/.json` | The same 26 ground tiles in all 7 seeded variants (`<kind>/s<seed>`). The game draws ground from this sheet. The reference scenes pick seed `(i·31 + j·17) % 7` per tile. Made by `source/tile_variants.py`. |
 | `buildings2.png/.json` | Phase 1 buildings in 4 orientations with `_night` variants: Pellridge Tower and Open Most Hours (named versions), The Low Tide, Marlo's Tow & Salvage, Drizzle Row Residences (`source/pack_phase1.py`) |
+| `city.png/.json` | City art for vector-ground maps, packed by `source/pack_city.py` from what the map uses: street props in any of 8 directions, wall, fence, railing, hedge and planting-bed segments in 16 directions, infill buildings with `_night` variants, and ground decals (grass tufts, weeds). Frame keys `<kind>/<name>/<dir>`. |
+| `ground.png/.json` | One repeating swatch per vector-ground material (asphalt, paint, sidewalk, kerb, plaza, brick paving, cobbles, terrazzo, concrete, grass with blades, soil, gravel, dirt, lot, grates, iron), from `source/ground_vec.py` |
 | `characters_steps.png/.json` | In-between walk poses (`step1` = walk +0.4, `step2` = −0.4) for the 8-frame cycle idle, step1, walk1, step1, idle, step2, walk2, step2 (`source/pack_steps.py`) |
 | `scene_*.png` | Reference compositions: overcast day and rainy dusk. **Match these.** |
 | `drafts/hud/` | HUD mockups (street and lockpick) and the HUD kit (see 11) |
@@ -37,6 +39,8 @@ New sprites must match the existing ones exactly. Generate them with the same pi
 
 Signs: `env.sign_text()` draws the 3 × 5 pixel font into a building's material in its local coordinates (one font pixel is about one screen pixel), so names read in every orientation. On a +x face, run the text along −y.
 
+City maps (Phase 1 milestone 1b): `downtown_map.py` authors the map (vector ground shapes, placements, doors, streets) with `citygeo.py` (curves, rounded blocks) and writes `src/maps/downtown.json` plus the drafts in `drafts/downtown/` (`draft_city.py`). `street.py` holds the street props, segments and decals, `infill.py` the infill buildings, `ground_vec.py` the ground materials and rasteriser, `check_city.py` the map checks (overlaps, buildings on roads, the 3 × 3 density rule). After changing the map: `python3 downtown_map.py && python3 check_city.py && python3 pack_city.py`, then commit the JSON, `city.*`, `ground.*` and the drafts.
+
 Workflow for a new asset:
 1. Add the model to the right file.
 2. Register it in `cache.factories()` with the right scale.
@@ -51,9 +55,9 @@ Never hand-draw placeholder rectangles in the shipped game. If an asset is missi
 - **Vehicles:** small airdrop plane (night flyover sprite plus shadow), tractor, scrap-yard crane, beater, pickup, sports car, armored SUV, log truck, SWAT van, helicopter (with a rotor animation), armored truck.
 - **Buildings:** bank, police HQ, gas station, mechanic garage, scrap yard, chop shop, bar, lumber camp, farm (fields, barn), legal scrap yard (car crusher, metal piles), docks crane, apartment block, front businesses (laundromat, car wash, nightclub), interiors.
 - **Streets (user direction 2026-10-10, see 01 "Street layout and density"):**
-  - Ground: curved kerb, road-edge and sidewalk pieces at a few radii (rounded corners, bends, a roundabout), or a ground baked from a vector street layout by `ground2d.py`. Paving variants and patterns, grates, cracks, puddles.
-  - Props: bus stop, newspaper boxes, phone booth, bike racks, café tables and awnings, kiosks, tree pits, fences and low walls, posters on walls, and alley clutter (dumpsters, pallets, crates, pipes, AC units).
-  - Small infill buildings and shopfronts to close the gaps between the main buildings.
+  - Ground (decided 2026-10-11: baked from a vector street layout, see 14): repeating material swatches from `ground2d.py` (asphalt, sidewalk, plaza paving patterns, cobbles, lot, grass, dirt, painted markings), plus grates, cracks and puddles.
+  - Props (made in milestone 1b, `source/street.py`): bus shelter, phone booth, café sets, kiosk, advertising column, sandwich board, parking meter, utility box, bollard, fountain, wheelie bins, pallets, pipes, AC units, bags, boxes, cones; segments for brick and stone walls, railings, chain-link fences, hedges and planting beds; grass tufts and weeds. Still wanted later: posters on building walls, awnings over cafés as separate props.
+  - Infill buildings and shopfronts (made in milestone 1b, `source/infill.py`): 10 shopfronts, 3 walk-ups, 3 mid-rise offices, a workshop.
 - **Effects:** muzzle flash, tracer, smoke, fire, explosion, blood-free hit spark, rain splash, siren light glow.
 - **UI:** the phone screens, inventory grid, shop screens, pause menu, Life Summary. (The HUD, prompts and the lockpick panel are drafted in `drafts/hud/`.)
 

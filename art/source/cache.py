@@ -28,6 +28,18 @@ def factories():
     for k, v in props2.PROPS.items():
         s = PROP_SCALE.get(k, 1.0)
         f['prop/' + k] = (lambda v, s: (lambda: scaled(v(), s)))(v, s)
+    import street, infill, decor
+    for k, v in street.PROPS.items():
+        f['prop/' + k] = v
+    for k in ('news_box', 'bike_rack', 'street_planter', 'bus_stop_sign'):
+        f['prop/' + k] = decor.DECOR[k]
+    f['prop/news_box_blue'] = lambda: decor.news_box('navy')
+    for k, v in street.DECALS.items():
+        f['dec/' + k] = v
+    for k, v in street.SEGMENTS.items():
+        f['seg/' + k] = v
+    for k, v in infill.BUILDINGS.items():
+        f['bld/' + k] = (lambda v: (lambda: scaled(v(), BLD_SCALE)))(v)
     for k, v in props2.INTERACT.items():
         s = INT_SCALE.get(k, 1.0)
         f['int/' + k] = (lambda v, s: (lambda: scaled(v(), s)))(v, s)
@@ -48,7 +60,7 @@ def get(key, ang_idx=0, walk=0.0, ang=None):
     fac = factories()[key]
     model = fac(walk) if key.startswith('char/') else fac()
     a = ang if ang is not None else ang_idx * np.pi / 4
-    img, ox, oy = render(model, ang=a)
+    img, ox, oy = render(model, ang=a, outline=not key.startswith('dec/'))   # ground decals have no outline
     Image.fromarray(img, 'RGBA').save(png)
     json.dump({'ox': ox, 'oy': oy}, open(meta, 'w'))
     return img, ox, oy

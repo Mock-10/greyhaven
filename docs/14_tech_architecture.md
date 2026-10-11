@@ -32,7 +32,8 @@
   config/             balance.ts (ALL tunable numbers), keys.ts, constants.ts
   data/               jobs.ts, crimes.ts, items.ts, weapons.ts, vehicles.ts, properties.ts — data tables, no logic
   core/               eventBus.ts, store.ts (game state), clock.ts (fixed timestep), rng.ts (seeded)
-  iso/                projection.ts, depthSort.ts, tilemap.ts, occlusion.ts, camera.ts
+  iso/                projection.ts, depthSort.ts, staticDepth.ts, tilemap.ts, vectorGround.ts,
+                      vectorGroundRenderer.ts, occlusion.ts, camera.ts
   assets/             atlasLoader.ts (art-pack JSON → Phaser frames + origins)
   entities/           Player, Pedestrian, Vehicle, Police, Interactable
   systems/            time, economy, laundering, careers, crime, wanted, police AI, witnesses, npcCrowd, traffic,
@@ -40,7 +41,8 @@
   minigames/          Minigame base class + one file per minigame
   scenes/             Boot, Preload, Title, World, Interior, UI (HUD overlay), Minigame overlay, Pause, Phone
   ui/                 HUD widgets, prompt plate, pixel font, menus
-  maps/               district map data (JSON from Tiled or hand-built)
+  maps/               district map data: downtown.json is written by art/source/downtown_map.py (vector ground,
+                      placements, doors, streets); testMap.ts is the Phase 0 tile map
 /tests                unit tests for systems (economy, wanted, careers, save migrations)
 ```
 
@@ -56,10 +58,13 @@
   `screenX = (x − y)`, `screenY = (x + y) / 2 − z` (then camera transform and zoom).
 - **Tile (i, j)** has its top vertex at world (32i, 32j). Draw the tile image with its anchor (the top vertex) at that point.
 - **Depth sorting:** tiles draw first (by i + j). Objects draw after, sorted by the world `x + y` of their **ground anchor**. Use Phaser `setDepth(x + y)` on a dedicated object layer. Large buildings use their footprint's front corner. Test with people walking around buildings.
+- **Depth sorting in dense city maps (Phase 1 milestone 1b):** sorting by the anchor alone fails when small props stand next to wide buildings. City maps order their static objects topologically (`src/iso/staticDepth.ts`): of two objects whose sprites overlap on screen, the one whose ground footprint lies behind the other along x or y draws first; ties fall back to the footprint's x + y. Trees sort by their trunk. A moving object slots in between the overlapping objects it is in front of and behind. The draft renderer (`art/source/draft_city.py`) uses the same rule. The Phase 0 reference map keeps the plain anchor sort so it still matches the reference image.
 - **Collision:** the ground is a tile grid of walkable/blocked cells. Buildings and props have **footprint polygons in world units**, and vehicles use oriented boxes. Do collision in world space, never in screen space.
 - **Occlusion:** if the player is behind a tall sprite (screen overlap and smaller world depth), fade that sprite.
-- **Map size:** about 160 × 160 tiles. Render only tiles and objects inside the camera bounds plus a margin. Pool and reuse sprites.
+- **Map size:** about 320 × 320 tiles (raised on 2026-10-11), so the world must stream: render only tiles and objects inside the camera bounds plus a margin. Pool and reuse sprites.
 - **Ground (built in Phase 0):** tiles never move, so they are baked into 16 × 16-tile chunk textures together with the static ground shadows. Only chunks near the camera are kept (least recently used are dropped past a cap). Chunk textures have even sizes; an odd-sized render texture draws 1 px out of place.
+- **Vector ground (decided 2026-10-11, built in Phase 1 milestone 1b):** streets, kerbs, sidewalks, plazas and paving patterns are vector shapes in world units (polygons, arcs and stroked centre lines for markings), so curves can have any radius. When a chunk is baked, the shapes are rasterised into a material buffer at pixel centres (no anti-aliasing), each pixel takes its colour from that material's repeating texture swatch, and raised edges get kerb faces. The swatches are made by `art/source/ground2d.py`, so the colours, dithering and texture match the tile art. Nothing large is shipped per map, so this scales to the full city. Plain areas can still use the tile grid. The Python draft renderer and the game use the same map data and the same rules; `tests/vectorGround.test.ts` checks the TypeScript compositor against a fixture written by `art/source/make_ground_fixture.py`. Ground decals (grass tufts, weeds) are baked into the chunks too, so the many small details cost nothing per frame. Wall, fence, railing, hedge and planting-bed pieces are short segments rendered at 16 directions, so curves can be built from them; they collide as turned boxes (`obox`).
+- **Camera bounds:** the view stays over the map, at most `BALANCE.camera.boundsMarginPx` past its edge.
 - **Pixel-perfect canvas (built in Phase 0):** the canvas runs at device resolution (CSS size × devicePixelRatio) with scale mode NONE, the camera origin is its top-left corner, and the scroll is a whole art pixel, so every sprite lands on whole screen pixels at any integer zoom.
 
 ## Performance targets

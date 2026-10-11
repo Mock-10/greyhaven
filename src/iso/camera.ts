@@ -7,7 +7,15 @@ import Phaser from 'phaser';
 import { BALANCE } from '../config/balance';
 import { TILE } from '../config/constants';
 import { worldToScreen, type Vec2 } from './projection';
-import { applyDeadzone, approach, clampLength, fitZoom, scrollFor, stepZoom } from './cameraMath';
+import {
+  applyDeadzone,
+  approach,
+  clampCenter,
+  clampLength,
+  fitZoom,
+  scrollFor,
+  stepZoom,
+} from './cameraMath';
 import type { Rect } from './shadows';
 
 const C = BALANCE.camera;
@@ -24,6 +32,8 @@ export class CameraController {
   private lastPointer: Vec2 = { x: 0, y: 0 };
   private readonly cam: Phaser.Cameras.Scene2D.Camera;
   private userZoom: number;
+  /** The view is kept over this screen rect (plus a margin), when given. */
+  private readonly bounds: Rect | null;
   private readonly canvas: HTMLCanvasElement;
   private readonly onWheel: (e: WheelEvent) => void;
   private readonly onEnter = () => (this.pointerInside = true);
@@ -32,8 +42,9 @@ export class CameraController {
   constructor(
     private scene: Phaser.Scene,
     private target: () => Vec2,
-    options: { zoom?: number } = {},
+    options: { zoom?: number; bounds?: Rect } = {},
   ) {
+    this.bounds = options.bounds ?? null;
     this.cam = scene.cameras.main;
     this.cam.setOrigin(0, 0);
     this.cam.setRoundPixels(true);
@@ -143,12 +154,16 @@ export class CameraController {
 
   private apply(): void {
     this.cam.setZoom(this.zoom);
-    const s = scrollFor(
-      { x: this.focus.x + this.pan.x, y: this.focus.y + this.pan.y },
-      this.cam.width,
-      this.cam.height,
-      this.zoom,
-    );
+    let center = { x: this.focus.x + this.pan.x, y: this.focus.y + this.pan.y };
+    if (this.bounds)
+      center = clampCenter(
+        center,
+        this.cam.width / this.zoom,
+        this.cam.height / this.zoom,
+        this.bounds,
+        C.boundsMarginPx,
+      );
+    const s = scrollFor(center, this.cam.width, this.cam.height, this.zoom);
     this.cam.setScroll(s.x, s.y);
   }
 

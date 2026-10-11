@@ -44,7 +44,7 @@ test('boots, starts from the title and moves the walker', async ({ page }) => {
 });
 
 test('sorts the player behind and in front of Pellridge Tower', async ({ page }) => {
-  await boot(page, '?scene=world&zoom=3&x=150&y=240');
+  await boot(page, '?scene=world&zoom=3&x=150&y=200');
   const tower = await page.evaluate(() => window.__DL__.depthOf('bld/pellridge_tower'));
   const behind = await page.evaluate(() => window.__DL__.walker!.depth);
   expect(behind).toBeLessThan(tower!);
@@ -86,7 +86,7 @@ test('zooms with Ctrl + wheel in whole steps and pans with the middle mouse', as
 });
 
 test('targets the ATM in range and the clock runs', async ({ page }) => {
-  const problems = await boot(page, '?scene=world&zoom=3&x=432&y=410');
+  const problems = await boot(page, '?scene=world&zoom=3&x=300&y=318');
   await page.keyboard.down('KeyW');
   await page.waitForTimeout(150);
   await page.keyboard.up('KeyW');

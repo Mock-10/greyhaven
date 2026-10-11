@@ -54,3 +54,13 @@ describe('ground shadows', () => {
     expect(shadowAlpha(0, 0.42)).toBe(0);
   });
 });
+
+describe('turned box shadows (wall and fence segments)', () => {
+  it('a box turned by 90 degrees casts the same shadow as the box with its sides swapped', () => {
+    const v = { box: 150, blob: 170 };
+    const a = shadowShape(100, 50, { kind: 'obox', hx: 8, hy: 3, h: 10, ang: Math.PI / 2 }, v);
+    const b = shadowShape(100, 50, { kind: 'box', hx: 3, hy: 8, h: 10 }, v);
+    expect(a.kind).toBe('poly');
+    expect(shapeBounds(a)).toEqual(shapeBounds(b));
+  });
+});

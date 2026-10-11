@@ -7,7 +7,11 @@
 import { LIGHT } from '../config/constants';
 import { worldToScreen, type Vec2 } from './projection';
 
-export type ShadowSpec = { kind: 'box'; hx: number; hy: number; h: number } | { kind: 'blob'; r: number };
+export type ShadowSpec =
+  | { kind: 'box'; hx: number; hy: number; h: number }
+  | { kind: 'blob'; r: number }
+  /** A box turned by `ang` radians about its anchor (wall, fence and planter segments). */
+  | { kind: 'obox'; hx: number; hy: number; h: number; ang: number };
 
 export type ShadowShape =
   | { kind: 'poly'; pts: Vec2[]; value: number }
@@ -33,15 +37,22 @@ export function shadowShape(
   values: { box: number; blob: number },
 ): ShadowShape {
   const [lx, ly, lz] = LIGHT;
-  if (spec.kind === 'box') {
+  if (spec.kind === 'box' || spec.kind === 'obox') {
     const dx = (-lx / lz) * spec.h;
     const dy = (-ly / lz) * spec.h;
+    const a = spec.kind === 'obox' ? spec.ang : 0;
+    const ca = Math.cos(a);
+    const sa = Math.sin(a);
     const corners: Vec2[] = [
       [-1, -1],
       [1, -1],
       [1, 1],
       [-1, 1],
-    ].map(([sx, sy]) => ({ x: x + (sx as number) * spec.hx, y: y + (sy as number) * spec.hy }));
+    ].map(([sx, sy]) => {
+      const u = (sx as number) * spec.hx;
+      const v = (sy as number) * spec.hy;
+      return { x: x + ca * u - sa * v, y: y + sa * u + ca * v };
+    });
     const all = [...corners, ...corners.map((c) => ({ x: c.x + dx, y: c.y + dy }))];
     const screen = all.map((p) => worldToScreen(p.x, p.y));
     const hull = convexHull(screen.map((p) => ({ x: round2(p.x), y: round2(p.y) })));

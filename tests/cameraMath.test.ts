@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { applyDeadzone, approach, clampLength, fitZoom, scrollFor, stepZoom } from '../src/iso/cameraMath';
+import {
+  applyDeadzone,
+  approach,
+  clampCenter,
+  clampLength,
+  fitZoom,
+  scrollFor,
+  stepZoom,
+} from '../src/iso/cameraMath';
 
 const LEVELS = [1, 2, 3, 4];
 
@@ -41,5 +49,16 @@ describe('camera maths', () => {
     const v = approach(0, 10, 8, 0.1);
     expect(v).toBeGreaterThan(0);
     expect(v).toBeLessThan(10);
+  });
+});
+
+describe('camera bounds', () => {
+  const b = { x: -100, y: 0, w: 200, h: 100 };
+  it('keeps the view over the map plus a margin', () => {
+    expect(clampCenter({ x: -500, y: 50 }, 40, 20, b, 10)).toEqual({ x: -90, y: 50 });
+    expect(clampCenter({ x: 0, y: 500 }, 40, 20, b, 10)).toEqual({ x: 0, y: 100 });
+  });
+  it('centres a view bigger than the map', () => {
+    expect(clampCenter({ x: 70, y: 0 }, 400, 300, b, 10)).toEqual({ x: 0, y: 50 });
   });
 });

@@ -3,7 +3,7 @@
 // frames whose anchors differ (characters do, per direction).
 
 import type Phaser from 'phaser';
-import { ATLASES, ATLAS_KEYS, type AtlasKey } from './manifest';
+import { ATLASES, ATLAS_KEYS, GROUND_SWATCHES_URL, type AtlasKey } from './manifest';
 import { opaqueBounds, parseAtlas, type Bounds, type FrameDef } from './atlasFormat';
 
 export interface FrameInfo extends FrameDef {
@@ -18,6 +18,7 @@ const id = (atlas: AtlasKey, frame: string) => `${atlas}:${frame}`;
 
 export function queueAtlases(load: Phaser.Loader.LoaderPlugin): void {
   for (const key of ATLAS_KEYS) load.image(key, ATLASES[key].url);
+  load.image('ground', GROUND_SWATCHES_URL);
 }
 
 /** Call once after the images have loaded. Adds every frame and measures its opaque bounds. */

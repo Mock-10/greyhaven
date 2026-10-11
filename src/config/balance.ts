@@ -10,6 +10,8 @@ export const BALANCE = {
   },
 
   camera: {
+    /** The view may show this many art pixels of background past the map edge, no more. */
+    boundsMarginPx: 48,
     /** Integer zoom levels the player can step through with Ctrl + wheel (docs/11). ?zoom=1 also works for debugging. */
     zoomLevels: [2, 3, 4] as readonly number[],
     /** Default zoom is the largest whole number that fits this many art pixels on screen. */
@@ -45,6 +47,10 @@ export const BALANCE = {
     duskEnd: 21 * 60 + 30,
     /** Street lamps and lit windows switch on above this darkness. */
     lightsOnDarkness: 0.35,
+    /** ...and reach full strength this much darkness later (they were faint for most of dusk before). */
+    lightsRampDarkness: 0.2,
+    /** Lamp and window glow strength the moment they switch on. */
+    lightsStartAlpha: 0.35,
   },
 
   economy: {
@@ -100,14 +106,15 @@ export const BALANCE = {
   },
 
   walker: {
-    /** Walking speed in world units per second (1.4 m/s ≈ 1 tile per second). */
-    walkSpeed: 32,
-    /** Sprint multiplier (Shift). */
-    sprintMultiplier: 1.9,
-    /** Walk-cycle frames per second for the 8-frame cycle (idle, step1, walk1, step1, idle, step2, walk2, step2). */
-    walkFps: 12,
-    /** The cycle runs faster while sprinting. */
-    sprintFpsMultiplier: 1.5,
+    /** Walking speed in world units per second (1.5 tiles per second; raised from 32 after the milestone 1 playtest). */
+    walkSpeed: 48,
+    /** Sprint multiplier (Shift): about 110 units/s, 3.4 tiles per second. */
+    sprintMultiplier: 2.3,
+    /** Walk-cycle frames per second for the 8-frame cycle (idle, step1, walk1, step1, idle, step2, walk2, step2).
+     *  Kept in step with walkSpeed (12 fps at 32 units/s) so the feet don't slide. */
+    walkFps: 18,
+    /** The cycle runs faster while sprinting (longer strides, so less than the speed multiplier). */
+    sprintFpsMultiplier: 1.8,
     /** Collision radius of a person, in world units. */
     radius: 6,
   },
@@ -137,5 +144,8 @@ export const BALANCE = {
     chunkTiles: 16,
     /** Most baked ground chunks kept in video memory at once. */
     maxChunks: 24,
+    /** Vector-ground chunks are screen-aligned blocks of this many art pixels (a multiple of the swatch size). */
+    vectorChunkW: 512,
+    vectorChunkH: 256,
   },
 } as const;
