@@ -106,7 +106,8 @@ export const BALANCE = {
   },
 
   walker: {
-    /** Walking speed in world units per second (1.5 tiles per second; raised from 32 after the milestone 1 playtest). */
+    /** Walking speed in world units per second along a tile edge (1.5 tiles per second; raised from 32 after the
+     *  milestone 1 playtest). Every key direction covers the same screen distance per second (systems/movement.ts). */
     walkSpeed: 48,
     /** Sprint multiplier (Shift): about 110 units/s, 3.4 tiles per second. */
     sprintMultiplier: 2.3,
@@ -117,6 +118,12 @@ export const BALANCE = {
     sprintFpsMultiplier: 1.8,
     /** Collision radius of a person, in world units. */
     radius: 6,
+    /** Small decoration (bollards, hydrants, lamp posts, meters, bins): hit circle scale, and how much the
+     *  walker's own radius shrinks against it, so brushing past one at a run doesn't stop you (2026-10-11). */
+    smallPropScale: 0.6,
+    smallPropSlack: 2,
+    /** A prop counts as small when its footprint radius (or half width) is at most this, in world units. */
+    smallPropMaxRadius: 9,
   },
 
   dayNight: {

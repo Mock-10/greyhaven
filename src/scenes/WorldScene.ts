@@ -27,13 +27,7 @@ import { CameraController } from '../iso/camera';
 import { unionRect } from '../iso/chunks';
 import { depthAgainstFootprints, depthOf, type Footprint } from '../iso/depthSort';
 import { isOccluding, rectsOverlap } from '../iso/occlusion';
-import {
-  facingFromWorld,
-  roundHalfEven,
-  screenDirToWorld,
-  worldToScreen,
-  worldToTile,
-} from '../iso/projection';
+import { facingFromWorld, roundHalfEven, worldToScreen, worldToTile } from '../iso/projection';
 import { rasterizeShadows, shadowAlpha, shadowShape, type Rect } from '../iso/shadows';
 import { GroundRenderer } from '../iso/tilemap';
 import { VectorGroundRenderer } from '../iso/vectorGroundRenderer';
@@ -43,6 +37,7 @@ import { tileSeed as referenceSeed, TEST_MAP } from '../maps/testMap';
 import type { Door, MapData, Placement } from '../maps/types';
 import { advance, calendar, darkness, tintAt } from '../systems/clock';
 import { selectTarget } from '../systems/interaction';
+import { moveVector, moveWithCollision, type CollisionRules, type Solid } from '../systems/movement';
 import { promptPixels } from '../ui/promptPlate';
 import { hook } from '../debug/hooks';
 import type { Params } from '../debug/params';
@@ -60,17 +55,6 @@ interface Placed {
   glow: Phaser.GameObjects.Image | null;
   /** Usable object: how to show its idle / hover cue. */
   cue: { kind: 'atlas'; name: string } | { kind: 'runtime' } | null;
-}
-
-interface Solid {
-  kind: 'box' | 'circle' | 'obox';
-  x: number;
-  y: number;
-  hx: number;
-  hy: number;
-  r: number;
-  /** Rotation of an 'obox' (radians). */
-  ang?: number;
 }
 
 /** Ground footprint used for depth sorting (art/source/downtown_map.py `fp`): trees sort by their trunk. */
@@ -361,12 +345,21 @@ export class WorldScene extends Phaser.Scene {
         bounds,
         sprite: p.sprite,
       });
-      if (p.solid) this.solids.push({ kind: 'box', x: p.x, y: p.y, hx, hy, r: 0 });
+      const small = Math.max(hx, hy) <= BALANCE.walker.smallPropMaxRadius && !p.sprite.startsWith('bld/');
+      if (p.solid) this.solids.push({ kind: 'box', x: p.x, y: p.y, hx, hy, r: 0, small });
     } else if (p.shadow.kind === 'obox') {
       const { hx, hy, ang } = p.shadow;
       if (p.solid) this.solids.push({ kind: 'obox', x: p.x, y: p.y, hx, hy, r: 0, ang });
     } else if (p.solid) {
-      this.solids.push({ kind: 'circle', x: p.x, y: p.y, hx: 0, hy: 0, r: p.shadow.r });
+      this.solids.push({
+        kind: 'circle',
+        x: p.x,
+        y: p.y,
+        hx: 0,
+        hy: 0,
+        r: p.shadow.r,
+        small: p.shadow.r <= BALANCE.walker.smallPropMaxRadius,
+      });
     }
   }
 
@@ -505,26 +498,15 @@ export class WorldScene extends Phaser.Scene {
     return worldToScreen(this.state.player.x, this.state.player.y);
   }
 
-  private collides(x: number, y: number): boolean {
-    const r = BALANCE.walker.radius;
-    if (x < r || y < r || x > this.map.width * TILE - r || y > this.map.height * TILE - r) return true;
-    for (const s of this.solids) {
-      if (s.kind === 'box') {
-        const cx = Math.max(s.x - s.hx, Math.min(x, s.x + s.hx));
-        const cy = Math.max(s.y - s.hy, Math.min(y, s.y + s.hy));
-        if ((x - cx) ** 2 + (y - cy) ** 2 < r * r) return true;
-      } else if (s.kind === 'obox') {
-        // into the box's own frame, then the same closest-point test
-        const ca = Math.cos(s.ang ?? 0);
-        const sa = Math.sin(s.ang ?? 0);
-        const u = (x - s.x) * ca + (y - s.y) * sa;
-        const v = -(x - s.x) * sa + (y - s.y) * ca;
-        const cu = Math.max(-s.hx, Math.min(u, s.hx));
-        const cv = Math.max(-s.hy, Math.min(v, s.hy));
-        if ((u - cu) ** 2 + (v - cv) ** 2 < r * r) return true;
-      } else if ((x - s.x) ** 2 + (y - s.y) ** 2 < (r + s.r) ** 2) return true;
-    }
-    return false;
+  private get collisionRules(): CollisionRules {
+    const W = BALANCE.walker;
+    return {
+      radius: W.radius,
+      mapW: this.map.width * TILE,
+      mapH: this.map.height * TILE,
+      smallScale: W.smallPropScale,
+      smallSlack: W.smallPropSlack,
+    };
   }
 
   private tick(dt: number): void {
@@ -550,16 +532,14 @@ export class WorldScene extends Phaser.Scene {
       p.sprinting = false;
       return;
     }
-    // WASD move along the screen; convert to a world direction of unit length.
-    const d = screenDirToWorld(sx, sy);
-    const len = Math.hypot(d.x, d.y);
+    // WASD: the same screen speed in every direction, two-key diagonals along the tile edges (systems/movement.ts)
     p.sprinting = k.sprint.isDown;
-    const speed = BALANCE.walker.walkSpeed * (p.sprinting ? BALANCE.walker.sprintMultiplier : 1) * dt;
-    const mx = (d.x / len) * speed;
-    const my = (d.y / len) * speed;
-    if (!this.collides(p.x + mx, p.y)) p.x += mx;
-    if (!this.collides(p.x, p.y + my)) p.y += my;
-    p.dir = facingFromWorld(d.x, d.y);
+    const speed = BALANCE.walker.walkSpeed * (p.sprinting ? BALANCE.walker.sprintMultiplier : 1);
+    const v = moveVector(sx, sy, speed) as { x: number; y: number };
+    const next = moveWithCollision(p.x, p.y, v.x * dt, v.y * dt, this.solids, this.collisionRules);
+    p.x = next.x;
+    p.y = next.y;
+    p.dir = facingFromWorld(v.x, v.y);
     p.moving = true;
   }
 
