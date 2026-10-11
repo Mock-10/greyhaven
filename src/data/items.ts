@@ -2,7 +2,7 @@
 // heal and a fuel can, for clean cash only). The full catalogue arrives with the Phase 2 economy.
 // Prices and effects are numbers, so they live in balance.ts (BALANCE.shop); this is the list.
 
-export type ItemId = 'chips' | 'sandwich' | 'fuel_can';
+export type ItemId = 'soda' | 'chips' | 'sandwich' | 'fuel_can';
 
 export interface ItemDef {
   id: ItemId;
@@ -12,6 +12,7 @@ export interface ItemDef {
 }
 
 export const ITEMS: Record<ItemId, ItemDef> = {
+  soda: { id: 'soda', name: 'SODA', use: 'eat' },
   chips: { id: 'chips', name: 'CHIPS', use: 'eat' },
   sandwich: { id: 'sandwich', name: 'SANDWICH', use: 'eat' },
   fuel_can: { id: 'fuel_can', name: 'FUEL CAN', use: 'carry' },
@@ -19,5 +20,5 @@ export const ITEMS: Record<ItemId, ItemDef> = {
 
 /** What each shop stocks, in menu order. */
 export const SHOP_STOCK: Record<'store', readonly ItemId[]> = {
-  store: ['chips', 'sandwich', 'fuel_can'],
+  store: ['soda', 'chips', 'sandwich', 'fuel_can'],
 };

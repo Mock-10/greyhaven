@@ -39,4 +39,13 @@ export class Rng {
   chance(p: number): boolean {
     return this.next() < p;
   }
+
+  /** Fisher–Yates shuffle in place; returns the same array. */
+  shuffle<T>(items: T[]): T[] {
+    for (let k = items.length - 1; k > 0; k--) {
+      const j = Math.floor(this.next() * (k + 1));
+      [items[k], items[j]] = [items[j] as T, items[k] as T];
+    }
+    return items;
+  }
 }

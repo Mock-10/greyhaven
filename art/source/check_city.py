@@ -66,7 +66,8 @@ def check_dict(m):
     N = m['width']
     grid, mats = material_grid(m)
     issues = []
-    blds = [p for p in m['placements'] if p['sprite'].startswith('bld/')]
+    # roofs on posts (the fuel canopy) aren't solid: cars and people go under them
+    blds = [p for p in m['placements'] if p['sprite'].startswith('bld/') and p.get('solid', True)]
     fps = [footprint(p) for p in blds]
     # buildings must not overlap each other (1 unit tolerance) or stand on a road
     for i in range(len(blds)):

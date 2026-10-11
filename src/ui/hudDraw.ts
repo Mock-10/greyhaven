@@ -41,6 +41,41 @@ export const C = {
   DIRTY_LABEL: [120, 86, 98] as RGB,
 } as const;
 
+// ------------------------------------------------------------------ layout audit
+/** A drawn text or icon rect, recorded while an audit runs (tests check that none overlap). */
+export interface DrawnRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  what: string;
+}
+
+let audit: DrawnRect[] | null = null;
+
+/** Start recording every text and icon drawn; `endAudit` returns them. */
+export function beginAudit(): void {
+  audit = [];
+}
+
+export function endAudit(): DrawnRect[] {
+  const out = audit ?? [];
+  audit = null;
+  return out;
+}
+
+/** Pairs of recorded rects that overlap (touching edges don't count). */
+export function overlaps(rects: readonly DrawnRect[]): [DrawnRect, DrawnRect][] {
+  const out: [DrawnRect, DrawnRect][] = [];
+  for (let i = 0; i < rects.length; i++)
+    for (let j = i + 1; j < rects.length; j++) {
+      const a = rects[i] as DrawnRect;
+      const b = rects[j] as DrawnRect;
+      if (a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h) out.push([a, b]);
+    }
+  return out;
+}
+
 export function createSurface(width: number, height: number): Surface {
   return { width, height, data: new Uint8ClampedArray(width * height * 4) };
 }
@@ -132,6 +167,7 @@ export function sprite(
   rows: readonly string[],
   pal: Record<string, RGB | null>,
 ): void {
+  audit?.push({ x, y, w: (rows[0] ?? '').length, h: rows.length, what: 'icon' });
   rows.forEach((row, j) => {
     [...row].forEach((ch, i) => {
       const c = pal[ch];
@@ -163,6 +199,7 @@ export function text(
   };
   if (shadow) put(0, 1, shadow);
   put(0, 0, col);
+  audit?.push({ x, y, w: w * scale, h: 5 * scale + (shadow ? 1 : 0), what: `text "${str}"` });
   return w * scale;
 }
 
@@ -215,6 +252,85 @@ export const ICON_PAL: Record<string, RGB | null> = {
   c: C.KHAKI4,
   r: C.RED3,
   $: C.SAGE1,
+  '.': null,
+};
+// shop item icons, 14 x 13 (hud.py ITEM_*). No gold: gold is reserved for valuables and interactables.
+export const ITEM_SODA = [
+  '....######....',
+  '...#ssssss#...',
+  '...#wwwwwW#...',
+  '...#rrrrrR#...',
+  '...#rrrrrR#...',
+  '...#wwwwwW#...',
+  '...#wrrwwW#...',
+  '...#wwwwwW#...',
+  '...#rrrrrR#...',
+  '...#rrrrrR#...',
+  '...#rrrrrR#...',
+  '...#ssssss#...',
+  '....######....',
+];
+export const ITEM_CHIPS = [
+  '..##########..',
+  '..#kKkKkKkK#..',
+  '..#kkkkkkkk#..',
+  '.#kkkkkkkkkk#.',
+  '.#krrrrrrrrk#.',
+  '.#krwwwwwwrk#.',
+  '.#krwyywwwrk#.',
+  '.#krwwyyywrk#.',
+  '.#krrrrrrrrk#.',
+  '.#kkkkkkkkkk#.',
+  '.#kkkkkkkkKK#.',
+  '.#kkkkkkkKKK#.',
+  '..##########..',
+];
+export const ITEM_SANDWICH = [
+  '..............',
+  '..##..........',
+  '..#b##........',
+  '..#bbb##......',
+  '..#bbbbb##....',
+  '..#bbbbbbb##..',
+  '..#gGgGgGgGg#.',
+  '..#tTtTtTtTtt#',
+  '..#bbbbbbbbbb#',
+  '..#BBBBBBBBBB#',
+  '..############',
+  '..............',
+  '..............',
+];
+export const ITEM_FUEL = [
+  '...######.....',
+  '...#....#.....',
+  '...######.....',
+  '..#rrrrrrr#...',
+  '..#rRRRRRr##..',
+  '..#rRrrrRr#s#.',
+  '..#rrRrRrr#s#.',
+  '..#rrrRrrr##..',
+  '..#rrRrRrr#...',
+  '..#rRrrrRr#...',
+  '..#rRRRRRr#...',
+  '..#rrrrrrr#...',
+  '..#########...',
+];
+export const ITEM_PAL: Record<string, RGB | null> = {
+  '#': C.INK,
+  s: [168, 160, 170],
+  w: [238, 233, 232],
+  W: [188, 180, 188],
+  r: [185, 94, 94],
+  R: [152, 69, 79],
+  k: [185, 180, 140],
+  K: [131, 132, 89],
+  y: [187, 147, 129],
+  b: [201, 191, 176],
+  B: [187, 147, 129],
+  g: [147, 163, 135],
+  G: [98, 116, 98],
+  t: [185, 94, 94],
+  T: [152, 69, 79],
   '.': null,
 };
 export const MOON = ['..###..', '.##....', '##.....', '##.....', '##.....', '.##....', '..###..'];

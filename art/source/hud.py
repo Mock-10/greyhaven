@@ -94,6 +94,12 @@ W_PAL = {'#': INK, 'm': R('lavlt', 3), 'h': R('wood', 2), 'w': R('wood', 4), 'g'
 
 ICON_CLEAN = ['#########', '#ccccccc#', '#c.ccc.c#', '#cc$$$cc#', '#c.ccc.c#', '#ccccccc#', '#########']
 ICON_DIRTY = ['#########', '#rrrrrrr#', '#r.rrr.r#', '#rr$$$rr#', '#r.rrr.r#', '#rrrrrrr#', '#########']
+# shop item icons (milestone 3): 14 x 13, palette ITEM_PAL. No gold: gold is reserved for valuables.
+ITEM_SODA = ['....######....', '...#ssssss#...', '...#wwwwwW#...', '...#rrrrrR#...', '...#rrrrrR#...', '...#wwwwwW#...', '...#wrrwwW#...', '...#wwwwwW#...', '...#rrrrrR#...', '...#rrrrrR#...', '...#rrrrrR#...', '...#ssssss#...', '....######....']
+ITEM_CHIPS = ['..##########..', '..#kKkKkKkK#..', '..#kkkkkkkk#..', '.#kkkkkkkkkk#.', '.#krrrrrrrrk#.', '.#krwwwwwwrk#.', '.#krwyywwwrk#.', '.#krwwyyywrk#.', '.#krrrrrrrrk#.', '.#kkkkkkkkkk#.', '.#kkkkkkkkKK#.', '.#kkkkkkkKKK#.', '..##########..']
+ITEM_SANDWICH = ['..............', '..##..........', '..#b##........', '..#bbb##......', '..#bbbbb##....', '..#bbbbbbb##..', '..#gGgGgGgGg#.', '..#tTtTtTtTtt#', '..#bbbbbbbbbb#', '..#BBBBBBBBBB#', '..############', '..............', '..............']
+ITEM_FUEL = ['...######.....', '...#....#.....', '...######.....', '..#rrrrrrr#...', '..#rRRRRRr##..', '..#rRrrrRr#s#.', '..#rrRrRrr#s#.', '..#rrrRrrr##..', '..#rrRrRrr#...', '..#rRrrrRr#...', '..#rRRRRRr#...', '..#rrrrrrr#...', '..#########...']
+ITEM_PAL = {'#': INK, 's': R('lavlt', 4), 'w': R('white', 5), 'W': R('white', 3), 'r': R('red', 3), 'R': R('red', 2), 'k': R('khaki', 4), 'K': R('khaki', 2), 'y': R('clay', 3), 'b': R('stone', 4), 'B': R('clay', 3), 'g': R('sage', 4), 'G': R('sage', 2), 't': R('red', 3), 'T': R('red', 2), '.': None}
 ICON_PAL = {'#': INK, 'c': R('khaki', 4), 'r': R('red', 3), '$': R('sage', 1), '.': None}
 
 MOON = ['..###..', '.##....', '##.....', '##.....', '##.....', '.##....', '..###..']

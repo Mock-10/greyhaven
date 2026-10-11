@@ -142,7 +142,7 @@ BLOCKS = {
     'e': Block('e', M, None, O, D, sidewalks={'n', 's'}),
     'sw': Block('sw', None, P, D, None),
     's': Block('s', P, M, D, None),
-    'se': Block('se', M, None, D, None),
+    'se': Block('se', M, None, D, None, sidewalks={'n'}),
 }
 
 # ------------------------------------------------------------------ output collections
@@ -162,7 +162,7 @@ PROP = {
     'mailbox': ('blob', 4), 'planter': ('blob', 13), 'tree_a': ('blob', 26), 'tree_b': ('blob', 26), 'pine': ('blob', 18),
     'bush': ('blob', 12), 'dumpster': ('box', 16, 8, 17), 'crate': ('box', 8, 8, 15), 'barrel_teal': ('blob', 6),
     'barrel_brick': ('blob', 6), 'traffic_light': ('blob', 5), 'street_sign': ('blob', 4),
-    'bus_shelter': ('box', 23, 8, 38), 'phone_booth': ('box', 6, 6, 44), 'parking_meter': ('blob', 2.5),
+    'gas_pump': ('box', 9, 6, 28), 'bus_shelter': ('box', 23, 8, 38), 'phone_booth': ('box', 6, 6, 44), 'parking_meter': ('blob', 2.5),
     'utility_box': ('box', 6, 3.5, 18), 'bollard': ('blob', 2), 'ad_column': ('blob', 8), 'sandwich_board': ('blob', 4),
     'cafe_set': ('blob', 12), 'cafe_set_red': ('blob', 12), 'kiosk': ('box', 15, 9, 26), 'fountain': ('blob', 38),
     'pallets': ('box', 10, 8, 8), 'pipes': ('box', 18, 5, 7), 'ac_unit': ('box', 8, 6, 14), 'trash_bags': ('blob', 8),
@@ -202,14 +202,14 @@ def prop(kind, x, y, dir=0, solid=None, **kw):
     return p
 
 
-def building(name, x, y, dir=0, door=None, front=None):
+def building(name, x, y, dir=0, door=None, front=None, solid=True):
     """Place a building by its footprint centre. door = (offset along the front in model units, target, label)."""
     hx, hy, h = BUILDING[name]
     hx, hy = hx * B, hy * B
     if dir in (2, 6):
         hx, hy = hy, hx
     p = {'sprite': f'bld/{name}', 'dir': dir, 'x': round(float(x), 2), 'y': round(float(y), 2),
-         'shadow': {'kind': 'box', 'hx': round(hx, 2), 'hy': round(hy, 2), 'h': round(h * B, 2)}, 'solid': True, 'night': True,
+         'shadow': {'kind': 'box', 'hx': round(hx, 2), 'hy': round(hy, 2), 'h': round(h * B, 2)}, 'solid': solid, 'night': True,
          'fp': _fp_box(x, y, hx, hy)}
     PL.append(p)
     if door:
@@ -722,14 +722,21 @@ def block_s():
 
 
 def block_se():
-    b = BLOCKS['se']
-    ground('concrete', b.interior())
+    """Pump & Go, the fuel station: a forecourt at road level off Millwright Road, two pumps under a canopy,
+    the kiosk behind them."""
     ny = ROADS_X[D] + HW + SWK
-    xw = y_edge(M, tc(44), +1, HW + SWK)
-    building('walkup_tan', xw + half('walkup_tan', 4)[0] + 2, tc(45.0), 4)
-    prop('dumpster', MAPW - 18, ny + tc(2.25))
-    lawn(rect(xw + 6, ny + 8, MAPW + 4, ny + tc(1.9)), 18)
-    prop('bush', xw + 24, ny + 30); prop('tree_b', MAPW - 40, ny + 30)
+    xr = y_edge(M, tc(44), +1, HW) - 1
+    ground('lot', rect(xr, ny, MAPW + 4, MAPW + 4))
+    for x in (tc(44.6), tc(47.4)):
+        ground('paint_white', rect(x - 0.9, ny + tc(0.8), x + 0.9, ny + tc(4.6)))
+    building('fuel_canopy', tc(46.0), tc(43.6), 0, solid=False)   # a roof on posts: cars drive under it
+    prop('gas_pump', tc(45.2), tc(43.6))
+    prop('gas_pump', tc(46.8), tc(43.6))
+    PL[-2]['interact'] = {'id': 'pump0', 'label': 'REFUEL'}
+    PL[-1]['interact'] = {'id': 'pump1', 'label': 'REFUEL'}
+    building('fuel_kiosk', tc(46.75), front_y('fuel_kiosk', MAPW - 4), 0)
+    prop('bollard', tc(45.0), tc(46.2)); prop('trash_can', tc(44.6), tc(45.9)); prop('news_box', tc(44.6), tc(46.7))
+    prop('utility_box', MAPW - 10, ny + 14)
 
 
 FILL = {

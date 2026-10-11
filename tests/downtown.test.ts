@@ -73,7 +73,7 @@ describe('Downtown map (vector ground)', () => {
 
   it('keeps buildings and parked cars off the roads', () => {
     for (const p of DOWNTOWN.placements) {
-      if (!(p.sprite.startsWith('bld/') || p.sprite.startsWith('veh/'))) continue;
+      if (!(p.sprite.startsWith('bld/') || p.sprite.startsWith('veh/')) || p.solid === false) continue;
       const [x0, y0, x1, y1] = box(p);
       for (const [x, y] of [
         [x0 + 3, y0 + 3],
@@ -93,7 +93,7 @@ describe('Downtown map (vector ground)', () => {
   });
 
   it('does not overlap buildings', () => {
-    const blds = DOWNTOWN.placements.filter((p) => p.sprite.startsWith('bld/')).map(box);
+    const blds = DOWNTOWN.placements.filter((p) => p.sprite.startsWith('bld/') && p.solid !== false).map(box);
     for (let i = 0; i < blds.length; i++)
       for (let j = i + 1; j < blds.length; j++) {
         const a = blds[i]!;

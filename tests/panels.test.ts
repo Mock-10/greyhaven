@@ -1,0 +1,116 @@
+// Layout check (user request, 2026-10-11): no text or icon in any panel or the HUD may overlap another.
+import { describe, expect, it } from 'vitest';
+import { Rng } from '../src/core/rng';
+import { SHOP_STOCK } from '../src/data/items';
+import {
+  DataEntryGame,
+  FilingGame,
+  HotwireGame,
+  MoneyCountGame,
+  SkillCheckGame,
+} from '../src/minigames/logic';
+import {
+  beginAudit,
+  createSurface,
+  endAudit,
+  hintKeys,
+  objective,
+  overlaps,
+  toast,
+  topLeft,
+  topRight,
+  stars,
+  type DrawnRect,
+  type Surface,
+} from '../src/ui/hudDraw';
+import {
+  PANEL_SIZE,
+  drawEntry,
+  drawFiling,
+  drawHotwire,
+  drawLockpick,
+  drawMoneyCount,
+  drawShop,
+  type PanelKind,
+} from '../src/ui/panels';
+
+const X = 40;
+const Y = 30;
+
+function check(kind: PanelKind | 'hud', draw: (s: Surface) => void): DrawnRect[] {
+  const s = createSurface(640, 360);
+  beginAudit();
+  draw(s);
+  const rects = endAudit();
+  expect(rects.length, `${kind}: nothing recorded`).toBeGreaterThan(3);
+  const bad = overlaps(rects).map(([a, b]) => `${a.what} @${a.x},${a.y} overlaps ${b.what} @${b.x},${b.y}`);
+  expect(bad, kind).toEqual([]);
+  if (kind !== 'hud') {
+    const P = PANEL_SIZE[kind];
+    for (const r of rects) {
+      expect(r.x >= X && r.y >= Y && r.x + r.w <= X + P.w && r.y + r.h <= Y + P.h, `${kind}: ${r.what} leaves the panel`).toBe(true);
+    }
+  }
+  return rects;
+}
+
+describe('panel layouts never overlap', () => {
+  it('filing, in play, after a stamp, and at the end', () => {
+    const f = new FilingGame(new Rng(1));
+    check('filing', (s) => drawFiling(s, X, Y, f, 'TASK 1/3', null));
+    f.file(0);
+    check('filing', (s) => drawFiling(s, X, Y, f, 'TASK 1/3', null));
+    f.misfiled = 9;
+    f.missed = 9;
+    f.correct = 9;
+    check('filing', (s) => drawFiling(s, X, Y, f, 'TASK 3/3', null));
+    while (!f.done) f.file(1);
+    check('filing', (s) => drawFiling(s, X, Y, f, 'TASK 3/3', null));
+  });
+
+  it('data entry', () => {
+    const e = new DataEntryGame(new Rng(2));
+    e.errors = 12;
+    check('dataEntry', (s) => drawEntry(s, X, Y, e, 'TASK 2/3'));
+  });
+
+  it('lockpick, hotwire and money count', () => {
+    const l = new SkillCheckGame(new Rng(3), 4);
+    l.noise = 1;
+    check('lockpick', (s) => drawLockpick(s, X, Y, l, 4, 'NO TOOL'));
+    const h = new HotwireGame(new Rng(4));
+    h.pickLeft(0);
+    h.sparks = 2;
+    check('hotwire', (s) => drawHotwire(s, X, Y, h));
+    const m = new MoneyCountGame();
+    for (let k = 0; k < 10; k++) m.count();
+    m.miscounts = 3;
+    check('moneyCount', (s) => drawMoneyCount(s, X, Y, m, 'DEZ'));
+  });
+
+  it('the shop, with every card, a long message and big numbers', () => {
+    check('shop', (s) =>
+      drawShop(s, X, Y, {
+        title: 'OPEN MOST HOURS',
+        stock: SHOP_STOCK.store,
+        clean: 99999,
+        selected: 3,
+        message: 'NOT ENOUGH CLEAN CASH',
+      }),
+    );
+  });
+
+  it('the HUD panels with long values', () => {
+    check('hud', (s) => {
+      topLeft(s, 6, 6, { ammo: '-/-', label: 'UNARMED', hp: 0.5, armor: 0.2 });
+      stars(s, 320, 6, 5);
+      topRight(s, 634, 6, { day: 'WED', clock: '23:59', clean: '99,999', dirty: '99,999', night: true });
+      objective(s, 320, 340, 'DO 3 MORE TASKS: FILING CABINETS OR YOUR DESK');
+      toast(s, 634, 308, 'MS. HOLLIS', 'PROMOTED TO ANALYST! +$250 BONUS. HERE IS YOUR KEY CARD.');
+      hintKeys(s, 500, 340, [
+        ['E', 'USE'],
+        ['TAB', 'NEXT'],
+      ]);
+    });
+  });
+});

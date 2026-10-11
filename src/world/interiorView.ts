@@ -274,6 +274,8 @@ export class InteriorView {
       remembered,
       BALANCE.interiors.sightRange,
     );
+    // remembered-room dimming is on hold (BALANCE.interiors.rememberedDimming): seen rooms draw as visible
+    if (!BALANCE.interiors.rememberedDimming) for (let k = 0; k < state.length; k++) if (state[k] === MEM) state[k] = VIS;
     this.state = enabled ? state : new Uint8Array(state.length).fill(VIS);
     this.applyState();
     return visibleRooms;

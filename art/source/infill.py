@@ -247,6 +247,28 @@ def workshop(lit=0.0, seed=3):
     return Model(parts, [body_m, solid('lav', 2.0), solid('stone', 1.8)], (-hx - 2, hx + 2, -hy - 2, hy + 2, 0, H + 6))
 
 
+def fuel_canopy(lit=0.0):
+    """Pump & Go's canopy: a flat roof on four posts with the name on its fascia (on the +y and +x faces)."""
+    hx, hy, H = 18.0, 18.0, 16.0
+
+    def parts(P):
+        roof = rbox(P, (0, 0, H + 2.0), (hx, hy, 2.2), 0.4)
+        posts = np.minimum.reduce([rbox(P, (sx * (hx - 3), sy * (hy - 3), H / 2), (0.9, 0.9, H / 2), 0.3) for sx in (-1, 1) for sy in (-1, 1)])
+        return [roof, posts]
+
+    def roof_m(p, n):
+        front, right, back, left = _faces(n)
+        u = np.where(front | back, p[:, 0], -p[:, 1])
+        side = front | right
+        txt = side & sign_text(u, p[:, 2], 'PUMP & GO', 0.0, H + 2.0)
+        band = (front | right | back | left)
+        under = n[:, 2] < -0.5
+        r = np.where(txt, RID['white'], np.where(band, RID['red'], np.where(under, RID['white'], RID['lavlt'])))
+        t = np.where(txt, 4.4, np.where(band, 2.7, np.where(under, 4.0 if lit else 3.0, 2.6)))
+        return r, t, np.zeros(len(p))
+    return Model(parts, [roof_m, solid('white', 3.0)], (-hx - 1, hx + 1, -hy - 1, hy + 1, 0, H + 5))
+
+
 # name: (factory(lit) , footprint half extents in model units (hx, hy), height in model units)
 _SPECS = {
     'shop_deli': (lambda lit: shop_building('DELI', 'brick', 2, awning=('sage', 'white'), sign=('night', 'white'), lit=lit, seed=1), (14, 12), 25),
@@ -266,6 +288,8 @@ _SPECS = {
     'midrise_blue': (lambda lit: midrise(9, 18, 18, 'render_blue', True, lit=lit, seed=8, crown='white'), (18, 18), 112),
     'midrise_brick': (lambda lit: midrise(6, 20, 16, 'darkbrick', False, lit=lit, seed=9), (20, 16), 76),
     'workshop': (lambda lit: workshop(lit), (16, 12), 15),
+    'fuel_canopy': (lambda lit: fuel_canopy(lit), (18, 18), 20),
+    'fuel_kiosk': (lambda lit: shop_building('PUMP & GO', 'render_lav', 1, 14, 10, awning=('red', 'white'), sign=('red', 'white'), lit=lit, seed=12, trim='white'), (14, 10), 13),
 }
 
 BUILDINGS = {}

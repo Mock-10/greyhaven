@@ -392,6 +392,33 @@ def puddle_cones():
     return M(parts, [m], (-8, 8, -4, 4, 0, 12))
 
 
+# ------------------------------------------------------------------ fuel station (milestone 3)
+def gas_pump():
+    """A fuel pump on a concrete island: a tall cabinet with a screen, a hose and a nozzle on the side."""
+    def parts(P):
+        island = rbox(P, (0, 0, 1.2), (9, 6, 1.2), 0.5)
+        body = rbox(P, (0, 0, 13), (6, 3.6, 11), 0.8)
+        head = rbox(P, (0, 0, 26.5), (6.6, 4.2, 2.6), 0.8)
+        hose = capsule(P, (6.4, 1.5, 18), (8.2, 2.5, 8), 0.5)
+        nozzle = rbox(P, (7.4, 2.8, 15.5), (0.8, 0.8, 2.2), 0.3)
+        return [island, body, head, np.minimum(hose, nozzle)]
+
+    def body_m(p, n):
+        front = n[:, 1] > 0.5
+        screen = front & (np.abs(p[:, 0]) < 3.6) & (np.abs(p[:, 2] - 19) < 2.6)
+        keys = front & (np.abs(p[:, 0]) < 3.0) & (np.abs(p[:, 2] - 12.5) < 2.0) & (np.mod(p[:, 0] + 10, 1.5) < 0.8)
+        stripe = np.abs(p[:, 2] - 7) < 1.2
+        r = np.where(screen, RID['teal'], np.where(keys, RID['lavlt'], np.where(stripe, RID['red'], RID['white'])))
+        t = np.where(screen, 3.4, np.where(keys, 2.2, np.where(stripe, 2.8, 3.1)))
+        return r, t, np.where(screen, 0.8, 0.2)
+
+    def head_m(p, n):
+        front = n[:, 1] > 0.5
+        txt = front & sign_text(p[:, 0], p[:, 2], 'FUEL', 0.0, 26.5, px=1.0)
+        return np.where(txt, RID['white'], RID['red']), np.where(txt, 4.2, 2.6), np.zeros(len(p))
+    return M(parts, [solid('stone', 2.4), body_m, head_m, solid('night', 1.8)], (-11, 11, -8, 8, 0, 31))
+
+
 # ------------------------------------------------------------------ grass tufts and weeds (ground decals)
 def tuft(n=7, h=7.0, spread=3.0, seed=1, flowers=None, ramp='sage'):
     """A small clump of grass blades leaning out from a common root. Baked into the ground as a decal, so it is
@@ -432,6 +459,7 @@ DECALS = {
 
 
 PROPS = {
+    'gas_pump': gas_pump,
     'bus_shelter': bus_shelter, 'phone_booth': phone_booth, 'parking_meter': parking_meter, 'utility_box': utility_box,
     'bollard': bollard, 'ad_column': ad_column, 'sandwich_board': sandwich_board,
     'cafe_set': cafe_set, 'cafe_set_red': lambda: cafe_set(('red', 'white')), 'kiosk': kiosk, 'fountain': fountain,

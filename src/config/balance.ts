@@ -81,14 +81,87 @@ export const BALANCE = {
   minigames: {
     filing: { papers: 8, startFall: 18, fallAccel: 2.2, misfilePenalty: 1 },
     dataEntry: { rounds: 3, length: 5, seconds: 14 },
+    /** docs/06 core skill check by tier: needle speed (rev/s), good and great zone widths (degrees), checks. */
+    skillTiers: [
+      { speed: 0.8, good: 60, great: 14, checks: 2 },
+      { speed: 1.0, good: 48, great: 11, checks: 3 },
+      { speed: 1.2, good: 38, great: 9, checks: 4 },
+      { speed: 1.45, good: 30, great: 7, checks: 5 },
+      { speed: 1.7, good: 24, great: 6, checks: 6 },
+    ],
+    /** Lockpick: misses allowed before the pick slips (fail), and progress lost per miss. */
+    lockpick: { maxMisses: 3 },
+    /** Hotwire (docs/06): 3–5 wire pairs before the timer runs out; a wrong pair sparks (noise). */
+    hotwire: { pairs: 4, seconds: 12, maxSparks: 3 },
+    /** Money count (docs/06): count bills into bundles of 10; miscounts cost a share of the wash. */
+    moneyCount: { bills: 30, seconds: 16 },
   },
 
   player: {
     maxHealth: 100,
   },
 
+  /** Driving (docs/08), in world units and seconds. The sedan's docs/08 stats (top speed 85, tank 40) are scaled
+   *  to the map: top speed 85 → 240 units/s (7.5 tiles/s). */
+  vehicles: {
+    sedan: {
+      topSpeed: 240,
+      reverseSpeed: 70,
+      accel: 140,
+      brake: 320,
+      /** Rolling slowdown with no throttle. */
+      drag: 70,
+      /** Steering rate at speed (radians per second); tighter at low speed. */
+      turnRate: 2.4,
+      /** Half length and half width of the body for collision. */
+      halfLength: 38,
+      halfWidth: 15,
+      health: 100,
+      /** docs/08: a sedan tank holds 40 units, about 15 real minutes of full throttle. */
+      tank: 40,
+      fuelPerSecond: 40 / (15 * 60),
+    },
+    /** Damage per unit of impact speed; below these healths the car smokes / loses 30% top speed (docs/08). */
+    damagePerSpeed: 0.12,
+    smokeBelow: 50,
+    limpBelow: 25,
+    limpFactor: 0.7,
+    /** Bounce on impact: share of speed kept, reversed. */
+    bounce: 0.25,
+    /** How close (world units) you must stand to a car to use or enter it, or drive to a pump or Marlo. */
+    reach: 40,
+    pumpReach: 64,
+    marloReach: 96,
+    /** Fuel price (docs/02: $3 per unit) and a jerry can's contents (docs/08: 10 units). */
+    fuelPrice: 3,
+    canUnits: 10,
+    /** Camera leads the car by up to this many tiles in its direction of travel (docs/11). */
+    cameraLeadTiles: 3,
+    /** Starting fuel of a parked car, as a share of the tank. */
+    parkedFuel: 0.35,
+  },
+
+  /** Crime (docs/04): carjacking a parked car and the chop shop. */
+  crime: {
+    /** Chop shop payout range in dirty dollars for a parked car (docs/04: $150–400). */
+    chopPayout: [150, 400] as readonly number[],
+    /** Chance a failed lockpick sets off the car alarm (docs/05: 30%). */
+    alarmChance: 0.3,
+    /** A stolen car stays hot this many in-game minutes (docs/08: 2 days). */
+    hotMinutes: 2 * 24 * 60,
+  },
+
+  /** Laundering with Dez (docs/02): cut, daily cap; a sloppy money count adds to the cut. */
+  laundering: {
+    cut: 0.35,
+    dailyCap: 1500,
+    /** Extra cut by money-count grade. */
+    miscountCut: { excellent: 0, good: 0.02, ok: 0.05, poor: 0.1, fail: 0.15 },
+  },
+
   /** Corner-store basics (docs/02 "Phase 1 shop"): price in clean dollars, health restored when eaten. */
   shop: {
+    soda: { price: 3, heal: 5 },
     chips: { price: 6, heal: 10 },
     sandwich: { price: 12, heal: 25 },
     /** docs/08: a jerry can costs $40 and holds 10 fuel units. */
@@ -105,6 +178,9 @@ export const BALANCE = {
     sightMoveUnits: 4,
     /** Sight state changes fade over this long (docs/19: about 150 ms), in seconds. */
     sightFadeSeconds: 0.15,
+    /** Remembered rooms dimmed with last-seen ghosts (docs/19). ON HOLD until Phase 8 (user, 2026-10-11):
+     *  while false, rooms seen before are drawn like visible ones; only never-seen rooms get the lid. */
+    rememberedDimming: false,
     /** Remembered rooms: floor dim overlay strength and the tint on static furniture (docs/19: about 50%, cooler). */
     rememberedDim: 0.5,
     rememberedTint: 0x8a82a8,
