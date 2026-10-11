@@ -8,7 +8,8 @@ import { groundSampler } from '../src/maps/groundQuery';
 import type { Placement } from '../src/maps/types';
 
 const T = 32;
-const N = 48;
+const NW = 64;
+const NH = 48;
 const ground = groundSampler(DOWNTOWN);
 const ROAD = new Set(['asphalt', 'asphalt_wet', 'paint_white', 'paint_gold', 'iron']);
 
@@ -38,9 +39,9 @@ const solidsHit = (x: number, y: number, r = 6) =>
   });
 
 describe('Downtown map (vector ground)', () => {
-  it('is 48 x 48 tiles of known ground materials', () => {
-    expect(DOWNTOWN.width).toBe(N);
-    expect(DOWNTOWN.height).toBe(N);
+  it('is 64 x 48 tiles of known ground materials', () => {
+    expect(DOWNTOWN.width).toBe(NW);
+    expect(DOWNTOWN.height).toBe(NH);
     const known = new Set(groundJson.materials.map((m) => m.name));
     expect(known.has(DOWNTOWN.ground!.base)).toBe(true);
     for (const s of DOWNTOWN.ground!.shapes) {
@@ -82,7 +83,7 @@ describe('Downtown map (vector ground)', () => {
         [x0 + 3, y1 - 3],
         [(x0 + x1) / 2, (y0 + y1) / 2],
       ] as const) {
-        if (x < 0 || y < 0 || x >= N * T || y >= N * T) continue;
+        if (x < 0 || y < 0 || x >= NW * T || y >= NH * T) continue;
         const k = ground(x, y);
         expect(
           k !== undefined && ROAD.has(k) && k !== 'paint_white',
@@ -124,26 +125,69 @@ describe('Downtown map (vector ground)', () => {
     }
   });
 
-  it('has a parking lot with cars to steal and keeps Marlo at the edge', () => {
+  it('has a parking lot with cars to steal, including the taxi and the van', () => {
     const cars = DOWNTOWN.placements.filter((p) => p.sprite.startsWith('veh/'));
     expect(cars.filter((c) => ground(c.x, c.y) === 'lot').length).toBeGreaterThanOrEqual(4);
-    const marlo = DOWNTOWN.placements.find((p) => p.sprite === 'bld/chop_shop')!;
-    expect(marlo.x).toBeGreaterThan(N * T * 0.85);
+    const stealable = cars.filter((c) => c.parked).map((c) => c.sprite);
+    expect(stealable).toContain('veh/taxi');
+    expect(stealable).toContain('veh/van_white');
+  });
+
+  it('gives Marlo a dotted sale spot in plain view, reachable from Gullsway', () => {
+    const z = DOWNTOWN.zones?.find((q) => q.id === 'marlo_spot');
+    expect(z).toBeDefined();
+    const cx = (z!.x0 + z!.x1) / 2;
+    const cy = (z!.y0 + z!.y1) / 2;
+    // a car fits: about 2.5 x 1 tiles
+    expect(z!.x1 - z!.x0).toBeGreaterThan(80);
+    expect(z!.y1 - z!.y0).toBeGreaterThan(36);
+    // nothing solid in it, and painted outline around it
+    expect(solidsHit(cx, cy, 30)).toEqual([]);
+    // painted dashes along the outline (the ground sampler's grid is too coarse for 2.6-unit lines)
+    const dashes = DOWNTOWN.ground!.shapes.filter(
+      (sh) =>
+        sh.m === 'paint_white' &&
+        sh.p.every(([x, y]) => x >= z!.x0 - 3 && x <= z!.x1 + 3 && y >= z!.y0 - 3 && y <= z!.y1 + 3),
+    );
+    expect(dashes.length).toBeGreaterThan(20);
+    // no building stands in front of it on screen (larger x + y, overlapping screen x)
+    for (const p of DOWNTOWN.placements.filter((q) => q.sprite.startsWith('bld/'))) {
+      const [x0, y0, x1, y1] = box(p);
+      const front = x0 + y0 > z!.x1 + z!.y1;
+      const sx = [x0 - y1, x1 - y0];
+      const overlaps = sx[0]! < z!.x1 - z!.y0 && sx[1]! > z!.x0 - z!.y1;
+      expect(front && overlaps, p.sprite).toBe(false);
+    }
+    // the drive from Gullsway's kerb to the spot is clear
+    for (let x = cx; x < cx + 6 * T; x += 8) expect(solidsHit(x, cy, 16), `x ${x}`).toEqual([]);
+  });
+
+  it('puts the fuel canopy overhead with posts tall enough to drive under', () => {
+    const roof = DOWNTOWN.placements.find((p) => p.sprite === 'bld/fuel_canopy')!;
+    expect(roof.over).toBe(true);
+    expect(roof.solid).toBe(false);
+    expect(DOWNTOWN.placements.filter((p) => p.sprite === 'bld/canopy_post').length).toBe(4);
+    const pumps = DOWNTOWN.placements.filter((p) => p.interact?.id.startsWith('pump'));
+    expect(pumps.length).toBe(2);
+    const kiosk = DOWNTOWN.placements.find((p) => p.sprite === 'bld/fuel_kiosk')!;
+    // the kiosk's front (+y) faces the pumps
+    expect(kiosk.dir).toBe(0);
+    for (const p of pumps) expect(p.y).toBeGreaterThan(kiosk.y);
   });
 
   it('names its streets, including the bend', () => {
     const names = new Set((DOWNTOWN.streets ?? []).map((s) => s.name));
-    for (const n of ['OVERCAST AVENUE', 'DRIZZLE ROW', 'PEWTER STREET', 'MILLWRIGHT ROAD'])
+    for (const n of ['OVERCAST AVENUE', 'DRIZZLE ROW', 'PEWTER STREET', 'MILLWRIGHT ROAD', 'GULLSWAY'])
       expect(names.has(n), n).toBe(true);
   });
 
   it('follows the density rule: no bare 3 x 3 patch of walkable ground (docs/01)', () => {
     const walk: boolean[][] = [];
     const dressed: boolean[][] = [];
-    for (let i = 0; i < N; i++) {
+    for (let i = 0; i < NW; i++) {
       walk.push([]);
       dressed.push([]);
-      for (let j = 0; j < N; j++) {
+      for (let j = 0; j < NH; j++) {
         const c = ground(i * T + 16, j * T + 16) ?? 'asphalt';
         walk[i]!.push(!ROAD.has(c) && c !== 'lot');
         const kinds = new Set<string>();
@@ -160,13 +204,13 @@ describe('Downtown map (vector ground)', () => {
         for (let i = Math.ceil(x0 / T); i < Math.floor(x1 / T); i++)
           for (let j = Math.ceil(y0 / T); j < Math.floor(y1 / T); j++) if (walk[i]) walk[i]![j] = false;
       } else
-        for (let i = Math.max(0, Math.floor(x0 / T)); i <= Math.min(N - 1, Math.floor(x1 / T)); i++)
-          for (let j = Math.max(0, Math.floor(y0 / T)); j <= Math.min(N - 1, Math.floor(y1 / T)); j++)
+        for (let i = Math.max(0, Math.floor(x0 / T)); i <= Math.min(NW - 1, Math.floor(x1 / T)); i++)
+          for (let j = Math.max(0, Math.floor(y0 / T)); j <= Math.min(NH - 1, Math.floor(y1 / T)); j++)
             dressed[i]![j] = true;
     }
     const bare: string[] = [];
-    for (let i = 0; i + 2 < N; i++)
-      for (let j = 0; j + 2 < N; j++) {
+    for (let i = 0; i + 2 < NW; i++)
+      for (let j = 0; j + 2 < NH; j++) {
         let all = true;
         for (let a = 0; a < 3 && all; a++)
           for (let b = 0; b < 3 && all; b++) all = walk[i + a]![j + b]! && !dressed[i + a]![j + b]!;

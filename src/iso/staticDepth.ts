@@ -12,6 +12,8 @@ export interface Sortable {
   fp: Box;
   /** Screen bounds of the sprite. */
   bounds: Rect;
+  /** An overhead object (a canopy roof on posts): it draws after anything standing under its footprint. */
+  over?: boolean;
 }
 
 const EPS = 0.01;
@@ -23,10 +25,12 @@ function behind(a: Box, b: Box): boolean {
 
 const sumKey = (f: Box) => f[0] + f[2] + f[1] + f[3];
 
-/** Which of two overlapping objects draws first: -1 for a, 1 for b. */
-export function firstOf(a: Box, b: Box): -1 | 1 {
+/** Which of two overlapping objects draws first: -1 for a, 1 for b. An overhead object draws after anything whose
+ *  footprint reaches under it. */
+export function firstOf(a: Box, b: Box, aOver = false, bOver = false): -1 | 1 {
   const ab = behind(a, b);
   const ba = behind(b, a);
+  if (aOver !== bOver && !ab && !ba) return aOver ? 1 : -1;
   if (ab && !ba) return -1;
   if (ba && !ab) return 1;
   return sumKey(a) <= sumKey(b) ? -1 : 1;
@@ -51,7 +55,8 @@ export function staticOrder(items: readonly Sortable[]): number[] {
       const bj = items[j]!.bounds;
       if (bj.x >= bi.x + bi.w) break;
       if (!overlaps(bi, bj)) continue;
-      const [first, second] = firstOf(items[i]!.fp, items[j]!.fp) < 0 ? [i, j] : [j, i];
+      const [first, second] =
+        firstOf(items[i]!.fp, items[j]!.fp, items[i]!.over, items[j]!.over) < 0 ? [i, j] : [j, i];
       out[first]!.push(second);
       indeg[second]!++;
     }
@@ -112,23 +117,76 @@ export function staticOrder(items: readonly Sortable[]): number[] {
   return rank;
 }
 
+/** The depths a moving object must stay between: above `lo` (what it's in front of), below `hi`. */
+export function depthRange(
+  fp: Box,
+  overlapping: readonly { fp: Box; depth: number; over?: boolean }[],
+): { lo: number; hi: number } {
+  let lo = -Infinity;
+  let hi = Infinity;
+  for (const o of overlapping) {
+    if (firstOf(o.fp, fp, o.over) < 0) lo = Math.max(lo, o.depth);
+    else hi = Math.min(hi, o.depth);
+  }
+  return { lo, hi };
+}
+
 /**
  * Depth for a moving object with footprint `fp` among the static objects its sprite overlaps (each with its
  * footprint and depth): above everything it is in front of, below everything it is behind.
  */
 export function depthAmong(
   fp: Box,
-  overlapping: readonly { fp: Box; depth: number }[],
+  overlapping: readonly { fp: Box; depth: number; over?: boolean }[],
   fallback: number,
 ): number {
-  let lo = -Infinity;
-  let hi = Infinity;
-  for (const o of overlapping) {
-    if (firstOf(o.fp, fp) < 0) lo = Math.max(lo, o.depth);
-    else hi = Math.min(hi, o.depth);
-  }
+  const { lo, hi } = depthRange(fp, overlapping);
   if (lo === -Infinity && hi === Infinity) return fallback;
   if (lo === -Infinity) return hi - 0.5;
   if (hi === Infinity) return lo + 0.5;
   return lo < hi ? (lo + hi) / 2 : lo + 0.5;
+}
+
+/** A turned box on the ground (a car), or an upright one (a person: ang 0, small half sizes). */
+export interface Obb {
+  x: number;
+  y: number;
+  hx: number;
+  hy: number;
+  ang: number;
+}
+
+/**
+ * Which of two turned boxes draws first (2026-10-11 camera rework): find an axis that separates them (an edge
+ * normal of either box) and put the one on the far side from the camera first. The camera looks along +x+y, so
+ * the far side is the side with the smaller x + y. Axes nearly across the view direction can't decide; touching
+ * boxes fall back to their centres' x + y. This fixes cars drawing over cars they stand behind, which their old
+ * axis-aligned boxes got wrong when turned.
+ */
+export function obbFirst(a: Obb, b: Obb): -1 | 1 {
+  let best: { side: -1 | 1; w: number } | null = null;
+  for (const ang of [a.ang, a.ang + Math.PI / 2, b.ang, b.ang + Math.PI / 2]) {
+    const nx = Math.cos(ang);
+    const ny = Math.sin(ang);
+    const w = (nx + ny) / Math.SQRT2; // how far this axis runs along the view direction
+    if (Math.abs(w) < 0.05) continue;
+    const proj = (o: Obb) => {
+      const c = o.x * nx + o.y * ny;
+      const r =
+        o.hx * Math.abs(Math.cos(o.ang) * nx + Math.sin(o.ang) * ny) +
+        o.hy * Math.abs(-Math.sin(o.ang) * nx + Math.cos(o.ang) * ny);
+      return [c - r, c + r] as const;
+    };
+    const [a0, a1] = proj(a);
+    const [b0, b1] = proj(b);
+    let aLow: boolean | null = null;
+    if (a1 <= b0 + EPS) aLow = true;
+    else if (b1 <= a0 + EPS) aLow = false;
+    if (aLow === null) continue;
+    // a lies on the low side of n; with w > 0 the low side is further from the camera
+    const aFirst = aLow === w > 0;
+    if (!best || Math.abs(w) > best.w) best = { side: aFirst ? -1 : 1, w: Math.abs(w) };
+  }
+  if (best) return best.side;
+  return a.x + a.y <= b.x + b.y ? -1 : 1;
 }

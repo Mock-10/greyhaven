@@ -30,6 +30,19 @@ export interface Placement {
   parked?: boolean;
   /** Something the player can use with E (shows the gold rim in range and a prompt when targeted). */
   interact?: { id: string; label: string };
+  /** An overhead roof on posts (the fuel canopy): drawn over whatever stands under it, faded when you're under it. */
+  over?: boolean;
+}
+
+/** A marked area on the ground with a job, e.g. Marlo's dotted sale spot. */
+export interface Zone {
+  id: string;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  /** Where the zone's NPC stands to come out (Marlo at his back door). */
+  npc?: { x: number; y: number };
 }
 
 /** Interiors a street door can lead to (built in milestone 2). */
@@ -75,6 +88,7 @@ export interface MapData {
   placements: Placement[];
   doors?: Door[];
   streets?: StreetSpan[];
+  zones?: Zone[];
   /** Where the player starts, in world units. */
   spawn: { x: number; y: number };
 }

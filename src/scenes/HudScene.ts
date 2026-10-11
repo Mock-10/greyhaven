@@ -161,7 +161,10 @@ export class HudScene extends Phaser.Scene {
               ['SHIFT', 'SPRINT'],
               ['C', 'CAMERA'],
             ];
-      hintKeys(s, W - 6 - hintKeysWidth(hints) + 8, H - 20, hints);
+      // a plate behind the hints, so they read over light pavement (handover known issue)
+      const hw = hintKeysWidth(hints) - 8;
+      plate(s, W - 10 - hw, H - 23, hw + 8, 15, C.LAVLT2, 0.82);
+      hintKeys(s, W - 6 - hw, H - 20, hints);
       let stackY = H - 52;
       if (this.toastMsg) {
         const t = this.toastMsg.t;

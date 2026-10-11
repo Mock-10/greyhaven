@@ -201,3 +201,25 @@ test('carjack: picks a parked car, hotwires it and drives off', async ({ page })
   await page.keyboard.up('KeyW');
   expect(problems).toEqual([]);
 });
+
+test("sells a stolen car in Marlo's dotted spot: he walks out and pays", async ({ page }) => {
+  test.setTimeout(120_000);
+  const problems = await boot(page, '?scene=world&zoom=3&time=16:00&x=1580&y=1045');
+  // the cheat console (Ctrl + Shift + F1) puts a stolen sedan in the spot
+  await page.keyboard.press('Control+Shift+F1');
+  await page.keyboard.type('car sedan_lav 1611 1013 0');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.cars.some((c) => c.id.startsWith('cheat')));
+  for (let k = 0; k < 6; k++) {
+    if ((await page.evaluate(() => window.__DL__.target)) === 'zone:marlo_spot') break;
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(200);
+  }
+  expect(await page.evaluate(() => window.__DL__.target)).toBe('zone:marlo_spot');
+  const dirty = await page.evaluate(() => window.__DL__.dirty);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction((d) => window.__DL__.dirty > d, dirty, { timeout: 30_000 });
+  expect(await page.evaluate(() => window.__DL__.cars.some((c) => c.id.startsWith('cheat')))).toBe(false);
+  expect(problems).toEqual([]);
+});

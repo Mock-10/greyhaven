@@ -14,7 +14,7 @@ import {
   topSpeed,
 } from '../src/systems/vehicle';
 
-const S = BALANCE.vehicles.sedan;
+const S = BALANCE.vehicles.types.sedan;
 const rules: CollisionRules = { radius: 6, mapW: 4000, mapH: 4000, smallScale: 0.6, smallSlack: 2 };
 const go = { throttle: 1, steer: 0, handbrake: false };
 
@@ -124,12 +124,32 @@ describe('fuel, chop and exits', () => {
     expect(pourCan(v, inv)).toBe(false);
   });
 
-  it('pays $150–400 at the chop shop, less for a wreck', () => {
+  it('pays a share of each type value at the chop shop, capped early, less for a wreck', () => {
     const v = running();
-    expect(chopPrice(v, 0)).toBe(150);
-    expect(chopPrice(v, 1)).toBe(400);
+    // sedan $5,000: 15–30% at the early 35% rate → $263–525, capped at $600
+    expect(chopPrice(v, 0)).toBe(263);
+    expect(chopPrice(v, 1)).toBe(525);
+    const taxi = parkedCar('t', 'taxi', 0, 0, 0);
+    expect(chopPrice(taxi, 1)).toBeLessThan(chopPrice(v, 1));
+    const van = parkedCar('v', 'van_white', 0, 0, 0);
+    expect(chopPrice(van, 1)).toBe(BALANCE.crime.chop.earlyCap);
+    expect(chopPrice(van, 0)).toBeGreaterThan(chopPrice(v, 0));
+    // from reputation tier 2 the full 15–30% applies
+    expect(chopPrice(v, 1, 2)).toBe(1500);
     damage(v, 50);
-    expect(chopPrice(v, 1)).toBeLessThan(400);
+    expect(chopPrice(v, 1)).toBeLessThan(525);
+  });
+
+  it('gives each car type its own stats', () => {
+    const van = parkedCar('v', 'van_white', 500, 500, 0);
+    expect(van.type).toBe('van');
+    expect(van.health).toBe(BALANCE.vehicles.types.van.health);
+    van.locked = false;
+    van.running = true;
+    van.fuel = 60;
+    for (let k = 0; k < 30 * 8; k++) drive(van, go, 1 / 30, [], rules);
+    expect(van.speed).toBeCloseTo(BALANCE.vehicles.types.van.topSpeed);
+    expect(parkedCar('t', 'taxi', 0, 0, 0).type).toBe('taxi');
   });
 
   it('measures distance to the body and finds exits beside the doors', () => {

@@ -11,6 +11,7 @@ import { hook } from '../debug/hooks';
 import { SHOP_STOCK } from '../data/items';
 import {
   DataEntryGame,
+  DuffelGame,
   FilingGame,
   HotwireGame,
   MoneyCountGame,
@@ -23,7 +24,10 @@ import { blend, clear, createSurface, type Surface } from '../ui/hudDraw';
 import {
   DRAG_STRIP,
   PANEL_SIZE,
+  drawDuffel,
   drawEntry,
+  drawHeldStack,
+  duffelLayout,
   drawFiling,
   drawHotwire,
   drawLockpick,
@@ -40,6 +44,7 @@ export type MinigameRequest =
   | { kind: 'lockpick'; seed: number; tier: number; tool: string }
   | { kind: 'hotwire'; seed: number }
   | { kind: 'moneyCount'; label: string }
+  | { kind: 'duffel'; seed: number; label: string }
   | { kind: 'shop'; title: string; wallet: Wallet };
 
 export interface MinigameResult {
@@ -65,6 +70,8 @@ export class MinigameScene extends Phaser.Scene {
   private resultT = -1;
   private message: { text: string; t: number } | null = null;
   private paperDrag: { dx: number; dy: number; x: number; y: number } | null = null;
+  /** A cash stack held by the pointer (duffel): its table slot and where it is. */
+  private stackDrag: { slot: number; x: number; y: number } | null = null;
   private panelDrag: { sx: number; sy: number; ox: number; oy: number } | null = null;
   private selected = 0;
   private baseX = 0;
@@ -79,6 +86,7 @@ export class MinigameScene extends Phaser.Scene {
     this.resultT = -1;
     this.message = null;
     this.paperDrag = null;
+    this.stackDrag = null;
     this.panelDrag = null;
     this.selected = 0;
     switch (req.kind) {
@@ -96,6 +104,9 @@ export class MinigameScene extends Phaser.Scene {
         break;
       case 'moneyCount':
         this.logic = new MoneyCountGame();
+        break;
+      case 'duffel':
+        this.logic = new DuffelGame(new Rng(req.seed));
         break;
       default:
         this.logic = null;
@@ -233,7 +244,13 @@ export class MinigameScene extends Phaser.Scene {
       });
     } else if (g instanceof SkillCheckGame) g.hit();
     else if (g instanceof MoneyCountGame) g.count();
-    else if (this.req.kind === 'shop')
+    else if (g instanceof DuffelGame && !g.done) {
+      const L = duffelLayout(x, y, g.stacks.length);
+      L.slots.forEach((r, k) => {
+        if (!g.stacks[k]!.bagged && this.inRect(q, { x: r.x - 2, y: r.y - 2, w: r.w + 4, h: r.h + 4 }))
+          this.stackDrag = { slot: k, x: q.x, y: q.y };
+      });
+    } else if (this.req.kind === 'shop')
       SHOP_STOCK.store.forEach((_, k) => {
         if (this.inRect(q, shopCard(x, y, k))) this.buy(k);
       });
@@ -248,7 +265,10 @@ export class MinigameScene extends Phaser.Scene {
       });
       return;
     }
-    if (this.paperDrag) {
+    if (this.stackDrag) {
+      this.stackDrag.x = q.x;
+      this.stackDrag.y = q.y;
+    } else if (this.paperDrag) {
       this.paperDrag.x = q.x;
       this.paperDrag.y = q.y;
     } else if (this.req.kind === 'shop') {
@@ -268,6 +288,13 @@ export class MinigameScene extends Phaser.Scene {
       return;
     }
     const g = this.logic;
+    if (this.stackDrag && g instanceof DuffelGame) {
+      const q = this.ui(p);
+      const { x, y } = this.pos;
+      if (this.inRect(q, duffelLayout(x, y, g.stacks.length).bag)) g.bag(this.stackDrag.slot);
+      this.stackDrag = null;
+      return;
+    }
     if (!this.paperDrag || !(g instanceof FilingGame)) return;
     const q = this.ui(p);
     this.paperDrag = null;
@@ -321,7 +348,11 @@ export class MinigameScene extends Phaser.Scene {
       drawLockpick(s, x, y, g, req.tier, req.tool);
     else if (req.kind === 'hotwire' && g instanceof HotwireGame) drawHotwire(s, x, y, g);
     else if (req.kind === 'moneyCount' && g instanceof MoneyCountGame) drawMoneyCount(s, x, y, g, req.label);
-    else if (req.kind === 'shop')
+    else if (req.kind === 'duffel' && g instanceof DuffelGame) {
+      const d = this.stackDrag;
+      drawDuffel(s, x, y, g, req.label, d && !g.done ? d.slot : null);
+      if (d && !g.done) drawHeldStack(s, d.x, d.y, g.stacks[d.slot]!.dyed);
+    } else if (req.kind === 'shop')
       drawShop(s, x, y, {
         title: req.title,
         stock: SHOP_STOCK.store,

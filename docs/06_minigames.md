@@ -44,7 +44,8 @@ Difficulty parameters:
 | **Route** | Delivery | Pick the shortest of 3 drawn routes within 5 s |
 | **Patrol / camera watch** | Security | Spot the odd one out across 4 camera feeds |
 | **Jackhammer / paint lines** | Road worker | Rhythm hits, or hold a steady line along a guide |
-| **Money count** | Laundering, printing | Count bills into bundles of 10 quickly; miscounts cost a % |
+| **Bag it (duffel)** | Laundering with Dez (since 2026-10-11) | Drag every clean cash stack off the table into Dez's duffel before the timer runs out (14 s, 8 stacks). Two stacks are dye-stained and must be left out. Mouse only. Excellent: all clean stacks, no dye, 30% of the time left; good: all clean, no dye; OK: 75% and at most one dyed; poor: half; else fail. The grade adds to Dez's cut (02). |
+| **Money count** | Printing (counterfeit collection) | Count bills into bundles of 10 quickly; miscounts cost a % |
 | **Plough / plant** | Farmer | Steer the tractor along furrow guide lines; drifting off the line lowers the grade |
 | **Harvest** | Farmer | Timing: hit as the cutter passes ripe rows |
 | **Crane magnet** | Scrap yard | Swing the crane and drop the car on the target pad |

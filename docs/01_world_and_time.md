@@ -10,7 +10,7 @@ The town is called **Greyhaven**. It is hand-authored. Target size is about **32
 
 **The end goal is a massive, dense open world** (user direction, 2026-10-11): a vast Downtown with skyscrapers and many buildings to enter, suburbs on the outskirts, a hood district, the Docks and Industrial areas, and a range of housing options. Outside the detailed districts, the map is filled with **large plain areas of grass or unused ground** that can be built on later. The big open fields and the woods (for the lumber and farming jobs) stay part of the plan.
 
-**The Phase 1 Downtown is a test map, not the final city.** It packs one of each kind of place (tower, store, apartment block, bar, chop shop) close together for testing. Don't treat its size or layout as the final Downtown. The full city is laid out in Phase 6.
+**The Phase 1 Downtown is a test map, not the final city.** Since 2026-10-11 it is 64 × 48 tiles: Gullsway, a new street toward the Docks, runs north–south along its east side, giving Pump & Go a drive-through forecourt (kiosk at the back facing the pumps, a tall canopy you can drive under) and Marlo a side yard with his dotted sale spot behind a gate on Gullsway. It packs one of each kind of place (tower, store, apartment block, bar, chop shop) close together for testing. Don't treat its size or layout as the final Downtown. The full city is laid out in Phase 6.
 
 | District | Feel | Contents | Main jobs and crimes |
 |----------|------|----------|------------------------|

@@ -81,7 +81,11 @@ def draw_order(PL, sprites):
             a, b = fp[i], fp[j]
             ab = (a[2] <= b[0] + 0.01) or (a[3] <= b[1] + 0.01)
             ba = (b[2] <= a[0] + 0.01) or (b[3] <= a[1] + 0.01)
-            if ab and not ba:
+            oi, oj = PL[i].get('over', False), PL[j].get('over', False)
+            if oi != oj and not ab and not ba:
+                # an overhead roof draws after anything standing under it (src/iso/staticDepth.ts)
+                first, second = (j, i) if oi else (i, j)
+            elif ab and not ba:
                 first, second = i, j
             elif ba and not ab:
                 first, second = j, i
@@ -129,10 +133,12 @@ def _hull(pts):
 
 
 def render(SHAPES, PL, mapw, night=False, debug=False, procs=4, decals=()):
+    """mapw: the map's world size, a number for a square map or (width, height)."""
     nn = night_names()
-    x0, y0 = int(-mapw - 40), -520
-    W, H = int(2 * mapw + 80), int(mapw + 560)
-    ground_img, mat = V.compose(SHAPES, mapw, mapw, 'asphalt', x0, y0, W, H)
+    mw, mh = mapw if isinstance(mapw, (tuple, list)) else (mapw, mapw)
+    x0, y0 = int(-mh - 40), -520
+    W, H = int(mw + mh + 80), int((mw + mh) / 2 + 560)
+    ground_img, mat = V.compose(SHAPES, mw, mh, 'asphalt', x0, y0, W, H)
     canvas = np.zeros((H, W, 3), float)
     bg = np.array((46, 36, 48) if night else (83, 72, 89), float)
     canvas[...] = bg

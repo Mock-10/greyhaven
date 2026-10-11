@@ -12,11 +12,23 @@ export const BALANCE = {
   camera: {
     /** The view may show this many art pixels of background past the map edge, no more. */
     boundsMarginPx: 48,
-    /** Integer zoom levels the player can step through with Ctrl + wheel (docs/11). ?zoom=1 also works for debugging. */
-    zoomLevels: [2, 3, 4] as readonly number[],
-    /** Default zoom is the largest whole number that fits this many art pixels on screen. */
-    fitWidth: 640,
-    fitHeight: 360,
+    /** Integer zoom levels the player can step through with Ctrl + wheel (docs/11). 1x since the 2026-10-11 camera
+     *  rework, for large windows and driving. ?zoom=1 also works for debugging. */
+    zoomLevels: [1, 2, 3, 4] as readonly number[],
+    /** Default zoom is the largest whole number that fits this many art pixels on screen. 960 x 540 since 2026-10-11
+     *  (about 2x more world than the first 640 x 360): 1080p runs at 2x. */
+    fitWidth: 960,
+    fitHeight: 540,
+    /** Context zoom (decided 2026-10-11): driving steps the zoom out by this many levels (never below 1x). */
+    drivingZoomStep: -1,
+    /** Driving look-ahead: the car sits toward the trailing edge, led by this share of the half view at top speed. */
+    driveLeadShare: 0.55,
+    /** On foot the view leans toward the mouse by up to this many art pixels. */
+    mouseLeadPx: 40,
+    /** How fast the look-ahead offsets settle (per second). */
+    leadRate: 2.2,
+    /** Follow stiffness of the critically damped camera spring (per second). */
+    followOmega: 9,
     /** Mouse pan reaches up to this many tiles from the player (docs/11). */
     panMaxTiles: 12,
     /** The camera springs back to the player after this many seconds without pan input (docs/11). */
@@ -30,8 +42,6 @@ export const BALANCE = {
     /** Soft deadzone around the followed target, in art pixels. */
     deadzoneW: 48,
     deadzoneH: 32,
-    /** Follow smoothing: fraction of the remaining distance closed per second. */
-    followRate: 8,
   },
 
   clock: {
@@ -95,6 +105,9 @@ export const BALANCE = {
     hotwire: { pairs: 4, seconds: 12, maxSparks: 3 },
     /** Money count (docs/06): count bills into bundles of 10; miscounts cost a share of the wash. */
     moneyCount: { bills: 30, seconds: 16 },
+    /** Duffel (Dez's laundering since 2026-10-11): stacks on the table, how many are dye-stained, the timer, and the
+     *  share of time that must be left for an excellent grade. */
+    duffel: { stacks: 8, dyed: 2, seconds: 14, excellentTimeShare: 0.3 },
   },
 
   player: {
@@ -104,24 +117,61 @@ export const BALANCE = {
   /** Driving (docs/08), in world units and seconds. The sedan's docs/08 stats (top speed 85, tank 40) are scaled
    *  to the map: top speed 85 → 240 units/s (7.5 tiles/s). */
   vehicles: {
-    sedan: {
-      topSpeed: 240,
-      reverseSpeed: 70,
-      accel: 140,
-      brake: 320,
-      /** Rolling slowdown with no throttle. */
-      drag: 70,
-      /** Steering rate at speed (radians per second); tighter at low speed. */
-      turnRate: 2.4,
-      /** Half length and half width of the body for collision. */
-      halfLength: 38,
-      halfWidth: 15,
-      /** Height of the body for its moving ground shadow. */
-      shadowHeight: 22,
-      health: 100,
-      /** docs/08: a sedan tank holds 40 units, about 15 real minutes of full throttle. */
-      tank: 40,
-      fuelPerSecond: 40 / (15 * 60),
+    /** Stats per car type (docs/08), scaled to the map: the sedan's top speed 85 → 240 units/s, so 1 docs unit of
+     *  speed ≈ 2.82 units/s. `value` is the docs/02 price, used for chop-shop pay (the taxi has no docs price:
+     *  assumed a little under a sedan). */
+    types: {
+      sedan: {
+        topSpeed: 240,
+        reverseSpeed: 70,
+        accel: 140,
+        brake: 320,
+        /** Rolling slowdown with no throttle. */
+        drag: 70,
+        /** Steering rate at speed (radians per second); tighter at low speed. */
+        turnRate: 2.4,
+        /** Half length and half width of the body for collision. */
+        halfLength: 38,
+        halfWidth: 15,
+        /** Height of the body for its moving ground shadow. */
+        shadowHeight: 22,
+        health: 100,
+        /** docs/08: a sedan tank holds 40 units, about 15 real minutes of full throttle. */
+        tank: 40,
+        fuelPerSecond: 40 / (15 * 60),
+        value: 5000,
+      },
+      taxi: {
+        topSpeed: 240,
+        reverseSpeed: 70,
+        accel: 140,
+        brake: 320,
+        drag: 70,
+        turnRate: 2.4,
+        halfLength: 38,
+        halfWidth: 15,
+        shadowHeight: 22,
+        health: 100,
+        tank: 40,
+        fuelPerSecond: 40 / (15 * 60),
+        value: 4500,
+      },
+      /** docs/08 van: top speed 70, low acceleration and grip, health 140, tank 60. */
+      van: {
+        topSpeed: 198,
+        reverseSpeed: 60,
+        accel: 105,
+        brake: 260,
+        drag: 70,
+        turnRate: 2.0,
+        halfLength: 42,
+        halfWidth: 16,
+        shadowHeight: 30,
+        health: 140,
+        tank: 60,
+        fuelPerSecond: 60 / (15 * 60),
+        value: 9000,
+      },
     },
     /** Damage per unit of impact speed; below these healths the car smokes / loses 30% top speed (docs/08). */
     damagePerSpeed: 0.12,
@@ -137,14 +187,14 @@ export const BALANCE = {
     /** How close (world units) you must stand to a car to use or enter it, or drive to a pump or Marlo. */
     reach: 40,
     pumpReach: 64,
-    marloReach: 96,
+    /** Marlo's dotted sale spot (decided 2026-10-11): the car's centre must be inside it, give or take this many
+     *  units, and the car stopped (slower than saleMaxSpeed). Marlo walks out at walking pace. */
+    spotSlack: 12,
+    saleMaxSpeed: 6,
+    marloWalkSpeed: 48,
     /** Fuel price (docs/02: $3 per unit) and a jerry can's contents (docs/08: 10 units). */
     fuelPrice: 3,
     canUnits: 10,
-    /** Camera leads the car by up to this many tiles in its direction of travel (docs/11). */
-    cameraLeadTiles: 3,
-    /** How fast the look-ahead catches up (per second). */
-    cameraLeadRate: 2,
     /** Getting out only below this speed (units per second). */
     exitMaxSpeed: 40,
     /** A crash this fast or harder gets a phone message when it wrecks the car. */
@@ -155,19 +205,21 @@ export const BALANCE = {
 
   /** Crime (docs/04): carjacking a parked car and the chop shop. */
   crime: {
-    /** Chop shop payout range in dirty dollars for a parked car (docs/04: $150–400). */
-    chopPayout: [150, 400] as readonly number[],
+    /** Chop shop pay (decided 2026-10-11): 15–30% of the car type's value (docs/08), scaled by condition. Below
+     *  reputation tier `fullRateTier` Marlo pays only `earlyFactor` of that, capped at `earlyCap`, so an early car
+     *  fetches about $250–600 (docs/04's $150–400 range, nudged up). */
+    chop: { share: [0.15, 0.3] as readonly number[], earlyFactor: 0.35, earlyCap: 600, fullRateTier: 2 },
     /** Chance a failed lockpick sets off the car alarm (docs/05: 30%). */
     alarmChance: 0.3,
     /** A stolen car stays hot this many in-game minutes (docs/08: 2 days). */
     hotMinutes: 2 * 24 * 60,
   },
 
-  /** Laundering with Dez (docs/02): cut, daily cap; a sloppy money count adds to the cut. */
+  /** Laundering with Dez (docs/02): cut, daily cap; a sloppy bagging (the duffel minigame) adds to the cut. */
   laundering: {
     cut: 0.35,
     dailyCap: 1500,
-    /** Extra cut by money-count grade. */
+    /** Extra cut by duffel grade (dropped and dye-stained cash). */
     miscountCut: { excellent: 0, good: 0.02, ok: 0.05, poor: 0.1, fail: 0.15 },
   },
 
@@ -221,6 +273,9 @@ export const BALANCE = {
     radarRadius: 38,
     radarScale: 0.13,
     radarHz: 15,
+    /** World prompts stay inside these UI-pixel margins, clear of the top panels, the objective and hint strip at
+     *  the bottom and the radar (which takes this square in the bottom-left corner). */
+    promptSafe: { top: 46, bottom: 26, side: 4, radar: 90 },
   },
 
   walker: {
@@ -259,10 +314,17 @@ export const BALANCE = {
     /** Shadow mask values for box and blob shadows (scene.py polygon 150, ellipse 170). */
     shadowBoxValue: 150,
     shadowBlobValue: 170,
-    /** A tall sprite in front of the player fades to this opacity (docs/11, docs/14). */
+    /** A sprite in front of the player or the car fades to this opacity (docs/11, docs/14). */
     occludedAlpha: 0.35,
-    /** Sprites shorter than this (art px above their anchor) never fade. */
-    occluderMinHeight: 56,
+    /** Sprites shorter than this (art px above their anchor) never fade: kerb-high things don't hide anyone.
+     *  Lowered from 56 in the 2026-10-11 camera rework, which fades any building that covers the car. */
+    occluderMinHeight: 18,
+    /** ...and a sprite fades only when its pixels hide at least this share of the player's or car's pixels (thin
+     *  lamp posts and the empty corners of a tree's cell don't count). */
+    occludeShare: 0.12,
+    /** The silhouette drawn where the player or car is hidden (2026-10-11): muted lavender (docs/19's ghost colour),
+     *  and the size of its mask texture in art px (bigger than any car or person sprite cell). */
+    silhouette: { colour: 0x8a82a8, alpha: 0.6, maskSize: 192 },
     /** Interactable idle shimmer frame rate (STYLE_GUIDE: about 6 fps). */
     shimmerFps: 6,
     /** Ground chunks are baked in blocks of this many tiles per side. */

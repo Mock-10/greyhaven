@@ -6,6 +6,7 @@ import { BALANCE } from '../config/balance';
 import { ITEMS, type ItemId } from '../data/items';
 import type {
   DataEntryGame,
+  DuffelGame,
   FilingGame,
   HotwireGame,
   MoneyCountGame,
@@ -38,6 +39,7 @@ export const PANEL_SIZE = {
   lockpick: { w: 176, h: 128 },
   hotwire: { w: 176, h: 128 },
   moneyCount: { w: 176, h: 128 },
+  duffel: { w: 176, h: 128 },
   shop: { w: 208, h: 140 },
 } as const;
 export type PanelKind = keyof typeof PANEL_SIZE;
@@ -335,6 +337,132 @@ export function drawMoneyCount(s: Surface, x: number, y: number, g: MoneyCountGa
   hintKeys(s, x + 8, y + 112, [
     ['SPACE', 'COUNT'],
     ['B', 'BAND'],
+    ['ESC', 'QUIT'],
+  ]);
+}
+
+// ------------------------------------------------------------------ duffel (Dez's laundering)
+type Box = { x: number; y: number; w: number; h: number };
+
+export interface DuffelLayout {
+  /** One rect per table slot. */
+  slots: Box[];
+  /** Drop a stack anywhere over the bag. */
+  bag: Box;
+}
+
+const STACK_W = 17;
+const STACK_H = 12;
+
+export function duffelLayout(x: number, y: number, n: number): DuffelLayout {
+  const slots: Box[] = [];
+  for (let k = 0; k < n; k++)
+    slots.push({ x: x + 12 + (k % 4) * 20, y: y + 34 + Math.floor(k / 4) * 28, w: STACK_W, h: STACK_H });
+  return { slots, bag: { x: x + 100, y: y + 30, w: 68, h: 62 } };
+}
+
+/** A banded stack of bills; dye-stained ones carry red blotches. */
+function cashStack(s: Surface, x: number, y: number, dyed: boolean): void {
+  blend(s, y + 2, y + STACK_H, x + 1, x + STACK_W + 1, C.INK, 0.6); // shadow
+  for (let k = 0; k < 3; k++)
+    blend(s, y + 2 * k, y + 2 * k + 8, x, x + STACK_W, k === 2 ? C.KHAKI4 : C.STONE5);
+  blend(s, y + 4, y + 12, x, x + STACK_W, C.KHAKI4);
+  blend(s, y + 5, y + 11, x + 6, x + 11, C.SAGE1); // the band
+  if (dyed) {
+    for (const [dx, dy, w, h] of [
+      [1, 5, 4, 3],
+      [12, 4, 4, 4],
+      [8, 9, 3, 2],
+      [3, 1, 3, 2],
+    ] as const)
+      blend(s, y + dy, y + dy + h, x + dx, x + dx + w, C.DIRTY);
+    px(s, x + 13, y + 6, C.HP);
+    px(s, x + 2, y + 6, C.HP);
+  }
+}
+
+/** A stack being dragged, drawn at the pointer. */
+export function drawHeldStack(s: Surface, x: number, y: number, dyed: boolean): void {
+  cashStack(s, Math.round(x - STACK_W / 2), Math.round(y - STACK_H / 2), dyed);
+}
+
+export function drawDuffel(
+  s: Surface,
+  x: number,
+  y: number,
+  g: DuffelGame,
+  right: string,
+  held: number | null,
+): void {
+  frame(s, x, y, 'duffel', 'BAG IT', right);
+  if (g.done && g.grade) return resultCard(s, x, y, 'duffel', g.grade, 'CASH BAGGED');
+  const L = duffelLayout(x, y, g.stacks.length);
+  // the counting table
+  blend(s, y + 26, y + 96, x + 8, x + 94, C.INK, 0.7);
+  g.stacks.forEach((st, k) => {
+    const r = L.slots[k] as Box;
+    if (st.bagged || k === held) {
+      blend(s, r.y + 4, r.y + 12, r.x, r.x + STACK_W, C.PLATE_HI);
+      return;
+    }
+    cashStack(s, r.x, r.y, st.dyed);
+  });
+  // the open duffel: a navy canvas barrel with darker end caps, a dark open mouth along the top with the zip
+  // pulled back, bagged stacks showing in the mouth, and two carry handles
+  const b = L.bag;
+  const flash = g.flash && g.flash.t < 0.35 ? (g.flash.ok ? C.SAGE4 : C.RED3) : null;
+  const NAVY: RGB = [70, 82, 118];
+  const NAVY_LO: RGB = [52, 62, 94];
+  const NAVY_HI: RGB = [96, 110, 150];
+  const top = b.y + 16;
+  const bot = b.y + 60;
+  const cx = b.x + b.w / 2;
+  for (let yy = top; yy < bot; yy++) {
+    const t = (yy - (top + bot) / 2) / ((bot - top) / 2);
+    const half = Math.round((b.w / 2 - 2) * Math.sqrt(Math.max(0, 1 - t * t * t * t)));
+    if (half <= 0) continue;
+    blend(s, yy, yy + 1, cx - half, cx + half, yy > bot - 6 ? NAVY_LO : NAVY);
+    // end caps and a seam piping
+    blend(s, yy, yy + 1, cx - half, cx - half + 5, NAVY_LO);
+    blend(s, yy, yy + 1, cx + half - 5, cx + half, NAVY_LO);
+    px(s, cx - half + 5, yy, NAVY_HI);
+    px(s, cx + half - 6, yy, NAVY_HI);
+  }
+  blend(s, top + 6, top + 7, cx - 22, cx + 22, NAVY_HI); // light catching the upper curve
+  // the mouth
+  const my0 = top - 2;
+  const my1 = top + 12;
+  for (let yy = my0; yy < my1; yy++) {
+    const t = (yy - (my0 + my1) / 2) / ((my1 - my0) / 2);
+    const half = Math.round(24 * Math.sqrt(Math.max(0, 1 - t * t)));
+    blend(s, yy, yy + 1, cx - half, cx + half, C.INK);
+  }
+  // zip teeth along the rim, gold-free khaki
+  for (let k = -24; k <= 24; k += 3) {
+    const ry = Math.round(
+      my0 + (my1 - my0) / 2 - Math.sqrt(Math.max(0, 1 - (k / 25) ** 2)) * ((my1 - my0) / 2),
+    );
+    px(s, cx + k, ry - 1, flash ?? C.KHAKI4);
+  }
+  const inBag = g.stacks.filter((q) => q.bagged).length;
+  for (let k = 0; k < inBag; k++) {
+    const sx = cx - 18 + (k % 4) * 9;
+    const sy = my1 - 5 - Math.floor(k / 4) * 3;
+    blend(s, sy, sy + 3, sx, sx + 8, C.KHAKI4);
+    blend(s, sy, sy + 1, sx, sx + 8, C.STONE5);
+  }
+  for (const hx of [cx - 16, cx + 9]) {
+    blend(s, b.y + 6, b.y + 8, hx, hx + 8, NAVY_LO);
+    blend(s, b.y + 6, top, hx, hx + 2, NAVY_LO);
+    blend(s, b.y + 6, top, hx + 6, hx + 8, NAVY_LO);
+  }
+  text(s, x + 8, y + 101, `IN BAG ${g.cleanBagged}/${g.cleanTotal}`, C.CREAM);
+  if (g.dyedBagged) text(s, x + 58, y + 101, `DYE ${g.dyedBagged}`, C.RED3);
+  text(s, x + 100, y + 101, 'TIME', C.MUTED);
+  bar(s, x + 120, y + 100, 48, 7, g.timeLeft / g.timeTotal, C.GOLD, C.GOLD_LO);
+  text(s, x + 106, y + 23, 'LEAVE DYE OUT', C.MUTED);
+  hintKeys(s, x + 8, y + 112, [
+    ['DRAG', 'INTO BAG'],
     ['ESC', 'QUIT'],
   ]);
 }
