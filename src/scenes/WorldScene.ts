@@ -90,6 +90,8 @@ import {
 import { promptPixels } from '../ui/promptPlate';
 import { hook } from '../debug/hooks';
 import type { Params } from '../debug/params';
+import { CHEAT_HELP, parseCheat } from '../debug/cheats';
+import { CheatConsole } from '../debug/cheatConsole';
 import { lampTextures, windowGlowTexture } from '../world/nightLights';
 
 interface Placed {
@@ -399,7 +401,94 @@ export class WorldScene extends Phaser.Scene {
       });
     });
     kb.on(`keydown-${KEYS.debugOverlay}`, () => this.setDebug(!this.debugOn));
+    this.cheats ??= new CheatConsole(
+      (line) => this.runCheat(line),
+      (open) => {
+        if (this.input.keyboard) {
+          this.input.keyboard.enabled = !open;
+          if (open) this.input.keyboard.resetKeys();
+        }
+      },
+    );
   }
+
+  private cheats: CheatConsole | null = null;
+
+  /** Apply a cheat-console line (debug/cheats.ts). */
+  private runCheat(line: string): void {
+    const c = parseCheat(line);
+    if ('error' in c) {
+      this.toast('CHEAT', c.error);
+      return;
+    }
+    const st = this.state;
+    const day = Math.floor(st.minutes / 1440);
+    switch (c.kind) {
+      case 'cash':
+        st.money.clean = c.clean;
+        break;
+      case 'dirty':
+        st.money.dirty = c.amount;
+        break;
+      case 'time':
+        st.minutes = day * 1440 + c.minute + (c.minute < st.minutes % 1440 ? 1440 : 0);
+        break;
+      case 'day':
+        st.minutes = (c.day - 1) * 1440 + (st.minutes % 1440);
+        break;
+      case 'rank': {
+        const job = st.career.jobs[st.career.current];
+        if (job) {
+          job.rank = c.rank;
+          job.xp = 0;
+        }
+        break;
+      }
+      case 'tp': {
+        const car = this.drivenCar();
+        if (car) {
+          car.v.x = c.x;
+          car.v.y = c.y;
+          car.v.speed = 0;
+        }
+        st.player.x = c.x;
+        st.player.y = c.y;
+        break;
+      }
+      case 'car': {
+        if (this.inside) {
+          this.toast('CHEAT', 'CARS ONLY ON THE STREET.');
+          return;
+        }
+        if (!this.textures.get('vehicles').has(`${c.model}/SE`)) {
+          this.toast(
+            'CHEAT',
+            'MODELS: SEDAN_LAV, SEDAN_TEAL, SEDAN_CLAY, SEDAN_KHAKI, TAXI, VAN_WHITE, VAN_SAGE',
+          );
+          return;
+        }
+        const ang = (st.player.dir * Math.PI) / 4;
+        const x = c.x ?? st.player.x + Math.cos(ang) * 60;
+        const y = c.y ?? st.player.y + Math.sin(ang) * 60;
+        const v = parkedCar(`cheat${this.cheatCars++}`, c.model, x, y, c.dir);
+        v.locked = false;
+        v.running = true;
+        v.hotUntil = st.minutes + BALANCE.crime.hotMinutes;
+        st.vehicles.push(v);
+        this.addCarView(v);
+        break;
+      }
+      case 'heal':
+        st.player.health = BALANCE.player.maxHealth;
+        break;
+      case 'help':
+        this.toast('CHEAT', CHEAT_HELP);
+        return;
+    }
+    this.toast('CHEAT', line.trim().toUpperCase());
+  }
+
+  private cheatCars = 0;
 
   // ---------------------------------------------------------------- placement
 

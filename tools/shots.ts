@@ -11,6 +11,8 @@ const BASE = 'http://localhost:4173/greyhaven/';
 interface Shot {
   name: string;
   query: string;
+  /** Cheat-console lines to run first (Ctrl + Shift + F1), e.g. to place a car. */
+  cheats?: string[];
   width: number;
   height: number;
   /** Click to start (leaves the title screen). */
@@ -52,6 +54,30 @@ const SHOTS: Shot[] = [
     hold: [['Shift+KeyD', 900]],
     wait: 200,
   },
+  { name: 'pump_and_go_2x', query: '?scene=world&zoom=2&time=15:00&x=1560&y=1340', width: 1280, height: 720 },
+  {
+    name: 'pump_and_go_under_canopy',
+    query: '?scene=world&zoom=3&time=15:00&x=1640&y=1452',
+    width: 1280,
+    height: 720,
+    cheats: ['car sedan_teal 1654 1408 0', 'car van_white 1600 1474 4'],
+    wait: 1200,
+  },
+  {
+    name: 'pump_and_go_dusk',
+    query: '?scene=world&zoom=2&time=20:30&x=1560&y=1340',
+    width: 1280,
+    height: 720,
+  },
+  {
+    name: 'marlo_spot_3x',
+    query: '?scene=world&zoom=3&time=15:00&x=1590&y=1060',
+    width: 1280,
+    height: 720,
+    cheats: ['car taxi 1611 1013 0'],
+    wait: 800,
+  },
+  { name: 'gullsway_2x', query: '?scene=world&zoom=2&time=11:00&x=1820&y=500', width: 1280, height: 720 },
   { name: 'reference_1x', query: '?scene=reference', width: 1900, height: 1280 },
   { name: 'depth_behind_tower', query: '?scene=world&zoom=3&x=150&y=200&debug=1', width: 1280, height: 720 },
   { name: 'camera_edge', query: '?scene=world&zoom=2&x=40&y=40', width: 1280, height: 720 },
@@ -127,6 +153,14 @@ async function main(): Promise<void> {
       await page.goto(BASE + s.query);
       await page.waitForFunction(() => window.__DL__?.ready === true, null, { timeout: 30_000 });
       if (s.start) await page.mouse.click(s.width / 2, s.height / 2);
+      if (s.cheats?.length) {
+        await page.keyboard.press('Control+Shift+F1');
+        for (const line of s.cheats) {
+          await page.keyboard.type(line);
+          await page.keyboard.press('Enter');
+        }
+        await page.keyboard.press('Escape');
+      }
       for (const [key, ms] of s.hold ?? []) {
         const parts = key.split('+');
         for (const p of parts) await page.keyboard.down(p);
