@@ -2,12 +2,15 @@
 // Heading is continuous (radians, world space: 0 = +x); the sprite snaps to the nearest of 8 directions.
 
 import { BALANCE } from '../config/balance';
+import { typeOfModel, type VehicleType } from '../data/vehicles';
 import { collides, type CollisionRules, type Solid } from './movement';
 
 export interface Vehicle {
   id: string;
   /** Sprite name in the vehicles atlas (sedan_lav, taxi ...). */
   model: string;
+  /** Car type: sets the stats (BALANCE.vehicles.types) and the chop price. */
+  type: VehicleType;
   x: number;
   y: number;
   heading: number;
@@ -29,7 +32,10 @@ export interface DriveInput {
   handbrake: boolean;
 }
 
-const S = () => BALANCE.vehicles.sedan;
+/** The stats of a car's type. */
+export function stats(v: Pick<Vehicle, 'type'>) {
+  return BALANCE.vehicles.types[v.type];
+}
 
 /** The sprite direction (0–7) for a heading. */
 export function dirOf(heading: number): number {
@@ -37,8 +43,8 @@ export function dirOf(heading: number): number {
 }
 
 /** Points around the body (corners and mid-sides) used for collision. */
-export function hullPoints(v: Pick<Vehicle, 'x' | 'y' | 'heading'>): { x: number; y: number }[] {
-  const { halfLength: L, halfWidth: W } = S();
+export function hullPoints(v: Pick<Vehicle, 'x' | 'y' | 'heading' | 'type'>): { x: number; y: number }[] {
+  const { halfLength: L, halfWidth: W } = stats(v);
   const c = Math.cos(v.heading);
   const s = Math.sin(v.heading);
   const pts: [number, number][] = [
@@ -56,13 +62,13 @@ export function hullPoints(v: Pick<Vehicle, 'x' | 'y' | 'heading'>): { x: number
 
 /** The car as a turned box, for other things to collide with. */
 export function vehicleSolid(v: Vehicle): Solid {
-  const { halfLength, halfWidth } = S();
+  const { halfLength, halfWidth } = stats(v);
   return { kind: 'obox', x: v.x, y: v.y, hx: halfLength, hy: halfWidth, r: 0, ang: v.heading };
 }
 
 export function topSpeed(v: Vehicle): number {
   const V = BALANCE.vehicles;
-  return S().topSpeed * (v.health < V.limpBelow ? V.limpFactor : 1);
+  return stats(v).topSpeed * (v.health < V.limpBelow ? V.limpFactor : 1);
 }
 
 /**
@@ -76,7 +82,7 @@ export function drive(
   solids: readonly Solid[],
   rules: CollisionRules,
 ): number {
-  const sp = S();
+  const sp = stats(v);
   const powered = v.running && !v.wrecked && v.fuel > 0;
   const th = powered ? inp.throttle : 0;
   if (th > 0) {
@@ -101,7 +107,7 @@ export function drive(
   const mx = Math.cos(heading) * v.speed * dt;
   const my = Math.sin(heading) * v.speed * dt;
   const free = (x: number, y: number, h: number) =>
-    !hullPoints({ x, y, heading: h }).some((p) => collides(p.x, p.y, solids, { ...rules, radius: 1 }));
+    !hullPoints({ x, y, heading: h, type: v.type }).some((p) => collides(p.x, p.y, solids, { ...rules, radius: 1 }));
   const V = BALANCE.vehicles;
   if (free(prev.x + mx, prev.y + my, heading)) {
     v.x += mx;
@@ -144,7 +150,7 @@ export function damage(v: Vehicle, amount: number): void {
 
 /** Fill the tank at a pump for clean cash: as much as the tank takes and the cash allows. Returns units added. */
 export function refuel(v: Vehicle, money: { clean: number }): number {
-  const room = S().tank - v.fuel;
+  const room = stats(v).tank - v.fuel;
   const affordable = Math.floor(money.clean / BALANCE.vehicles.fuelPrice);
   const units = Math.max(0, Math.min(Math.floor(room), affordable));
   v.fuel += units;
@@ -154,21 +160,27 @@ export function refuel(v: Vehicle, money: { clean: number }): number {
 
 /** Pour a jerry can into the tank (docs/08: 10 units). */
 export function pourCan(v: Vehicle, inv: { fuelCans: number }): boolean {
-  if (inv.fuelCans <= 0 || v.fuel >= S().tank) return false;
+  if (inv.fuelCans <= 0 || v.fuel >= stats(v).tank) return false;
   inv.fuelCans--;
-  v.fuel = Math.min(S().tank, v.fuel + BALANCE.vehicles.canUnits);
+  v.fuel = Math.min(stats(v).tank, v.fuel + BALANCE.vehicles.canUnits);
   return true;
 }
 
-/** What Marlo pays for a car (docs/04: $150–400 dirty), less for a battered one. */
-export function chopPrice(v: Vehicle, roll: number): number {
-  const [lo, hi] = BALANCE.crime.chopPayout as [number, number];
-  return Math.round((lo + (hi - lo) * roll) * (0.4 + 0.6 * (v.health / S().health)));
+/**
+ * What Marlo pays for a car (decided 2026-10-11): 15–30% of its type's value, at an early rate and cap below the
+ * full-rate reputation tier, then less for a battered one (40% at 0 health).
+ */
+export function chopPrice(v: Pick<Vehicle, 'type' | 'health'>, roll: number, repTier = 0): number {
+  const C = BALANCE.crime.chop;
+  const [lo, hi] = C.share as [number, number];
+  let base = stats(v).value * (lo + (hi - lo) * roll);
+  if (repTier < C.fullRateTier) base = Math.min(C.earlyCap, base * C.earlyFactor);
+  return Math.round(base * (0.4 + 0.6 * (v.health / stats(v).health)));
 }
 
 /** Distance from a point to the car's body (0 inside it). */
-export function distToCar(v: Pick<Vehicle, 'x' | 'y' | 'heading'>, x: number, y: number): number {
-  const { halfLength, halfWidth } = S();
+export function distToCar(v: Pick<Vehicle, 'x' | 'y' | 'heading' | 'type'>, x: number, y: number): number {
+  const { halfLength, halfWidth } = stats(v);
   const c = Math.cos(v.heading);
   const s = Math.sin(v.heading);
   const dx = x - v.x;
@@ -180,10 +192,10 @@ export function distToCar(v: Pick<Vehicle, 'x' | 'y' | 'heading'>, x: number, y:
 
 /** Where the driver can step out: beside the doors first (left, then right), then behind and in front. */
 export function exitSpots(
-  v: Pick<Vehicle, 'x' | 'y' | 'heading'>,
+  v: Pick<Vehicle, 'x' | 'y' | 'heading' | 'type'>,
   radius: number,
 ): { x: number; y: number }[] {
-  const { halfLength, halfWidth } = S();
+  const { halfLength, halfWidth } = stats(v);
   const c = Math.cos(v.heading);
   const s = Math.sin(v.heading);
   const side = halfWidth + radius + 3;
@@ -201,15 +213,18 @@ export function exitSpots(
 
 /** A parked car from the map: locked, engine off, part-full tank (docs/08). */
 export function parkedCar(id: string, model: string, x: number, y: number, dir: number): Vehicle {
+  const type = typeOfModel(model);
+  const S = BALANCE.vehicles.types[type];
   return {
     id,
     model,
+    type,
     x,
     y,
     heading: (dir * Math.PI) / 4,
     speed: 0,
-    fuel: S().tank * BALANCE.vehicles.parkedFuel,
-    health: S().health,
+    fuel: S.tank * BALANCE.vehicles.parkedFuel,
+    health: S.health,
     locked: true,
     running: false,
     hotUntil: 0,

@@ -47,6 +47,7 @@ import {
 } from '../systems/career';
 import { INTERIORS, interiorForDoor, isOpen, type InteriorDef, type InteriorId } from '../data/interiors';
 import { TASK_NAMES, type TaskId } from '../data/jobs';
+import { TYPE_LABEL } from '../data/vehicles';
 import { ATLASES } from '../assets/manifest';
 import {
   createDoors,
@@ -70,6 +71,7 @@ import {
   drive,
   exitSpots,
   parkedCar,
+  stats,
   pourCan,
   refuel,
   topSpeed,
@@ -177,7 +179,7 @@ export interface HudSnapshot {
   target: string | null;
   objective: string;
   /** The car being driven (fractions 0–1), or null on foot. */
-  vehicle: { fuel: number; health: number; speed: number } | null;
+  vehicle: { type: string; fuel: number; health: number; speed: number } | null;
 }
 
 const SHADOW_VALUES = { box: BALANCE.render.shadowBoxValue, blob: BALANCE.render.shadowBlobValue };
@@ -1253,7 +1255,7 @@ export class WorldScene extends Phaser.Scene {
     const ref = vehicleFrame(v.model, dirOf(v.heading));
     const sprite = this.add.sprite(0, 0, ref.atlas, ref.frame);
     this.objectLayer.add(sprite);
-    const shadow = this.add.image(0, 0, this.carShadowTexture(dirOf(v.heading))).setDepth(1e6 - 2);
+    const shadow = this.add.image(0, 0, this.carShadowTexture(v, dirOf(v.heading))).setDepth(1e6 - 2);
     this.groundLayer.add(shadow);
     const info = frameInfo(ref.atlas, ref.frame);
     const placed: Placed = {
@@ -1288,10 +1290,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** A moving box shadow for each of the 8 car directions, made once. */
-  private carShadowTexture(dir: number): string {
-    const key = `car-shadow-${dir}`;
+  private carShadowTexture(v: Vehicle, dir: number): string {
+    const key = `car-shadow-${v.type}-${dir}`;
     if (this.textures.exists(key)) return key;
-    const S = BALANCE.vehicles.sedan;
+    const S = stats(v);
     const shape = shadowShape(
       0,
       0,
@@ -1359,7 +1361,7 @@ export class WorldScene extends Phaser.Scene {
     p.dir = dirOf(v.heading);
     p.moving = false;
     // the camera looks ahead in the direction of travel, up to 3 tiles at top speed (docs/11)
-    const reach = (BALANCE.vehicles.cameraLeadTiles * TILE * v.speed) / BALANCE.vehicles.sedan.topSpeed;
+    const reach = (BALANCE.vehicles.cameraLeadTiles * TILE * v.speed) / stats(v).topSpeed;
     const want = { x: Math.cos(v.heading) * reach, y: Math.sin(v.heading) * reach };
     const a = Math.min(1, dt * BALANCE.vehicles.cameraLeadRate);
     this.lead.x += (want.x - this.lead.x) * a;
@@ -1388,7 +1390,7 @@ export class WorldScene extends Phaser.Scene {
         c.placed.info = frameInfo(ref.atlas, ref.frame);
         c.placed.placement.dir = dir;
         if (sp.texture.key === ref.atlas) sp.setFrame(ref.frame);
-        c.shadow.setTexture(this.carShadowTexture(dir));
+        c.shadow.setTexture(this.carShadowTexture(v, dir));
       }
       c.shadow.setPosition(x, y);
       const info = c.placed.info;
@@ -1403,8 +1405,7 @@ export class WorldScene extends Phaser.Scene {
       c.usable.x = v.x;
       c.usable.y = v.y;
       // sort by the car's ground box among the static objects its sprite overlaps
-      const L = BALANCE.vehicles.sedan.halfLength;
-      const W = BALANCE.vehicles.sedan.halfWidth;
+      const { halfLength: L, halfWidth: W } = stats(v);
       const ex = Math.abs(L * Math.cos(v.heading)) + Math.abs(W * Math.sin(v.heading));
       const ey = Math.abs(L * Math.sin(v.heading)) + Math.abs(W * Math.cos(v.heading));
       const fp: Box = [v.x - ex, v.y - ey, v.x + ex, v.y + ey];
@@ -1415,10 +1416,10 @@ export class WorldScene extends Phaser.Scene {
 
   /** Labels on the street: car prompts and Marlo's door change with what you have. */
   private refreshStreetLabels(): void {
-    const tank = BALANCE.vehicles.sedan.tank;
     for (const c of this.cars) {
       const u = c.usable;
       const v = c.v;
+      const tank = stats(v).tank;
       u.key = 'E';
       u.blocked = false;
       if (v.wrecked) {
@@ -1470,7 +1471,7 @@ export class WorldScene extends Phaser.Scene {
       this.openMinigame({ kind: 'lockpick', seed: this.rng.int(1, 2 ** 30), tier: 0, tool: 'NO TOOL' });
     } else if (
       this.state.inventory.fuelCans > 0 &&
-      v.fuel <= BALANCE.vehicles.sedan.tank - BALANCE.vehicles.canUnits
+      v.fuel <= stats(v).tank - BALANCE.vehicles.canUnits
     ) {
       pourCan(v, this.state.inventory);
       this.toldOutOfFuel = false;
@@ -1577,7 +1578,7 @@ export class WorldScene extends Phaser.Scene {
       this.toast('PUMP & GO', 'PULL A CAR UP TO THE PUMP.');
       return;
     }
-    if (car.v.fuel >= BALANCE.vehicles.sedan.tank - 0.5) {
+    if (car.v.fuel >= stats(car.v).tank - 0.5) {
       this.toast('PUMP & GO', 'THE TANK IS FULL.');
       return;
     }
@@ -1605,8 +1606,9 @@ export class WorldScene extends Phaser.Scene {
   private vehicleReadout(): HudSnapshot['vehicle'] {
     const c = this.drivenCar();
     if (!c) return null;
-    const S = BALANCE.vehicles.sedan;
+    const S = stats(c.v);
     return {
+      type: TYPE_LABEL[c.v.type],
       fuel: c.v.fuel / S.tank,
       health: c.v.health / S.health,
       speed: Math.abs(c.v.speed) / topSpeed(c.v),

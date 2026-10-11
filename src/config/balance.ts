@@ -104,24 +104,61 @@ export const BALANCE = {
   /** Driving (docs/08), in world units and seconds. The sedan's docs/08 stats (top speed 85, tank 40) are scaled
    *  to the map: top speed 85 → 240 units/s (7.5 tiles/s). */
   vehicles: {
-    sedan: {
-      topSpeed: 240,
-      reverseSpeed: 70,
-      accel: 140,
-      brake: 320,
-      /** Rolling slowdown with no throttle. */
-      drag: 70,
-      /** Steering rate at speed (radians per second); tighter at low speed. */
-      turnRate: 2.4,
-      /** Half length and half width of the body for collision. */
-      halfLength: 38,
-      halfWidth: 15,
-      /** Height of the body for its moving ground shadow. */
-      shadowHeight: 22,
-      health: 100,
-      /** docs/08: a sedan tank holds 40 units, about 15 real minutes of full throttle. */
-      tank: 40,
-      fuelPerSecond: 40 / (15 * 60),
+    /** Stats per car type (docs/08), scaled to the map: the sedan's top speed 85 → 240 units/s, so 1 docs unit of
+     *  speed ≈ 2.82 units/s. `value` is the docs/02 price, used for chop-shop pay (the taxi has no docs price:
+     *  assumed a little under a sedan). */
+    types: {
+      sedan: {
+        topSpeed: 240,
+        reverseSpeed: 70,
+        accel: 140,
+        brake: 320,
+        /** Rolling slowdown with no throttle. */
+        drag: 70,
+        /** Steering rate at speed (radians per second); tighter at low speed. */
+        turnRate: 2.4,
+        /** Half length and half width of the body for collision. */
+        halfLength: 38,
+        halfWidth: 15,
+        /** Height of the body for its moving ground shadow. */
+        shadowHeight: 22,
+        health: 100,
+        /** docs/08: a sedan tank holds 40 units, about 15 real minutes of full throttle. */
+        tank: 40,
+        fuelPerSecond: 40 / (15 * 60),
+        value: 5000,
+      },
+      taxi: {
+        topSpeed: 240,
+        reverseSpeed: 70,
+        accel: 140,
+        brake: 320,
+        drag: 70,
+        turnRate: 2.4,
+        halfLength: 38,
+        halfWidth: 15,
+        shadowHeight: 22,
+        health: 100,
+        tank: 40,
+        fuelPerSecond: 40 / (15 * 60),
+        value: 4500,
+      },
+      /** docs/08 van: top speed 70, low acceleration and grip, health 140, tank 60. */
+      van: {
+        topSpeed: 198,
+        reverseSpeed: 60,
+        accel: 105,
+        brake: 260,
+        drag: 70,
+        turnRate: 2.0,
+        halfLength: 42,
+        halfWidth: 16,
+        shadowHeight: 30,
+        health: 140,
+        tank: 60,
+        fuelPerSecond: 60 / (15 * 60),
+        value: 9000,
+      },
     },
     /** Damage per unit of impact speed; below these healths the car smokes / loses 30% top speed (docs/08). */
     damagePerSpeed: 0.12,
@@ -155,8 +192,10 @@ export const BALANCE = {
 
   /** Crime (docs/04): carjacking a parked car and the chop shop. */
   crime: {
-    /** Chop shop payout range in dirty dollars for a parked car (docs/04: $150–400). */
-    chopPayout: [150, 400] as readonly number[],
+    /** Chop shop pay (decided 2026-10-11): 15–30% of the car type's value (docs/08), scaled by condition. Below
+     *  reputation tier `fullRateTier` Marlo pays only `earlyFactor` of that, capped at `earlyCap`, so an early car
+     *  fetches about $250–600 (docs/04's $150–400 range, nudged up). */
+    chop: { share: [0.15, 0.3] as readonly number[], earlyFactor: 0.35, earlyCap: 600, fullRateTier: 2 },
     /** Chance a failed lockpick sets off the car alarm (docs/05: 30%). */
     alarmChance: 0.3,
     /** A stolen car stays hot this many in-game minutes (docs/08: 2 days). */

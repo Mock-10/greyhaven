@@ -437,10 +437,10 @@ export function vehiclePanel(
   s: Surface,
   x: number,
   y: number,
-  o: { fuel: number; health: number; speed: number },
+  o: { type?: string; fuel: number; health: number; speed: number },
 ): void {
   plate(s, x, y, CAR_PANEL.w, CAR_PANEL.h);
-  text(s, x + 5, y + 4, 'SEDAN', C.CREAM);
+  text(s, x + 5, y + 4, o.type ?? 'SEDAN', C.CREAM);
   const pct = `${Math.round(o.speed * 100)}%`;
   sprite(s, x + CAR_PANEL.w - 12 - textWidthPx(pct), y + 4, GAUGE, { '#': C.MUTED });
   text(s, x + CAR_PANEL.w - 5 - textWidthPx(pct), y + 4, pct, C.MUTED);
