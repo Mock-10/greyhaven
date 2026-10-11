@@ -11,7 +11,10 @@ const GOLD_SHADE = [148, 111, 46, 255];
 const CREAM = [238, 233, 232, 255];
 const KEY_INK = [45, 34, 46, 255];
 
-export function promptPixels(key: string, label: string): Pixels {
+const RED = [208, 132, 120, 255];
+
+/** `blocked` draws the label in red: a requirement isn't met (docs/11: "LOCKED shown in red"). */
+export function promptPixels(key: string, label: string, blocked = false): Pixels {
   const kt = textBits(key);
   const lt = textBits(label);
   const ltw = (lt[0] as boolean[]).length;
@@ -40,6 +43,6 @@ export function promptPixels(key: string, label: string): Pixels {
   fill(3, 10, 2, 9, GOLD);
   fill(3, 10, 8, 9, GOLD_SHADE);
   kt.forEach((row, y) => row.forEach((on, x) => on && set(5 + x, 3 + y, KEY_INK)));
-  lt.forEach((row, y) => row.forEach((on, x) => on && set(13 + x, 3 + y, CREAM)));
+  lt.forEach((row, y) => row.forEach((on, x) => on && set(13 + x, 3 + y, blocked ? RED : CREAM)));
   return { width: w, height: H, data };
 }

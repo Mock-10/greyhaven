@@ -9,4 +9,6 @@ export const KEYS = {
   use: 'E',
   cycle: 'TAB',
   debugOverlay: 'F3',
+  /** Sight lines on/off (docs/19) until the settings menu exists. */
+  sightLines: 'L',
 } as const;

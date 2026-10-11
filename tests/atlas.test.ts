@@ -9,6 +9,9 @@ describe('atlas format', () => {
     for (const [key, a] of Object.entries(ATLASES)) {
       const frames = parseAtlas(a.json);
       expect(frames.size, key).toBeGreaterThan(0);
+      // interior pieces (walls, wall pieces, wall-mounted items) are anchored at the room origin or a ground
+      // point that can lie outside their own cell
+      if (key.startsWith('in_')) continue;
       for (const f of frames.values()) {
         expect(f.ax >= 0 && f.ax < f.w && f.ay >= 0 && f.ay < f.h, `${key}:${f.name}`).toBe(true);
       }

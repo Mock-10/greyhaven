@@ -17,7 +17,8 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 ## Handover (updated 2026-10-11) — read this first in a new session
 
 **Where things stand**
-- **The current phase is still Phase 1 (vertical slice).** It is delivered in milestones, one PR each. Milestone 1 is done. **Milestone 1b (the Downtown rework) is built** on branch `claude/sweet-albattani-4dbzox`, with a PR waiting for the user to merge and play. **Next: milestone 2** (interiors and the office job), once the user has played 1b and says go. Phase 2 is parked until Phase 1 is finished.
+- **The current phase is still Phase 1 (vertical slice).** Milestones 1 and 1b are merged (PR #2, #4). **Milestone 2 (interiors, the office job, sleep, the corner store) is built** on branch `claude/sweet-albattani-4dbzox` with a PR waiting for the user. **Next: milestone 3** (driving and the carjack loop) once the user says go. Phase 2 is parked until Phase 1 is finished.
+- Communication preference (2026-10-11): the user asked for fewer progress messages in chat while working; still send images and important updates. They may switch back later.
 - **`main`** has Phase 0, Phase 1 milestone 1 and the milestone 2 WIP logic (PR #1, #2 and #3, all merged). It is live at `https://mock-10.github.io/greyhaven/`.
 - **Milestone 2 WIP logic is already on `main`** (PR #3 merged it), not wired into the game yet:
   - `art/source/export_interiors.py` → `art/interiors/` (game-ready interior sheets and geometry);
@@ -150,11 +151,14 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - [x] Interior definitions: hours, door rules, prompt actions, NPC schedules (`src/data/interiors.ts`). *On the WIP branch.*
 - [x] Career logic for the office job: clock-in window, late pay, pay, XP, promotion bonus, key card (`src/systems/career.ts`, `src/data/jobs.ts`). *On the WIP branch.*
 - [x] Filing and data-entry minigame rules (`src/minigames/logic.ts`). *On the WIP branch, no on-screen panel yet.*
-- [ ] Minigame overlay scene (panels drawn to match `art/drafts/hud/`).
-- [ ] Interior scene with doors and the sight system (docs/19): apartment, office building, corner store (shopping), bar.
-- [ ] Office Worker job: clock in, 3 filing / data-entry tasks, pay, promotion XP, rank 1 → 2.
-- [ ] Sleep at the apartment.
-- [ ] Tests, screenshots, notes, PR.
+- [x] Movement fixes from the 1b playtest: the same screen speed in every direction; small props (bollards, hydrants, lamp posts, meters, bins) collide with a smaller circle and round props push you aside instead of stopping you (`src/systems/movement.ts`).
+- [x] Minigame overlay scene (`src/scenes/MinigameScene.ts`), matching the lockpick mockup: filing (drag a paper into its tray or press 1–3; FILED / WRONG stamps), data entry, and the shop menu. Job tasks and menus pause the world.
+- [x] Interiors in the street scene (`src/world/interiorModel.ts`, `interiorView.ts`): fade in and out, opening hours on street doors, key card after hours at the tower, Marlo's "COME BACK WITH A CAR", collision, doors with OPEN / CLOSE prompts and red locked labels, the elevator between the lobby and floor 4, NPCs by their hours.
+- [x] Sight (docs/19): dithered lids over unseen rooms, remembered rooms dimmed with ghosts of the people last seen there, back walls darkened above rooms out of sight, 150 ms fades, remembered rooms kept in the game state, the sight-lines setting (key L until the settings menu exists, `?sight=0`).
+- [x] Office Worker job: clock in with Ms. Hollis, 3 filing / data-entry tasks, clock out for pay, XP and promotions (rank 2 brings the key card), objective lines and phone messages.
+- [x] Sleep at the apartment: skip to 06:00 the next day.
+- [x] Corner store basics: chips, sandwich (heal), fuel can, clean cash only.
+- [x] Tests (114 unit, 9 e2e), screenshots in `docs/screenshots/phase1_m2/`, notes, PR.
 
 ### Milestone 2 notes (in progress)
 **Assumptions (approved 2026-10-11):**
@@ -169,7 +173,20 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 
 **Art debt:** none. All interior sprites come from the approved drafts through `art/source/`.
 
-**Known issues:** milestone 2 is not playable yet. Street doors still only show a phone message on `main`.
+**How to try:** walk to Pellridge Tower after 08:00 (`?scene=world&time=08:00`), press E at the door, take the elevator up, clock in with Ms. Hollis in the back-right office, do three tasks at the filing cabinets or your desk, then clock out. The corner store sells snacks and a fuel can (counter: SHOP). Dez's back room at The Low Tide opens at 18:00. Sleep in your apartment at Drizzle Row Residences. Press L to switch sight lines off and on. Debug: `?scene=world&area=office_floor&time=08:30` starts inside.
+
+**Assumptions (please review):**
+- Doors with no lock start open (Ms. Hollis's office door); locked and staff doors start closed. Doors don't remember their state after you leave.
+- Food from the store is eaten on the spot (no inventory screen yet); the fuel can is carried for milestone 3.
+- Quitting a job task with Esc doesn't count as a task (no grade, no penalty).
+- While sight lines are on, objects in rooms you can't see can't be used.
+- The sight-lines toggle sits on key L until the settings menu exists.
+
+**Art debt:** none.
+
+**Known issues:**
+- Camera fades are slow in headless Chromium (the e2e tests wait for them); real browsers are fine.
+- No save yet (milestone 4): sleeping says so.
 
 ### Milestone 3: driving and the carjack loop
 - [ ] One sedan with arcade handling, fuel and basic damage; enter and exit (F).

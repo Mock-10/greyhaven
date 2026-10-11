@@ -11,6 +11,7 @@ export type Action =
   | { kind: 'job'; task: 'filing' | 'dataEntry' }
   | { kind: 'clock' }
   | { kind: 'elevator'; to: InteriorId }
+  | { kind: 'shop' }
   | { kind: 'later'; who: string; text: string };
 
 /** How a door leaf behaves: always openable, locked, or open only under a condition. */
@@ -82,10 +83,8 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     hours: h(7, 21),
     entrance: { x: 170, y: 210 },
     actions: {
-      'ROB REGISTER': {
-        label: 'SHOP',
-        action: { kind: 'later', who: 'CLERK', text: 'THE SHOP OPENS IN PHASE 2. JUST LOOKING?' },
-      },
+      // Phase 1 sells a few basics (decided 2026-10-11); robbery comes in Phase 3
+      'ROB REGISTER': { label: 'SHOP', action: { kind: 'shop' } },
       'LOCKPICK DOOR': null,
       'CRACK SAFE': null,
       'DISABLE CAMERAS': null,

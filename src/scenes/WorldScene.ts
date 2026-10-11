@@ -7,7 +7,7 @@ import { BG_DAY, DIRS, PAL, SHADOW_RGB, TILE } from '../config/constants';
 import { KEYS } from '../config/keys';
 import { FixedStep } from '../core/clock';
 import { Rng } from '../core/rng';
-import { createState, loadSettings, type GameState, type Settings } from '../core/store';
+import { createState, loadSettings, saveSettings, type GameState, type Settings } from '../core/store';
 import { framePixels, frameInfo } from '../assets/atlasLoader';
 import { highlight, HIGHLIGHT_PAD } from '../assets/highlight';
 import { addPixelsTexture } from '../assets/runtimeTextures';
@@ -35,7 +35,33 @@ import { depthAmong, staticOrder, type Box } from '../iso/staticDepth';
 import { DOWNTOWN } from '../maps/downtown';
 import { tileSeed as referenceSeed, TEST_MAP } from '../maps/testMap';
 import type { Door, MapData, Placement } from '../maps/types';
-import { advance, calendar, darkness, tintAt } from '../systems/clock';
+import { advance, calendar, darkness, sleepUntil, tintAt } from '../systems/clock';
+import {
+  clockIn,
+  clockOut,
+  hasKeyCard,
+  rankTitle,
+  recordTask,
+  tasksLeft,
+  type Grade,
+} from '../systems/career';
+import { INTERIORS, interiorForDoor, isOpen, type InteriorDef, type InteriorId } from '../data/interiors';
+import { TASK_NAMES, type TaskId } from '../data/jobs';
+import { ATLASES } from '../assets/manifest';
+import {
+  createDoors,
+  doorPrompt,
+  interiorSolids,
+  npcOnDuty,
+  useSpots,
+  type DoorRuntime,
+  type InteriorJson,
+  type UseSpot,
+} from '../world/interiorModel';
+import { InteriorView } from '../world/interiorView';
+import { VIS } from '../systems/sight';
+import type { MinigameRequest, MinigameResult } from './MinigameScene';
+import type { Wallet } from '../systems/shop';
 import { selectTarget } from '../systems/interaction';
 import { moveVector, moveWithCollision, type CollisionRules, type Solid } from '../systems/movement';
 import { promptPixels } from '../ui/promptPlate';
@@ -70,7 +96,7 @@ export function footprintOf(p: Placement): Box {
   return [p.x - r, p.y - r, p.x + r, p.y + r];
 }
 
-/** Something E can be used on: a placed object or a street door. */
+/** Something E can be used on: a placed object, a street door, or a spot inside an interior. */
 interface Usable {
   id: string;
   x: number;
@@ -78,7 +104,30 @@ interface Usable {
   label: string;
   placed: Placed | null;
   door: Door | null;
+  spot?: UseSpot;
+  /** The label shows in red: a requirement isn't met. */
+  blocked?: boolean;
 }
+
+/** An interior while the player is in it. */
+interface InteriorRun {
+  def: InteriorDef;
+  json: InteriorJson;
+  view: InteriorView;
+  doors: DoorRuntime[];
+  npcs: boolean[];
+}
+
+/** What the street keeps while the player is inside. */
+interface StreetSaved {
+  placed: Placed[];
+  footprints: { fp: Footprint; bounds: Rect; sprite: string }[];
+  solids: Solid[];
+  usables: Usable[];
+  statics: { fp: Box; depth: number; bounds: Rect }[];
+}
+
+const INTERIOR_BG = 0x241c28;
 
 export interface HudSnapshot {
   px: number;
@@ -96,6 +145,7 @@ export interface HudSnapshot {
   buildings: { x: number; y: number; hx: number; hy: number }[];
   doors: Door[];
   target: string | null;
+  objective: string;
 }
 
 const SHADOW_VALUES = { box: BALANCE.render.shadowBoxValue, blob: BALANCE.render.shadowBlobValue };
@@ -138,6 +188,12 @@ export class WorldScene extends Phaser.Scene {
   private street: string | null = null;
   private radarBuildings: HudSnapshot['buildings'] = [];
   private dezTold = false;
+  private inside: InteriorRun | null = null;
+  private streetSaved: StreetSaved | null = null;
+  private inGround!: Phaser.GameObjects.Layer;
+  private inObjects!: Phaser.GameObjects.Layer;
+  private busy = false;
+  private lastNpcMinute = -1;
 
   constructor() {
     super('world');
@@ -173,6 +229,9 @@ export class WorldScene extends Phaser.Scene {
     this.groundLayer = this.add.layer().setDepth(0);
     this.objectLayer = this.add.layer().setDepth(1);
     this.overlayLayer = this.add.layer().setDepth(2);
+    this.inGround = this.add.layer().setDepth(0).setVisible(false);
+    this.inObjects = this.add.layer().setDepth(1).setVisible(false);
+    if (this.params.sight !== null) this.settings.sightLines = this.params.sight;
 
     const shapes = this.map.placements.map((p) => shadowShape(p.x, p.y, p.shadow, SHADOW_VALUES));
     const seedFor = this.isReference ? referenceSeed : (i: number, j: number) => (i * 31 + j * 17) % 7;
@@ -221,6 +280,16 @@ export class WorldScene extends Phaser.Scene {
     h.scene = this.params.scene;
     h.depthOf = (sprite) => this.placed.find((p) => p.placement.sprite === sprite)?.sprite.depth ?? null;
     h.alphaOf = (sprite) => this.placed.find((p) => p.placement.sprite === sprite)?.sprite.alpha ?? null;
+    const onDone = (r: MinigameResult) => this.minigameDone(r);
+    this.game.events.on('minigame:done', onDone);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off('minigame:done', onDone));
+    const startIn = this.params.area as InteriorId | null;
+    if (startIn && INTERIORS[startIn] && !this.isReference) {
+      const def = INTERIORS[startIn];
+      const door = (this.map.doors ?? []).find((d) => d.target === def.street) ?? this.map.doors?.[0];
+      this.state.streetReturn = door ? { x: door.x, y: door.y + 12 } : { ...this.map.spawn };
+      this.enterInterior(def, this.params.spawn ?? def.entrance ?? def.elevator ?? { x: 40, y: 40 });
+    }
     this.game.events.once(Phaser.Core.Events.POST_RENDER, () => {
       h.ready = true;
     });
@@ -258,6 +327,14 @@ export class WorldScene extends Phaser.Scene {
     this.keys.recenter.on('down', () => this.camCtl.recenter());
     this.keys.use.on('down', () => this.use());
     this.keys.cycle.on('down', () => this.cycle++);
+    kb.on(`keydown-${KEYS.sightLines}`, () => {
+      this.settings.sightLines = !this.settings.sightLines;
+      saveSettings(this.settings);
+      this.game.events.emit('hud:toast', {
+        who: 'SETTINGS',
+        text: this.settings.sightLines ? 'SIGHT LINES ON' : 'SIGHT LINES OFF: EVERY ROOM VISIBLE',
+      });
+    });
     kb.on(`keydown-${KEYS.debugOverlay}`, () => this.setDebug(!this.debugOn));
   }
 
@@ -411,9 +488,9 @@ export class WorldScene extends Phaser.Scene {
     return key;
   }
 
-  private promptTexture(label: string): string {
-    const key = `prompt:E:${label}`;
-    if (!this.textures.exists(key)) addPixelsTexture(this.textures, key, promptPixels('E', label));
+  private promptTexture(label: string, blocked = false): string {
+    const key = `prompt:E:${label}:${blocked ? 'red' : ''}`;
+    if (!this.textures.exists(key)) addPixelsTexture(this.textures, key, promptPixels('E', label, blocked));
     return key;
   }
 
@@ -502,8 +579,8 @@ export class WorldScene extends Phaser.Scene {
     const W = BALANCE.walker;
     return {
       radius: W.radius,
-      mapW: this.map.width * TILE,
-      mapH: this.map.height * TILE,
+      mapW: this.inside ? this.inside.json.W : this.map.width * TILE,
+      mapH: this.inside ? this.inside.json.D : this.map.height * TILE,
       smallScale: W.smallPropScale,
       smallSlack: W.smallPropSlack,
     };
@@ -523,6 +600,11 @@ export class WorldScene extends Phaser.Scene {
         this.dezTold = true;
         this.game.events.emit('hud:toast', { who: 'DEZ', text: "BACK ROOM'S OPEN AFTER 6." });
       }
+    }
+    if (this.inside && Math.floor(this.state.minutes) !== this.lastNpcMinute) {
+      this.lastNpcMinute = Math.floor(this.state.minutes);
+      this.updateNpcs();
+      if (this.lastNpcMinute % 10 === 0) this.updateInteriorObjective();
     }
     const k = this.keys;
     const sx = (k.right.isDown ? 1 : 0) - (k.left.isDown ? 1 : 0);
@@ -567,7 +649,10 @@ export class WorldScene extends Phaser.Scene {
         this.player.setTexture(ref.atlas, ref.frame);
     }
     const bounds = this.playerBounds();
-    if (this.map.ground) {
+    if (this.inside) {
+      const near = this.inside.view.footprints.filter((f) => rectsOverlap(f.bounds, bounds)).map((f) => f.fp);
+      this.player.setDepth(depthAgainstFootprints(p.x, p.y, near));
+    } else if (this.map.ground) {
       const r = BALANCE.walker.radius;
       const fp: Box = [p.x - r, p.y - r, p.x + r, p.y + r];
       const near = this.statics.filter((o) => rectsOverlap(o.bounds, bounds));
@@ -590,8 +675,14 @@ export class WorldScene extends Phaser.Scene {
     if (!this.player || !this.playing) return;
     const p = this.state.player;
     const ang = (p.dir * Math.PI) / 4;
+    if (this.inside) this.refreshInteriorLabels();
+    // with sight lines on, nothing in a room you can't see can be used (doors stand between rooms: always)
+    const view = this.inside?.view;
+    const usable = view
+      ? this.usables.filter((u) => u.spot?.kind === 'door' || view.stateAt(u.x, u.y) === VIS)
+      : this.usables;
     const t = selectTarget(
-      this.usables,
+      usable,
       p.x,
       p.y,
       { x: Math.cos(ang), y: Math.sin(ang) },
@@ -627,7 +718,7 @@ export class WorldScene extends Phaser.Scene {
       this.prompt?.setVisible(false);
       return;
     }
-    const key = this.promptTexture(tgt.label);
+    const key = this.promptTexture(tgt.label, tgt.blocked ?? false);
     if (!this.prompt) {
       this.prompt = this.add.image(0, 0, key).setOrigin(0, 0);
       this.overlayLayer.add(this.prompt);
@@ -650,19 +741,444 @@ export class WorldScene extends Phaser.Scene {
     if (!this.playing || !this.target) return;
     const u = this.usables.find((x) => x.id === this.target);
     if (!u) return;
-    if (u.door) {
-      this.game.events.emit('hud:toast', {
-        who: u.door.label.replace(/^ENTER /, ''),
-        text: 'INTERIORS OPEN IN THE NEXT UPDATE.',
-      });
-    } else if (u.id.startsWith('atm')) {
+    if (u.door) this.tryEnter(u.door);
+    else if (u.spot) this.useSpot(u.spot);
+    else if (u.id.startsWith('atm')) {
       this.game.events.emit('hud:toast', { who: 'ATM', text: 'BANKING ARRIVES WITH THE PHONE.' });
+    }
+  }
+
+  // ---------------------------------------------------------------- interiors (docs/18)
+
+  private toast(who: string, text: string): void {
+    this.game.events.emit('hud:toast', { who, text });
+  }
+
+  private objectiveText = 'EXPLORE THE LEDGER (DOWNTOWN)';
+
+  private objective(text: string): void {
+    this.objectiveText = text;
+  }
+
+  private minuteOfDay(): number {
+    return calendar(this.state.minutes).minute;
+  }
+
+  /** Street door: opening hours, the key card after hours, and Marlo, who only deals in cars. */
+  private tryEnter(door: Door): void {
+    if (this.busy) return;
+    const def = interiorForDoor(door.target);
+    if (!def) {
+      this.toast('MARLO', 'COME BACK WITH A CAR.');
+      return;
+    }
+    const open = isOpen(def.hours, this.minuteOfDay());
+    const keyCard = def.id === 'tower_lobby' && hasKeyCard(this.state.career);
+    if (!open && !keyCard) {
+      const h = def.hours as { from: number; to: number };
+      const hhmm = (m: number) =>
+        `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+      this.toast(def.name, `CLOSED. OPEN ${hhmm(h.from)} TO ${hhmm(h.to)}.`);
+      return;
+    }
+    this.state.streetReturn = { x: door.x, y: door.y + 12 };
+    this.fade(() => this.enterInterior(def, def.entrance ?? { x: 40, y: 40 }));
+  }
+
+  /** Fade out, run `mid`, fade back in (docs/18: about 0.3 s). */
+  private fade(mid: () => void): void {
+    this.busy = true;
+    const half = BALANCE.interiors.fadeMs / 2;
+    const cam = this.cameras.main;
+    cam.fadeOut(half, 0, 0, 0);
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      mid();
+      cam.fadeIn(half, 0, 0, 0);
+      this.busy = false;
+    });
+  }
+
+  private npcsOnDuty(def: InteriorDef, json: InteriorJson): boolean[] {
+    const m = this.minuteOfDay();
+    return json.npcs.map((_, i) => npcOnDuty(def.npcs[i]?.hours ?? null, m));
+  }
+
+  private enterInterior(def: InteriorDef, at: { x: number; y: number }): void {
+    if (this.inside) this.leaveInteriorView();
+    else {
+      this.streetSaved = {
+        placed: this.placed,
+        footprints: this.footprints,
+        solids: this.solids,
+        usables: this.usables,
+        statics: this.statics,
+      };
+      this.groundLayer.setVisible(false);
+      this.objectLayer.setVisible(false);
+      for (const l of this.lamps) l.halo.setVisible(false);
+    }
+    const json = ATLASES[`in_${def.id}` as keyof typeof ATLASES].json as unknown as InteriorJson;
+    this.inGround.setVisible(true);
+    this.inObjects.setVisible(true);
+    const view = new InteriorView(this, json, def, this.inGround, this.inObjects);
+    const doors = createDoors(json, def);
+    const npcs = this.npcsOnDuty(def, json);
+    this.inside = { def, json, view, doors, npcs };
+    this.state.area = { kind: 'interior', id: def.id };
+    if (this.player) {
+      this.objectLayer.remove(this.player);
+      this.inObjects.add(this.player);
+      if (this.playerShadow) {
+        this.groundLayer.remove(this.playerShadow);
+        this.inGround.add(this.playerShadow);
+      }
+    }
+    // the interior's own objects become the scene's
+    this.placed = view.placed.map((pl) => this.placedFromInterior(pl, json));
+    this.footprints = [];
+    this.statics = [];
+    this.usables = useSpots(json, def, doors).map((spot) => ({
+      id: spot.id,
+      x: spot.x,
+      y: spot.y,
+      label: spot.kind === 'exit' ? 'EXIT TO STREET' : spot.kind === 'action' ? spot.label : 'OPEN DOOR',
+      placed:
+        spot.kind === 'action'
+          ? (this.placed.find((pl) => pl.placement.interact?.id === spot.id) ?? null)
+          : spot.kind === 'door'
+            ? (this.placed.find((pl) => pl.placement.interact?.id === spot.id) ?? null)
+            : null,
+      door: null,
+      spot,
+    }));
+    this.worldChanged();
+    const p = this.state.player;
+    p.x = at.x;
+    p.y = at.y;
+    p.dir = 6;
+    p.moving = false;
+    this.lastNpcMinute = Math.floor(this.state.minutes);
+    this.camCtl.setBounds(view.bounds);
+    this.syncPlayer();
+    this.camCtl.snap();
+    this.lastDark = -1;
+    this.applyDayNight(true);
+    this.game.events.emit('hud:street', def.name);
+    this.updateInteriorObjective();
+  }
+
+  private placedFromInterior(pl: InteriorView['placed'][number], json: InteriorJson): Placed {
+    const it = json.items[pl.item] as InteriorJson['items'][number];
+    const f = frameInfo(pl.frame.atlas, pl.frame.frame);
+    const id = it.door ? null : `${json.id}:${pl.item}`;
+    const doorIdx = it.door ? json.items.filter((x, k) => x.door && k < pl.item).length : -1;
+    return {
+      placement: {
+        sprite: `int/${it.kind}`,
+        dir: 0,
+        x: it.x,
+        y: it.y,
+        shadow: { kind: 'blob', r: 0 },
+        valuable: it.valuable,
+        interact: it.door
+          ? { id: `${json.id}:door${doorIdx}`, label: '' }
+          : it.prompt
+            ? { id: id as string, label: '' }
+            : undefined,
+      },
+      sprite: pl.sprite,
+      info: f,
+      bounds: pl.bounds,
+      height: pl.height,
+      dayFrame: pl.frame,
+      nightFrame: null,
+      glow: null,
+      cue: it.prompt || it.door ? { kind: 'runtime' } : null,
+    };
+  }
+
+  /** Doors or NPCs changed: rebuild collision and redraw. */
+  private worldChanged(): void {
+    const r = this.inside;
+    if (!r) return;
+    this.solids = interiorSolids(r.json, r.doors, r.npcs, BALANCE.walker.radius);
+    r.view.setWorld(r.doors, r.npcs);
+  }
+
+  private leaveInteriorView(): void {
+    const r = this.inside;
+    if (!r) return;
+    if (this.player) this.inObjects.remove(this.player);
+    if (this.playerShadow) this.inGround.remove(this.playerShadow);
+    r.view.destroy();
+    this.inside = null;
+  }
+
+  private exitToStreet(): void {
+    const back = this.streetSaved;
+    if (!back) return;
+    this.leaveInteriorView();
+    this.inGround.setVisible(false);
+    this.inObjects.setVisible(false);
+    this.groundLayer.setVisible(true);
+    this.objectLayer.setVisible(true);
+    Object.assign(this, back);
+    this.streetSaved = null;
+    if (this.player) {
+      this.objectLayer.add(this.player);
+      if (this.playerShadow) this.groundLayer.add(this.playerShadow);
+    }
+    const p = this.state.player;
+    const at = this.state.streetReturn ?? this.map.spawn;
+    p.x = at.x;
+    p.y = at.y;
+    p.dir = 2;
+    this.state.area = { kind: 'street' };
+    this.camCtl.setBounds(this.ground.bounds);
+    this.syncPlayer();
+    this.camCtl.snap();
+    this.street = null;
+    this.lastDark = -1;
+    this.applyDayNight(true);
+    this.updateInteriorObjective();
+  }
+
+  /** Door and clock-in labels change with the time of day and the shift. */
+  private refreshInteriorLabels(): void {
+    const r = this.inside;
+    if (!r) return;
+    const ctx = { minuteOfDay: this.minuteOfDay(), keyCard: hasKeyCard(this.state.career) };
+    for (const u of this.usables) {
+      const sp = u.spot;
+      if (!sp) continue;
+      if (sp.kind === 'door') {
+        const d = doorPrompt(r.doors[sp.door] as DoorRuntime, ctx);
+        u.label = d.label;
+        u.blocked = d.blocked;
+      } else if (sp.kind === 'action' && sp.action.kind === 'clock') {
+        const c = this.state.career;
+        u.label = c.shift ? (tasksLeft(c) === 0 ? 'CLOCK OUT' : `TASKS LEFT: ${tasksLeft(c)}`) : 'CLOCK IN';
+        u.blocked = !!c.shift && tasksLeft(c) > 0;
+      }
+    }
+  }
+
+  private useSpot(spot: UseSpot): void {
+    const r = this.inside;
+    if (!r || this.busy) return;
+    if (spot.kind === 'exit') {
+      this.fade(() => this.exitToStreet());
+      return;
+    }
+    if (spot.kind === 'door') {
+      const d = r.doors[spot.door] as DoorRuntime;
+      const pr = doorPrompt(d, { minuteOfDay: this.minuteOfDay(), keyCard: hasKeyCard(this.state.career) });
+      if (pr.blocked) {
+        this.toast('DOOR', pr.label);
+        return;
+      }
+      d.open = !d.open;
+      // don't shut a door on the player standing in it
+      if (!d.open && this.solidsWouldTrapPlayer()) d.open = true;
+      this.worldChanged();
+      return;
+    }
+    const a = spot.action;
+    switch (a.kind) {
+      case 'later':
+        this.toast(a.who, a.text);
+        break;
+      case 'elevator': {
+        const to = INTERIORS[a.to];
+        this.fade(() => this.enterInterior(to, to.elevator ?? to.entrance ?? { x: 40, y: 40 }));
+        break;
+      }
+      case 'sleep':
+        this.sleep();
+        break;
+      case 'shop':
+        this.openMinigame({ kind: 'shop', title: r.def.name, wallet: this.wallet() });
+        break;
+      case 'clock':
+        this.clockAction();
+        break;
+      case 'job':
+        this.jobTask(a.task);
+        break;
+    }
+  }
+
+  private solidsWouldTrapPlayer(): boolean {
+    const r = this.inside;
+    if (!r) return false;
+    const solids = interiorSolids(r.json, r.doors, r.npcs, BALANCE.walker.radius);
+    const p = this.state.player;
+    const rules = this.collisionRules;
+    return solids.some(
+      (s) =>
+        s.kind === 'box' &&
+        Math.abs(p.x - s.x) <= s.hx + rules.radius &&
+        Math.abs(p.y - s.y) <= s.hy + rules.radius,
+    );
+  }
+
+  private sleep(): void {
+    this.fade(() => {
+      this.state.minutes = sleepUntil(this.state.minutes, BALANCE.sleep.wakeMinute);
+      const cal = calendar(this.state.minutes);
+      this.toast('HOME', `SLEPT UNTIL 06:00, ${cal.weekday}. SAVING ARRIVES IN MILESTONE 4.`);
+      this.lastDark = -1;
+      this.updateNpcs(true);
+      this.updateInteriorObjective();
+    });
+  }
+
+  private clockAction(): void {
+    const c = this.state.career;
+    if (c.shift) {
+      const left = tasksLeft(c);
+      if (left > 0) {
+        this.toast('MS. HOLLIS', `${left} TASK${left > 1 ? 'S' : ''} LEFT. FILING CABINETS OR YOUR DESK.`);
+        return;
+      }
+      const res = clockOut(c);
+      if (!res) return;
+      this.state.money.clean += res.pay + res.bonus;
+      this.toast('MS. HOLLIS', `GOOD WORK. +$${res.pay} CLEAN, +${res.xp} XP.`);
+      if (res.promoted)
+        this.time.delayedCall(2200, () =>
+          this.toast(
+            'MS. HOLLIS',
+            `PROMOTED TO ${rankTitle(c)}! +$${res.bonus} BONUS.${hasKeyCard(c) ? ' HERE IS YOUR KEY CARD.' : ''}`,
+          ),
+        );
+      this.updateInteriorObjective();
+      return;
+    }
+    const r = clockIn(c, this.state.minutes);
+    if (r.ok) {
+      this.toast('MS. HOLLIS', r.late ? "YOU'RE LATE. THAT'S 80% PAY TODAY." : 'MORNING. THREE TASKS TODAY.');
+    } else {
+      const why: Record<typeof r.reason, string> = {
+        weekend: "IT'S THE WEEKEND. GO HOME.",
+        early: 'CLOCK-IN OPENS AT 08:00.',
+        tooLate: 'CLOCK-IN CLOSED AT 10:00. TRY TOMORROW.',
+        alreadyWorked: 'YOU ALREADY WORKED TODAY.',
+        onShift: 'YOU ARE ALREADY ON SHIFT.',
+      };
+      this.toast('MS. HOLLIS', why[r.reason]);
+    }
+    this.updateInteriorObjective();
+  }
+
+  private jobTask(task: TaskId): void {
+    const c = this.state.career;
+    if (!c.shift) {
+      this.toast('MS. HOLLIS', 'CLOCK IN WITH ME FIRST. MY OFFICE, BACK RIGHT.');
+      return;
+    }
+    if (tasksLeft(c) === 0) {
+      this.toast('MS. HOLLIS', "THAT'S ENOUGH FOR TODAY. CLOCK OUT WITH ME.");
+      return;
+    }
+    const done = 3 - tasksLeft(c);
+    this.pendingTask = task;
+    this.openMinigame({ kind: task, seed: this.rng.int(1, 2 ** 30), task: `TASK ${done + 1}/3` });
+  }
+
+  private pendingTask: TaskId | null = null;
+
+  /** Money, health and inventory as the shop sees them (health lives on the player). */
+  private wallet(): Wallet {
+    const p = this.state.player;
+    return {
+      money: this.state.money,
+      inventory: this.state.inventory,
+      get health() {
+        return p.health;
+      },
+      set health(v: number) {
+        p.health = v;
+      },
+    };
+  }
+
+  private openMinigame(req: MinigameRequest): void {
+    this.prompt?.setVisible(false);
+    hook().minigame = req.kind;
+    this.scene.pause();
+    this.scene.launch('minigame', req);
+  }
+
+  private minigameDone(r: MinigameResult): void {
+    hook().minigame = null;
+    this.scene.resume();
+    if ((r.kind === 'filing' || r.kind === 'dataEntry') && this.pendingTask) {
+      const task = this.pendingTask;
+      this.pendingTask = null;
+      if (r.grade) {
+        recordTask(this.state.career, task, r.grade as Grade);
+        const left = tasksLeft(this.state.career);
+        this.toast(
+          TASK_NAMES[task],
+          left > 0
+            ? `${r.grade.toUpperCase()}. ${left} TO GO.`
+            : `${r.grade.toUpperCase()}. CLOCK OUT WITH MS. HOLLIS.`,
+        );
+      }
+      this.updateInteriorObjective();
+    }
+  }
+
+  private updateInteriorObjective(): void {
+    const c = this.state.career;
+    if (c.shift) {
+      const left = tasksLeft(c);
+      this.objective(
+        left > 0
+          ? `DO ${left} MORE TASK${left > 1 ? 'S' : ''}: FILING CABINETS OR YOUR DESK`
+          : 'CLOCK OUT WITH MS. HOLLIS',
+      );
+      return;
+    }
+    const m = this.minuteOfDay();
+    const workday = BALANCE.careers.workdays.includes((calendar(this.state.minutes).day - 1) % 7);
+    if (workday && c.lastShiftDay !== calendar(this.state.minutes).day && m < BALANCE.careers.clockInUntil)
+      this.objective(
+        this.inside?.def.id === 'office_floor'
+          ? 'CLOCK IN WITH MS. HOLLIS (08:00-10:00)'
+          : 'GO TO WORK: PELLRIDGE TOWER, FLOOR 4 (08:00-10:00)',
+      );
+    else
+      this.objective(
+        m >= 20 * 60 || m < 6 * 60
+          ? 'GO HOME AND SLEEP: DRIZZLE ROW RESIDENCES'
+          : 'EXPLORE THE LEDGER (DOWNTOWN)',
+      );
+  }
+
+  /** NPCs come and go with their hours. */
+  private updateNpcs(force = false): void {
+    const r = this.inside;
+    if (!r) return;
+    const now = this.npcsOnDuty(r.def, r.json);
+    if (force || now.some((v, i) => v !== r.npcs[i])) {
+      r.npcs = now;
+      this.worldChanged();
     }
   }
 
   // ---------------------------------------------------------------- day / night
 
   private applyDayNight(force = false): void {
+    if (this.inside) {
+      // interiors don't take the outdoor night tint (docs/18)
+      if (!force) return;
+      for (const pl of this.placed) pl.sprite.clearTint();
+      this.player?.clearTint();
+      this.cameras.main.setBackgroundColor(INTERIOR_BG);
+      return;
+    }
     const d = this.isReference ? 0 : darkness(calendar(this.state.minutes).minute);
     if (!force && Math.abs(d - this.lastDark) < 0.01) return;
     this.lastDark = d;
@@ -788,9 +1304,18 @@ export class WorldScene extends Phaser.Scene {
     this.updateInteraction(dt);
     this.updateOcclusion(dt);
     this.applyDayNight();
-    this.updateStreet();
+    if (this.inside) {
+      const r = this.inside;
+      const seen = new Set(this.state.sight[r.def.id] ?? []);
+      const vis = r.view.updateSight(this.state.player, r.doors, seen, this.settings.sightLines);
+      if (vis) {
+        for (const room of vis) seen.add(room);
+        this.state.sight[r.def.id] = [...seen];
+      }
+      r.view.tick(dt);
+    } else this.updateStreet();
     this.camCtl.update(dt);
-    this.ground.update(this.camCtl.view());
+    if (!this.inside) this.ground.update(this.camCtl.view());
     this.drawDebug();
 
     const h = hook();
@@ -801,6 +1326,10 @@ export class WorldScene extends Phaser.Scene {
     h.target = this.target;
     const p = this.state.player;
     if (this.player) h.walker = { x: p.x, y: p.y, depth: this.player.depth, dir: DIRS[p.dir] as string };
+    h.area = this.inside ? this.inside.def.id : 'street';
+    h.clean = this.state.money.clean;
+    h.rank = this.state.career.jobs.office.rank;
+    h.tasksLeft = this.state.career.shift ? tasksLeft(this.state.career) : -1;
     const tile = worldToTile(p.x, p.y);
     this.game.events.emit('debug:stats', {
       fps: this.game.loop.actualFps,
@@ -815,9 +1344,11 @@ export class WorldScene extends Phaser.Scene {
     });
     if (!this.isReference) {
       const fw = worldToScreen(Math.cos((p.dir * Math.PI) / 4), Math.sin((p.dir * Math.PI) / 4));
+      // inside, the radar shows where the building stands on the street
+      const onMap = this.inside ? (this.state.streetReturn ?? p) : p;
       const snap: HudSnapshot = {
-        px: p.x,
-        py: p.y,
+        px: onMap.x,
+        py: onMap.y,
         heading: Math.atan2(fw.y, fw.x),
         minutes: this.state.minutes,
         money: this.state.money,
@@ -825,11 +1356,12 @@ export class WorldScene extends Phaser.Scene {
         health: p.health / BALANCE.player.maxHealth,
         armor: p.armor,
         district: this.map.name ?? '',
-        street: this.street,
+        street: this.inside ? this.inside.def.name : this.street,
         map: this.map,
         buildings: this.radarBuildings,
         doors: this.map.doors ?? [],
         target: this.target,
+        objective: this.objectiveText,
       };
       this.game.events.emit('hud:frame', snap);
     }

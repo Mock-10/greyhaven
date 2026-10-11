@@ -45,6 +45,7 @@ Building interiors are separate small maps entered through doors: apartment, sto
 ## Time
 - **1 in-game day = 20 real minutes by default.** 1 in-game hour = 50 real seconds.
 - **Day-length setting:** 15, 20 or 30 real minutes per in-game day. All in-game-time values (shift length, opening hours, operation cycles, rent, timers measured in in-game hours or days) scale automatically, because they are stored in in-game units. Values measured in **real seconds** (minigame timings, the star escape timer, witness call delay) do **not** scale. The economy is balanced per in-game day, so money per day stays the same and only real playtime changes (about 7.5–11 h at 15 min, 15–22 h at 30 min).
+- **Walking speed** is the same on screen in every direction; with two keys the character walks along the tile edges (decided 2026-10-11 after the user found straight up and down slower than diagonals).
 - Phases:
   - **Morning** 06:00–10:00: commute and clock-in window.
   - **Day** 10:00–18:00.

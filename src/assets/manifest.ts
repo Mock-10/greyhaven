@@ -8,6 +8,16 @@ import buildings2Json from '../../art/buildings2.json';
 import cityPng from '../../art/city.png';
 import cityJson from '../../art/city.json';
 import groundPng from '../../art/ground.png';
+import inApartmentPng from '../../art/interiors/apartment.png';
+import inApartmentJson from '../../art/interiors/apartment.json';
+import inStorePng from '../../art/interiors/store.png';
+import inStoreJson from '../../art/interiors/store.json';
+import inLobbyPng from '../../art/interiors/tower_lobby.png';
+import inLobbyJson from '../../art/interiors/tower_lobby.json';
+import inOfficePng from '../../art/interiors/office_floor.png';
+import inOfficeJson from '../../art/interiors/office_floor.json';
+import inBarPng from '../../art/interiors/bar.png';
+import inBarJson from '../../art/interiors/bar.json';
 import charactersPng from '../../art/characters.png';
 import charactersJson from '../../art/characters.json';
 import stepsPng from '../../art/characters_steps.png';
@@ -32,6 +42,12 @@ export const ATLASES = {
   vehicles: { url: vehiclesPng, json: vehiclesJson as unknown as AtlasJson },
   interactables: { url: interactablesPng, json: interactablesJson as unknown as AtlasJson },
   city: { url: cityPng, json: cityJson as unknown as AtlasJson },
+  // interiors (art/source/export_interiors.py): every piece anchored at the room origin or its ground point
+  in_apartment: { url: inApartmentPng, json: inApartmentJson as unknown as AtlasJson },
+  in_store: { url: inStorePng, json: inStoreJson as unknown as AtlasJson },
+  in_tower_lobby: { url: inLobbyPng, json: inLobbyJson as unknown as AtlasJson },
+  in_office_floor: { url: inOfficePng, json: inOfficeJson as unknown as AtlasJson },
+  in_bar: { url: inBarPng, json: inBarJson as unknown as AtlasJson },
 } as const;
 
 /** Ground material swatches for vector-ground maps (art/ground.png, read as pixels, not drawn as frames). */

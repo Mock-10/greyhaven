@@ -14,6 +14,13 @@ export interface DebugHook {
   /** Id of the usable object E would use, if any. */
   target: string | null;
   walker: { x: number; y: number; depth: number; dir: string } | null;
+  /** 'street' or the id of the interior the player is in. */
+  area: string;
+  /** Clean cash, office rank, shift tasks left (-1 when off shift), and an open minigame or menu. */
+  clean: number;
+  rank: number;
+  tasksLeft: number;
+  minigame: string | null;
   /** Depth of a placed object by sprite key (first match). */
   depthOf: (sprite: string) => number | null;
   /** Current opacity of a placed object by sprite key (first match), for occlusion checks. */
@@ -38,6 +45,11 @@ export function installHook(): DebugHook {
     minutes: 0,
     target: null,
     walker: null,
+    area: 'street',
+    clean: 0,
+    rank: 1,
+    tasksLeft: -1,
+    minigame: null,
     depthOf: () => null,
     alphaOf: () => null,
     errors: [],

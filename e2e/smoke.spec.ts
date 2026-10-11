@@ -106,3 +106,45 @@ test('night falls: renders at 23:30 without errors', async ({ page }) => {
   expect(await page.evaluate(() => Math.floor(window.__DL__.minutes))).toBe(23 * 60 + 30);
   expect(problems).toEqual([]);
 });
+
+test('walks into the corner store and back out to the street', async ({ page }) => {
+  const problems = await boot(page, '?scene=world&zoom=3&time=10:00&x=873&y=545');
+  await page.keyboard.down('KeyW');
+  await page.keyboard.down('KeyD');
+  await page.waitForTimeout(150);
+  await page.keyboard.up('KeyW');
+  await page.keyboard.up('KeyD');
+  await page.waitForFunction(() => window.__DL__.target === 'door:store');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.area === 'store', null, { timeout: 15_000 });
+  await page.waitForFunction(() => window.__DL__.target === 'store:exit');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.area === 'street', null, { timeout: 15_000 });
+  expect(problems).toEqual([]);
+});
+
+test('keeps closed buildings closed: the tower before 08:00', async ({ page }) => {
+  await boot(page, '?scene=world&zoom=3&time=07:00&x=237&y=300');
+  await page.keyboard.down('KeyW');
+  await page.keyboard.down('KeyD');
+  await page.waitForTimeout(150);
+  await page.keyboard.up('KeyW');
+  await page.keyboard.up('KeyD');
+  await page.waitForFunction(() => window.__DL__.target === 'door:tower_lobby');
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(1500);
+  expect(await page.evaluate(() => window.__DL__.area)).toBe('street');
+});
+
+test('clocks in with Ms. Hollis on floor 4', async ({ page }) => {
+  const problems = await boot(page, '?scene=world&zoom=3&area=office_floor&time=08:10&x=206&y=151');
+  for (let k = 0; k < 6; k++) {
+    if ((await page.evaluate(() => window.__DL__.target)) === 'office_floor:41') break;
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(100);
+  }
+  expect(await page.evaluate(() => window.__DL__.tasksLeft)).toBe(-1);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.tasksLeft === 3);
+  expect(problems).toEqual([]);
+});

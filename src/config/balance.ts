@@ -87,6 +87,33 @@ export const BALANCE = {
     maxHealth: 100,
   },
 
+  /** Corner-store basics (docs/02 "Phase 1 shop"): price in clean dollars, health restored when eaten. */
+  shop: {
+    chips: { price: 6, heal: 10 },
+    sandwich: { price: 12, heal: 25 },
+    /** docs/08: a jerry can costs $40 and holds 10 fuel units. */
+    fuel_can: { price: 40, heal: 0 },
+  },
+
+  /** Sleeping at home skips to this minute of the next day (docs/01: 06:00). */
+  sleep: { wakeMinute: 6 * 60 },
+
+  interiors: {
+    /** Fade between the street and an interior (docs/18: about 0.3 s), in milliseconds. */
+    fadeMs: 300,
+    /** Sight is recomputed when the player has moved this far (docs/19: about 4 units). */
+    sightMoveUnits: 4,
+    /** Sight state changes fade over this long (docs/19: about 150 ms), in seconds. */
+    sightFadeSeconds: 0.15,
+    /** Remembered rooms: floor dim overlay strength and the tint on static furniture (docs/19: about 50%, cooler). */
+    rememberedDim: 0.5,
+    rememberedTint: 0x8a82a8,
+    /** Last-seen NPC ghosts: opacity (docs/19: about 40%). */
+    ghostAlpha: 0.4,
+    /** Indoor sight range in world units (docs/19: about 13 tiles). */
+    sightRange: 420,
+  },
+
   interact: {
     /** Objects within this range show the idle rim (docs/11: 1.5 tiles). */
     rangeTiles: 1.5,

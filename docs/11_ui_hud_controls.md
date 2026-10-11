@@ -56,6 +56,7 @@ The generator is `art/source/hud.py` (with `pixfont.py`), and the shapes, colour
 | Surrender | Y (when prompted) |
 | Camera pan | hold middle mouse and drag, or push the mouse to the screen edge |
 | Camera recenter | C |
+| Sight lines on/off (until the settings menu exists) | L |
 | Zoom | Ctrl + mouse wheel (integer steps: 2×, 3×, 4×) |
 
 ## Camera
