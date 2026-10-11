@@ -121,7 +121,13 @@ export class HudScene extends Phaser.Scene {
     if (snap) {
       const cal = calendar(snap.minutes);
       topLeft(s, 6, 6, { ammo: '-/-', label: 'UNARMED', hp: snap.health, armor: snap.armor });
-      stars(s, Math.floor(W / 2), 6, snap.stars);
+      stars(
+        s,
+        Math.floor(W / 2),
+        6,
+        snap.stars,
+        snap.starsFlash && Math.floor(this.time.now / 250) % 2 === 0,
+      );
       topRight(s, W - 6, 6, {
         day: cal.weekday,
         clock: formatClock(cal.minute),
@@ -135,32 +141,38 @@ export class HudScene extends Phaser.Scene {
         heading: snap.heading,
         groundAt: groundSampler(snap.map),
         buildings: snap.buildings,
-        blips: snap.doors
-          .filter((d) => d.target === 'apartment' || d.target === 'store')
-          .map((d) => ({
-            kind: d.target === 'apartment' ? ('home' as const) : ('shop' as const),
-            x: d.x,
-            y: d.y,
-          })),
+        blips: [
+          ...snap.doors
+            .filter((d) => d.target === 'apartment' || d.target === 'store')
+            .map((d) => ({
+              kind: d.target === 'apartment' ? ('home' as const) : ('shop' as const),
+              x: d.x,
+              y: d.y,
+            })),
+          ...snap.police.map((q) => ({ kind: 'police' as const, x: q.x, y: q.y })),
+        ],
+        search: snap.search,
       });
       objective(s, Math.floor(W / 2), H - 20, snap.objective || this.objectiveText);
       if (snap.vehicle) vehiclePanel(s, 6, 46, snap.vehicle);
-      const hints: [string, string][] = snap.vehicle
-        ? [
-            ['W/S', 'DRIVE'],
-            ['A/D', 'STEER'],
-            ['SPACE', 'BRAKE'],
-            ['F', 'EXIT'],
-          ]
-        : snap.target
+      const hints: [string, string][] = snap.surrender
+        ? [['Y', 'SURRENDER']]
+        : snap.vehicle
           ? [
-              ['E', 'USE'],
-              ['TAB', 'NEXT'],
+              ['W/S', 'DRIVE'],
+              ['A/D', 'STEER'],
+              ['SPACE', 'BRAKE'],
+              ['F', 'EXIT'],
             ]
-          : [
-              ['SHIFT', 'SPRINT'],
-              ['C', 'CAMERA'],
-            ];
+          : snap.target
+            ? [
+                ['E', 'USE'],
+                ['TAB', 'NEXT'],
+              ]
+            : [
+                ['SHIFT', 'SPRINT'],
+                ['C', 'CAMERA'],
+              ];
       // a plate behind the hints, so they read over light pavement (handover known issue)
       const hw = hintKeysWidth(hints) - 8;
       plate(s, W - 10 - hw, H - 23, hw + 8, 15, C.LAVLT2, 0.82);

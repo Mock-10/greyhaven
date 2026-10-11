@@ -8,6 +8,7 @@ import {
   distToCar,
   drive,
   exitSpots,
+  parkAtHome,
   parkedCar,
   pourCan,
   refuel,
@@ -159,5 +160,18 @@ describe('fuel, chop and exits', () => {
     expect(distToCar(v, S.halfWidth + 5, 0)).toBeCloseTo(5);
     const [first] = exitSpots(v, 6);
     expect(distToCar(v, first!.x, first!.y)).toBeGreaterThan(6);
+  });
+});
+
+describe('home street spot', () => {
+  it('puts the last driven car in the spot after a load, unless it was wrecked', () => {
+    const cars = [parkedCar('a', 'sedan_lav', 900, 900, 0), parkedCar('b', 'taxi', 10, 10, 0)];
+    const slots = [{ x: 60, y: 1096, dir: 0 }];
+    expect(parkAtHome(cars, 'a', slots)?.id).toBe('a');
+    expect(cars[0]).toMatchObject({ x: 60, y: 1096, speed: 0 });
+    expect(cars[1]).toMatchObject({ x: 10, y: 10 });
+    cars[1]!.wrecked = true;
+    expect(parkAtHome(cars, 'b', slots)).toBeNull();
+    expect(parkAtHome(cars, null, slots)).toBeNull();
   });
 });

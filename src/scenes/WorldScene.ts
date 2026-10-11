@@ -30,6 +30,12 @@ import { unionRect } from '../iso/chunks';
 import { depthAgainstFootprints, depthOf, type Footprint } from '../iso/depthSort';
 import { coverage, rectsOverlap, type MaskedSprite } from '../iso/occlusion';
 import { Silhouette } from '../world/silhouette';
+import { StreetLife } from '../world/streetLife';
+import { Police } from '../world/police';
+import { buildRoads, type RoadGraph } from '../systems/roads';
+import { startFlee } from '../systems/crowd';
+import { addStars, arrest, canSee, emptyWanted, searchRadius, tickWanted } from '../systems/wanted';
+import { typeOfModel } from '../data/vehicles';
 import { facingFromWorld, roundHalfEven, worldToScreen, worldToTile } from '../iso/projection';
 import { rasterizeShadows, shadowAlpha, shadowShape, type Rect } from '../iso/shadows';
 import { GroundRenderer } from '../iso/tilemap';
@@ -73,6 +79,7 @@ import {
   distToCar,
   drive,
   exitSpots,
+  parkAtHome,
   parkedCar,
   parkedIn,
   stats,
@@ -93,6 +100,8 @@ import {
 import { promptPixels } from '../ui/promptPlate';
 import { hook } from '../debug/hooks';
 import type { Params } from '../debug/params';
+import { makeSave, nextAutoSlot, type SaveFile, type SaveMeta, type SlotId } from '../core/save';
+import { askPersist, saveStore } from '../core/storage';
 import { CHEAT_HELP, parseCheat } from '../debug/cheats';
 import { CheatConsole } from '../debug/cheatConsole';
 import { lampTextures, windowGlowTexture } from '../world/nightLights';
@@ -188,6 +197,12 @@ export interface HudSnapshot {
   objective: string;
   /** The car being driven (fractions 0–1), or null on foot. */
   vehicle: { type: string; fuel: number; health: number; speed: number } | null;
+  /** Wanted and out of sight: the stars flash and the radar shows the search circle (docs/05, docs/11). */
+  starsFlash: boolean;
+  search: { x: number; y: number; r: number } | null;
+  police: { x: number; y: number }[];
+  /** An officer is busting the player: the surrender prompt. */
+  surrender: boolean;
 }
 
 const SHADOW_VALUES = { box: BALANCE.render.shadowBoxValue, blob: BALANCE.render.shadowBlobValue };
@@ -254,12 +269,13 @@ export class WorldScene extends Phaser.Scene {
     this.settings = loadSettings();
     this.rng = new Rng(params.seed);
     this.map = params.scene === 'reference' ? TEST_MAP : DOWNTOWN;
-    this.state = createState(
-      params.seed,
-      this.map.id,
-      params.spawn ?? this.map.spawn,
-      params.minute ?? undefined,
-    );
+    // a save chosen in the menu (scenes/MenuScene.ts) restarts this scene with its state
+    const loaded = this.registry.get('pendingLoad') as SaveFile | undefined;
+    this.registry.remove('pendingLoad');
+    this.loaded = loaded ?? null;
+    this.state = loaded
+      ? (JSON.parse(JSON.stringify(loaded.state)) as GameState)
+      : createState(params.seed, this.map.id, params.spawn ?? this.map.spawn, params.minute ?? undefined);
     this.placed = [];
     this.statics = [];
     this.footprints = [];
@@ -268,8 +284,11 @@ export class WorldScene extends Phaser.Scene {
     this.lamps = [];
     this.cars = [];
     this.lastDark = -1;
-    this.playing = params.scene !== 'title';
+    this.playing = params.scene !== 'title' || loaded !== undefined;
   }
+
+  /** The save this scene was started from, if any. */
+  private loaded: SaveFile | null = null;
 
   get isReference(): boolean {
     return this.params.scene === 'reference';
@@ -321,6 +340,7 @@ export class WorldScene extends Phaser.Scene {
       this.createPlayer();
       this.createCars();
       this.createLamps();
+      this.createStreetLife();
     }
 
     this.debugGfx = this.add.graphics();
@@ -350,7 +370,15 @@ export class WorldScene extends Phaser.Scene {
     const onDone = (r: MinigameResult) => this.minigameDone(r);
     this.game.events.on('minigame:done', onDone);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off('minigame:done', onDone));
-    const startIn = this.params.area as InteriorId | null;
+    if (this.loaded) {
+      const area = this.state.area;
+      if (area.kind === 'interior' && INTERIORS[area.id]) {
+        const at = { x: this.state.player.x, y: this.state.player.y };
+        this.enterInterior(INTERIORS[area.id], at);
+      }
+      hook().started = true;
+    }
+    const startIn = this.loaded ? null : (this.params.area as InteriorId | null);
     if (startIn && INTERIORS[startIn] && !this.isReference) {
       const def = INTERIORS[startIn];
       const door = (this.map.doors ?? []).find((d) => d.target === def.street) ?? this.map.doors?.[0];
@@ -360,6 +388,274 @@ export class WorldScene extends Phaser.Scene {
     this.game.events.once(Phaser.Core.Events.POST_RENDER, () => {
       h.ready = true;
     });
+  }
+
+  // ---------------------------------------------------------------- street life and police (milestone 4)
+
+  private life: StreetLife | null = null;
+  private police: Police | null = null;
+  private roads: RoadGraph | null = null;
+  private buildingBoxes: [number, number, number, number][] = [];
+  /** Seconds an officer has been close enough to bust the player (docs/05). */
+  private bustT = 0;
+  /** A car alarm about to reach the police. */
+  private alarm: { t: number; at: { x: number; y: number } } | null = null;
+
+  private createStreetLife(): void {
+    if (!this.map.walkways && !this.map.lanes) return;
+    this.buildingBoxes = this.map.placements
+      .filter((q) => q.sprite.startsWith('bld/') && q.solid !== false)
+      .map((q) => footprintOf(q) as [number, number, number, number]);
+    const place = (sp: Phaser.GameObjects.Sprite, x: number, y: number, r: number) => {
+      const s = worldToScreen(x, y);
+      sp.setPosition(Math.round(s.x), Math.round(s.y));
+      const near = this.statics.filter((o) => rectsOverlap(o.bounds, this.spriteRect(sp)));
+      sp.setDepth(depthAmong([x - r, y - r, x + r, y + r], near, depthOf(x, y)));
+    };
+    const carShadow = (model: string, dir: number) =>
+      this.carShadowTexture({ type: typeOfModel(model) }, dir);
+    this.life = new StreetLife(this, this.map, {
+      place,
+      ensureWalkAnims: (c) => this.ensureWalkAnims(c),
+      view: () => this.camCtl?.view() ?? { x: 0, y: 0, w: 0, h: 0 },
+      obstacles: () => {
+        const out: Obb[] = [];
+        const r = BALANCE.walker.radius;
+        if (!this.inside) {
+          const p = this.state.player;
+          if (!this.drivenCar()) out.push({ x: p.x, y: p.y, hx: r, hy: r, ang: 0 });
+        }
+        for (const c of this.cars) {
+          const S = stats(c.v);
+          out.push({ x: c.v.x, y: c.v.y, hx: S.halfLength, hy: S.halfWidth, ang: c.v.heading });
+        }
+        const cr = this.police?.cruiserBox();
+        if (cr) out.push(cr);
+        return out;
+      },
+      carShadow,
+      layer: this.objectLayer,
+      groundLayer: this.groundLayer,
+      rng: this.rng,
+    });
+    const pre = this.map.zones?.find((z) => z.id === 'precinct');
+    const base = pre?.slots?.[0] ?? { ...this.map.spawn, dir: 0 };
+    this.roads = buildRoads(this.map.lanes ?? [], this.map.crossings ?? []);
+    this.police = new Police(this, {
+      place,
+      ensureWalkAnims: (c) => this.ensureWalkAnims(c),
+      carShadow,
+      layer: this.objectLayer,
+      groundLayer: this.groundLayer,
+      rng: this.rng,
+      roads: this.roads,
+      solids: () => [...this.solids, ...this.cars.map((c) => vehicleSolid(c.v))],
+      rules: this.collisionRules,
+      buildings: this.buildingBoxes,
+      base,
+    });
+  }
+
+  /**
+   * A crime happened at `at` (docs/05): an officer who sees it raises the stars at once; people who see it run and
+   * phone the police, which takes 6–10 seconds and can be stopped.
+   */
+  private crime(stars: number, at: { x: number; y: number }): void {
+    const W = BALANCE.wanted;
+    if (this.police?.active && this.police.sees(at)) {
+      addStars(this.state.wanted, stars, at);
+      return;
+    }
+    const night = darkness(this.minuteOfDay()) > 0.5;
+    const range = night ? W.witnessNightTiles : W.witnessTiles;
+    for (const pv of this.life?.peds ?? []) {
+      const q = pv.ped;
+      if (q.call || !canSee(q, at, range, this.buildingBoxes)) continue;
+      const [lo, hi] = W.callSeconds as [number, number];
+      q.call = { t: lo + (hi - lo) * this.rng.next(), at: { ...at }, stars };
+      startFlee(q, at);
+    }
+  }
+
+  private updateStreetLife(dt: number): void {
+    if (!this.life || !this.police) return;
+    const W = BALANCE.wanted;
+    const wanted = this.state.wanted;
+    this.life.update(dt, this.minuteOfDay(), !this.inside);
+    // witness calls and alarms getting through
+    for (const pv of this.life.peds) {
+      const c = pv.ped.call;
+      if (!c) continue;
+      c.t -= dt;
+      if (c.t <= 0) {
+        addStars(wanted, c.stars, c.at);
+        pv.ped.call = null;
+        this.toast('POLICE', 'A WITNESS CALLED IT IN.');
+      }
+    }
+    if (this.alarm) {
+      this.alarm.t -= dt;
+      if (this.alarm.t <= 0) {
+        addStars(wanted, W.crimeStars.alarm, this.alarm.at);
+        this.alarm = null;
+      }
+    }
+    // where the police think the player is: outside, or at the door of the building they went into
+    const p = this.state.player;
+    const street = this.inside ? (this.state.streetReturn ?? p) : p;
+    const car = this.drivenCar();
+    const view = {
+      x: street.x,
+      y: street.y,
+      driving: !!car && Math.abs(car.v.speed) > W.stoppedCarSpeed,
+      speed: car ? Math.abs(car.v.speed) : 0,
+    };
+    const busting = this.police.update(dt, wanted, view);
+    const seen = !this.inside && this.police.active && this.police.sees(street);
+    // a hot stolen car seen by the police (docs/08: 20% a minute)
+    if (car && car.v.hotUntil > this.state.minutes && seen && wanted.stars === 0) {
+      const chance = 1 - Math.pow(1 - W.hotCarChancePerMinute, dt / 60);
+      if (this.rng.chance(chance)) addStars(wanted, W.crimeStars.hotCar, street);
+    }
+    if (tickWanted(wanted, dt, seen, street)) this.toast('POLICE', 'YOU LOST THEM.');
+    // people get out of the way of a fast car
+    if (car && Math.abs(car.v.speed) > 70)
+      for (const pv of this.life.peds) {
+        const dx = pv.ped.x - car.v.x;
+        const dy = pv.ped.y - car.v.y;
+        const ahead = dx * Math.cos(car.v.heading) + dy * Math.sin(car.v.heading);
+        if (ahead > 0 && Math.hypot(dx, dy) < 3 * TILE && pv.ped.mode !== 'flee') startFlee(pv.ped, car.v);
+      }
+    // the bust (docs/05): an officer close for long enough; Y surrenders
+    if (busting > 0 && wanted.stars > 0 && !this.inside) {
+      this.bustT += dt;
+      if (this.bustT >= W.bustSeconds) this.doArrest(false);
+    } else this.bustT = Math.max(0, this.bustT - dt * 2);
+  }
+
+  /** Arrested (docs/05): the fine, maybe jail and seized dirty cash, the stolen car impounded, release at Precinct 1. */
+  private doArrest(surrendered: boolean): void {
+    // busted in the middle of a lockpick or a hotwire: the panel closes
+    if (this.scene.isActive('minigame')) {
+      this.scene.stop('minigame');
+      hook().minigame = null;
+      this.pendingCar = null;
+    }
+    const st = this.state;
+    const stars = Math.max(1, st.wanted.stars);
+    const o = arrest(st.money, st.record, stars, st.minutes, surrendered);
+    const car = this.drivenCar();
+    let impounded = false;
+    if (car) {
+      this.leaveCar({ x: car.v.x, y: car.v.y });
+      if (car.v.hotUntil > 0) {
+        this.removeCar(car);
+        impounded = true;
+      }
+    }
+    st.wanted = emptyWanted();
+    this.bustT = 0;
+    this.alarm = null;
+    for (const pv of this.life?.peds ?? []) pv.ped.call = null;
+    this.police?.destroy();
+    const day = Math.floor(st.minutes / 1440);
+    st.minutes = o.jailDays > 0 ? (day + o.jailDays) * 1440 + BALANCE.sleep.wakeMinute : st.minutes + 60;
+    const door = this.map.zones?.find((z) => z.id === 'precinct')?.npc ?? this.map.spawn;
+    st.player.x = door.x + 14;
+    st.player.y = door.y;
+    this.camCtl.snap();
+    const lines = [
+      o.repeat ? 'REPEAT OFFENSE' : 'FIRST OFFENSE: A FINE ONLY',
+      `FINE $${o.fine}${surrendered ? ' (SURRENDERED: -30%)' : ''}${o.paid < o.fine ? `, PAID $${o.paid}` : ''}`,
+    ];
+    if (o.jailDays > 0) lines.push(`${o.jailDays} DAY${o.jailDays > 1 ? 'S' : ''} IN JAIL`);
+    if (o.seized > 0) lines.push(`DIRTY CASH SEIZED: $${o.seized}`);
+    if (impounded) lines.push('THE STOLEN CAR WAS IMPOUNDED');
+    lines.push('RELEASED AT PRECINCT 1, PEWTER STREET');
+    this.prompt?.setVisible(false);
+    this.scene.pause();
+    this.scene.launch('menu', { info: { title: 'BUSTED', lines } });
+    this.game.events.once('menu:closed', () => {
+      this.scene.resume();
+      this.resumedAt = this.time.now;
+    });
+  }
+
+  /** Esc: the pause menu (docs/11), which pauses the world. */
+  private openMenu(): void {
+    if (!this.playing || this.isReference || this.scene.isPaused() || this.busy) return;
+    if (this.time.now - this.resumedAt < BALANCE.ui.keyGuardMs) return;
+    this.prompt?.setVisible(false);
+    this.scene.pause();
+    this.scene.launch('menu');
+    this.game.events.once('menu:closed', () => {
+      this.scene.resume();
+      this.resumedAt = this.time.now;
+    });
+  }
+
+  // ---------------------------------------------------------------- saves (docs/12)
+
+  /** Manual saves happen at home (the apartment) and never while wanted (docs/12). */
+  canSave(): { ok: boolean; why: string } {
+    if (this.state.wanted.stars > 0) return { ok: false, why: 'NOT WHILE WANTED' };
+    if (this.inside?.def.id !== 'apartment')
+      return { ok: false, why: 'SAVE AT HOME: DRIZZLE ROW RESIDENCES' };
+    return { ok: true, why: '' };
+  }
+
+  /** A small picture of the screen for the save summary. */
+  private thumbnail(): Promise<string | undefined> {
+    return new Promise((resolve) => {
+      try {
+        this.game.renderer.snapshot((img) => {
+          try {
+            const c = document.createElement('canvas');
+            c.width = 160;
+            c.height = 90;
+            const ctx = c.getContext('2d');
+            if (!ctx || !(img instanceof HTMLImageElement)) return resolve(undefined);
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+            resolve(c.toDataURL('image/png'));
+          } catch {
+            resolve(undefined);
+          }
+        });
+      } catch {
+        resolve(undefined);
+      }
+    });
+  }
+
+  /** Write the current game to a slot. Returns an error message, or null when saved. */
+  async saveTo(slot: SlotId): Promise<string | null> {
+    const store = await saveStore();
+    if (store.kind === 'none') return 'BROWSER STORAGE IS OFF: USE EXPORT';
+    try {
+      const file = makeSave(this.state, slot, Date.now(), await this.thumbnail());
+      await store.put(file);
+      askPersist();
+      return null;
+    } catch {
+      return 'COULD NOT SAVE';
+    }
+  }
+
+  /** The current game as a save file, for exporting without storage. */
+  snapshotSave(slot: SlotId): SaveFile {
+    return makeSave(this.state, slot, Date.now());
+  }
+
+  /** Autosave (docs/12): on sleep, rotating between the two autosave slots. */
+  private async autosave(): Promise<void> {
+    if (this.state.wanted.stars > 0) return;
+    const store = await saveStore();
+    if (store.kind === 'none') return;
+    const metas: Partial<Record<SlotId, SaveMeta>> = {};
+    for (const f of await store.all()) metas[f.meta.slot] = f.meta;
+    const err = await this.saveTo(nextAutoSlot(metas));
+    if (!err) this.toast('AUTOSAVE', 'GAME SAVED.');
   }
 
   /** Called by the title screen once the player clicks. */
@@ -393,10 +689,12 @@ export class WorldScene extends Phaser.Scene {
       handbrake: kb.addKey(KEYS.handbrake),
     };
     kb.addCapture([KEYS.up, KEYS.down, KEYS.left, KEYS.right, KEYS.debugOverlay, KEYS.cycle, KEYS.handbrake]);
-    this.keys.vehicle.on('down', () => this.enterOrExit());
+    // while a crime minigame is open the world keeps running (docs/06) but its keys belong to the panel
+    const free = () => !hook().minigame;
+    this.keys.vehicle.on('down', () => free() && this.enterOrExit());
     this.keys.recenter.on('down', () => this.camCtl.recenter());
-    this.keys.use.on('down', () => this.use());
-    this.keys.cycle.on('down', () => this.cycle++);
+    this.keys.use.on('down', () => free() && this.use());
+    this.keys.cycle.on('down', () => free() && this.cycle++);
     kb.on(`keydown-${KEYS.sightLines}`, () => {
       this.settings.sightLines = !this.settings.sightLines;
       saveSettings(this.settings);
@@ -406,6 +704,10 @@ export class WorldScene extends Phaser.Scene {
       });
     });
     kb.on(`keydown-${KEYS.debugOverlay}`, () => this.setDebug(!this.debugOn));
+    kb.on('keydown-ESC', () => free() && this.openMenu());
+    kb.on('keydown-Y', () => {
+      if (this.bustT > 0 && !this.scene.isPaused()) this.doArrest(true);
+    });
     this.cheats ??= new CheatConsole(
       (line) => this.runCheat(line),
       (open) => {
@@ -485,6 +787,13 @@ export class WorldScene extends Phaser.Scene {
       }
       case 'heal':
         st.player.health = BALANCE.player.maxHealth;
+        break;
+      case 'stars':
+        if (c.stars === 0) st.wanted = emptyWanted();
+        else {
+          st.wanted = emptyWanted();
+          addStars(st.wanted, c.stars, this.inside ? (st.streetReturn ?? st.player) : st.player);
+        }
         break;
       case 'help':
         this.toast('CHEAT', CHEAT_HELP);
@@ -782,6 +1091,7 @@ export class WorldScene extends Phaser.Scene {
 
   private tick(dt: number): void {
     const p = this.state.player;
+    if (this.playing) this.state.playtime += dt;
     if (!this.isReference) {
       this.state.minutes = advance(this.state.minutes, dt, this.settings.dayLengthMinutes);
       // Dez checks in once on the first evening (the HUD mockup's message).
@@ -800,10 +1110,15 @@ export class WorldScene extends Phaser.Scene {
       this.updateNpcs();
       if (this.lastNpcMinute % 10 === 0) this.updateInteriorObjective();
     }
+    if (!this.isReference) this.updateStreetLife(dt);
     const k = this.keys;
     const car = this.drivenCar();
     if (car) {
       this.driveTick(car, dt);
+      return;
+    }
+    if (hook().minigame) {
+      p.moving = false;
       return;
     }
     const sx = (k.right.isDown ? 1 : 0) - (k.left.isDown ? 1 : 0);
@@ -1002,6 +1317,15 @@ export class WorldScene extends Phaser.Scene {
     if (this.time.now - this.resumedAt < BALANCE.ui.keyGuardMs) return;
     const u = this.usables.find((x) => x.id === this.target);
     if (!u) return;
+    if (u.id.startsWith('witness:')) {
+      const ped = this.life?.peds.find((pv) => `witness:${pv.ped.id}` === u.id)?.ped;
+      if (ped) {
+        ped.call = null;
+        startFlee(ped, this.state.player);
+        this.toast('WITNESS', 'THEY HANG UP AND RUN.');
+      }
+      return;
+    }
     if (u.id === 'zone:marlo_spot') {
       const car = this.carForMarlo();
       if (car) this.sellToMarlo(car);
@@ -1299,7 +1623,8 @@ export class WorldScene extends Phaser.Scene {
     this.fade(() => {
       this.state.minutes = sleepUntil(this.state.minutes, BALANCE.sleep.wakeMinute);
       const cal = calendar(this.state.minutes);
-      this.toast('HOME', `SLEPT UNTIL 06:00, ${cal.weekday}. SAVING ARRIVES IN MILESTONE 4.`);
+      this.toast('HOME', `SLEPT UNTIL 06:00, ${cal.weekday}.`);
+      void this.autosave();
       this.lastDark = -1;
       this.updateNpcs(true);
       this.updateInteriorObjective();
@@ -1376,16 +1701,17 @@ export class WorldScene extends Phaser.Scene {
     };
   }
 
+  /** Job tasks and menus pause the world; crime minigames don't: witnesses and police keep moving (docs/06). */
   private openMinigame(req: MinigameRequest): void {
     this.prompt?.setVisible(false);
     hook().minigame = req.kind;
-    this.scene.pause();
+    if (!(req.kind === 'lockpick' || req.kind === 'hotwire')) this.scene.pause();
     this.scene.launch('minigame', req);
   }
 
   private minigameDone(r: MinigameResult): void {
     hook().minigame = null;
-    this.scene.resume();
+    if (this.scene.isPaused()) this.scene.resume();
     // keys pressed in the panel (the hotwire's F terminal, E) must not also act in the world
     this.resumedAt = this.time.now;
     if (r.kind === 'lockpick' || r.kind === 'hotwire') this.carMinigameDone(r);
@@ -1449,6 +1775,10 @@ export class WorldScene extends Phaser.Scene {
 
   /** Parked map cars become vehicles the first time the street loads. */
   private createCars(): void {
+    if (this.loaded) {
+      const home = this.map.zones?.find((z) => z.id === 'home_parking');
+      parkAtHome(this.state.vehicles, this.state.lastCar, home?.slots ?? []);
+    }
     if (this.state.vehicles.length === 0)
       this.map.placements.forEach((p, i) => {
         if (!p.parked) return;
@@ -1497,7 +1827,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** A moving box shadow for each of the 8 car directions, made once. */
-  private carShadowTexture(v: Vehicle, dir: number): string {
+  private carShadowTexture(v: Pick<Vehicle, 'type'>, dir: number): string {
     const key = `car-shadow-${v.type}-${dir}`;
     if (this.textures.exists(key)) return key;
     const S = stats(v);
@@ -1532,11 +1862,28 @@ export class WorldScene extends Phaser.Scene {
 
   /** Everything the walker bumps into outside: the street's solids plus every car. */
   private walkSolids(): Solid[] {
-    if (this.inside || this.cars.length === 0) return this.solids;
+    if (this.inside) return this.solids;
     return [
       ...this.solids,
       ...this.cars.filter((c) => c.v.id !== this.state.driving).map((c) => vehicleSolid(c.v)),
+      ...this.movingSolids(),
     ];
+  }
+
+  /** Traffic and the police cruiser as turned boxes. */
+  private movingSolids(): Solid[] {
+    const boxes = [...(this.life?.carBoxes().map((c) => c.obb) ?? [])];
+    const cr = this.police?.cruiserBox();
+    if (cr) boxes.push(cr);
+    return boxes.map((o) => ({
+      kind: 'obox' as const,
+      x: o.x,
+      y: o.y,
+      hx: o.hx,
+      hy: o.hy,
+      r: 0,
+      ang: o.ang,
+    }));
   }
 
   private drivenCar(): CarView | null {
@@ -1548,14 +1895,18 @@ export class WorldScene extends Phaser.Scene {
     const k = this.keys;
     const p = this.state.player;
     const v = car.v;
-    const input = this.playing
-      ? {
-          throttle: (k.up.isDown ? 1 : 0) - (k.down.isDown ? 1 : 0),
-          steer: (k.right.isDown ? 1 : 0) - (k.left.isDown ? 1 : 0),
-          handbrake: k.handbrake.isDown,
-        }
-      : { throttle: 0, steer: 0, handbrake: true };
-    const others = this.cars.filter((c) => c !== car).map((c) => vehicleSolid(c.v));
+    const input =
+      this.playing && !hook().minigame
+        ? {
+            throttle: (k.up.isDown ? 1 : 0) - (k.down.isDown ? 1 : 0),
+            steer: (k.right.isDown ? 1 : 0) - (k.left.isDown ? 1 : 0),
+            handbrake: k.handbrake.isDown,
+          }
+        : { throttle: 0, steer: 0, handbrake: true };
+    const others = [
+      ...this.cars.filter((c) => c !== car).map((c) => vehicleSolid(c.v)),
+      ...this.movingSolids(),
+    ];
     const fuelBefore = v.fuel;
     const impact = drive(v, input, dt, [...this.solids, ...others], this.collisionRules);
     if (impact > BALANCE.vehicles.crashToastSpeed && v.wrecked) this.toast('CAR', 'WRECKED. GET OUT: F.');
@@ -1659,6 +2010,20 @@ export class WorldScene extends Phaser.Scene {
         u.label = v.running ? 'GET IN' : 'HOTWIRE';
       }
     }
+    this.usables = this.usables.filter((u) => !u.id.startsWith('witness:'));
+    const reach = BALANCE.wanted.scareTiles * TILE;
+    for (const pv of this.life?.peds ?? []) {
+      const q = pv.ped;
+      if (q.call && Math.hypot(q.x - this.state.player.x, q.y - this.state.player.y) < reach + TILE)
+        this.usables.push({
+          id: `witness:${q.id}`,
+          x: q.x,
+          y: q.y,
+          label: 'SCARE OFF',
+          placed: null,
+          door: null,
+        });
+    }
     const spot = this.usables.find((u) => u.id === 'zone:marlo_spot');
     if (spot) spot.hidden = this.marloWalker !== null || !this.carForMarlo();
   }
@@ -1692,6 +2057,7 @@ export class WorldScene extends Phaser.Scene {
     const v = c.v;
     if (v.wrecked) this.toast('CAR', 'WRECKED. NOTHING LEFT TO DRIVE.');
     else if (v.locked) {
+      this.crime(BALANCE.wanted.crimeStars.carjack, { x: v.x, y: v.y });
       this.pendingCar = id;
       this.openMinigame({ kind: 'lockpick', seed: this.rng.int(1, 2 ** 30), tier: 0, tool: 'NO TOOL' });
     } else if (this.state.inventory.fuelCans > 0 && v.fuel <= stats(v).tank - BALANCE.vehicles.canUnits) {
@@ -1730,6 +2096,7 @@ export class WorldScene extends Phaser.Scene {
 
   private getIn(c: CarView): void {
     this.state.driving = c.v.id;
+    this.state.lastCar = c.v.id;
     this.lead = { x: 0, y: 0 };
     this.player?.setVisible(false);
     this.playerShadow?.setVisible(false);
@@ -1774,9 +2141,12 @@ export class WorldScene extends Phaser.Scene {
       if (ok) {
         c.v.locked = false;
         this.toast('LOCKPICK', 'UNLOCKED. PRESS F TO GET IN AND HOTWIRE IT.');
-      } else if (this.rng.chance(BALANCE.crime.alarmChance))
-        this.toast('CAR ALARM', 'THE ALARM IS GOING OFF. WALK AWAY FOR NOW.');
-      else this.toast('LOCKPICK', 'THE PICK SLIPPED. TRY AGAIN.');
+      } else if (this.rng.chance(BALANCE.crime.alarmChance)) {
+        this.toast('CAR ALARM', 'THE ALARM IS GOING OFF. THE POLICE WILL HEAR OF IT.');
+        this.alarm = { t: BALANCE.wanted.alarmSeconds, at: { x: c.v.x, y: c.v.y } };
+        for (const pv of this.life?.peds ?? [])
+          if (Math.hypot(pv.ped.x - c.v.x, pv.ped.y - c.v.y) < 8 * TILE) startFlee(pv.ped, c.v);
+      } else this.toast('LOCKPICK', 'THE PICK SLIPPED. TRY AGAIN.');
       return;
     }
     if (ok) {
@@ -1907,6 +2277,15 @@ export class WorldScene extends Phaser.Scene {
     }
     const p = this.state.player;
     if (this.player?.visible) add(this.player, { x: p.x, y: p.y, hx: r, hy: r, ang: 0 }, this.playerBounds());
+    for (const pv of this.life?.peds ?? [])
+      add(pv.sprite, { x: pv.ped.x, y: pv.ped.y, hx: r, hy: r, ang: 0 }, this.spriteRect(pv.sprite));
+    for (const c of this.life?.carBoxes() ?? []) add(c.sprite, c.obb, this.spriteRect(c.sprite));
+    if (this.police?.cruiser) {
+      const box = this.police.cruiserBox() as Obb;
+      add(this.police.cruiser.sprite, box, this.spriteRect(this.police.cruiser.sprite));
+    }
+    for (const o of this.police?.officers ?? [])
+      if (!o.inCar) add(o.sprite, { x: o.x, y: o.y, hx: r, hy: r, ang: 0 }, this.spriteRect(o.sprite));
     if (this.marloWalker && this.marloPos) {
       const g = this.marloWalker.getBounds();
       add(
@@ -1927,6 +2306,11 @@ export class WorldScene extends Phaser.Scene {
           if (back.sp.depth + step < front.hi) front.sp.setDepth(back.sp.depth + step);
           else if (front.sp.depth - step > back.lo) back.sp.setDepth(front.sp.depth - step);
         }
+  }
+
+  private spriteRect(sp: Phaser.GameObjects.Sprite): Rect {
+    const b = sp.getBounds();
+    return { x: b.x, y: b.y, w: b.width, h: b.height };
   }
 
   /** Marlo's position while he walks to a car and back. */
@@ -2181,6 +2565,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.player) h.walker = { x: p.x, y: p.y, depth: this.player.depth, dir: DIRS[p.dir] as string };
     h.area = this.inside ? this.inside.def.id : 'street';
     h.clean = this.state.money.clean;
+    h.stars = this.state.wanted.stars;
     h.rank = this.state.career.jobs.office.rank;
     h.tasksLeft = this.state.career.shift ? tasksLeft(this.state.career) : -1;
     h.dirty = this.state.money.dirty;
@@ -2227,8 +2612,15 @@ export class WorldScene extends Phaser.Scene {
         buildings: this.radarBuildings,
         doors: this.map.doors ?? [],
         target: this.target,
-        objective: this.objectiveText,
+        objective: this.state.wanted.stars > 0 ? 'LOSE THE COPS' : this.objectiveText,
         vehicle: this.vehicleReadout(),
+        starsFlash: this.state.wanted.stars > 0 && !this.state.wanted.seen,
+        search:
+          this.state.wanted.stars > 0 && !this.state.wanted.seen && this.state.wanted.lastKnown
+            ? { ...this.state.wanted.lastKnown, r: searchRadius(this.state.wanted.stars) }
+            : null,
+        police: this.police?.blips() ?? [],
+        surrender: this.bustT > 0,
       };
       this.game.events.emit('hud:frame', snap);
     }

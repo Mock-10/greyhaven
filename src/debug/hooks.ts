@@ -25,6 +25,8 @@ export interface DebugHook {
   minigameState: unknown;
   /** Dirty cash, the car being driven, and every drivable car (milestone 3). */
   dirty: number;
+  /** Wanted stars (milestone 4). */
+  stars: number;
   driving: string | null;
   cars: {
     id: string;
@@ -68,6 +70,7 @@ export function installHook(): DebugHook {
     minigame: null,
     minigameState: null,
     dirty: 0,
+    stars: 0,
     driving: null,
     cars: [],
     depthOf: () => null,

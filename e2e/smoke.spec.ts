@@ -238,3 +238,57 @@ test("sells a stolen car in Marlo's dotted spot: he walks out and pays", async (
   expect(await page.evaluate(() => window.__DL__.cars.some((c) => c.id.startsWith('cheat')))).toBe(false);
   expect(problems).toEqual([]);
 });
+
+test('saves at home and loads the save back (docs/12)', async ({ page }) => {
+  test.setTimeout(120_000);
+  const problems = await boot(page, '?scene=world&zoom=3&area=apartment&time=21:00');
+  await page.waitForFunction(() => window.__DL__.area === 'apartment');
+  // Esc opens the pause menu; SAVE GAME is the second row, then slot 1
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === 'menu');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(300);
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(1500);
+  await page.keyboard.press('Escape'); // back to the main menu
+  await page.keyboard.press('Escape'); // resume
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  // spend the money with the cheat console, then load the save: the money comes back
+  await page.keyboard.press('Control+Shift+F1');
+  await page.keyboard.type('cash 5');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.clean === 5);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === 'menu');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter'); // LOAD GAME
+  await page.waitForTimeout(300);
+  await page.keyboard.press('Enter'); // slot 1
+  await page.waitForFunction(() => window.__DL__.clean === 250 && window.__DL__.area === 'apartment', null, {
+    timeout: 30_000,
+  });
+  expect(problems).toEqual([]);
+});
+
+test('police: the cruiser comes from Precinct 1, an officer busts the player, a first offense costs the fine', async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  // stand on Pewter Street's sidewalk a little north of the precinct, in plain view
+  const problems = await boot(page, '?scene=world&zoom=2&time=12:00&x=560&y=1240');
+  await page.keyboard.press('Control+Shift+F1');
+  await page.keyboard.type('stars 1');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.stars === 1);
+  // the officers get out, run up and bust the player (no surrender: the full fine)
+  await page.waitForFunction(() => window.__DL__.minigame === 'arrest', null, { timeout: 120_000 });
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  expect(await page.evaluate(() => window.__DL__.stars)).toBe(0);
+  expect(await page.evaluate(() => window.__DL__.clean)).toBe(250 - 200);
+  expect(problems).toEqual([]);
+});

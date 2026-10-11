@@ -3,7 +3,7 @@
 Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done when" checks pass.
 
 - [x] Phase 0 — Foundations
-- [ ] Phase 1 — Vertical slice
+- [x] Phase 1 — Vertical slice
 - [ ] Phase 2 — Economy and careers
 - [ ] Phase 3 — Crime breadth and police
 - [ ] Phase 4 — Combat and vehicles
@@ -36,8 +36,8 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 ## Handover (updated 2026-10-11, end of session) — read this first in a new session
 
 **Where things stand**
-- **The current phase is still Phase 1 (vertical slice).** Milestones 1, 1b, 2 and **3 (driving and the carjack loop)** are built. Milestones 1–2 went through PRs #2, #4 and #5. Milestone 3 and the UI fixes of 2026-10-11 were **pushed straight to `main` at your request** (no PR), so `https://mock-10.github.io/greyhaven/` has everything once the deploy workflow finishes.
-- **Next:** **milestone 4** (police 1–2★ with a small precinct, saves, pedestrians and traffic), which closes Phase 1, then Phase 2. The milestone 3 follow-ups are done (milestone 3b notes below). See the checklists under each phase.
+- **Phase 1 (vertical slice) is done.** Milestones 1, 1b, 2 and **3 (driving and the carjack loop)** are built. Milestones 1–2 went through PRs #2, #4 and #5. Milestone 3 and the UI fixes of 2026-10-11 were **pushed straight to `main` at your request** (no PR), so `https://mock-10.github.io/greyhaven/` has everything once the deploy workflow finishes.
+- **Phase 1 is complete** (milestone 4 closed it on 2026-10-11). **Next: Phase 2** (economy and careers): see its checklist below.
 - **The Downtown map is a test map, not the final city.** The final city is a dense open world of about 320 × 320 tiles with a hood district, open fields and woods (docs/01, built in Phase 6).
 - **Communication preference (2026-10-11):** you asked for fewer progress messages while I work. Still send images and important updates. You may switch back later.
 
@@ -318,12 +318,37 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - The parking garage's parked cars are simple shapes, readable only up close.
 
 ### Milestone 4: police, saves, crowd
-- [ ] A small Greyhaven PD precinct on the test map.
-- [ ] Wanted 1–2★: witnesses with the call delay, one police car and officers from the precinct, search circle, escape timer, arrest with surrender, fine, first-offense rule, arrest screen.
-- [ ] Saves: 3 slots, autosave on sleep, export and import, SAVE_VERSION and migrations. A parking spot outside Drizzle Row where saved cars (bought or stolen) spawn.
+- [x] A small Greyhaven PD precinct on the test map (Pewter Street, new art in `infill2.py`).
+- [x] Wanted 1–2★: witnesses with the call delay, one police car and officers from the precinct, search circle, escape timer, arrest with surrender, fine, first-offense rule, arrest screen.
+- [x] Saves: 3 slots, autosave on sleep, export and import, SAVE_VERSION and migrations. A parking spot outside Drizzle Row where your last car waits after a load.
 - [x] Cheat console behind a hidden key combo, on Pages too (built early, in milestone 3b).
-- [ ] A few pedestrians and ambient traffic.
-- [ ] **Done when:** a full day loop can be played (work → evening carjack → escape or arrest → launder → sleep → reload the save), all unit tests pass, and the frame rate holds.
+- [x] Pedestrians and ambient traffic (sidewalk paths, lanes, traffic lights).
+- [x] **Done when:** a full day loop can be played (work → evening carjack → escape or arrest → launder → sleep → reload the save), all unit tests pass (171), the e2e tests pass (13, including save/load and a police bust).
+
+### Milestone 4 notes (2026-10-11) — Phase 1 is complete
+**How to try:**
+- **Saves:** go home (Drizzle Row Residences), press Esc → SAVE GAME → a slot. Sleep for an autosave. Esc → LOAD GAME anywhere. EXPORT downloads a backup file; IMPORT reads one back into a slot.
+- **The crowd and traffic:** people walk every sidewalk and cross at the corners; cars drive both ways on every road and stop at red lights.
+- **Police:** lockpick a car where people can see you: they run and phone (walk up and press E to SCARE OFF a caller). After 6–10 s you get a star; a cruiser comes from Precinct 1 on Pewter Street. Out of sight the stars flash and the radar shows the search circle; stay outside it to lose them. If an officer reaches you, press Y to surrender or run. A first arrest costs the fine; a second within 14 days means jail and losing your dirty cash.
+- Cheat console: `stars 2` to call the police at once.
+
+**Built:** `src/core/save.ts` and `storage.ts` (saves), `src/scenes/MenuScene.ts` and `src/ui/menus.ts` (pause menu, arrest notice), `src/systems/crowd.ts`, `traffic.ts`, `paths.ts`, `roads.ts`, `wanted.ts`, `src/world/streetLife.ts` and `police.ts`, map data for sidewalk paths, lanes, crossings and zones (`downtown_map.py`), the precinct model, the HUD's flashing stars, search circle, police blips and surrender hint.
+
+**Assumptions (please review):**
+- One cruiser and two officers at both 1★ and 2★ (the roadmap's "one police car plus officers"); no shooting until Phase 4.
+- A first-offense arrest takes an in-game hour; jail ends at 06:00 after the jail days. A fine bigger than your clean cash takes what you have.
+- The stolen car you're in when arrested is impounded (gone).
+- Witnesses only matter for crimes they can see within 10 tiles (7.5 at night) with no building in between; scaring one off doesn't add a star in Phase 1 (nobody else sees it).
+- Traffic drives straight along its road (no turns yet) and doesn't stop for pedestrians; pedestrians step out of the way of fast cars but can't be hit yet.
+- Crime minigames (lockpick, hotwire) no longer pause the world, as docs/06 says; job tasks, shops and menus still do.
+- Saving is in the pause menu while you're in the apartment (the docs' "the bed or the phone": the phone comes in Phase 2).
+
+**Art debt:** none. The precinct was made with `art/source/infill2.py`.
+
+**Known issues:**
+- Traffic lights don't show their colour on the light sprites yet.
+- The cruiser follows the roads but can clip kerbs and props at sharp turns; it backs up when stuck.
+- The thumbnail in a save isn't shown anywhere yet.
 
 ### Milestone 1 notes
 **How to try:** click to start, walk with WASD (Shift sprints). Walk up to the ATM on the plaza or any building door: the gold rim and the `[E]` prompt appear; Tab switches target when two are in range. Watch the clock: dusk starts at 18:00 and windows and street lamps light up. Debug links: `?scene=world&time=19:45` (dusk), `?scene=world&time=23:30` (night).

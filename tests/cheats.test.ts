@@ -18,6 +18,7 @@ describe('cheat console', () => {
       dir: 2,
     });
     expect(parseCheat('help')).toEqual({ kind: 'help' });
+    expect(parseCheat('stars 2')).toEqual({ kind: 'stars', stars: 2 });
   });
 
   it('rejects bad input with a hint', () => {

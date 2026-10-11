@@ -9,11 +9,12 @@ export type Cheat =
   | { kind: 'rank'; rank: number }
   | { kind: 'tp'; x: number; y: number }
   | { kind: 'car'; model: string; x: number | null; y: number | null; dir: number }
+  | { kind: 'stars'; stars: number }
   | { kind: 'heal' }
   | { kind: 'help' };
 
 export const CHEAT_HELP =
-  'CASH N · DIRTY N · TIME HH:MM · DAY N · RANK 1-5 · TP X Y · CAR MODEL [X Y DIR] · HEAL';
+  'CASH N · DIRTY N · TIME HH:MM · DAY N · RANK 1-5 · STARS 0-5 · TP X Y · CAR MODEL [X Y DIR] · HEAL';
 
 const num = (s: string | undefined): number | null => {
   if (s === undefined || s.trim() === '') return null;
@@ -57,6 +58,10 @@ export function parseCheat(line: string): Cheat | { error: string } {
         y: a[2] ?? null,
         dir: Math.floor(a[3] ?? 0) % 8,
       };
+    case 'stars':
+      return a[0] !== null && a[0] !== undefined && a[0] >= 0 && a[0] <= 5
+        ? { kind: 'stars', stars: Math.floor(a[0]) }
+        : { error: 'STARS 0-5' };
     case 'heal':
       return { kind: 'heal' };
     case 'help':

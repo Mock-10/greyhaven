@@ -643,8 +643,18 @@ def block_w():
     lawn(rect(tc(11.0), ny + 8, tc(15.85), ny + tc(2.5)), 20)
     prop('tree_b', tc(13.4), ny + tc(1.2)); prop('bush', tc(11.8), ny + tc(1.9)); prop('bench', tc(14.6), ny + tc(1.6), dir=6)
     # planting strips along the kerb of Drizzle Row's residential stretch
-    for xa, xb in ((0.4, 3.2), (6.6, 10.4), (11.4, 14.2)):
+    for xa, xb in ((6.6, 10.4), (11.4, 14.2)):
         lawn(rect(tc(xa), fy + 30, tc(xb), fy + 52), 8, 2.0)
+    # the apartment's street spot (docs/09: "1 street spot"; your cars, bought or stolen, wait here after a load):
+    # a lay-by cut into the sidewalk west of the residences, white end lines
+    ky = ROADS_X[D] - HW
+    ground('kerb', rect(tc(0.25), fy + 14, tc(3.45), ky))
+    ground('asphalt', rect(tc(0.35), fy + 17, tc(3.35), ky + 1))
+    for x in (tc(0.45), tc(3.25)):
+        ground('paint_white', rect(x - 0.9, fy + 20, x + 0.9, ky - 2))
+    keep_clear(tc(1.85), fy + 42, 64)
+    ZONES.append({'id': 'home_parking', 'x0': tc(0.35), 'y0': fy + 17, 'x1': tc(3.35), 'y1': ky,
+                  'slots': [{'x': tc(1.85), 'y': round((fy + 17 + ky) / 2, 1), 'dir': 0}]})
 
 
 def block_mid():
@@ -769,7 +779,13 @@ def block_sw():
     prop('bus_shelter', tc(12.8), ny - 22, dir=4)
     prop('bus_stop_sign', tc(14.4), ny - tc(1.6))
     keep_clear(tc(12.8), ny - 22, 60)
-    col(['chapel', 'walkup_tan'], tc(16.0), ny + 2, dir=6)
+    col(['chapel', 'police_precinct'], tc(16.0), ny + 2, dir=6)
+    # Greyhaven PD, Precinct 1 (milestone 4): officers come out of its door, the cruiser starts on Pewter Street
+    pre = [p_ for p_ in PL if p_['sprite'] == 'bld/police_precinct'][-1]
+    ZONES.append({'id': 'precinct', 'x0': pre['fp'][0], 'y0': pre['fp'][1], 'x1': pre['fp'][2], 'y1': pre['fp'][3],
+                  'npc': {'x': tc(16.5), 'y': round(pre['y'] + 6, 1)},
+                  'slots': [{'x': tc(19.0), 'y': round(pre['y'], 1), 'dir': 2}]})
+    keep_clear(tc(16.8), pre['y'] + 6, 40)
     building('shop_tailor', tc(11.4), tc(46.7), 4)
 
 
@@ -992,6 +1008,64 @@ def street_spans():
             STREETS.append({'name': name, 'x0': float(xs.min() - HW - SWK), 'x1': float(xs.max() + HW + SWK), 'y0': float(y0), 'y1': float(y0 + T)})
 
 
+def walkways():
+    """Pedestrian paths (milestone 4): a line along every sidewalk a little in from the kerb, nudged around the
+    solid street furniture, as polylines in world units."""
+    solids = [p_['fp'] for p_ in PL if p_.get('solid') and not p_['sprite'].startswith('veh/')]
+    out = []
+    for b in BLOCKS.values():
+        for side in sorted(b.sidewalks):
+            line = resample(b.side_line(side, SWK * 0.55), 10.0)
+            if len(line) < 2:
+                continue
+            pts = []
+            for k, (x, y) in enumerate(line):
+                a = line[max(0, k - 1)]; c = line[min(len(line) - 1, k + 1)]
+                dx, dy = c[0] - a[0], c[1] - a[1]
+                L = math.hypot(dx, dy) or 1.0
+                nx, ny = -dy / L, dx / L
+                for o in (0, 6, -6, 12, -12, 18, -18):
+                    px_, py_ = x + nx * o, y + ny * o
+                    if not any(f[0] - 7 < px_ < f[2] + 7 and f[1] - 7 < py_ < f[3] + 7 for f in solids):
+                        pts.append([round(float(px_), 1), round(float(py_), 1)])
+                        break
+                else:
+                    pts.append(None)
+            # split at points that couldn't be cleared
+            run = []
+            for q in pts + [None]:
+                if q is None:
+                    if len(run) >= 4:
+                        out.append(run)
+                    run = []
+                else:
+                    run.append(q)
+    return out
+
+
+def lanes():
+    """Traffic lanes (milestone 4), one each way per road, in driving order, right-hand traffic."""
+    out = []
+    for name, cy in ROADS_X.items():
+        out.append({'road': name, 'p': [[-T, cy + T], [MAPW + T, cy + T]]})          # eastbound
+        out.append({'road': name, 'p': [[MAPW + T, cy - T], [-T, cy - T]]})          # westbound
+    for name, line in ROADS_Y.items():
+        sb = offset(line, T)                # south-bound keeps to the west (+ offset is west)
+        nb = offset(line, -T)[::-1]
+        for ln in (sb, nb):
+            r = resample(ln, 16.0)
+            out.append({'road': name, 'p': [[round(float(x), 1), round(float(y), 1)] for x, y in r]})
+    return out
+
+
+def crossings():
+    out = []
+    for cy in ROADS_X.values():
+        for name, line in ROADS_Y.items():
+            out.append({'x': round(float(np.interp(cy, line[:, 1], line[:, 0])), 1), 'y': cy})
+    return out
+
+
 def export(path):
     out = {
         'id': 'downtown', 'name': 'THE LEDGER', 'width': NW, 'height': NH,
@@ -999,6 +1073,7 @@ def export(path):
                    'decals': [{'k': k, 'x': x, 'y': y} for k, x, y in DECALS]},
         'placements': [{k: v for k, v in p.items() if k != 'fp'} for p in PL],
         'doors': DOORS, 'streets': STREETS, 'zones': ZONES,
+        'walkways': walkways(), 'lanes': lanes(), 'crossings': crossings(),
         'spawn': {'x': tc(9), 'y': ROADS_X[O] - HW - 20},
     }
     json.dump(out, open(path, 'w'), separators=(',', ':'))

@@ -43,6 +43,8 @@ export interface Zone {
   y1: number;
   /** Where the zone's NPC stands to come out (Marlo at his back door). */
   npc?: { x: number; y: number };
+  /** Parking slots in the zone (the apartment's street spot): car centre and sprite direction. */
+  slots?: { x: number; y: number; dir: number }[];
 }
 
 /** Interiors a street door can lead to (built in milestone 2). */
@@ -89,6 +91,12 @@ export interface MapData {
   doors?: Door[];
   streets?: StreetSpan[];
   zones?: Zone[];
+  /** Pedestrian paths along the sidewalks (milestone 4). */
+  walkways?: [number, number][][];
+  /** Traffic lanes in driving order, one each way per road (milestone 4). */
+  lanes?: { road: string; p: [number, number][] }[];
+  /** Road crossings: where the traffic lights are. */
+  crossings?: { x: number; y: number }[];
   /** Where the player starts, in world units. */
   spawn: { x: number; y: number };
 }
