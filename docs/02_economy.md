@@ -1,6 +1,6 @@
 # 02 — Economy
 
-All numbers here are **starting values for tuning**. They must live in one config file (`src/data/balance.ts`). Never hard-code them in systems.
+All numbers here are **starting values for tuning**. They must live in one config file (`src/config/balance.ts`). Never hard-code them in systems.
 
 ## Currencies
 | | Clean money | Dirty money |
@@ -76,3 +76,11 @@ Fronts launder automatically each night from the hideout stash, up to their capa
 4. Costs scale with ambition: ammo, crew wages and restocks keep high-tier money moving, so cash never becomes meaningless.
 
 The sim script is in `tools/econ_sim.py`. Re-run it after any change to pay, payouts, reputation thresholds or laundering numbers, and update this table.
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- **Chop prices:** 15–30% of each car type's value (docs/08), scaled by damage, with the cheap types valued so an early car pays about $300–500. Each type pays differently. Re-run `tools/econ_sim.py` after setting the values.
+- **Bank:** clean cash is either carried or in the bank. Pay goes to the bank; ATMs deposit and withdraw. Death and arrest only touch carried cash.
+- **Rent** is taken automatically from the bank on Monday 06:00. If the bank is short, late fees build (+$50 a day) and eviction follows after two missed weeks. **After eviction you sleep at a shelter, which still allows saving.**
+- **Phase 2 shops:** corner store (full: food, fuel can, first-aid kit), clothing store (outfits; masks come in Phase 3), hardware store (basic lockpicks, toolbox, repair kit), car dealer (beater and sedan to start).
+- **Weekend odd jobs** (instead of side gigs of your own job): a **car wash** gig and a **bar shift at The Low Tide** (pour drinks), at the 60% side-gig rate, no promotion XP.

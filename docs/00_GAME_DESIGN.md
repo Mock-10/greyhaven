@@ -120,5 +120,12 @@ Nobody forces a path. The game is about balancing **safe, slow, clean money** ag
 ## 6. Content and tone guardrails
 
 - Drugs are abstracted as **"product"** in three tiers. There are no real drug names and no recipes. A lab is a hideout room that turns supplies into product.
-- Violence is shown at the pixel scale with no gore. Downed NPCs fade out.
+- Violence is shown at the pixel scale. **Blood is allowed** (user, 2026-10-11): blood marks and pools when someone goes down, is run over, or a robbery goes wrong. Downed NPCs fall, leave blood marks, then fade out; whether they are dead stays ambiguous. No dismemberment.
 - The tone of the game shifts with the active path. Civilian scenes carry light, dry humour. Crime is tense: music cues, rain and sirens.
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- **Development mode: autopilot.** Claude merges its own PRs once CI is green, carries on from phase to phase, and builds interiors, story chains and the rival crew from the recorded answers; the user reviews afterwards. Heist interiors still get approval first. Updates: a short note with screenshots per milestone.
+- **No public transport.** No bus or taxi: you walk or drive. The guided first day drops the bus-stop step.
+- **Bank account:** clean money is split into carried cash and a bank balance (see 02).
+- **Blood is allowed** (see §6).

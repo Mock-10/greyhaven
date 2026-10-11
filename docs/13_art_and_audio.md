@@ -71,3 +71,10 @@ SFX should be short, soft, slightly lo-fi, and consistent with the muted visuals
 | Music (later) | Calm civilian daytime loop, tense chase loop that layers in with stars, rainy night ambience |
 
 Mixer: master, music, SFX and UI volume sliders. Sirens are positional (pan and volume by distance).
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- **Sound effects:** procedural (jsfxr-style), generated in the repo.
+- **Music:** a mix of CC0 tracks and procedural loops.
+- **Higher resolution** (2× sprite detail): its own phase after Phase 8, decided then.
+- **Blood** decals (marks, pools, tyre smears) are allowed; make them with `art/source/`.

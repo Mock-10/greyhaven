@@ -50,3 +50,10 @@ Crew members have a name, a portrait (generated from the character art) and 1–
 
 ## Front businesses
 See 02 for laundering numbers. Fronts are bought properties with their own building sprite. They launder automatically from the stash each night and earn clean revenue. They are a late-game goal for both criminal and mixed players.
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- **Hideouts:** one big space (basement or garage) where stations are added as you buy add-ons, plus **locked rooms you can buy** for extra space.
+- **No furniture decorating** at first (maybe in Phase 8).
+- **Crew:** random names and portraits generated from the character art.
+- **Front businesses** (laundromat, car wash, nightclub) are all **full interiors**.

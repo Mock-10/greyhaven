@@ -31,3 +31,8 @@ Dealers sell to **everyone**. Heavy weapons are **very expensive**. Every weapon
 ## Combat with police
 - Police warn at 1★ ("Stop! Police!") and **only shoot at 2★ and above**, or if you shoot first.
 - Shooting at police instantly raises the wanted level to at least 3★. Killing an officer raises it to at least 4★.
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- **Weapon dealer:** a dealer with an open van in a back alley (in the hood once it exists). The legal gun store arrives with the full Downtown.
+- **Downed people** fall, leave blood marks and pools, then fade out; whether they are dead stays ambiguous.

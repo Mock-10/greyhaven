@@ -14,11 +14,30 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
+## Phase 2 — Economy and careers (planned; starts after Phase 1)
+- [ ] Test map grows: Torque & Sons garage block, a street of houses with the Swiftish Couriers depot, a patch of woods with Ashby Timber and a road (all reachable on foot or by car).
+- [ ] Bank account: carried vs banked clean cash, ATMs, pay into the bank.
+- [ ] Rent auto-paid on Monday 06:00, late fees, eviction after two missed weeks, shelter (sleep and save).
+- [ ] Character creator (palette-swap sprites, as specced) before the first day.
+- [ ] Office: stamp-and-sign and meeting tasks (rank 3+).
+- [ ] Car mechanic: garage interior (bay, lift, spray booth, office), diagnose, bolt torque, tyre change, respray.
+- [ ] Lumberjack: chop, fell direction, load logs, haul with the log truck; site trailer to clock in.
+- [ ] Delivery: depot interior, load van, route, doorstep, signature; marked doors on the house row.
+- [ ] Rank ladders and perks for the 4 jobs (stub the perks that need later systems).
+- [ ] Work uniforms and lockers (change by hand).
+- [ ] Weekend odd jobs: car wash and a bar shift at The Low Tide.
+- [ ] Shops: full corner store, clothing store, hardware store, car dealer (beater and sedan).
+- [ ] Arrest effects on careers (freeze, missed shifts, extra work, HR bribes on the phone), clean-record bonus.
+- [ ] Phone: job board, bank, contacts (first pass).
+- [ ] Trunk looting (brought forward).
+- [ ] Guided first day (no bus or taxi step; trunk looting in step 5).
+- [ ] Econ sim re-run, tests, screenshots, notes, PR.
+
 ## Handover (updated 2026-10-11, end of session) — read this first in a new session
 
 **Where things stand**
 - **The current phase is still Phase 1 (vertical slice).** Milestones 1, 1b, 2 and **3 (driving and the carjack loop)** are built. Milestones 1–2 went through PRs #2, #4 and #5. Milestone 3 and the UI fixes of 2026-10-11 were **pushed straight to `main` at your request** (no PR), so `https://mock-10.github.io/greyhaven/` has everything once the deploy workflow finishes.
-- **Next:** first the **milestone 3 follow-ups** you asked for (list below), then **milestone 4** (police 1–2★, saves, a few pedestrians and traffic), which closes Phase 1. Phase 2 stays parked until Phase 1 is done.
+- **Next:** the **milestone 3 follow-ups** (list below, with your answers), then **milestone 4** (police 1–2★, saves, pedestrians and traffic), which closes Phase 1, then Phase 2. See the checklists under each phase.
 - **The Downtown map is a test map, not the final city.** The final city is a dense open world of about 320 × 320 tiles with a hood district, open fields and woods (docs/01, built in Phase 6).
 - **Communication preference (2026-10-11):** you asked for fewer progress messages while I work. Still send images and important updates. You may switch back later.
 
@@ -55,14 +74,39 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 - Idle and interact animations: Phase 8 (decided 2026-10-11).
 - The 320 × 320 city: Phase 6.
 
-**Questions I owe you (ask before building the follow-ups)**
-- **Chop prices:** docs/04 says a parked car is worth **$150–400** at the chop shop, but docs/08 says the chop shop pays **15–30% of the car's value** (a $5,000 sedan would then fetch $750–1,500). Which rule wins, and what should each Phase 1 type pay (sedan, taxi, van)?
-- **Which cars can be stolen in Phase 1?** The roadmap says "one sedan model", so only the 3 sedans in the store lot can be stolen now; the taxi and the white van stay parked props. Should the taxi and van be stealable too (they'd need their own stats)?
-- **The bag minigame:** how should it be graded? Ideas: drag stacks of bills into the bag before a timer runs out; dropped or torn bills cost a %; dirty dye-stained bills must be left out. Click-drag only, or also keys?
-- **Chop yard sale:** park in the dotted spot and press E to sell (with Marlo walking up), or does stopping in the spot sell automatically? Should Marlo's yard open only at certain hours?
-- **Camera:** how much wider should the default view be (about 1.5× or 2× more world), should the zoom change by itself when you drive, and do you want a silhouette of the player and car through walls, walls cutting away, or both?
-- **Gas station placement:** keep it on the south-east block of the test map (cramped against the map edge) or move it to a bigger lot?
-- Still open from docs/16, **not needed yet:** names and looks for the rival crew (Phase 5), an outline of each story chain before it is written, the hood district's name and details (Phase 6).
+**Question round of 2026-10-11 (answered; autopilot from here)**
+All open questions for Phases 1–8 were asked and answered. The answers are in the docs under "Decisions (question round of 2026-10-11)" (docs 00–18) and in CLAUDE.md. The main ones:
+- **Autopilot:** I merge my own PRs once CI is green, carry on from phase to phase, and build from the recorded answers. You review afterwards. Heist interiors still need your approval first. Updates come per milestone, with images.
+- **Phase 1:**
+  - Chop pay is 15–30% of value by car type, with an early cap of about $300–500.
+  - The taxi and the van can be stolen.
+  - The bag minigame has a timer, and dye-stained stacks must be left out.
+  - Marlo: park in the dotted spot and press E; he walks over. Open 24 h.
+  - Camera: about 2× wider, one zoom step out when driving, look-ahead, silhouette plus cutaway.
+  - The gas station moves to a bigger lot.
+  - A small precinct goes on the test map. Arrests use a screen for now.
+  - Drizzle Row gets a parking spot where saved cars spawn.
+- **Phase 2:**
+  - No bus or taxi. The test map grows with the garage block, a street of houses with the depot, and woods.
+  - Bank account with carried vs banked cash. Rent is auto-paid.
+  - A shelter after eviction, where you can still save.
+  - Shops: corner store, clothing, hardware, car dealer.
+  - Weekend odd jobs: car wash and a bar shift.
+  - Uniforms are changed by hand.
+  - Trunk looting moves forward for the first day.
+- **Later phases:**
+  - Blood is allowed.
+  - Masks at the fence (pawn shop, new character).
+  - Burglary: 3 layouts, sleeping owners, some alarms, occupancy read from the cars outside.
+  - Rival crew: the Saltgate Union.
+  - Hideouts: one big space with stations, plus locked rooms to buy.
+  - The hood: hostile but no turf system.
+  - Marlo moves to Industrial in Phase 6.
+  - Jewellery heist: 10 cases and a rooftop escape. Bank: a vault basement.
+  - Fronts are full interiors.
+  - Procedural sound effects; music is a mix of CC0 and procedural.
+  - Higher resolution becomes Phase 9.
+- **Still to come from you:** extras that aren't in the docs (you'll bring them up later).
 
 **Session notes for whoever picks this up**
 - npm goes through the proxy. Before `npm`, `npx vite preview` or Playwright, set `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1`. Playwright uses the pre-installed Chromium (`/opt/pw-browsers`) with `--use-gl=angle --use-angle=swiftshader`; don't run `playwright install`.
@@ -172,7 +216,13 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - [x] Fuel station (your request): Pump & Go on Millwright Road with two pumps (REFUEL, clean cash, $3 a unit), the jerry can from the store works on foot (E USE FUEL CAN).
 - [x] UI fixes (your request): remembered-room dimming put on hold; filing panel re-laid out (no overlapping text); shop redesigned as item cards with icons (soda can, chips, sandwich, fuel can); every pop-up panel draggable by its top strip; an automatic overlap check for every panel and the HUD.
 - [x] Tests (134 unit, 10 e2e including a full lockpick → hotwire → drive run), screenshots in `docs/screenshots/phase1_m3/`, notes.
-- [ ] Follow-ups from your review (see the handover): taller gas station canopy that fades, kiosk facing the pumps, a bag minigame instead of the cash count, a dotted sale spot in Marlo's back yard, prices by car type.
+- [ ] Follow-ups from your review (answers of 2026-10-11 in the docs):
+  - [ ] Gas station moved to a bigger lot; tall canopy you can drive under that fades when you're under it; kiosk facing the forecourt; Downtown drafts re-rendered.
+  - [ ] Duffel minigame replaces the money count: drag stacks into the bag before the timer runs out; leave dye-stained stacks out.
+  - [ ] Marlo's back yard with a white dotted sale spot: park, press E, Marlo walks up. Open 24 h.
+  - [ ] Chop pay by car type: 15–30% of value, scaled by damage, with an early cap of about $300–500. The taxi and the van become stealable, each with its own stats.
+  - [ ] Camera rework: about 2× wider default view, one zoom step out when driving, velocity look-ahead, critically damped follow, a silhouette through buildings plus cutaway or fade of the covering building, car-vs-car sorting by turned footprints. docs/11 numbers and screenshots at each zoom level.
+  - [ ] Handover leftovers: key hints on a plate, prompts kept clear of HUD panels, tree crowns fading too early.
 
 ### Milestone 3 notes
 **How to try:** walk to the parking lot behind Open Most Hours (`?scene=world&x=841&y=184`). Stand by a sedan: **E LOCKPICK** opens the dial (space when the needle is in the zone). Then **F** hotwires it (press a wire 1–4, then its colour A/S/D/F). Drive with **W/S** (throttle and brake or reverse), **A/D** to steer, **Space** for the handbrake, **F** to get out (below walking pace). Fill up at **Pump & Go** in the south-east (E REFUEL beside a pump). Drive to **Marlo's Tow & Salvage** on Drizzle Row: **E SELL CAR TO MARLO** pays dirty cash. After 18:00, take it to Dez in the back room of **The Low Tide** (E LAUNDER, then count the bills: space counts, B bands each 10). Panels can be dragged by their top strip.
@@ -213,8 +263,10 @@ Decisions from the question round (2026-10-10) are recorded in docs/18 ("Answers
 - The `art/drafts/downtown/` drafts don't show the gas station yet.
 
 ### Milestone 4: police, saves, crowd
-- [ ] Wanted 1–2★: witnesses with the call delay, one police car and officers, search circle, escape timer, arrest with surrender, fine, first-offense rule.
-- [ ] Saves: 3 slots, autosave on sleep, export and import, SAVE_VERSION and migrations.
+- [ ] A small Greyhaven PD precinct on the test map.
+- [ ] Wanted 1–2★: witnesses with the call delay, one police car and officers from the precinct, search circle, escape timer, arrest with surrender, fine, first-offense rule, arrest screen.
+- [ ] Saves: 3 slots, autosave on sleep, export and import, SAVE_VERSION and migrations. A parking spot outside Drizzle Row where saved cars (bought or stolen) spawn.
+- [ ] Cheat console behind a hidden key combo, on Pages too.
 - [ ] A few pedestrians and ambient traffic.
 - [ ] **Done when:** a full day loop can be played (work → evening carjack → escape or arrest → launder → sleep → reload the save), all unit tests pass, and the frame rate holds.
 

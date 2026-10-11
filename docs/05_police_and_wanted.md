@@ -54,3 +54,9 @@ Stars stack: each new detected crime while wanted adds its stars, capped at 5.
 
 ## Death
 Wake at the nearest hospital at the next 06:00. Pay 10% of carried clean cash (min $100, max $1,500). **You keep your items.** Stars clear. Your offense record is unchanged. There are no other death penalties (decided).
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- **Arrest:** Phase 1 uses an arrest screen ("fine paid" or "jailed N days"). In Phase 3 the police station gets a walkable front desk (lawyer and judge bribes, lockers with seized items).
+- **Phase 1 police** leave from a small precinct on the test map.
+- **Hospital:** you wake in a ward bed, pay at the discharge desk and walk out.

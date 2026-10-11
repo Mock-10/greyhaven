@@ -89,3 +89,10 @@ A short guided first day of about 15 real minutes, with skippable hints:
 4. Get paid, buy something at a store (shows clean money).
 5. Evening: an NPC at the bar mentions "easier money". Lockpick a car's trunk, with the stars and witness system shown (low-stakes, 1★).
 6. Lose the cops, go home, sleep: shows the autosave and the rent reminder.
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- **Camera rework:** the default view shows about **2× more world** (fit about 960 × 540 art pixels, so 1080p runs at 2×). When you drive, the camera **steps out one integer zoom level** and leads ahead so the car sits toward the trailing edge. A player or car hidden behind a building shows as a **silhouette**, and the covering building **cuts away or fades**.
+- **Cheat console:** on the Pages build behind a hidden key combo, so the user can playtest (add cash, set stars, set rank or reputation, skip time).
+- **Character creator:** as specced (no body types, no extra hair).
+- **Onboarding:** no bus or taxi step; step 5 uses trunk looting (brought forward to Phase 2).

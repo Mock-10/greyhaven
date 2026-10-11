@@ -99,3 +99,13 @@ Heists can be replayed after a 7-day cooldown, with −30% payout each replay. E
 ## Planning crimes with the day job
 - Crimes during your shift hours make you **late** for work. That is a deliberate tension.
 - Wearing your work uniform during a crime gets you **identified 100% of the time** (the uniform has your name tag). Change clothes first.
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- **Trunk looting moves forward to Phase 2** so the guided first day can teach it.
+- **Store robbery:** no bulletproof glass. Every clerk stands at an open counter.
+- **House burglary:** 3 layouts; owners can be home asleep (noise wakes them); about 1 in 3 houses has an alarm panel. No pets. **Occupancy reads from the driveway:** in daytime, a house with no cars outside is empty; a house with cars outside may have someone home, which raises the risk.
+- **Fence:** the PAWN shop becomes enterable, run by a new minor named character. It sells masks (balaclava, bandana, hockey-style) and basic tools and buys stolen goods.
+- **Rival crew:** **Saltgate Union**, Vance's smuggling syndicate: grey peacoats with red armbands.
+- **Jewellery store heist:** 10 display cases and a rooftop escape down to the alley.
+- **Bank heist:** 2 guards; the vault is in a basement, which adds a stair route to the escape choices.

@@ -26,3 +26,8 @@ The user approved this cast. **Before writing each character's chain**, show the
 - Missions are data in `src/data/missions.ts`: id, character, unlock condition, steps (objective type, target, timer) and rewards.
 - Objective types reuse systems: `goTo`, `doJobTask`, `minigame`, `stealCar`, `deliver`, `survive`, `loseWanted`, `talkTo`.
 - Mission progress is saved (12).
+
+
+## Decisions (question round of 2026-10-11, before autopilot)
+- Claude writes the outlines for all 6 chains in one document and builds from it; the user reviews afterwards.
+- Vance's crew is the **Saltgate Union** (see 04).
