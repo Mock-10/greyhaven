@@ -13,6 +13,8 @@ export interface ListRequest {
   /** What hook().minigame reads while open ('phone', 'atm', 'bag'). */
   name: string;
   root: () => ListPage;
+  /** Called after every action, so the world's read-only hook shows the new balances while it is paused. */
+  onChange?: () => void;
 }
 
 const TEX = 'list-canvas';
@@ -106,7 +108,8 @@ export class ListScene extends Phaser.Scene {
     const n = this.page.rows.length;
     if (e.key === 'Escape' || (e.key.toUpperCase() === 'P' && this.req.name === 'phone')) this.back();
     else if (e.key.toUpperCase() === 'I' && this.req.name === 'bag') this.close();
-    else if (e.key === 'ArrowDown' || e.key.toUpperCase() === 'S') this.select((this.selected + 1) % Math.max(1, n));
+    else if (e.key === 'ArrowDown' || e.key.toUpperCase() === 'S')
+      this.select((this.selected + 1) % Math.max(1, n));
     else if (e.key === 'ArrowUp' || e.key.toUpperCase() === 'W')
       this.select((this.selected + Math.max(1, n) - 1) % Math.max(1, n));
     else if (e.key === 'Enter' || e.key === ' ' || e.key.toUpperCase() === 'E') this.choose(this.selected);
@@ -138,6 +141,7 @@ export class ListScene extends Phaser.Scene {
       this.back();
       return;
     } else if (a && 'say' in a) this.message = { text: a.say, t: 0 };
+    this.req.onChange?.();
     this.rebuild();
   }
 

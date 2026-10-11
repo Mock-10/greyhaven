@@ -15,35 +15,74 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
 ## Phase 2 — Economy and careers (in progress)
-Status key: [x] done and playable on `main` · [~] code written on the branch `claude/p2-money-phone`, not playable yet · [ ] not started.
+Status key: [x] done and playable · [~] partly done (what's left is said) · [ ] not started. Milestones: M5 money and phone (done), M6 map growth, shops and the creator, M7 the three new jobs, M8 odd jobs, the first day and the close.
 
 **Standing rule from now on (user, 2026-10-11): every new street is at least two lanes in each direction (4 lanes in all).** The existing Downtown streets stay as they are: they have one lane each way, which suits a compact downtown. Everything built from now on follows the rule, starting with the Phase 2 map growth (the garage block road, the house row with the depot, the road through the woods) and later the Phase 6 city. See docs/01 ("Street width").
 
 - [ ] **Street width rule:** new streets are at least two lanes each way. The map script, the lane data and the traffic code must support several lanes per direction first (see the handover).
 - [ ] Test map grows: Torque & Sons garage block, a street of houses with the Swiftish Couriers depot, a patch of woods with Ashby Timber and a road (all reachable on foot or by car). All new roads are two lanes each way.
-- [~] Bank account: carried vs banked clean cash, ATMs, pay into the bank. (`systems/finance.ts`, ATM page in `world/phone.ts`.)
-- [~] Rent auto-paid on Monday 06:00, late fees, eviction after two missed weeks, shelter (sleep and save). (Rent and eviction are in `systems/finance.ts` and `systems/days.ts`; the shelter itself isn't built.)
+- [x] Bank account: carried vs banked clean cash, ATMs, pay into the bank. (M5)
+- [x] Rent auto-paid on Monday 06:00, late fees, eviction after two missed weeks, shelter (sleep and save). (M5)
 - [ ] Character creator (palette-swap sprites, as specced) before the first day.
 - [ ] Office: stamp-and-sign and meeting tasks (rank 3+).
 - [ ] Car mechanic: garage interior (bay, lift, spray booth, office), diagnose, bolt torque, tyre change, respray.
 - [ ] Lumberjack: chop, fell direction, load logs, haul with the log truck; site trailer to clock in.
 - [ ] Delivery: depot interior, load van, route, doorstep, signature; marked doors on the house row.
-- [~] Rank ladders and perks for the 4 jobs (stub the perks that need later systems). (All four jobs and their rank titles are in `data/jobs.ts`; the three new ones are marked "not hiring yet".)
+- [~] Rank ladders and perks for the 4 jobs (stub the perks that need later systems). (All four jobs and their rank titles are in `data/jobs.ts`; the three new ones are marked "not hiring yet" until M7.)
 - [ ] Work uniforms and lockers (change by hand).
 - [ ] Weekend odd jobs: car wash and a bar shift at The Low Tide.
-- [~] Shops: full corner store, clothing store, hardware store, car dealer (beater and sedan). (Corner store stock and hardware stock with icons are written; clothing, the car dealer and the shop buildings aren't.)
-- [~] Arrest effects on careers (freeze, missed shifts, extra work, HR bribes on the phone), clean-record bonus. (`systems/career.ts`, `systems/days.ts`, HR on the phone's contacts page.)
-- [~] Phone: job board, bank, contacts (first pass). (`world/phone.ts`, `scenes/ListScene.ts`, `ui/listPanel.ts`.)
-- [~] Trunk looting (brought forward). (`systems/loot.ts`, the search minigame `SearchGame` and its panel.)
+- [~] Shops: full corner store, clothing store, hardware store, car dealer (beater and sedan). (M5: the full corner store with the first-aid kit. M6: the hardware store building, clothing, the car dealer.)
+- [x] Arrest effects on careers (freeze, missed shifts, extra work, HR bribes on the phone), clean-record bonus. (M5)
+- [x] Phone: job board, bank, contacts (first pass); the bag (I). (M5)
+- [x] Trunk looting (brought forward). (M5)
 - [ ] Guided first day (no bus or taxi step; trunk looting in step 5).
 - [ ] Econ sim re-run, tests, screenshots, notes, PR.
 
-## Handover (updated 2026-10-11, end of session 3) — read this first in a new session
+### Milestone 5: money and the phone (2026-10-11)
+**How to try** (`https://mock-10.github.io/greyhaven/` once the PR is merged):
+- **Get paid to the bank:** work a shift at Pellridge Tower; Ms. Hollis says "+$180 TO THE BANK". Press **P** for the phone → BANK: the balance and the STATEMENT.
+- **ATM:** E at the ATM on the Pellridge plaza: deposit your carried clean cash or take out $20–500. Shops, pumps and fines take carried cash only.
+- **Rent:** Monday 06:00 takes $350 from the bank. With an empty bank you get a LANDLORD message, then $50 a day late fees; 14 days late you're evicted. Try it fast with the cheat console: `day 23` from a new game. The apartment door then refuses you; sleep and save at **St. Brine's Mission**, the chapel on Pewter Street next to the precinct (E SLEEP (SHELTER), Esc → SAVE GAME at its door). Move back in from the phone's BANK app ($550).
+- **Trunk looting:** walk up to the rear bumper of any parked car: **E LOOT TRUNK**. Pick the lock (lockpicks from the bag make it easier), then click the glinting items before the 6 s run out. Cash is dirty; phones and watches wait in the bag (I) for the fence. Someone who sees you calls the police (1★).
+- **Arrest effects:** get busted (`stars 1` and wait), and the arrest screen says the promotion is frozen. The next shift has an extra task; the JOB BOARD shows the freeze. HR on the phone (CONTACTS) lifts it for $600 or covers a missed shift for $150.
+- **Bag (I):** use a first-aid kit; see lockpick uses, kits, stolen goods. **Repair kit:** E USE REPAIR KIT on a car under 50%.
+- New cheats for testing: `bank N`, `item lockpicks 10` (also firstaid, repairkits, fuelcans, toolbox).
+
+**Built:**
+- `systems/finance.ts` (bank, statement, rent, late fees, eviction, moving back in), `systems/days.ts` (`runCalendar`: Monday rent and bonus, daily late fees and eviction, missed shifts at 10:00, the Sunday reminder), wired into the clock, sleep and jail time.
+- `systems/career.ts`: arrest effects, missed shifts, HR cover, the week's pay and the clean-record bonus.
+- The phone, the ATM and the bag: `scenes/ListScene.ts`, `ui/listPanel.ts`, `world/phone.ts`. Messages from people and services are kept (last 30). HUD messages now queue instead of replacing each other; key hints show P PHONE · I BAG.
+- Trunk looting: `systems/loot.ts`, the search minigame (`SearchGame`, `drawSearch`), the LOOT TRUNK prompt at each car's rear (`trunkSpot`), lockpick wear (`wearLockpicks`), the toolbox's +3 s on the hotwire.
+- The repair kit (`repairKit`), the evicted apartment door, the shelter zone at the chapel (`art/source/downtown_map.py` → `src/maps/downtown.json`).
+- Autosave on clock-out and at 06:00 (docs/12); manual saves at the shelter.
+- **Fix:** several witnesses of one crime raised the stars once each (three witnesses of a lockpick gave 3★). Now each crime raises its stars once (`reportCrime`).
+- Save version 2 with its migration and test.
+- Tests: 190 unit (new: finance, calendar, arrest effects, loot, search and list-panel layouts, the one-crime-one-report rule, new cheats), 17 e2e (new: ATM deposit and withdrawal, the phone's bank app, looting a trunk, eviction and the shelter). Screenshots in `docs/screenshots/phase2_m5/`.
+
+**Assumptions (please review):**
+- Pay and bonuses go to the bank; shops, pumps and fines use carried cash; rent, HR bribes and moving back in come from the bank. A fine bigger than your carried cash takes only what you carry.
+- Rent is all or nothing; late fees start the day after it falls due; eviction 14 days after the first unpaid rent clears the debt.
+- St. Brine's shelter is open to anyone at any time (not only when evicted). Saving there works at its door.
+- The HR cover gives the 5 XP back but no pay, for misses in the last 7 days.
+- The extra-work days run to the end of the second day after release; an arrest also loses a shift in progress (and, if before 10:00, the day counts as missed).
+- Picking a trunk's lock unlocks the whole car. A trunk can be searched once; quitting the search with Esc leaves it unsearched.
+- Lockpicks: 10 uses, a failure costs 2, the bare-hands pick still works (tier-0 dial). The toolbox is $120 (docs silent).
+- A first-aid kit heals fully. A repair kit can't fix a wrecked car.
+- Missing shifts during the jail days count as missed (docs/03: "missed shifts while jailed").
+
+**Art debt:** none. The item and loot icons are pixel arrays in `src/ui/hudDraw.ts`, like the other icons; the shelter uses the existing chapel.
+
+**Known issues:**
+- The search panel can cover part of the car you're looting (panels sit beside the player, as before).
+- The hardware store, the clothing store and the car dealer have no buildings yet (M6), so lockpicks, the toolbox and repair kits can only come from the cheat console or a trunk for now. The corner store sells the first-aid kit.
+- The phone has no map, crew or properties apps yet (later phases).
+
+## Handover (updated 2026-10-11, session 4) — read this first in a new session
 
 **Where things stand**
 - **Phases 0 and 1 are done and live** at `https://mock-10.github.io/greyhaven/`. Milestone 4 (saves, crowd and traffic, police 1–2★, arrests) was merged in PR #9 on 2026-10-11, which closed Phase 1.
 - **Phase 2 (economy and careers) has started.** It is planned as four milestones, one PR each:
-  - **M5, money and phone (in progress):** bank and ATMs, rent and eviction with a shelter, the phone (P), the bag (I), the full corner store, trunk looting, arrest effects on careers, and the clean-record bonus.
+  - **M5, money and phone (done):** bank and ATMs, rent and eviction with a shelter, the phone (P), the bag (I), the full corner store, trunk looting, arrest effects on careers, and the clean-record bonus.
   - **M6, map growth and shops:**
     - the garage block, the house row with the depot, and the woods with Ashby Timber, all with **two-lane-each-way roads**;
     - clothing store, hardware store and car dealer (buildings, interiors, stock);
@@ -56,61 +95,7 @@ Status key: [x] done and playable on `main` · [~] code written on the branch `c
 - **The Downtown map is a test map, not the final city.** The final city is a dense open world of about 320 × 320 tiles with a hood district, open fields and woods (docs/01, built in Phase 6).
 - **Autopilot is on** (CLAUDE.md): I merge my own PRs once CI is green, carry on from phase to phase, and send a short note with screenshots at each milestone. Heist interiors still need your approval first.
 
-**M5 work in progress: branch `claude/p2-money-phone` (pushed; it does not build yet)**
-Start the next session by checking out that branch: `git fetch origin claude/p2-money-phone && git checkout claude/p2-money-phone`, then merge `main` into it.
-- **Done there:**
-  - **Systems, all tested (`tests/finance.test.ts`, new cases in `career`, `shop` and `save`):**
-    - `src/systems/finance.ts`: bank, statement, deposit and withdraw, rent due, late fees, eviction, moving back in.
-    - `src/systems/days.ts`: `runCalendar` runs the calendar's fixed moments over any stretch of time:
-      - Monday 06:00: rent and the clean-record bonus;
-      - every day at 06:00: late fees and the eviction check;
-      - 10:00 on workdays: missed shifts;
-      - Sunday 20:00: the rent reminder.
-    - `src/systems/career.ts`: arrest effects (3-day freeze, 2 days of extra work with +1 task and a 10% higher XP bar), the missed-shift penalty, HR cover, the week's pay, and the bonus. `clockOut` now takes the current minute.
-    - `src/systems/loot.ts`: the trunk loot roll, and `takeLoot`.
-  - **Save version 2** with a v1 → v2 migration and its test. The migration adds:
-    - `money.bank`, `finance`, `calendarAt` and `messages`;
-    - on the career: `freezeUntil`, `extraUntil`, `missed`, `week`, `shift.tasks`, and entries for all four jobs;
-    - the fuller bag: `fuelCans`, `firstAid`, `repairKits`, `lockpicks` (uses left), `toolbox`, `phones`, `watches`.
-  - **Items:** the catalogue grows with the first-aid kit ($60), lockpicks ($40 for 10 uses), the toolbox ($120) and the repair kit ($150). Pixel icons for these and for the loot.
-  - **Shops:** `SHOP_STOCK` gains `hardware`. The shop panel is taller (3 rows).
-  - **Lockpick tool tolerance (docs/06):** basic tools widen the zones by 15%; pro tools by 30% with one check fewer. The toolbox adds 3 s to the hotwire timer.
-  - **`SearchGame`** (click the glinting items before the timer runs out; the watch is the gold item) and its panel `drawSearch`.
-  - **A generic list overlay:**
-    - `src/scenes/ListScene.ts`, registered in `main.ts`;
-    - `src/ui/listPanel.ts`, with the phone plate in lavender;
-    - page builders in `src/world/phone.ts`: phone (messages, bank and statement, job board, contacts with HR bribes, landlord, Dez, Marlo), the ATM, and the bag (use a first-aid kit).
-  - New debug-hook fields (`bank`, `rentOwed`, `evicted`, `inventory`, `listPage`) and a `^` glyph in the pixel font.
-- **Still to do for M5:**
-  1. **Wire `WorldScene.ts`.** `tsc` lists exactly these breakages:
-     - the shop request needs `shop: 'store'`;
-     - `clockOut(c, this.state.minutes)` must pay into the bank with `credit` (bonus too), and the toast should say "TO THE BANK";
-     - the lockpick request needs `tool: lockTool(inv)` and a `label`;
-     - the hotwire request needs `bonusSeconds` (toolbox).
-     Then:
-     - wear lockpicks after each attempt (`wearLockpicks`);
-     - `jobTask` uses `shift.tasks` instead of the hard-coded 3;
-     - call `runCalendar(state, state.calendarAt, state.minutes)` every tick and after sleep or jail time skips, toast the messages, then set `calendarAt`;
-     - after `arrest(...)` in `doArrest`, apply `arrestEffects(career, arrestMinute, releaseMinute)`;
-     - log toasts from `PHONE_SENDERS` into `state.messages` (keep the last 30);
-     - P opens the phone and I opens the bag through `scene.launch('list', { style, name, root })`, pausing the world and resuming on `'list:closed'`, like `openMenu`;
-     - the plaza ATM opens `atmPage`;
-     - fill the new hook fields.
-  2. **Trunk looting in the world:**
-     - a second usable per parked car, `trunk:<id>`, at the car's rear (heading × −0.45 car length), labelled LOOT TRUNK;
-     - it is hidden when `v.looted` is set (add `looted?: boolean` to `Vehicle`) and for your own car;
-     - flow: `crime(1★)` → lockpick (unless the car is already unlocked) → `rollTrunk` → the `search` minigame → `takeLoot`; mark the car looted.
-  3. **Repair kit and evicted door:**
-     - a USE REPAIR KIT prompt on a car under 50% health;
-     - the apartment door refuses you while evicted ("EVICTED: MOVE BACK IN FROM THE PHONE, BANK").
-  4. **Shelter:**
-     - add a `shelter` zone at the chapel on Pewter Street (St. Brine's Mission) in `art/source/downtown_map.py`, then re-run the map pipeline;
-     - in the world, a SLEEP (SHELTER) usable that sleeps to 06:00 and autosaves;
-     - `canSave()` allows saving at the shelter.
-  5. **Tests and checks:**
-     - list-panel layout tests in `tests/panels.test.ts` (search panel, phone, ATM, bag);
-     - e2e tests: ATM deposit and withdraw, open the phone, loot a trunk;
-     - screenshots, docs (02, 03, 06, 11, 12), the M5 notes here, a PR and the merge.
+**M5 (money and phone) is done** (see "Milestone 5" above). Next is **M6**: multi-lane roads first (below), then the garage block, the house row with the depot, the woods, the hardware and clothing stores, the car dealer, and the character creator.
 
 **Making the streets wider (your request, 2026-10-11): not done yet, applies to all new streets**
 - **Today:**
@@ -125,32 +110,6 @@ Start the next session by checking out that branch: `git fetch origin claude/p2-
     - let traffic pick a lane on spawn (lane changes can wait);
     - draw lane dividers (dashed white between same-direction lanes, the centre line between directions).
   - Police routing (`systems/roads.ts`) works on road centrelines and should only need the wider half-width.
-
-**Assumptions made in the M5 code (please review once it is playable)**
-- **Pay and bank:**
-  - Shift pay and promotion bonuses go to the bank.
-  - Shops take only carried clean cash.
-  - Rent, HR bribes and moving back in come from the bank.
-  - A fine larger than your carried clean cash still takes only what you carry (the "arrest only touches carried cash" decision).
-- **Rent:**
-  - If the bank can't cover all the rent owed, nothing is taken (no partial payments); the next morning tries again.
-  - Late fees start the day after rent falls due.
-  - **Eviction** happens 14 days after the first unpaid rent. It clears the debt. Your belongings go to "city storage", and moving back in costs a week's rent plus the $200 storage fee, from the phone's bank page. The apartment stash doesn't exist yet, so storage only matters from Phase 5.
-- **Missed shifts:**
-  - Any weekday with no shift started by 10:00 counts as missed (−5 XP, never below 0), except day 1 (the guided first day).
-  - The HR "cover a missed shift" bribe ($150) gives the 5 XP back but no pay, so it can't be used to earn money without working. It only covers misses from the last 7 days.
-- **Arrest effects:**
-  - The extra-work days run to the end of the day after release.
-  - An arrest also cancels a shift in progress.
-- **Weekly bonus:** the clean-record bonus is 15% of the week's job pay, paid Monday 06:00, before rent is taken.
-- **Items:**
-  - The first-aid kit restores full health.
-  - The toolbox costs $120 (not in the docs) and adds 3 s to hotwiring.
-  - Lockpicks are a basic set of 10 uses; a failure costs 2.
-- **Trunk loot:**
-  - Each trunk holds 2–4 valuables plus junk. Cash and wallets together give $20–120 dirty. Phones and watches wait in the bag for the fence (Phase 3). A found lockpick set adds 5 uses.
-  - The "sometimes product or a gun" part of the loot table comes with those systems in Phases 3–4.
-- **The phone's job board** lists all four starting jobs; the garage, the camp and the depot show "NOT HIRING YET" until M7.
 
 **Art debt**
 - None in use. The new item icons are hand-placed pixel arrays in `src/ui/hudDraw.ts`, like the existing ones. When the bag gets a proper inventory grid (docs/11), consider moving them into an atlas made with `art/source/`.
@@ -184,7 +143,7 @@ Start the next session by checking out that branch: `git fetch origin claude/p2-
 - None are blocking. All earlier questions were answered in the 2026-10-11 round (recorded under "Decisions (question round of 2026-10-11)" in docs 00–18 and in CLAUDE.md).
 - **Still to come from you:** the extras that aren't in the docs ("I'll tell you later").
 - **Still needs your approval when we get there:** the heist interiors (jewellery store, bank) before they are built (Phases 3 and 7).
-- **Worth a look once M5 is playable:** the assumptions above (bank and rent rules, the HR cover rule, the toolbox price).
+- **Worth a look now that M5 is playable:** its assumptions (bank and rent rules, the HR cover rule, the open shelter, the toolbox price).
 
 **Answered decisions, in short (full text in the docs)**
 - **Phase 1:**
@@ -227,7 +186,7 @@ Start the next session by checking out that branch: `git fetch origin claude/p2-
 - npm goes through the proxy. Before `npm`, `npx vite preview` or Playwright, set `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1`. Playwright uses the pre-installed Chromium (`/opt/pw-browsers`) with `--use-gl=angle --use-angle=swiftshader`; don't run `playwright install`.
 - `npm run shots -- <names>` starts and stops its own preview server (presets in `tools/shots.ts`, with an optional `cheats: [...]`). **Never** use `pkill -f "vite preview"` or `pgrep -f`: they kill the calling shell. Find the PID with `ps -eo pid,args | grep "[n]ode.*vite preview"`.
 - Foreground `sleep` is blocked in the container. Wait on a background job with an until-loop instead.
-- Debug hook (`window.__DL__`, read-only): `dirty`, `stars`, `driving`, `cars`, `minigameState` (the open minigame's logic, so tests can play it like a person), and on the M5 branch `bank`, `rentOwed`, `evicted`, `inventory`, `listPage`. Cheats are never read from the URL. The cheat console (Ctrl + Shift + F1) is how tests and screenshots set things up.
+- Debug hook (`window.__DL__`, read-only): `dirty`, `stars`, `driving`, `cars` (with `looted`), `minigameState` (the open minigame's logic, so tests can play it like a person), `bank`, `rentOwed`, `evicted`, `health`, `inventory`, `listPage` (the open phone, ATM or bag page; refreshed after each action while the world is paused). Cheats are never read from the URL. The cheat console (Ctrl + Shift + F1) is how tests and screenshots set things up.
 - Interior art pipeline: edit `art/source/rooms.py` → `python3 art/source/check_layout.py` (0 issues) → `python3 art/source/export_interiors.py` → commit `art/interiors/*`.
 - City map pipeline, run in `art/source/`:
   1. Edit `downtown_map.py`, then run `python3 downtown_map.py --no-render` (writes `src/maps/downtown.json`).

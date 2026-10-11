@@ -50,12 +50,14 @@ export type MinigameRequest =
   | { kind: 'search'; seed: number; label: string; items: LootItem[] }
   | { kind: 'moneyCount'; label: string }
   | { kind: 'duffel'; seed: number; label: string }
-  | { kind: 'shop'; title: string; shop: ShopId; wallet: Wallet }
+  | { kind: 'shop'; title: string; shop: ShopId; wallet: Wallet };
 
 export interface MinigameResult {
   kind: MinigameRequest['kind'];
   /** Null when quit with Esc. */
   grade: Grade | null;
+  /** The search panel: what was grabbed. */
+  haul?: LootItem[];
 }
 
 const TEX = 'minigame-canvas';
@@ -349,6 +351,7 @@ export class MinigameScene extends Phaser.Scene {
 
   private close(grade: Grade | null): void {
     const result: MinigameResult = { kind: this.req.kind, grade };
+    if (this.logic instanceof SearchGame) result.haul = this.logic.haul;
     this.scene.stop();
     this.game.events.emit('minigame:done', result);
   }
@@ -375,7 +378,8 @@ export class MinigameScene extends Phaser.Scene {
       const d = this.stackDrag;
       drawDuffel(s, x, y, g, req.label, d && !g.done ? d.slot : null);
       if (d && !g.done) drawHeldStack(s, d.x, d.y, g.stacks[d.slot]!.dyed);
-    } else if (req.kind === 'search' && g instanceof SearchGame) drawSearch(s, x, y, g, req.label, this.clock);
+    } else if (req.kind === 'search' && g instanceof SearchGame)
+      drawSearch(s, x, y, g, req.label, this.clock);
     else if (req.kind === 'shop')
       drawShop(s, x, y, {
         title: req.title,

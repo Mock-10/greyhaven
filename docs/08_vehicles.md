@@ -53,3 +53,6 @@
 - **Phase 1 stealable cars:** the sedans, the taxi and the white van, each with its own stats and chop price.
 - **Selling to Marlo:** park in the white dotted spot in his back yard and press E; Marlo walks over and pays. Open 24 hours.
 - **Home parking:** Drizzle Row Residences has a parking spot outside. Saved vehicles, bought or stolen, spawn there on load.
+
+## Phase 2 build (milestone 5, 2026-10-11)
+- **Repair kit** (hardware store, $150): E USE REPAIR KIT on any unlocked car below 50% health brings it to 50%. A wrecked car (0%) can't be saved by a kit.

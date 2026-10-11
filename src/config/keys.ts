@@ -14,4 +14,7 @@ export const KEYS = {
   debugOverlay: 'F3',
   /** Sight lines on/off (docs/19) until the settings menu exists. */
   sightLines: 'L',
+  /** The phone and the bag (docs/11). */
+  phone: 'P',
+  bag: 'I',
 } as const;

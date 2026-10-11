@@ -12,14 +12,7 @@ import {
   xpNeeded,
 } from '../src/systems/career';
 import { runCalendar, type CalendarState } from '../src/systems/days';
-import {
-  createFinance,
-  credit,
-  deposit,
-  moveBackIn,
-  moveInCost,
-  withdraw,
-} from '../src/systems/finance';
+import { createFinance, credit, deposit, moveBackIn, moveInCost, withdraw } from '../src/systems/finance';
 
 const at = (day: number, hh: number, mm = 0) => (day - 1) * 1440 + hh * 60 + mm;
 

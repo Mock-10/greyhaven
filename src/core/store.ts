@@ -117,7 +117,11 @@ export function createState(
       armor: 0,
       costume: 'office_worker',
     },
-    money: { clean: BALANCE.economy.startClean, dirty: BALANCE.economy.startDirty, bank: BALANCE.economy.startBank },
+    money: {
+      clean: BALANCE.economy.startClean,
+      dirty: BALANCE.economy.startDirty,
+      bank: BALANCE.economy.startBank,
+    },
     finance: createFinance(),
     calendarAt: minutes,
     wanted: emptyWanted(),

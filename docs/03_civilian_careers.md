@@ -82,3 +82,9 @@ You are **never fired** from any job, however many arrests you have (decided). A
 - **Lumber camp (Ashby Timber):** outdoors (trees, loading yard, the log truck to the mill), plus a site trailer to clock in.
 - **Delivery (Swiftish Couriers):** a depot interior (loading bay and counter), then drive the van to marked doors on a short row of houses.
 - **Office Meeting task:** Claude writes the dialogue in the dry office tone; the user reviews it afterwards.
+
+## Phase 2 build (milestone 5, 2026-10-11)
+- **Missed shift:** any workday with no shift worked or started by 10:00 (except day 1, the guided first day) costs 5 XP, never below 0. HR can cover it from the phone (CONTACTS) within 7 days.
+- **Arrest effects** apply to every job: a 3-day promotion freeze from the arrest (XP earned meanwhile is lost), extra work until the end of the second day after release (one more task per shift and a 10% higher XP bar), no clean-record bonus that week, and a shift in progress is lost. The arrest screen says so.
+- **Pay goes to the bank** ("+$180 TO THE BANK"), and clocking out autosaves.
+- **Job board** on the phone: switch jobs any time off shift; rank is kept per job. The garage, the lumber camp and the depot show NOT HIRING YET until their milestone (M7).

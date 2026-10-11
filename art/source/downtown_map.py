@@ -780,6 +780,10 @@ def block_sw():
     prop('bus_stop_sign', tc(14.4), ny - tc(1.6))
     keep_clear(tc(12.8), ny - 22, 60)
     col(['chapel', 'police_precinct'], tc(16.0), ny + 2, dir=6)
+    # St. Brine's Mission (Phase 2): the shelter where an evicted player sleeps and saves, at the chapel's door
+    ch = [p_ for p_ in PL if p_['sprite'] == 'bld/chapel'][-1]
+    ZONES.append({'id': 'shelter', 'x0': ch['fp'][0], 'y0': ch['fp'][1], 'x1': ch['fp'][2], 'y1': ch['fp'][3],
+                  'npc': {'x': tc(16.5), 'y': round(ch['y'], 1)}})
     # Greyhaven PD, Precinct 1 (milestone 4): officers come out of its door, the cruiser starts on Pewter Street
     pre = [p_ for p_ in PL if p_['sprite'] == 'bld/police_precinct'][-1]
     ZONES.append({'id': 'precinct', 'x0': pre['fp'][0], 'y0': pre['fp'][1], 'x1': pre['fp'][2], 'y1': pre['fp'][3],

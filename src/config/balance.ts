@@ -267,6 +267,8 @@ export const BALANCE = {
       junk: [2, 4] as readonly [number, number],
       weights: { cash: 34, wallet: 26, phone: 18, lockpicks: 12, watch: 10 },
       lockpickUses: 5,
+      /** The trunk prompt sits this share of the car's length behind its centre (at the rear bumper). */
+      reach: 0.45,
     },
     /** Chop shop pay (decided 2026-10-11): 15–30% of the car type's value (docs/08), scaled by condition. Below
      *  reputation tier `fullRateTier` Marlo pays only `earlyFactor` of that, capped at `earlyCap`, so an early car
@@ -326,7 +328,7 @@ export const BALANCE = {
     bustSeconds: 2.2,
     stoppedCarSpeed: 12,
     /** Stars by crime when detected (docs/04). */
-    crimeStars: { carjack: 1, alarm: 1, hotCar: 1 },
+    crimeStars: { carjack: 1, alarm: 1, hotCar: 1, trunk: 1 },
     /** A hot stolen car seen by police is recognised with this chance per real minute (docs/08: 20%). */
     hotCarChancePerMinute: 0.2,
     /** Fines in clean dollars and jail days by stars at arrest (docs/02), the surrender discount (docs/05: −30%
@@ -425,12 +427,19 @@ export const BALANCE = {
     facingWeight: 0.6,
   },
 
+  /** The phone (docs/11): messages kept in its MESSAGES app. */
+  phone: { messagesKept: 30 },
+
   /** Input: keys pressed inside a minigame panel are ignored by the world this long after it closes. */
   ui: { keyGuardMs: 300 },
 
   hud: {
     /** Phone messages stay this long, then slide out (docs/11). */
     toastSeconds: 5,
+    /** A message that arrives while another shows waits until that one has been up this long (at most `toastQueue`
+     *  wait). */
+    toastMinSeconds: 2.2,
+    toastQueue: 4,
     /** The street name shows for this long after entering a new street. */
     streetSeconds: 4,
     /** Radar radius in UI pixels and its world scale (docs/11: radius 38, about 0.13). */

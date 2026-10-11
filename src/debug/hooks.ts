@@ -31,8 +31,14 @@ export interface DebugHook {
   bank: number;
   rentOwed: number;
   evicted: boolean;
+  /** Player health. */
+  health: number;
   inventory: Record<string, number>;
-  listPage: { title: string; lines?: string[]; rows: { label: string; detail?: string; enabled?: boolean }[] } | null;
+  listPage: {
+    title: string;
+    lines?: string[];
+    rows: { label: string; detail?: string; enabled?: boolean }[];
+  } | null;
   driving: string | null;
   cars: {
     id: string;
@@ -44,6 +50,7 @@ export interface DebugHook {
     heading: number;
     speed: number;
     health: number;
+    looted: boolean;
   }[];
   /** Depth of a placed object by sprite key (first match). */
   depthOf: (sprite: string) => number | null;
@@ -80,6 +87,7 @@ export function installHook(): DebugHook {
     bank: 0,
     rentOwed: 0,
     evicted: false,
+    health: 100,
     inventory: {},
     listPage: null,
     driving: null,

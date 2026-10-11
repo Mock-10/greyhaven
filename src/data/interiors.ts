@@ -3,6 +3,7 @@
 // come from art/interiors/<id>.json (art/source/export_interiors.py).
 
 import type { DoorTarget } from '../maps/types';
+import type { ShopId } from './items';
 
 export type InteriorId = 'apartment' | 'store' | 'tower_lobby' | 'office_floor' | 'bar';
 
@@ -11,7 +12,7 @@ export type Action =
   | { kind: 'job'; task: 'filing' | 'dataEntry' }
   | { kind: 'clock' }
   | { kind: 'elevator'; to: InteriorId }
-  | { kind: 'shop' }
+  | { kind: 'shop'; shop?: ShopId }
   | { kind: 'launder' }
   | { kind: 'later'; who: string; text: string };
 

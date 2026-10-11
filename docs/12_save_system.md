@@ -45,3 +45,8 @@ The NPC crowd and traffic are **not** saved. They respawn.
 ## Versioning
 - `SAVE_VERSION` is an integer. A migration function exists for each version bump (`migrations[n](state) → state for n+1`).
 - **Never** break old saves without a migration. Add a unit test per migration.
+
+## Phase 2 build (milestone 5, 2026-10-11)
+- **SAVE_VERSION 2.** The v1 → v2 migration adds the bank balance, the statement and rent, the calendar marker, the phone's messages, the career's freeze and extra-work timers, missed shifts and the week's pay, entries for all four jobs, and the fuller bag (fuel cans, first-aid kits, repair kits, lockpick uses, toolbox, stolen phones and watches). Cars keep a `looted` flag (optional, so no migration needed).
+- **Autosave** also on clock-out and every morning at 06:00 when not wanted (sleeping still autosaves once).
+- **Manual save** also at St. Brine's shelter (stand at its door). While evicted, the apartment doesn't count as home.

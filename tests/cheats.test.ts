@@ -5,6 +5,9 @@ describe('cheat console', () => {
   it('parses money, time, rank, teleports and cars', () => {
     expect(parseCheat('cash 500')).toEqual({ kind: 'cash', clean: 500 });
     expect(parseCheat(' DIRTY  1200 ')).toEqual({ kind: 'dirty', amount: 1200 });
+    expect(parseCheat('bank 900')).toEqual({ kind: 'bank', amount: 900 });
+    expect(parseCheat('item lockpicks 10')).toEqual({ kind: 'item', item: 'lockpicks', count: 10 });
+    expect(parseCheat('item lockpicks')).toHaveProperty('error');
     expect(parseCheat('time 18:30')).toEqual({ kind: 'time', minute: 18 * 60 + 30 });
     expect(parseCheat('day 3')).toEqual({ kind: 'day', day: 3 });
     expect(parseCheat('rank 2')).toEqual({ kind: 'rank', rank: 2 });

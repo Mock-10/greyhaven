@@ -41,7 +41,13 @@ export interface ListLayout {
   hintY: number;
 }
 
-export function listLayout(style: ListStyle, x: number, y: number, page: ListPage, scroll: number): ListLayout {
+export function listLayout(
+  style: ListStyle,
+  x: number,
+  y: number,
+  page: ListPage,
+  scroll: number,
+): ListLayout {
   const { w, h } = LIST_SIZE[style];
   const top = y + 26 + (page.lines?.length ?? 0) * LINE_H + (page.lines?.length ? 4 : 0);
   const bottom = y + h - 26;

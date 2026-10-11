@@ -4,14 +4,7 @@
 import type { Inventory } from '../core/store';
 
 export type ItemId =
-  | 'soda'
-  | 'chips'
-  | 'sandwich'
-  | 'fuel_can'
-  | 'first_aid'
-  | 'lockpicks'
-  | 'toolbox'
-  | 'repair_kit';
+  'soda' | 'chips' | 'sandwich' | 'fuel_can' | 'first_aid' | 'lockpicks' | 'toolbox' | 'repair_kit';
 
 export interface ItemDef {
   id: ItemId;
@@ -33,8 +26,21 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   fuel_can: { id: 'fuel_can', name: 'FUEL CAN', use: 'carry', slot: 'fuelCans', effect: '10 FUEL' },
   first_aid: { id: 'first_aid', name: 'FIRST AID', use: 'carry', slot: 'firstAid', effect: 'FULL HP' },
   lockpicks: { id: 'lockpicks', name: 'LOCKPICKS', use: 'carry', slot: 'lockpicks', effect: '10 USES' },
-  toolbox: { id: 'toolbox', name: 'TOOLBOX', use: 'carry', slot: 'toolbox', effect: 'HOTWIRE +', single: true },
-  repair_kit: { id: 'repair_kit', name: 'REPAIR KIT', use: 'carry', slot: 'repairKits', effect: 'CAR TO 50%' },
+  toolbox: {
+    id: 'toolbox',
+    name: 'TOOLBOX',
+    use: 'carry',
+    slot: 'toolbox',
+    effect: 'HOTWIRE +',
+    single: true,
+  },
+  repair_kit: {
+    id: 'repair_kit',
+    name: 'REPAIR KIT',
+    use: 'carry',
+    slot: 'repairKits',
+    effect: 'CAR TO 50%',
+  },
 };
 
 export type ShopId = 'store' | 'hardware';

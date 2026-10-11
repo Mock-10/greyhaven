@@ -53,6 +53,8 @@ export class HudScene extends Phaser.Scene {
   private stats: Stats | null = null;
   private debugOn = false;
   private toastMsg: { who: string; text: string; t: number } | null = null;
+  /** Messages that arrived while another was showing (rent and the bonus land together on Monday 06:00). */
+  private toastQueue: { who: string; text: string }[] = [];
   private streetMsg: { name: string; t: number } | null = null;
   private acc = 0;
   private objectiveText = 'EXPLORE THE LEDGER (DOWNTOWN)';
@@ -71,7 +73,7 @@ export class HudScene extends Phaser.Scene {
       ['hud:frame', (s: HudSnapshot) => (this.snap = s)],
       ['debug:stats', (s: Stats) => (this.stats = s)],
       ['debug:overlay', (on: boolean) => (this.debugOn = on)],
-      ['hud:toast', (m: { who: string; text: string }) => (this.toastMsg = { ...m, t: 0 })],
+      ['hud:toast', (m: { who: string; text: string }) => this.pushToast(m)],
       ['hud:street', (name: string) => (this.streetMsg = { name, t: 0 })],
       ['hud:objective', (t: string) => (this.objectiveText = t)],
     ];
@@ -94,11 +96,25 @@ export class HudScene extends Phaser.Scene {
     this.redraw();
   }
 
+  /** Show a message now, or after the one on screen has had its minimum time. */
+  private pushToast(m: { who: string; text: string }): void {
+    const H = BALANCE.hud;
+    if (!this.toastMsg || this.toastMsg.t >= H.toastMinSeconds) this.toastMsg = { ...m, t: 0 };
+    else {
+      this.toastQueue.push(m);
+      if (this.toastQueue.length > H.toastQueue) this.toastQueue.shift();
+    }
+  }
+
   update(_t: number, deltaMs: number): void {
     const dt = deltaMs / 1000;
     if (this.toastMsg) {
       this.toastMsg.t += dt;
-      if (this.toastMsg.t > BALANCE.hud.toastSeconds + 0.4) this.toastMsg = null;
+      const next = this.toastQueue[0];
+      if (next && this.toastMsg.t >= BALANCE.hud.toastMinSeconds) {
+        this.toastQueue.shift();
+        this.toastMsg = { ...next, t: 0 };
+      } else if (this.toastMsg.t > BALANCE.hud.toastSeconds + 0.4) this.toastMsg = null;
     }
     if (this.streetMsg) {
       this.streetMsg.t += dt;
@@ -170,8 +186,9 @@ export class HudScene extends Phaser.Scene {
                 ['TAB', 'NEXT'],
               ]
             : [
+                ['P', 'PHONE'],
+                ['I', 'BAG'],
                 ['SHIFT', 'SPRINT'],
-                ['C', 'CAMERA'],
               ];
       // a plate behind the hints, so they read over light pavement (handover known issue)
       const hw = hintKeysWidth(hints) - 8;

@@ -6,13 +6,7 @@
 import { BALANCE } from '../config/balance';
 import type { GameState } from '../core/store';
 import { JOBS, type JobId } from '../data/jobs';
-import {
-  coverShift,
-  coverable,
-  frozen,
-  rankTitle,
-  xpNeeded,
-} from '../systems/career';
+import { coverShift, coverable, frozen, rankTitle, xpNeeded } from '../systems/career';
 import { calendar, formatClock } from '../systems/clock';
 import { debit, deposit, moveBackIn, moveInCost, payOwed, withdraw } from '../systems/finance';
 import { useFirstAid, type Wallet } from '../systems/shop';
@@ -72,7 +66,11 @@ export function phoneRoot(ctx: PhoneCtx): ListPage {
         act: () => ({ open: () => messagesPage(ctx) }),
       },
       { label: 'BANK', detail: rentNote || money(st.money.bank), act: () => ({ open: () => bankPage(ctx) }) },
-      { label: 'JOB BOARD', detail: JOBS[st.career.current].short, act: () => ({ open: () => jobsPage(ctx) }) },
+      {
+        label: 'JOB BOARD',
+        detail: JOBS[st.career.current].short,
+        act: () => ({ open: () => jobsPage(ctx) }),
+      },
       { label: 'CONTACTS', act: () => ({ open: () => contactsPage(ctx) }) },
     ],
   };
@@ -106,7 +104,9 @@ export function bankPage(ctx: PhoneCtx): ListPage {
       label: 'PAY RENT NOW',
       detail: money(r.owed),
       enabled: st.money.bank >= r.owed,
-      act: () => ({ say: payOwed(st.money, st.finance, st.minutes) ? 'RENT PAID.' : 'NOT ENOUGH IN THE BANK.' }),
+      act: () => ({
+        say: payOwed(st.money, st.finance, st.minutes) ? 'RENT PAID.' : 'NOT ENOUGH IN THE BANK.',
+      }),
     });
   if (r.evicted)
     rows.push({
@@ -199,7 +199,10 @@ export function contactsPage(ctx: PhoneCtx): ListPage {
           : `RENT ${money(BALANCE.rent.weekly)}, MONDAYS 06:00, FROM YOUR BANK.`,
       ),
     },
-    { label: 'DEZ', act: say(`BACK ROOM OF THE LOW TIDE, 18:00-02:00. ${Math.round(BALANCE.laundering.cut * 100)}% CUT.`) },
+    {
+      label: 'DEZ',
+      act: say(`BACK ROOM OF THE LOW TIDE, 18:00-02:00. ${Math.round(BALANCE.laundering.cut * 100)}% CUT.`),
+    },
     { label: 'MARLO', act: say('PARK IN MY DOTTED SPOT AND PRESS E. NO QUESTIONS.') },
   ];
   return { title: 'CONTACTS', rows };
@@ -213,7 +216,9 @@ export function atmPage(ctx: PhoneCtx): ListPage {
   const out = (n: number): ListRow => ({
     label: `WITHDRAW ${money(n)}`,
     enabled: m.bank >= n,
-    act: () => ({ say: withdraw(m, st.finance, st.minutes, n) ? `TOOK OUT ${money(n)}.` : 'NOT ENOUGH IN THE BANK.' }),
+    act: () => ({
+      say: withdraw(m, st.finance, st.minutes, n) ? `TOOK OUT ${money(n)}.` : 'NOT ENOUGH IN THE BANK.',
+    }),
   });
   return {
     title: 'ATM',

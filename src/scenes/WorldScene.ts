@@ -34,7 +34,15 @@ import { StreetLife } from '../world/streetLife';
 import { Police } from '../world/police';
 import { buildRoads, type RoadGraph } from '../systems/roads';
 import { startFlee } from '../systems/crowd';
-import { addStars, arrest, canSee, emptyWanted, searchRadius, tickWanted } from '../systems/wanted';
+import {
+  addStars,
+  arrest,
+  canSee,
+  emptyWanted,
+  reportCrime,
+  searchRadius,
+  tickWanted,
+} from '../systems/wanted';
 import { typeOfModel } from '../data/vehicles';
 import { facingFromWorld, roundHalfEven, worldToScreen, worldToTile } from '../iso/projection';
 import { rasterizeShadows, shadowAlpha, shadowShape, type Rect } from '../iso/shadows';
@@ -46,6 +54,7 @@ import { tileSeed as referenceSeed, TEST_MAP } from '../maps/testMap';
 import type { Door, MapData, Placement } from '../maps/types';
 import { advance, calendar, darkness, sleepUntil, tintAt } from '../systems/clock';
 import {
+  arrestEffects,
   clockIn,
   clockOut,
   hasKeyCard,
@@ -54,8 +63,14 @@ import {
   tasksLeft,
   type Grade,
 } from '../systems/career';
+import { runCalendar } from '../systems/days';
+import { credit } from '../systems/finance';
+import { rollTrunk, takeLoot, type LootItem } from '../systems/loot';
+import { lockTool, wearLockpicks } from '../systems/shop';
+import { atmPage, bagPage, phoneRoot, PHONE_SENDERS, type PhoneCtx } from '../world/phone';
+import type { ListRequest } from './ListScene';
 import { INTERIORS, interiorForDoor, isOpen, type InteriorDef, type InteriorId } from '../data/interiors';
-import { TASK_NAMES, type TaskId } from '../data/jobs';
+import { JOBS, TASK_NAMES, type TaskId } from '../data/jobs';
 import { TYPE_LABEL } from '../data/vehicles';
 import { ATLASES } from '../assets/manifest';
 import {
@@ -85,7 +100,10 @@ import {
   stats,
   pourCan,
   refuel,
+  needsRepair,
+  repairKit,
   topSpeed,
+  trunkSpot,
   vehicleSolid,
   type Vehicle,
 } from '../systems/vehicle';
@@ -156,6 +174,8 @@ interface CarView {
   placed: Placed;
   shadow: Phaser.GameObjects.Image;
   usable: Usable;
+  /** LOOT TRUNK at the car's rear (docs/04 trunk looting). */
+  trunk: Usable;
 }
 
 /** An interior while the player is in it. */
@@ -326,16 +346,28 @@ export class WorldScene extends Phaser.Scene {
     else {
       for (const d of this.map.doors ?? [])
         this.usables.push({ id: `door:${d.target}`, x: d.x, y: d.y, label: d.label, placed: null, door: d });
-      for (const z of this.map.zones ?? [])
-        this.usables.push({
-          id: `zone:${z.id}`,
-          x: (z.x0 + z.x1) / 2,
-          y: (z.y0 + z.y1) / 2,
-          label: 'SELL CAR TO MARLO',
-          placed: null,
-          door: null,
-          hidden: true,
-        });
+      for (const z of this.map.zones ?? []) {
+        // Marlo's dotted spot shows only with a car in it; the shelter is at the chapel's door
+        if (z.id === 'marlo_spot')
+          this.usables.push({
+            id: `zone:${z.id}`,
+            x: (z.x0 + z.x1) / 2,
+            y: (z.y0 + z.y1) / 2,
+            label: 'SELL CAR TO MARLO',
+            placed: null,
+            door: null,
+            hidden: true,
+          });
+        else if (z.id === 'shelter' && z.npc)
+          this.usables.push({
+            id: 'zone:shelter',
+            x: z.npc.x,
+            y: z.npc.y,
+            label: 'SLEEP (SHELTER)',
+            placed: null,
+            door: null,
+          });
+      }
       this.createEntranceOutlines();
       this.createPlayer();
       this.createCars();
@@ -369,7 +401,12 @@ export class WorldScene extends Phaser.Scene {
     h.alphaOf = (sprite) => this.placed.find((p) => p.placement.sprite === sprite)?.sprite.alpha ?? null;
     const onDone = (r: MinigameResult) => this.minigameDone(r);
     this.game.events.on('minigame:done', onDone);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off('minigame:done', onDone));
+    const onToast = (m: { who: string; text: string }) => this.logMessage(m.who, m.text);
+    this.game.events.on('hud:toast', onToast);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off('minigame:done', onDone);
+      this.game.events.off('hud:toast', onToast);
+    });
     if (this.loaded) {
       const area = this.state.area;
       if (area.kind === 'interior' && INTERIORS[area.id]) {
@@ -398,6 +435,9 @@ export class WorldScene extends Phaser.Scene {
   private buildingBoxes: [number, number, number, number][] = [];
   /** Seconds an officer has been close enough to bust the player (docs/05). */
   private bustT = 0;
+  /** Crimes are numbered, so several witnesses of one crime raise its stars once (docs/05). */
+  private crimeSeq = 0;
+  private reported = new Set<number>();
   /** A car alarm about to reach the police. */
   private alarm: { t: number; at: { x: number; y: number } } | null = null;
 
@@ -462,8 +502,9 @@ export class WorldScene extends Phaser.Scene {
    */
   private crime(stars: number, at: { x: number; y: number }): void {
     const W = BALANCE.wanted;
+    const id = ++this.crimeSeq;
     if (this.police?.active && this.police.sees(at)) {
-      addStars(this.state.wanted, stars, at);
+      reportCrime(this.state.wanted, this.reported, id, stars, at);
       return;
     }
     const night = darkness(this.minuteOfDay()) > 0.5;
@@ -472,7 +513,7 @@ export class WorldScene extends Phaser.Scene {
       const q = pv.ped;
       if (q.call || !canSee(q, at, range, this.buildingBoxes)) continue;
       const [lo, hi] = W.callSeconds as [number, number];
-      q.call = { t: lo + (hi - lo) * this.rng.next(), at: { ...at }, stars };
+      q.call = { t: lo + (hi - lo) * this.rng.next(), at: { ...at }, stars, crime: id };
       startFlee(q, at);
     }
   }
@@ -488,9 +529,9 @@ export class WorldScene extends Phaser.Scene {
       if (!c) continue;
       c.t -= dt;
       if (c.t <= 0) {
-        addStars(wanted, c.stars, c.at);
+        if (reportCrime(wanted, this.reported, c.crime, c.stars, c.at))
+          this.toast('POLICE', 'A WITNESS CALLED IT IN.');
         pv.ped.call = null;
-        this.toast('POLICE', 'A WITNESS CALLED IT IN.');
       }
     }
     if (this.alarm) {
@@ -517,7 +558,10 @@ export class WorldScene extends Phaser.Scene {
       const chance = 1 - Math.pow(1 - W.hotCarChancePerMinute, dt / 60);
       if (this.rng.chance(chance)) addStars(wanted, W.crimeStars.hotCar, street);
     }
-    if (tickWanted(wanted, dt, seen, street)) this.toast('POLICE', 'YOU LOST THEM.');
+    if (tickWanted(wanted, dt, seen, street)) {
+      this.toast('POLICE', 'YOU LOST THEM.');
+      this.reported.clear();
+    }
     // people get out of the way of a fast car
     if (car && Math.abs(car.v.speed) > 70)
       for (const pv of this.life.peds) {
@@ -540,9 +584,11 @@ export class WorldScene extends Phaser.Scene {
       this.scene.stop('minigame');
       hook().minigame = null;
       this.pendingCar = null;
+      this.pendingTrunk = null;
     }
     const st = this.state;
     const stars = Math.max(1, st.wanted.stars);
+    const arrestedAt = st.minutes;
     const o = arrest(st.money, st.record, stars, st.minutes, surrendered);
     const car = this.drivenCar();
     let impounded = false;
@@ -560,6 +606,8 @@ export class WorldScene extends Phaser.Scene {
     this.police?.destroy();
     const day = Math.floor(st.minutes / 1440);
     st.minutes = o.jailDays > 0 ? (day + o.jailDays) * 1440 + BALANCE.sleep.wakeMinute : st.minutes + 60;
+    // the record follows the person into every job (docs/03): freeze, extra work, no clean-record bonus
+    arrestEffects(st.career, arrestedAt, st.minutes);
     const door = this.map.zones?.find((z) => z.id === 'precinct')?.npc ?? this.map.spawn;
     st.player.x = door.x + 14;
     st.player.y = door.y;
@@ -571,6 +619,7 @@ export class WorldScene extends Phaser.Scene {
     if (o.jailDays > 0) lines.push(`${o.jailDays} DAY${o.jailDays > 1 ? 'S' : ''} IN JAIL`);
     if (o.seized > 0) lines.push(`DIRTY CASH SEIZED: $${o.seized}`);
     if (impounded) lines.push('THE STOLEN CAR WAS IMPOUNDED');
+    lines.push(`PROMOTION FROZEN ${BALANCE.careers.freezeDays} DAYS, EXTRA WORK AFTER`);
     lines.push('RELEASED AT PRECINCT 1, PEWTER STREET');
     this.prompt?.setVisible(false);
     this.scene.pause();
@@ -578,6 +627,8 @@ export class WorldScene extends Phaser.Scene {
     this.game.events.once('menu:closed', () => {
       this.scene.resume();
       this.resumedAt = this.time.now;
+      // missed shifts while in jail, rent and the rest of the calendar during the time that passed
+      this.runDays(true);
     });
   }
 
@@ -594,13 +645,94 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * A list panel (scenes/ListScene.ts): the phone (P), the ATM and the bag (I). Like the pause menu, it pauses the
+   * world until it closes.
+   */
+  private openList(name: 'phone' | 'atm' | 'bag'): void {
+    if (!this.playing || this.isReference || this.scene.isPaused() || this.busy) return;
+    if (this.time.now - this.resumedAt < BALANCE.ui.keyGuardMs) return;
+    const ctx: PhoneCtx = { state: this.state, wallet: this.wallet() };
+    const root = { phone: phoneRoot, atm: atmPage, bag: bagPage }[name];
+    const req: ListRequest = {
+      style: name === 'phone' ? 'phone' : 'menu',
+      name,
+      root: () => root(ctx),
+      onChange: () => this.syncMoneyHook(),
+    };
+    this.prompt?.setVisible(false);
+    hook().minigame = name;
+    this.scene.pause();
+    this.scene.launch('list', req);
+    this.game.events.once('list:closed', () => {
+      hook().minigame = null;
+      this.scene.resume();
+      this.resumedAt = this.time.now;
+      this.updateInteriorObjective();
+    });
+  }
+
+  /** Money, rent and the bag on the read-only debug hook. */
+  private syncMoneyHook(): void {
+    const h = hook();
+    const st = this.state;
+    h.clean = st.money.clean;
+    h.dirty = st.money.dirty;
+    h.bank = st.money.bank;
+    h.rentOwed = st.finance.rent.owed;
+    h.evicted = st.finance.rent.evicted;
+    h.inventory = { ...st.inventory };
+    h.health = st.player.health;
+  }
+
+  /** Messages from people and services go into the phone's MESSAGES app (newest first). */
+  private logMessage(who: string, text: string): void {
+    if (!PHONE_SENDERS.has(who) || !this.state) return;
+    const list = this.state.messages;
+    list.unshift({ at: this.state.minutes, who, text });
+    list.length = Math.min(list.length, BALANCE.phone.messagesKept);
+  }
+
+  /**
+   * The calendar's fixed moments for the time that passed (systems/days.ts): rent and the weekly bonus on Monday
+   * 06:00, late fees and eviction, missed shifts at 10:00, the Sunday rent reminder. Each message shows on the
+   * phone. Passing 06:00 also autosaves when you aren't wanted (docs/12), unless the caller saves anyway.
+   */
+  private runDays(autosave: boolean): void {
+    const st = this.state;
+    if (this.isReference || !(st.minutes > st.calendarAt)) {
+      st.calendarAt = Math.max(st.calendarAt, st.minutes);
+      return;
+    }
+    const wake = BALANCE.sleep.wakeMinute;
+    const crossed = Math.floor((st.minutes - wake) / 1440) > Math.floor((st.calendarAt - wake) / 1440);
+    const msgs = runCalendar(st, st.calendarAt, st.minutes);
+    st.calendarAt = st.minutes;
+    for (const m of msgs) this.toast(m.who, m.text);
+    if (msgs.length) this.updateInteriorObjective();
+    if (crossed && autosave && this.playing) void this.autosave();
+  }
+
   // ---------------------------------------------------------------- saves (docs/12)
 
-  /** Manual saves happen at home (the apartment) and never while wanted (docs/12). */
+  /** Is the player at the shelter's door (St. Brine's, after an eviction: sleep and save)? */
+  private atShelter(): boolean {
+    const z = this.map.zones?.find((q) => q.id === 'shelter');
+    if (!z?.npc || this.inside) return false;
+    const p = this.state.player;
+    return Math.hypot(p.x - z.npc.x, p.y - z.npc.y) <= BALANCE.interact.rangeTiles * TILE * 2;
+  }
+
+  /** Manual saves happen at home (the apartment) or the shelter, and never while wanted (docs/12). */
   canSave(): { ok: boolean; why: string } {
     if (this.state.wanted.stars > 0) return { ok: false, why: 'NOT WHILE WANTED' };
-    if (this.inside?.def.id !== 'apartment')
-      return { ok: false, why: 'SAVE AT HOME: DRIZZLE ROW RESIDENCES' };
+    if (this.atShelter()) return { ok: true, why: '' };
+    const evicted = this.state.finance.rent.evicted;
+    if (this.inside?.def.id !== 'apartment' || evicted)
+      return {
+        ok: false,
+        why: evicted ? "SAVE AT ST. BRINE'S SHELTER, PEWTER ST" : 'SAVE AT HOME: DRIZZLE ROW RESIDENCES',
+      };
     return { ok: true, why: '' };
   }
 
@@ -705,6 +837,8 @@ export class WorldScene extends Phaser.Scene {
     });
     kb.on(`keydown-${KEYS.debugOverlay}`, () => this.setDebug(!this.debugOn));
     kb.on('keydown-ESC', () => free() && this.openMenu());
+    kb.on(`keydown-${KEYS.phone}`, () => free() && this.openList('phone'));
+    kb.on(`keydown-${KEYS.bag}`, () => free() && this.openList('bag'));
     kb.on('keydown-Y', () => {
       if (this.bustT > 0 && !this.scene.isPaused()) this.doArrest(true);
     });
@@ -737,6 +871,20 @@ export class WorldScene extends Phaser.Scene {
       case 'dirty':
         st.money.dirty = c.amount;
         break;
+      case 'bank':
+        st.money.bank = c.amount;
+        break;
+      case 'item': {
+        const key = (Object.keys(st.inventory) as (keyof typeof st.inventory)[]).find(
+          (k) => k.toLowerCase() === c.item.replace(/[^a-z]/g, ''),
+        );
+        if (!key) {
+          this.toast('CHEAT', `ITEMS: ${Object.keys(st.inventory).join(', ').toUpperCase()}`);
+          return;
+        }
+        st.inventory[key] = c.count;
+        break;
+      }
       case 'time':
         st.minutes = day * 1440 + c.minute + (c.minute < st.minutes % 1440 ? 1440 : 0);
         break;
@@ -799,6 +947,8 @@ export class WorldScene extends Phaser.Scene {
         this.toast('CHEAT', CHEAT_HELP);
         return;
     }
+    // turning the clock back doesn't replay the calendar; forward runs it
+    st.calendarAt = Math.min(st.calendarAt, st.minutes);
     this.toast('CHEAT', line.trim().toUpperCase());
   }
 
@@ -1094,6 +1244,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.playing) this.state.playtime += dt;
     if (!this.isReference) {
       this.state.minutes = advance(this.state.minutes, dt, this.settings.dayLengthMinutes);
+      this.runDays(true);
       // Dez checks in once on the first evening (the HUD mockup's message).
       if (
         !this.dezTold &&
@@ -1289,7 +1440,8 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     const tgt = this.usables.find((u) => u.id === this.target);
-    if (!tgt) {
+    // an open panel (a crime minigame keeps the world running) hides the world prompt
+    if (!tgt || hook().minigame) {
       this.prompt?.setVisible(false);
       return;
     }
@@ -1331,11 +1483,11 @@ export class WorldScene extends Phaser.Scene {
       if (car) this.sellToMarlo(car);
     } else if (u.door) this.tryEnter(u.door);
     else if (u.spot) this.useSpot(u.spot);
+    else if (u.id === 'zone:shelter') this.sleep('shelter');
     else if (u.id.startsWith('car:')) this.useCar(u.id.slice(4));
+    else if (u.id.startsWith('trunk:')) this.lootTrunk(u.id.slice(6));
     else if (u.id.startsWith('pump')) this.usePump(u);
-    else if (u.id.startsWith('atm')) {
-      this.game.events.emit('hud:toast', { who: 'ATM', text: 'BANKING ARRIVES WITH THE PHONE.' });
-    }
+    else if (u.id.startsWith('atm')) this.openList('atm');
   }
 
   // ---------------------------------------------------------------- interiors (docs/18)
@@ -1364,6 +1516,10 @@ export class WorldScene extends Phaser.Scene {
         'MARLO',
         withCar ? 'ROUND THE SIDE. PARK IT IN THE DOTTED SPOT OFF GULLSWAY.' : 'COME BACK WITH A CAR.',
       );
+      return;
+    }
+    if (def.id === 'apartment' && this.state.finance.rent.evicted) {
+      this.toast('LANDLORD', 'EVICTED: MOVE BACK IN FROM THE PHONE, BANK.');
       return;
     }
     const open = isOpen(def.hours, this.minuteOfDay());
@@ -1591,7 +1747,12 @@ export class WorldScene extends Phaser.Scene {
         this.sleep();
         break;
       case 'shop':
-        this.openMinigame({ kind: 'shop', title: r.def.name, wallet: this.wallet() });
+        this.openMinigame({
+          kind: 'shop',
+          title: r.def.name,
+          shop: a.shop ?? 'store',
+          wallet: this.wallet(),
+        });
         break;
       case 'launder':
         this.startLaundering();
@@ -1619,11 +1780,22 @@ export class WorldScene extends Phaser.Scene {
     );
   }
 
-  private sleep(): void {
+  /** Sleep to 06:00 at home or at St. Brine's shelter (after an eviction), then autosave (docs/12). */
+  private sleep(where: 'home' | 'shelter' = 'home'): void {
+    if (where === 'home' && this.state.finance.rent.evicted) {
+      this.toast('LANDLORD', "EVICTED. TRY ST. BRINE'S SHELTER ON PEWTER STREET.");
+      return;
+    }
+    if (this.state.wanted.stars > 0) {
+      this.toast(where === 'home' ? 'HOME' : 'SHELTER', 'NOT WITH THE POLICE AFTER YOU.');
+      return;
+    }
     this.fade(() => {
       this.state.minutes = sleepUntil(this.state.minutes, BALANCE.sleep.wakeMinute);
+      this.runDays(false);
       const cal = calendar(this.state.minutes);
-      this.toast('HOME', `SLEPT UNTIL 06:00, ${cal.weekday}.`);
+      if (where === 'home') this.toast('HOME', `SLEPT UNTIL 06:00, ${cal.weekday}.`);
+      else this.toast('SHELTER', `A COT AT ST. BRINE'S. UP AT 06:00, ${cal.weekday}.`);
       void this.autosave();
       this.lastDark = -1;
       this.updateNpcs(true);
@@ -1639,15 +1811,23 @@ export class WorldScene extends Phaser.Scene {
         this.toast('MS. HOLLIS', `${left} TASK${left > 1 ? 'S' : ''} LEFT. FILING CABINETS OR YOUR DESK.`);
         return;
       }
-      const res = clockOut(c);
+      const res = clockOut(c, this.state.minutes);
       if (!res) return;
-      this.state.money.clean += res.pay + res.bonus;
-      this.toast('MS. HOLLIS', `GOOD WORK. +$${res.pay} CLEAN, +${res.xp} XP.`);
+      const st = this.state;
+      credit(st.money, st.finance, st.minutes, `PAY, ${JOBS[c.current].short}`, res.pay);
+      credit(st.money, st.finance, st.minutes, 'PROMOTION BONUS', res.bonus);
+      this.toast(
+        'MS. HOLLIS',
+        res.frozen
+          ? `+$${res.pay} TO THE BANK. NO XP: YOUR PROMOTION IS FROZEN.`
+          : `GOOD WORK. +$${res.pay} TO THE BANK, +${res.xp} XP.`,
+      );
+      void this.autosave();
       if (res.promoted)
         this.time.delayedCall(2200, () =>
           this.toast(
             'MS. HOLLIS',
-            `PROMOTED TO ${rankTitle(c)}! +$${res.bonus} BONUS.${hasKeyCard(c) ? ' HERE IS YOUR KEY CARD.' : ''}`,
+            `PROMOTED TO ${rankTitle(c)}! +$${res.bonus} BONUS TO THE BANK.${hasKeyCard(c) ? ' HERE IS YOUR KEY CARD.' : ''}`,
           ),
         );
       this.updateInteriorObjective();
@@ -1655,7 +1835,14 @@ export class WorldScene extends Phaser.Scene {
     }
     const r = clockIn(c, this.state.minutes);
     if (r.ok) {
-      this.toast('MS. HOLLIS', r.late ? "YOU'RE LATE. THAT'S 80% PAY TODAY." : 'MORNING. THREE TASKS TODAY.');
+      const n = tasksLeft(c);
+      const extra = n > JOBS[c.current].tasksPerShift ? ' ONE EXTRA, AFTER YOUR LITTLE ADVENTURE.' : '';
+      this.toast(
+        'MS. HOLLIS',
+        r.late
+          ? `YOU'RE LATE. THAT'S 80% PAY TODAY. ${n} TASKS.${extra}`
+          : `MORNING. ${n} TASKS TODAY.${extra}`,
+      );
     } else {
       const why: Record<typeof r.reason, string> = {
         weekend: "IT'S THE WEEKEND. GO HOME.",
@@ -1679,9 +1866,10 @@ export class WorldScene extends Phaser.Scene {
       this.toast('MS. HOLLIS', "THAT'S ENOUGH FOR TODAY. CLOCK OUT WITH ME.");
       return;
     }
-    const done = 3 - tasksLeft(c);
+    const total = c.shift.tasks;
+    const done = total - tasksLeft(c);
     this.pendingTask = task;
-    this.openMinigame({ kind: task, seed: this.rng.int(1, 2 ** 30), task: `TASK ${done + 1}/3` });
+    this.openMinigame({ kind: task, seed: this.rng.int(1, 2 ** 30), task: `TASK ${done + 1}/${total}` });
   }
 
   private pendingTask: TaskId | null = null;
@@ -1705,7 +1893,9 @@ export class WorldScene extends Phaser.Scene {
   private openMinigame(req: MinigameRequest): void {
     this.prompt?.setVisible(false);
     hook().minigame = req.kind;
-    if (!(req.kind === 'lockpick' || req.kind === 'hotwire')) this.scene.pause();
+    // the panel's logic arrives when the scene starts (next frame); until then, nothing stale
+    hook().minigameState = null;
+    if (!(req.kind === 'lockpick' || req.kind === 'hotwire' || req.kind === 'search')) this.scene.pause();
     this.scene.launch('minigame', req);
   }
 
@@ -1714,7 +1904,8 @@ export class WorldScene extends Phaser.Scene {
     if (this.scene.isPaused()) this.scene.resume();
     // keys pressed in the panel (the hotwire's F terminal, E) must not also act in the world
     this.resumedAt = this.time.now;
-    if (r.kind === 'lockpick' || r.kind === 'hotwire') this.carMinigameDone(r);
+    if (this.pendingTrunk) this.trunkMinigameDone(r);
+    else if (r.kind === 'lockpick' || r.kind === 'hotwire') this.carMinigameDone(r);
     if (r.kind === 'duffel') this.launderDone(r);
     if ((r.kind === 'filing' || r.kind === 'dataEntry') && this.pendingTask) {
       const task = this.pendingTask;
@@ -1814,15 +2005,17 @@ export class WorldScene extends Phaser.Scene {
       cue: { kind: 'runtime' },
     };
     const usable: Usable = { id: `car:${v.id}`, x: v.x, y: v.y, label: 'LOCKPICK', placed, door: null };
-    this.usables.push(usable);
-    this.cars.push({ v, placed, shadow, usable });
+    const rear = trunkSpot(v);
+    const trunk: Usable = { id: `trunk:${v.id}`, ...rear, label: 'LOOT TRUNK', placed: null, door: null };
+    this.usables.push(usable, trunk);
+    this.cars.push({ v, placed, shadow, usable, trunk });
   }
 
   private removeCar(c: CarView): void {
     c.placed.sprite.destroy();
     c.shadow.destroy();
     this.cars = this.cars.filter((x) => x !== c);
-    this.usables = this.usables.filter((u) => u !== c.usable);
+    this.usables = this.usables.filter((u) => u !== c.usable && u !== c.trunk);
     this.state.vehicles = this.state.vehicles.filter((v) => v !== c.v);
   }
 
@@ -1981,6 +2174,7 @@ export class WorldScene extends Phaser.Scene {
       c.placed.placement.y = v.y;
       c.usable.x = v.x;
       c.usable.y = v.y;
+      Object.assign(c.trunk, trunkSpot(v));
       // sort by the car's ground box among the static objects its sprite overlaps
       const { halfLength: L, halfWidth: W } = stats(v);
       const ex = Math.abs(L * Math.cos(v.heading)) + Math.abs(W * Math.sin(v.heading));
@@ -2002,13 +2196,16 @@ export class WorldScene extends Phaser.Scene {
       if (v.wrecked) {
         u.label = 'WRECKED';
         u.blocked = true;
-      } else if (v.locked) u.label = 'LOCKPICK';
+      } else if (v.locked) u.label = this.state.inventory.lockpicks > 0 ? 'LOCKPICK' : 'LOCKPICK (NO TOOLS)';
+      else if (this.state.inventory.repairKits > 0 && needsRepair(v)) u.label = 'USE REPAIR KIT';
       else if (this.state.inventory.fuelCans > 0 && v.fuel <= tank - BALANCE.vehicles.canUnits)
         u.label = 'USE FUEL CAN';
       else {
         u.key = 'F';
         u.label = v.running ? 'GET IN' : 'HOTWIRE';
       }
+      // the trunk: not on a car you own or drive, and only once (docs/12: a looted car stays looted)
+      c.trunk.hidden = !!v.looted || !!v.owned || v.wrecked || this.state.driving === v.id;
     }
     this.usables = this.usables.filter((u) => !u.id.startsWith('witness:'));
     const reach = BALANCE.wanted.scareTiles * TILE;
@@ -2059,7 +2256,13 @@ export class WorldScene extends Phaser.Scene {
     else if (v.locked) {
       this.crime(BALANCE.wanted.crimeStars.carjack, { x: v.x, y: v.y });
       this.pendingCar = id;
-      this.openMinigame({ kind: 'lockpick', seed: this.rng.int(1, 2 ** 30), tier: 0, tool: 'NO TOOL' });
+      this.openLockpick('CAR DOOR');
+    } else if (this.state.inventory.repairKits > 0 && needsRepair(v)) {
+      repairKit(v, this.state.inventory);
+      this.toast(
+        'REPAIR KIT',
+        `PATCHED UP TO ${Math.round(BALANCE.tools.repairKitTo * 100)}%. ${this.state.inventory.repairKits} KIT(S) LEFT.`,
+      );
     } else if (this.state.inventory.fuelCans > 0 && v.fuel <= stats(v).tank - BALANCE.vehicles.canUnits) {
       pourCan(v, this.state.inventory);
       this.toldOutOfFuel = false;
@@ -2090,7 +2293,8 @@ export class WorldScene extends Phaser.Scene {
     else if (v.locked) this.toast('CAR', 'LOCKED. PRESS E TO PICK THE LOCK.');
     else if (!v.running) {
       this.pendingCar = v.id;
-      this.openMinigame({ kind: 'hotwire', seed: this.rng.int(1, 2 ** 30) });
+      const bonus = this.state.inventory.toolbox > 0 ? BALANCE.tools.toolboxHotwireSeconds : 0;
+      this.openMinigame({ kind: 'hotwire', seed: this.rng.int(1, 2 ** 30), bonusSeconds: bonus });
     } else this.getIn(near);
   }
 
@@ -2132,21 +2336,39 @@ export class WorldScene extends Phaser.Scene {
     this.playerShadow?.setVisible(true);
   }
 
+  /** The lockpick panel (docs/06), with the bag's lockpicks as the tool if there are any. */
+  private openLockpick(label: string): void {
+    this.pickTool = lockTool(this.state.inventory);
+    this.openMinigame({
+      kind: 'lockpick',
+      seed: this.rng.int(1, 2 ** 30),
+      tier: 0,
+      tool: this.pickTool,
+      label,
+    });
+  }
+
+  /** The tool the open lockpick attempt uses, worn after it (docs/06: 1 use, 2 on a failure). */
+  private pickTool: 'none' | 'basic' = 'none';
+
+  private wearPicks(failed: boolean): void {
+    if (this.pickTool !== 'basic') return;
+    this.pickTool = 'none';
+    if (wearLockpicks(this.state.inventory, failed))
+      this.toast('LOCKPICK', 'THE LAST PICK SNAPPED. BUY MORE AT HARDWARE.');
+  }
+
   private carMinigameDone(r: MinigameResult): void {
     const c = this.cars.find((x) => x.v.id === this.pendingCar);
     this.pendingCar = null;
+    if (r.kind === 'lockpick') this.wearPicks(r.grade === 'fail' || r.grade === null);
     if (!c || r.grade === null) return;
     const ok = r.grade !== 'fail';
     if (r.kind === 'lockpick') {
       if (ok) {
         c.v.locked = false;
         this.toast('LOCKPICK', 'UNLOCKED. PRESS F TO GET IN AND HOTWIRE IT.');
-      } else if (this.rng.chance(BALANCE.crime.alarmChance)) {
-        this.toast('CAR ALARM', 'THE ALARM IS GOING OFF. THE POLICE WILL HEAR OF IT.');
-        this.alarm = { t: BALANCE.wanted.alarmSeconds, at: { x: c.v.x, y: c.v.y } };
-        for (const pv of this.life?.peds ?? [])
-          if (Math.hypot(pv.ped.x - c.v.x, pv.ped.y - c.v.y) < 8 * TILE) startFlee(pv.ped, c.v);
-      } else this.toast('LOCKPICK', 'THE PICK SLIPPED. TRY AGAIN.');
+      } else this.lockpickFailed(c);
       return;
     }
     if (ok) {
@@ -2156,6 +2378,63 @@ export class WorldScene extends Phaser.Scene {
       this.toast('HOTWIRE', 'IT STARTED. MARLO BUYS CARS, NO QUESTIONS.');
       this.objective("SELL THE CAR AT MARLO'S TOW & SALVAGE");
     } else this.toast('HOTWIRE', 'SPARKS. TRY AGAIN.');
+  }
+
+  // ---------------------------------------------------------------- trunk looting (docs/04, brought forward)
+
+  /** The car whose trunk is being opened or searched, and what's in it once it's open. */
+  private pendingTrunk: { car: string; items: LootItem[] | null } | null = null;
+
+  /** E at a car's rear: a 1★ crime if seen; pick the lock unless the car is open, then search the trunk. */
+  private lootTrunk(id: string): void {
+    const c = this.cars.find((x) => x.v.id === id);
+    if (!c || this.busy || c.v.looted) return;
+    this.crime(BALANCE.wanted.crimeStars.trunk, { x: c.trunk.x, y: c.trunk.y });
+    this.pendingTrunk = { car: id, items: null };
+    if (c.v.locked) this.openLockpick('TRUNK');
+    else this.searchTrunk();
+  }
+
+  private searchTrunk(): void {
+    const t = this.pendingTrunk;
+    if (!t) return;
+    t.items = rollTrunk(this.rng);
+    this.openMinigame({ kind: 'search', seed: this.rng.int(1, 2 ** 30), label: 'TRUNK', items: t.items });
+  }
+
+  private trunkMinigameDone(r: MinigameResult): void {
+    const t = this.pendingTrunk;
+    const c = this.cars.find((x) => x.v.id === t?.car);
+    if (r.kind === 'lockpick') {
+      this.wearPicks(r.grade === 'fail' || r.grade === null);
+      if (!c || r.grade === null || r.grade === 'fail') {
+        this.pendingTrunk = null;
+        if (c && r.grade === 'fail') this.lockpickFailed(c);
+        return;
+      }
+      // the trunk lock is the car's lock: the car opens too
+      c.v.locked = false;
+      this.time.delayedCall(BALANCE.ui.keyGuardMs, () => this.searchTrunk());
+      return;
+    }
+    this.pendingTrunk = null;
+    if (r.kind !== 'search' || !c || r.grade === null) return;
+    const haul = r.haul ?? [];
+    c.v.looted = true;
+    const got = takeLoot(haul, this.state.money, this.state.inventory);
+    this.toast('TRUNK', got.summary === 'NOTHING' ? 'NOTHING WORTH TAKING.' : `TOOK ${got.summary}.`);
+    if (got.cash > 0 && this.state.wanted.stars === 0)
+      this.objective('WASH THE CASH: DEZ, THE LOW TIDE BACK ROOM (18:00-02:00)');
+  }
+
+  /** A failed pick: 30% of the time the car alarm goes off (docs/05), otherwise try again. */
+  private lockpickFailed(c: CarView): void {
+    if (this.rng.chance(BALANCE.crime.alarmChance)) {
+      this.toast('CAR ALARM', 'THE ALARM IS GOING OFF. THE POLICE WILL HEAR OF IT.');
+      this.alarm = { t: BALANCE.wanted.alarmSeconds, at: { x: c.v.x, y: c.v.y } };
+      for (const pv of this.life?.peds ?? [])
+        if (Math.hypot(pv.ped.x - c.v.x, pv.ped.y - c.v.y) < 8 * TILE) startFlee(pv.ped, c.v);
+    } else this.toast('LOCKPICK', 'THE PICK SLIPPED. TRY AGAIN.');
   }
 
   /** E at a pump: fill the car you drive, or the stolen car parked beside it, for clean cash. */
@@ -2568,7 +2847,7 @@ export class WorldScene extends Phaser.Scene {
     h.stars = this.state.wanted.stars;
     h.rank = this.state.career.jobs.office.rank;
     h.tasksLeft = this.state.career.shift ? tasksLeft(this.state.career) : -1;
-    h.dirty = this.state.money.dirty;
+    this.syncMoneyHook();
     h.driving = this.state.driving;
     h.cars = this.state.vehicles.map((v) => ({
       id: v.id,
@@ -2580,6 +2859,7 @@ export class WorldScene extends Phaser.Scene {
       heading: v.heading,
       speed: v.speed,
       health: v.health,
+      looted: !!v.looted,
     }));
     const tile = worldToTile(p.x, p.y);
     this.game.events.emit('debug:stats', {
