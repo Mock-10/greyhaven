@@ -238,3 +238,37 @@ test("sells a stolen car in Marlo's dotted spot: he walks out and pays", async (
   expect(await page.evaluate(() => window.__DL__.cars.some((c) => c.id.startsWith('cheat')))).toBe(false);
   expect(problems).toEqual([]);
 });
+
+test('saves at home and loads the save back (docs/12)', async ({ page }) => {
+  test.setTimeout(120_000);
+  const problems = await boot(page, '?scene=world&zoom=3&area=apartment&time=21:00');
+  await page.waitForFunction(() => window.__DL__.area === 'apartment');
+  // Esc opens the pause menu; SAVE GAME is the second row, then slot 1
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === 'menu');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(300);
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(1500);
+  await page.keyboard.press('Escape'); // back to the main menu
+  await page.keyboard.press('Escape'); // resume
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  // spend the money with the cheat console, then load the save: the money comes back
+  await page.keyboard.press('Control+Shift+F1');
+  await page.keyboard.type('cash 5');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.clean === 5);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === 'menu');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter'); // LOAD GAME
+  await page.waitForTimeout(300);
+  await page.keyboard.press('Enter'); // slot 1
+  await page.waitForFunction(() => window.__DL__.clean === 250 && window.__DL__.area === 'apartment', null, {
+    timeout: 30_000,
+  });
+  expect(problems).toEqual([]);
+});

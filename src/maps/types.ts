@@ -43,6 +43,8 @@ export interface Zone {
   y1: number;
   /** Where the zone's NPC stands to come out (Marlo at his back door). */
   npc?: { x: number; y: number };
+  /** Parking slots in the zone (the apartment's street spot): car centre and sprite direction. */
+  slots?: { x: number; y: number; dir: number }[];
 }
 
 /** Interiors a street door can lead to (built in milestone 2). */

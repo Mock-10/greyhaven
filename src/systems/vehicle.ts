@@ -248,3 +248,23 @@ export function parkedCar(id: string, model: string, x: number, y: number, dir: 
     wrecked: false,
   };
 }
+
+/**
+ * After loading a save, the car the player drove last waits in the home street spot (decided 2026-10-11: "a
+ * parking spot outside that allows for spawning saved vehicles whether stolen or bought"). Other cars stay where
+ * they were. Returns the car that was moved, if any.
+ */
+export function parkAtHome(
+  vehicles: Vehicle[],
+  lastCar: string | null,
+  slots: readonly { x: number; y: number; dir: number }[],
+): Vehicle | null {
+  const v = vehicles.find((c) => c.id === lastCar && !c.wrecked);
+  const slot = slots[0];
+  if (!v || !slot) return null;
+  v.x = slot.x;
+  v.y = slot.y;
+  v.heading = (slot.dir * Math.PI) / 4;
+  v.speed = 0;
+  return v;
+}

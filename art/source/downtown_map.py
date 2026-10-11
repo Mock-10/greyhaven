@@ -643,8 +643,18 @@ def block_w():
     lawn(rect(tc(11.0), ny + 8, tc(15.85), ny + tc(2.5)), 20)
     prop('tree_b', tc(13.4), ny + tc(1.2)); prop('bush', tc(11.8), ny + tc(1.9)); prop('bench', tc(14.6), ny + tc(1.6), dir=6)
     # planting strips along the kerb of Drizzle Row's residential stretch
-    for xa, xb in ((0.4, 3.2), (6.6, 10.4), (11.4, 14.2)):
+    for xa, xb in ((6.6, 10.4), (11.4, 14.2)):
         lawn(rect(tc(xa), fy + 30, tc(xb), fy + 52), 8, 2.0)
+    # the apartment's street spot (docs/09: "1 street spot"; your cars, bought or stolen, wait here after a load):
+    # a lay-by cut into the sidewalk west of the residences, white end lines
+    ky = ROADS_X[D] - HW
+    ground('kerb', rect(tc(0.25), fy + 14, tc(3.45), ky))
+    ground('asphalt', rect(tc(0.35), fy + 17, tc(3.35), ky + 1))
+    for x in (tc(0.45), tc(3.25)):
+        ground('paint_white', rect(x - 0.9, fy + 20, x + 0.9, ky - 2))
+    keep_clear(tc(1.85), fy + 42, 64)
+    ZONES.append({'id': 'home_parking', 'x0': tc(0.35), 'y0': fy + 17, 'x1': tc(3.35), 'y1': ky,
+                  'slots': [{'x': tc(1.85), 'y': round((fy + 17 + ky) / 2, 1), 'dir': 0}]})
 
 
 def block_mid():

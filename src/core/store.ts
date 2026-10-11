@@ -44,8 +44,14 @@ export interface GameState {
   vehicles: Vehicle[];
   /** Id of the car the player is driving, or null on foot. */
   driving: string | null;
+  /** The car the player drove last: after loading a save it waits in the home street spot (docs/09). */
+  lastCar: string | null;
   /** Dirty cash washed today, for the launderer's daily cap (docs/02). */
   laundered: LaunderLog;
+  /** Offense record (docs/05): the in-game minute of every arrest; the last 14 days decide first vs repeat. */
+  record: { arrests: number[] };
+  /** Real seconds played, for the save summary and local play stats (docs/12). */
+  playtime: number;
 }
 
 export interface Settings {
@@ -92,7 +98,10 @@ export function createState(
     sight: {},
     vehicles: [],
     driving: null,
+    lastCar: null,
     laundered: { day: 0, amount: 0 },
+    record: { arrests: [] },
+    playtime: 0,
   };
 }
 

@@ -73,6 +73,7 @@ import {
   distToCar,
   drive,
   exitSpots,
+  parkAtHome,
   parkedCar,
   parkedIn,
   stats,
@@ -93,6 +94,8 @@ import {
 import { promptPixels } from '../ui/promptPlate';
 import { hook } from '../debug/hooks';
 import type { Params } from '../debug/params';
+import { makeSave, nextAutoSlot, type SaveFile, type SaveMeta, type SlotId } from '../core/save';
+import { askPersist, saveStore } from '../core/storage';
 import { CHEAT_HELP, parseCheat } from '../debug/cheats';
 import { CheatConsole } from '../debug/cheatConsole';
 import { lampTextures, windowGlowTexture } from '../world/nightLights';
@@ -254,12 +257,13 @@ export class WorldScene extends Phaser.Scene {
     this.settings = loadSettings();
     this.rng = new Rng(params.seed);
     this.map = params.scene === 'reference' ? TEST_MAP : DOWNTOWN;
-    this.state = createState(
-      params.seed,
-      this.map.id,
-      params.spawn ?? this.map.spawn,
-      params.minute ?? undefined,
-    );
+    // a save chosen in the menu (scenes/MenuScene.ts) restarts this scene with its state
+    const loaded = this.registry.get('pendingLoad') as SaveFile | undefined;
+    this.registry.remove('pendingLoad');
+    this.loaded = loaded ?? null;
+    this.state = loaded
+      ? (JSON.parse(JSON.stringify(loaded.state)) as GameState)
+      : createState(params.seed, this.map.id, params.spawn ?? this.map.spawn, params.minute ?? undefined);
     this.placed = [];
     this.statics = [];
     this.footprints = [];
@@ -268,8 +272,11 @@ export class WorldScene extends Phaser.Scene {
     this.lamps = [];
     this.cars = [];
     this.lastDark = -1;
-    this.playing = params.scene !== 'title';
+    this.playing = params.scene !== 'title' || loaded !== undefined;
   }
+
+  /** The save this scene was started from, if any. */
+  private loaded: SaveFile | null = null;
 
   get isReference(): boolean {
     return this.params.scene === 'reference';
@@ -350,7 +357,15 @@ export class WorldScene extends Phaser.Scene {
     const onDone = (r: MinigameResult) => this.minigameDone(r);
     this.game.events.on('minigame:done', onDone);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off('minigame:done', onDone));
-    const startIn = this.params.area as InteriorId | null;
+    if (this.loaded) {
+      const area = this.state.area;
+      if (area.kind === 'interior' && INTERIORS[area.id]) {
+        const at = { x: this.state.player.x, y: this.state.player.y };
+        this.enterInterior(INTERIORS[area.id], at);
+      }
+      hook().started = true;
+    }
+    const startIn = this.loaded ? null : (this.params.area as InteriorId | null);
     if (startIn && INTERIORS[startIn] && !this.isReference) {
       const def = INTERIORS[startIn];
       const door = (this.map.doors ?? []).find((d) => d.target === def.street) ?? this.map.doors?.[0];
@@ -360,6 +375,83 @@ export class WorldScene extends Phaser.Scene {
     this.game.events.once(Phaser.Core.Events.POST_RENDER, () => {
       h.ready = true;
     });
+  }
+
+  /** Esc: the pause menu (docs/11), which pauses the world. */
+  private openMenu(): void {
+    if (!this.playing || this.isReference || this.scene.isPaused() || this.busy) return;
+    if (this.time.now - this.resumedAt < BALANCE.ui.keyGuardMs) return;
+    this.prompt?.setVisible(false);
+    this.scene.pause();
+    this.scene.launch('menu');
+    this.game.events.once('menu:closed', () => {
+      this.scene.resume();
+      this.resumedAt = this.time.now;
+    });
+  }
+
+  // ---------------------------------------------------------------- saves (docs/12)
+
+  /** Manual saves happen at home (the apartment) and never while wanted (docs/12). */
+  canSave(): { ok: boolean; why: string } {
+    if (this.state.wanted.stars > 0) return { ok: false, why: 'NOT WHILE WANTED' };
+    if (this.inside?.def.id !== 'apartment')
+      return { ok: false, why: 'SAVE AT HOME: DRIZZLE ROW RESIDENCES' };
+    return { ok: true, why: '' };
+  }
+
+  /** A small picture of the screen for the save summary. */
+  private thumbnail(): Promise<string | undefined> {
+    return new Promise((resolve) => {
+      try {
+        this.game.renderer.snapshot((img) => {
+          try {
+            const c = document.createElement('canvas');
+            c.width = 160;
+            c.height = 90;
+            const ctx = c.getContext('2d');
+            if (!ctx || !(img instanceof HTMLImageElement)) return resolve(undefined);
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+            resolve(c.toDataURL('image/png'));
+          } catch {
+            resolve(undefined);
+          }
+        });
+      } catch {
+        resolve(undefined);
+      }
+    });
+  }
+
+  /** Write the current game to a slot. Returns an error message, or null when saved. */
+  async saveTo(slot: SlotId): Promise<string | null> {
+    const store = await saveStore();
+    if (store.kind === 'none') return 'BROWSER STORAGE IS OFF: USE EXPORT';
+    try {
+      const file = makeSave(this.state, slot, Date.now(), await this.thumbnail());
+      await store.put(file);
+      askPersist();
+      return null;
+    } catch {
+      return 'COULD NOT SAVE';
+    }
+  }
+
+  /** The current game as a save file, for exporting without storage. */
+  snapshotSave(slot: SlotId): SaveFile {
+    return makeSave(this.state, slot, Date.now());
+  }
+
+  /** Autosave (docs/12): on sleep, rotating between the two autosave slots. */
+  private async autosave(): Promise<void> {
+    if (this.state.wanted.stars > 0) return;
+    const store = await saveStore();
+    if (store.kind === 'none') return;
+    const metas: Partial<Record<SlotId, SaveMeta>> = {};
+    for (const f of await store.all()) metas[f.meta.slot] = f.meta;
+    const err = await this.saveTo(nextAutoSlot(metas));
+    if (!err) this.toast('AUTOSAVE', 'GAME SAVED.');
   }
 
   /** Called by the title screen once the player clicks. */
@@ -406,6 +498,7 @@ export class WorldScene extends Phaser.Scene {
       });
     });
     kb.on(`keydown-${KEYS.debugOverlay}`, () => this.setDebug(!this.debugOn));
+    kb.on('keydown-ESC', () => this.openMenu());
     this.cheats ??= new CheatConsole(
       (line) => this.runCheat(line),
       (open) => {
@@ -782,6 +875,7 @@ export class WorldScene extends Phaser.Scene {
 
   private tick(dt: number): void {
     const p = this.state.player;
+    if (this.playing) this.state.playtime += dt;
     if (!this.isReference) {
       this.state.minutes = advance(this.state.minutes, dt, this.settings.dayLengthMinutes);
       // Dez checks in once on the first evening (the HUD mockup's message).
@@ -1299,7 +1393,8 @@ export class WorldScene extends Phaser.Scene {
     this.fade(() => {
       this.state.minutes = sleepUntil(this.state.minutes, BALANCE.sleep.wakeMinute);
       const cal = calendar(this.state.minutes);
-      this.toast('HOME', `SLEPT UNTIL 06:00, ${cal.weekday}. SAVING ARRIVES IN MILESTONE 4.`);
+      this.toast('HOME', `SLEPT UNTIL 06:00, ${cal.weekday}.`);
+      void this.autosave();
       this.lastDark = -1;
       this.updateNpcs(true);
       this.updateInteriorObjective();
@@ -1449,6 +1544,10 @@ export class WorldScene extends Phaser.Scene {
 
   /** Parked map cars become vehicles the first time the street loads. */
   private createCars(): void {
+    if (this.loaded) {
+      const home = this.map.zones?.find((z) => z.id === 'home_parking');
+      parkAtHome(this.state.vehicles, this.state.lastCar, home?.slots ?? []);
+    }
     if (this.state.vehicles.length === 0)
       this.map.placements.forEach((p, i) => {
         if (!p.parked) return;
@@ -1730,6 +1829,7 @@ export class WorldScene extends Phaser.Scene {
 
   private getIn(c: CarView): void {
     this.state.driving = c.v.id;
+    this.state.lastCar = c.v.id;
     this.lead = { x: 0, y: 0 };
     this.player?.setVisible(false);
     this.playerShadow?.setVisible(false);

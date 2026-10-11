@@ -10,6 +10,7 @@ import { TitleScene } from './scenes/TitleScene';
 import { HudScene } from './scenes/HudScene';
 import { WorldScene } from './scenes/WorldScene';
 import { MinigameScene } from './scenes/MinigameScene';
+import { MenuScene } from './scenes/MenuScene';
 
 const hook = installHook();
 const params = parseParams(window.location.search);
@@ -34,7 +35,7 @@ const game = new Phaser.Game({
   scale: { mode: Phaser.Scale.NONE, width: size.w, height: size.h },
   input: { mouse: { preventDefaultWheel: false } },
   disableContextMenu: true,
-  scene: [BootScene, WorldScene, TitleScene, HudScene, MinigameScene],
+  scene: [BootScene, WorldScene, TitleScene, HudScene, MinigameScene, MenuScene],
   callbacks: {
     preBoot: (g) => g.registry.set('params', params),
   },

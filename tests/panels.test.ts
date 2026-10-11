@@ -1,5 +1,6 @@
 // Layout check (user request, 2026-10-11): no text or icon in any panel or the HUD may overlap another.
 import { describe, expect, it } from 'vitest';
+import { drawMenu, MENU_PANEL } from '../src/ui/menus';
 import { Rng } from '../src/core/rng';
 import { SHOP_STOCK } from '../src/data/items';
 import {
@@ -138,5 +139,34 @@ describe('panel layouts never overlap', () => {
         ['TAB', 'NEXT'],
       ]);
     });
+  });
+});
+
+describe('pause menu (docs/11)', () => {
+  it('fits the longest save summaries, a message and the footer without overlaps', () => {
+    const s = createSurface(640, 360);
+    beginAudit();
+    drawMenu(
+      s,
+      X,
+      Y,
+      'LOAD',
+      'GREYHAVEN',
+      ['SLOT 1', 'SLOT 2', 'SLOT 3', 'AUTOSAVE A', 'AUTOSAVE B'].map((label) => ({
+        label,
+        detail: 'DAY 42 WED 23:59  $99999 / $99999',
+        enabled: true,
+      })),
+      2,
+      'SAVES LIVE IN THIS BROWSER ONLY. EXPORT TO BACK UP.',
+      'SAVED TO SLOT 3',
+    );
+    const rects = endAudit();
+    expect(overlaps(rects)).toEqual([]);
+    for (const r of rects)
+      expect(
+        r.x >= X && r.y >= Y && r.x + r.w <= X + MENU_PANEL.w && r.y + r.h <= Y + MENU_PANEL.h,
+        r.what,
+      ).toBe(true);
   });
 });
