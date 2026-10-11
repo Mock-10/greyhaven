@@ -3,12 +3,13 @@
 
 import Phaser from 'phaser';
 import { BALANCE } from '../config/balance';
-import { BG_DAY, DIRS, PAL, SHADOW_RGB, TILE } from '../config/constants';
+import { BG_DAY, DIRS, PAL, SHADOW_RGB, TILE, UI_BASE_H, UI_BASE_W } from '../config/constants';
 import { KEYS } from '../config/keys';
 import { FixedStep } from '../core/clock';
 import { Rng } from '../core/rng';
 import { createState, loadSettings, saveSettings, type GameState, type Settings } from '../core/store';
-import { framePixels, frameInfo } from '../assets/atlasLoader';
+import { framePixels, frameInfo, opaqueAt } from '../assets/atlasLoader';
+import type { AtlasKey } from '../assets/manifest';
 import { highlight, HIGHLIGHT_PAD } from '../assets/highlight';
 import { addPixelsTexture } from '../assets/runtimeTextures';
 import {
@@ -26,12 +27,13 @@ import {
 import { CameraController } from '../iso/camera';
 import { unionRect } from '../iso/chunks';
 import { depthAgainstFootprints, depthOf, type Footprint } from '../iso/depthSort';
-import { isOccluding, rectsOverlap } from '../iso/occlusion';
+import { coverage, rectsOverlap, type MaskedSprite } from '../iso/occlusion';
+import { Silhouette } from '../world/silhouette';
 import { facingFromWorld, roundHalfEven, worldToScreen, worldToTile } from '../iso/projection';
 import { rasterizeShadows, shadowAlpha, shadowShape, type Rect } from '../iso/shadows';
 import { GroundRenderer } from '../iso/tilemap';
 import { VectorGroundRenderer } from '../iso/vectorGroundRenderer';
-import { depthAmong, staticOrder, type Box } from '../iso/staticDepth';
+import { depthAmong, depthRange, obbFirst, staticOrder, type Box, type Obb } from '../iso/staticDepth';
 import { DOWNTOWN } from '../maps/downtown';
 import { tileSeed as referenceSeed, TEST_MAP } from '../maps/testMap';
 import type { Door, MapData, Placement } from '../maps/types';
@@ -321,6 +323,7 @@ export class WorldScene extends Phaser.Scene {
 
     this.debugGfx = this.add.graphics();
     this.overlayLayer.add(this.debugGfx);
+    if (!this.isReference) this.silhouette = new Silhouette(this, this.overlayLayer);
     this.setupInput();
 
     const bounds = this.placed.reduce((r, p) => unionRect(r, p.bounds), this.ground.bounds);
@@ -665,6 +668,33 @@ export class WorldScene extends Phaser.Scene {
 
   private positionPrompt(img: Phaser.GameObjects.Image, cx: number, top: number): void {
     img.setPosition(roundHalfEven(cx - img.width / 2), roundHalfEven(top - img.height));
+    this.keepClearOfHud(img);
+  }
+
+  /**
+   * Keep a world prompt off the HUD panels (handover known issue): the top panels, the bottom strip with the
+   * objective and key hints, and the radar. The HUD is drawn at its own whole-number scale (HudScene).
+   */
+  private keepClearOfHud(img: Phaser.GameObjects.Image): void {
+    const cam = this.cameras.main;
+    const z = this.camCtl?.zoom ?? cam.zoom;
+    const W = cam.width;
+    const H = cam.height;
+    const ui = Math.max(1, Math.floor(Math.min(W / UI_BASE_W, H / UI_BASE_H)));
+    const S = BALANCE.hud.promptSafe;
+    let x = (img.x - cam.scrollX) * z;
+    let y = (img.y - cam.scrollY) * z;
+    const w = img.width * z;
+    const h = img.height * z;
+    const top = S.top * ui;
+    const bottom = H - S.bottom * ui;
+    if (y < top) y = top;
+    if (y + h > bottom) y = bottom - h;
+    x = Math.min(Math.max(S.side * ui, x), W - S.side * ui - w);
+    // the radar in the bottom-left corner
+    const rr = S.radar * ui;
+    if (x < rr && y + h > H - rr) x = rr;
+    img.setPosition(Math.round(x / z + cam.scrollX), Math.round(y / z + cam.scrollY));
   }
 
   private createLamps(): void {
@@ -1478,18 +1508,37 @@ export class WorldScene extends Phaser.Scene {
     p.y = v.y;
     p.dir = dirOf(v.heading);
     p.moving = false;
-    // the camera looks ahead in the direction of travel, up to 3 tiles at top speed (docs/11)
-    const reach = (BALANCE.vehicles.cameraLeadTiles * TILE * v.speed) / stats(v).topSpeed;
-    const want = { x: Math.cos(v.heading) * reach, y: Math.sin(v.heading) * reach };
-    const a = Math.min(1, dt * BALANCE.vehicles.cameraLeadRate);
+  }
+
+  /**
+   * Look-ahead (docs/11, 2026-10-11 camera rework): in a car the view leads in the direction of travel, so the car
+   * sits toward the trailing edge (more of the road ahead shows); on foot it leans gently toward the mouse. Both in
+   * screen pixels, smoothed. Driving also steps the zoom out one level.
+   */
+  private updateLead(dt: number): void {
+    const C = BALANCE.camera;
+    const car = this.inside ? null : this.drivenCar();
+    this.camCtl.setContext(car ? C.drivingZoomStep : 0);
+    let want = { x: 0, y: 0 };
+    if (car) {
+      const v = car.v;
+      const view = this.camCtl.view();
+      const d = worldToScreen(Math.cos(v.heading), Math.sin(v.heading));
+      const len = Math.hypot(d.x, d.y) || 1;
+      const reach = (C.driveLeadShare * (Math.min(view.w, view.h) / 2) * v.speed) / stats(v).topSpeed;
+      want = { x: (d.x / len) * reach, y: (d.y / len) * reach };
+    } else if (!this.inside && this.playing) {
+      const m = this.camCtl.pointer();
+      want = { x: m.x * C.mouseLeadPx, y: m.y * C.mouseLeadPx };
+    }
+    const a = 1 - Math.exp(-C.leadRate * dt);
     this.lead.x += (want.x - this.lead.x) * a;
     this.lead.y += (want.y - this.lead.y) * a;
   }
 
   private cameraTarget(): { x: number; y: number } {
-    const p = this.state.player;
-    if (!this.drivenCar()) return this.playerScreen();
-    return worldToScreen(p.x + this.lead.x, p.y + this.lead.y);
+    const s = this.playerScreen();
+    return { x: s.x + this.lead.x, y: s.y + this.lead.y };
   }
 
   private syncCars(): void {
@@ -1748,6 +1797,7 @@ export class WorldScene extends Phaser.Scene {
         walk(to, home, () => {
           s.destroy();
           this.marloWalker = null;
+          this.marloPos = null;
         });
         return;
       }
@@ -1765,13 +1815,67 @@ export class WorldScene extends Phaser.Scene {
         walk(to, home, () => {
           s.destroy();
           this.marloWalker = null;
+          this.marloPos = null;
         });
       });
     });
   }
 
+  /**
+   * Cars, the player and Marlo against each other (2026-10-11 camera rework): each already sits between the static
+   * objects it's in front of and behind; where two of them overlap on screen, their turned footprints decide which
+   * draws first, nudging the depths without leaving those static limits.
+   */
+  private orderMovers(): void {
+    if (this.inside || !this.map.ground) return;
+    type M = { sp: Phaser.GameObjects.Sprite; obb: Obb; b: Rect; lo: number; hi: number };
+    const ms: M[] = [];
+    const add = (sp: Phaser.GameObjects.Sprite, obb: Obb, b: Rect) => {
+      const ex = Math.abs(obb.hx * Math.cos(obb.ang)) + Math.abs(obb.hy * Math.sin(obb.ang));
+      const ey = Math.abs(obb.hx * Math.sin(obb.ang)) + Math.abs(obb.hy * Math.cos(obb.ang));
+      const fp: Box = [obb.x - ex, obb.y - ey, obb.x + ex, obb.y + ey];
+      const near = this.statics.filter((o) => rectsOverlap(o.bounds, b));
+      ms.push({ sp, obb, b, ...depthRange(fp, near) });
+    };
+    const r = BALANCE.walker.radius;
+    for (const c of this.cars) {
+      const { halfLength, halfWidth } = stats(c.v);
+      add(
+        c.placed.sprite,
+        { x: c.v.x, y: c.v.y, hx: halfLength, hy: halfWidth, ang: c.v.heading },
+        c.placed.bounds,
+      );
+    }
+    const p = this.state.player;
+    if (this.player?.visible) add(this.player, { x: p.x, y: p.y, hx: r, hy: r, ang: 0 }, this.playerBounds());
+    if (this.marloWalker && this.marloPos) {
+      const g = this.marloWalker.getBounds();
+      add(
+        this.marloWalker,
+        { ...this.marloPos, hx: r, hy: r, ang: 0 },
+        { x: g.x, y: g.y, w: g.width, h: g.height },
+      );
+    }
+    const step = 0.002;
+    for (let pass = 0; pass < 3; pass++)
+      for (let i = 0; i < ms.length; i++)
+        for (let j = i + 1; j < ms.length; j++) {
+          const a = ms[i] as M;
+          const b = ms[j] as M;
+          if (!rectsOverlap(a.b, b.b)) continue;
+          const [back, front] = obbFirst(a.obb, b.obb) < 0 ? [a, b] : [b, a];
+          if (back.sp.depth < front.sp.depth) continue;
+          if (back.sp.depth + step < front.hi) front.sp.setDepth(back.sp.depth + step);
+          else if (front.sp.depth - step > back.lo) back.sp.setDepth(front.sp.depth - step);
+        }
+  }
+
+  /** Marlo's position while he walks to a car and back. */
+  private marloPos: { x: number; y: number } | null = null;
+
   /** Put an NPC walking on the street at a world point, sorted among the static objects. */
   private placeWalker(s: Phaser.GameObjects.Sprite, x: number, y: number): void {
+    if (s === this.marloWalker) this.marloPos = { x, y };
     const p = worldToScreen(x, y);
     s.setPosition(Math.round(p.x), Math.round(p.y));
     const r = BALANCE.walker.radius;
@@ -1869,27 +1973,57 @@ export class WorldScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------- per frame
 
+  /** A sprite's cell on screen with a per-pixel opacity test, for occlusion coverage. */
+  private masked(sp: Phaser.GameObjects.Sprite, frame?: FrameRef): MaskedSprite {
+    const atlas = frame?.atlas ?? (sp.texture.key as AtlasKey);
+    const name = frame?.frame ?? sp.frame.name;
+    const f = frameInfo(atlas, name);
+    return {
+      x: sp.x - f.ax,
+      y: sp.y - f.ay,
+      w: f.w,
+      h: f.h,
+      opaque: (u, v) => opaqueAt(atlas, name, u, v),
+    };
+  }
+
+  /**
+   * Occlusion (docs/11, reworked 2026-10-11): anything in front whose pixels hide enough of the player (or the car
+   * you drive) fades, and the hidden parts show through as a silhouette.
+   */
   private updateOcclusion(dt: number): void {
     if (!this.player) return;
-    // while driving, tall things in front of the car fade instead
     const car = this.drivenCar();
-    const target = car ? car.placed.bounds : this.playerBounds();
-    const depth = car ? car.placed.sprite.depth : this.player.depth;
-    const { occludedAlpha, occluderMinHeight } = BALANCE.render;
+    const tSprite = car ? car.placed.sprite : this.player;
+    const tBounds = car ? car.placed.bounds : this.playerBounds();
+    const target = this.inside ? null : this.masked(tSprite, car ? car.placed.dayFrame : undefined);
+    const depth = tSprite.depth;
+    const { occludedAlpha, occluderMinHeight, occludeShare } = BALANCE.render;
+    const covering: Phaser.GameObjects.Sprite[] = [];
     for (const pl of this.placed) {
-      const occ = isOccluding(
-        { bounds: pl.bounds, depth: pl.sprite.depth, height: pl.height },
-        target,
-        depth,
-        occluderMinHeight,
-      );
-      const want = occ ? occludedAlpha : 1;
+      let want = 1;
+      if (target && pl.sprite.visible && pl.sprite.depth > depth && rectsOverlap(pl.bounds, tBounds)) {
+        const share = coverage(this.masked(pl.sprite, pl.dayFrame), target);
+        if (share > 0) covering.push(pl.sprite);
+        if (share >= occludeShare && pl.height >= occluderMinHeight) want = occludedAlpha;
+      }
       const a = pl.sprite.alpha + (want - pl.sprite.alpha) * Math.min(1, dt * 10);
       const alpha = Math.abs(a - want) < 0.01 ? want : a;
       pl.sprite.setAlpha(alpha);
       if (pl.glow) pl.glow.setAlpha(Math.min(pl.glow.alpha, alpha));
     }
+    // other cars in front hide the player too
+    if (target)
+      for (const c of this.cars) {
+        if (c === car || c.placed.sprite.depth <= depth || !rectsOverlap(c.placed.bounds, tBounds)) continue;
+        if (coverage(this.masked(c.placed.sprite, c.placed.dayFrame), target) > 0)
+          covering.push(c.placed.sprite);
+      }
+    if (this.inside) this.silhouette?.hide();
+    else this.silhouette?.update(tSprite, covering);
   }
+
+  private silhouette: Silhouette | null = null;
 
   private updateStreet(): void {
     const p = this.state.player;
@@ -1959,6 +2093,7 @@ export class WorldScene extends Phaser.Scene {
     this.step.advance(this.game.loop.rawDelta / 1000, (h) => this.tick(h));
     this.syncCars();
     this.syncPlayer();
+    this.orderMovers();
     this.updateInteraction(dt);
     this.updateOcclusion(dt);
     this.applyDayNight();
@@ -1972,6 +2107,7 @@ export class WorldScene extends Phaser.Scene {
       }
       r.view.tick(dt);
     } else this.updateStreet();
+    this.updateLead(dt);
     this.camCtl.update(dt);
     if (!this.inside) this.ground.update(this.camCtl.view());
     this.drawDebug();

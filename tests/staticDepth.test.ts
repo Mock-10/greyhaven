@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { depthAmong, firstOf, staticOrder, type Box } from '../src/iso/staticDepth';
+import { depthAmong, firstOf, staticOrder, type Box, obbFirst, type Obb } from '../src/iso/staticDepth';
 
 const item = (fp: Box) => ({ fp, bounds: { x: 0, y: 0, w: 100, h: 100 } });
 
@@ -38,5 +38,27 @@ describe('static depth order', () => {
     expect(d).toBeGreaterThan(3);
     expect(d).toBeLessThan(7);
     expect(depthAmong([0, 0, 1, 1], [], -1)).toBe(-1);
+  });
+});
+
+describe('turned boxes (cars) against each other', () => {
+  const car = (x: number, y: number, ang: number): Obb => ({ x, y, hx: 38, hy: 15, ang });
+
+  it('draws the car further from the camera first, side by side or nose to tail', () => {
+    // two cars parked side by side along x: the one with the smaller y is behind
+    expect(obbFirst(car(100, 100, 0), car(100, 140, 0))).toBe(-1);
+    expect(obbFirst(car(100, 140, 0), car(100, 100, 0))).toBe(1);
+    // nose to tail along x
+    expect(obbFirst(car(100, 100, 0), car(190, 100, 0))).toBe(-1);
+  });
+
+  it('gets turned cars right where axis-aligned boxes would overlap', () => {
+    // a car at 45 degrees just behind another: their bounding boxes overlap, the turned boxes don't
+    const a = car(100, 100, Math.PI / 4);
+    const b = car(140, 140, Math.PI / 4);
+    expect(obbFirst(a, b)).toBe(-1);
+    expect(obbFirst(b, a)).toBe(1);
+    // a person standing beside the front door of a turned car, on the camera side
+    expect(obbFirst(car(100, 100, -Math.PI / 4), { x: 128, y: 128, hx: 6, hy: 6, ang: 0 })).toBe(-1);
   });
 });

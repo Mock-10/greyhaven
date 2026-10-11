@@ -1,6 +1,6 @@
-// Camera controller (docs/11): follows a target with a soft deadzone, pans with the middle mouse or
-// the screen edge (up to 12 tiles from the player, springing back on C or after 3 s idle), zooms in
-// integer steps with Ctrl + wheel. Scroll is always a whole art pixel and the camera origin is the
+// Camera controller (docs/11): follows a target with a soft deadzone and a critically damped spring, pans with the
+// middle mouse or the screen edge (up to 12 tiles from the player, springing back on C or after 3 s idle), zooms in
+// integer steps with Ctrl + wheel, and steps out by a context offset (driving, 2026-10-11 camera rework). Scroll is always a whole art pixel and the camera origin is the
 // top-left corner, so every sprite lands on a whole screen pixel (CLAUDE.md hard rule 3).
 
 import Phaser from 'phaser';
@@ -13,7 +13,9 @@ import {
   clampCenter,
   clampLength,
   fitZoom,
+  offsetZoom,
   scrollFor,
+  springStep,
   stepZoom,
 } from './cameraMath';
 import type { Rect } from './shadows';
@@ -25,6 +27,9 @@ const PAN_MAX_PX = Math.hypot(worldToScreen(TILE, 0).x, worldToScreen(TILE, 0).y
 export class CameraController {
   zoom: number;
   private focus: Vec2;
+  private vel: Vec2 = { x: 0, y: 0 };
+  /** Context zoom offset in levels (driving: -1), applied on top of the chosen or fitted zoom. */
+  private context = 0;
   private pan: Vec2 = { x: 0, y: 0 };
   private panIdle = 0;
   private dragging = false;
@@ -50,7 +55,7 @@ export class CameraController {
     this.cam.setRoundPixels(true);
     this.canvas = scene.game.canvas;
     this.userZoom = options.zoom ?? 0;
-    this.zoom = this.userZoom || this.fit();
+    this.zoom = this.effective();
     this.focus = { ...target() };
 
     const input = scene.input;
@@ -75,7 +80,7 @@ export class CameraController {
     this.onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey) return;
       e.preventDefault();
-      if (e.deltaY !== 0) this.setZoom(stepZoom(this.zoom, e.deltaY < 0 ? 1 : -1, C.zoomLevels));
+      if (e.deltaY !== 0) this.wheelZoom(e.deltaY < 0 ? 1 : -1);
     };
     this.canvas.addEventListener('wheel', this.onWheel, { passive: false });
     this.canvas.addEventListener('mouseenter', this.onEnter);
@@ -88,17 +93,44 @@ export class CameraController {
     return fitZoom(this.cam.width, this.cam.height, C.zoomLevels, C.fitWidth, C.fitHeight);
   }
 
+  /** The zoom actually used: the player's choice (or the fit), moved by the context offset. */
+  private effective(): number {
+    return offsetZoom(this.userZoom || this.fit(), this.context, C.zoomLevels);
+  }
+
+  /** Ctrl + wheel: change the base zoom by one level. While driving the context offset still applies. */
+  private wheelZoom(delta: 1 | -1): void {
+    const base = this.userZoom || this.fit();
+    this.setZoom(stepZoom(base, delta, C.zoomLevels));
+  }
+
   setZoom(z: number): void {
     this.userZoom = z;
-    this.zoom = z;
+    this.zoom = this.effective();
     this.apply();
     this.scene.game.events.emit('camera:zoom', z);
   }
 
+  /** Step the zoom by a context offset (driving), keeping the same point in the middle of the view. */
+  setContext(step: number): void {
+    if (step === this.context) return;
+    this.context = step;
+    this.zoom = this.effective();
+    this.apply();
+  }
+
   /** Re-pick the zoom after the window size changes (unless the player chose one). */
   onResize(): void {
-    if (!this.userZoom) this.zoom = this.fit();
+    this.zoom = this.effective();
     this.apply();
+  }
+
+  /** Where the mouse is, from -1 to 1 across the view on each axis (0 when it's outside the canvas). */
+  pointer(): Vec2 {
+    if (!this.pointerInside || this.dragging) return { x: 0, y: 0 };
+    const p = this.scene.input.activePointer;
+    const cl = (v: number) => Math.max(-1, Math.min(1, v));
+    return { x: cl((p.x / this.cam.width) * 2 - 1), y: cl((p.y / this.cam.height) * 2 - 1) };
   }
 
   /** Keep the view over another area (entering or leaving an interior). */
@@ -114,6 +146,7 @@ export class CameraController {
   /** Jump straight to the target (no smoothing), e.g. after a teleport. */
   snap(): void {
     this.focus = { ...this.target() };
+    this.vel = { x: 0, y: 0 };
     this.apply();
   }
 
@@ -149,10 +182,10 @@ export class CameraController {
       if (Math.hypot(this.pan.x, this.pan.y) < 0.5) this.pan = { x: 0, y: 0 };
     }
     const desired = applyDeadzone(this.focus, this.target(), C.deadzoneW, C.deadzoneH);
-    this.focus = {
-      x: approach(this.focus.x, desired.x, C.followRate, dtSeconds),
-      y: approach(this.focus.y, desired.y, C.followRate, dtSeconds),
-    };
+    const sx = springStep(this.focus.x, this.vel.x, desired.x, C.followOmega, dtSeconds);
+    const sy = springStep(this.focus.y, this.vel.y, desired.y, C.followOmega, dtSeconds);
+    this.focus = { x: sx.pos, y: sy.pos };
+    this.vel = { x: sx.vel, y: sy.vel };
     // The deadzone is a hard limit: the target never leaves it, even while smoothing catches up.
     this.focus = applyDeadzone(this.focus, this.target(), C.deadzoneW, C.deadzoneH);
     this.apply();

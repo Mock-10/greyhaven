@@ -12,11 +12,23 @@ export const BALANCE = {
   camera: {
     /** The view may show this many art pixels of background past the map edge, no more. */
     boundsMarginPx: 48,
-    /** Integer zoom levels the player can step through with Ctrl + wheel (docs/11). ?zoom=1 also works for debugging. */
-    zoomLevels: [2, 3, 4] as readonly number[],
-    /** Default zoom is the largest whole number that fits this many art pixels on screen. */
-    fitWidth: 640,
-    fitHeight: 360,
+    /** Integer zoom levels the player can step through with Ctrl + wheel (docs/11). 1x since the 2026-10-11 camera
+     *  rework, for large windows and driving. ?zoom=1 also works for debugging. */
+    zoomLevels: [1, 2, 3, 4] as readonly number[],
+    /** Default zoom is the largest whole number that fits this many art pixels on screen. 960 x 540 since 2026-10-11
+     *  (about 2x more world than the first 640 x 360): 1080p runs at 2x. */
+    fitWidth: 960,
+    fitHeight: 540,
+    /** Context zoom (decided 2026-10-11): driving steps the zoom out by this many levels (never below 1x). */
+    drivingZoomStep: -1,
+    /** Driving look-ahead: the car sits toward the trailing edge, led by this share of the half view at top speed. */
+    driveLeadShare: 0.55,
+    /** On foot the view leans toward the mouse by up to this many art pixels. */
+    mouseLeadPx: 40,
+    /** How fast the look-ahead offsets settle (per second). */
+    leadRate: 2.2,
+    /** Follow stiffness of the critically damped camera spring (per second). */
+    followOmega: 9,
     /** Mouse pan reaches up to this many tiles from the player (docs/11). */
     panMaxTiles: 12,
     /** The camera springs back to the player after this many seconds without pan input (docs/11). */
@@ -30,8 +42,6 @@ export const BALANCE = {
     /** Soft deadzone around the followed target, in art pixels. */
     deadzoneW: 48,
     deadzoneH: 32,
-    /** Follow smoothing: fraction of the remaining distance closed per second. */
-    followRate: 8,
   },
 
   clock: {
@@ -185,10 +195,6 @@ export const BALANCE = {
     /** Fuel price (docs/02: $3 per unit) and a jerry can's contents (docs/08: 10 units). */
     fuelPrice: 3,
     canUnits: 10,
-    /** Camera leads the car by up to this many tiles in its direction of travel (docs/11). */
-    cameraLeadTiles: 3,
-    /** How fast the look-ahead catches up (per second). */
-    cameraLeadRate: 2,
     /** Getting out only below this speed (units per second). */
     exitMaxSpeed: 40,
     /** A crash this fast or harder gets a phone message when it wrecks the car. */
@@ -267,6 +273,9 @@ export const BALANCE = {
     radarRadius: 38,
     radarScale: 0.13,
     radarHz: 15,
+    /** World prompts stay inside these UI-pixel margins, clear of the top panels, the objective and hint strip at
+     *  the bottom and the radar (which takes this square in the bottom-left corner). */
+    promptSafe: { top: 46, bottom: 26, side: 4, radar: 90 },
   },
 
   walker: {
@@ -305,10 +314,17 @@ export const BALANCE = {
     /** Shadow mask values for box and blob shadows (scene.py polygon 150, ellipse 170). */
     shadowBoxValue: 150,
     shadowBlobValue: 170,
-    /** A tall sprite in front of the player fades to this opacity (docs/11, docs/14). */
+    /** A sprite in front of the player or the car fades to this opacity (docs/11, docs/14). */
     occludedAlpha: 0.35,
-    /** Sprites shorter than this (art px above their anchor) never fade. */
-    occluderMinHeight: 56,
+    /** Sprites shorter than this (art px above their anchor) never fade: kerb-high things don't hide anyone.
+     *  Lowered from 56 in the 2026-10-11 camera rework, which fades any building that covers the car. */
+    occluderMinHeight: 18,
+    /** ...and a sprite fades only when its pixels hide at least this share of the player's or car's pixels (thin
+     *  lamp posts and the empty corners of a tree's cell don't count). */
+    occludeShare: 0.12,
+    /** The silhouette drawn where the player or car is hidden (2026-10-11): muted lavender (docs/19's ghost colour),
+     *  and the size of its mask texture in art px (bigger than any car or person sprite cell). */
+    silhouette: { colour: 0x8a82a8, alpha: 0.6, maskSize: 192 },
     /** Interactable idle shimmer frame rate (STYLE_GUIDE: about 6 fps). */
     shimmerFps: 6,
     /** Ground chunks are baked in blocks of this many tiles per side. */

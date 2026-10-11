@@ -5,7 +5,9 @@ import {
   clampCenter,
   clampLength,
   fitZoom,
+  offsetZoom,
   scrollFor,
+  springStep,
   stepZoom,
 } from '../src/iso/cameraMath';
 
@@ -60,5 +62,32 @@ describe('camera bounds', () => {
   });
   it('centres a view bigger than the map', () => {
     expect(clampCenter({ x: 70, y: 0 }, 400, 300, b, 10)).toEqual({ x: 0, y: 50 });
+  });
+});
+
+describe('camera rework (2026-10-11)', () => {
+  it('follows with a critically damped spring: no overshoot, settles', () => {
+    let pos = 0;
+    let vel = 0;
+    let max = 0;
+    for (let k = 0; k < 120; k++) {
+      ({ pos, vel } = springStep(pos, vel, 100, 9, 1 / 60));
+      max = Math.max(max, pos);
+    }
+    expect(max).toBeLessThanOrEqual(100.0001);
+    expect(pos).toBeGreaterThan(99);
+  });
+
+  it('steps the zoom out for driving and never below the smallest level', () => {
+    expect(offsetZoom(2, -1, LEVELS)).toBe(1);
+    expect(offsetZoom(1, -1, LEVELS)).toBe(1);
+    expect(offsetZoom(3, -1, LEVELS)).toBe(2);
+    expect(offsetZoom(3, 0, LEVELS)).toBe(3);
+  });
+
+  it('fits 960 x 540 art pixels by default: 2x at 1080p', () => {
+    expect(fitZoom(1920, 1080, LEVELS, 960, 540)).toBe(2);
+    expect(fitZoom(1280, 720, LEVELS, 960, 540)).toBe(1);
+    expect(fitZoom(3840, 2160, LEVELS, 960, 540)).toBe(4);
   });
 });

@@ -72,3 +72,28 @@ export function clampCenter(
   };
   return { x: axis(center.x, viewW, bounds.x, bounds.w), y: axis(center.y, viewH, bounds.y, bounds.h) };
 }
+
+/**
+ * One step of a critically damped spring (no overshoot, no wobble) pulling `pos` toward `target`. `omega` is the
+ * stiffness: larger follows tighter. Exact for a constant target over the step, so it's stable at any frame rate.
+ */
+export function springStep(
+  pos: number,
+  vel: number,
+  target: number,
+  omega: number,
+  dt: number,
+): { pos: number; vel: number } {
+  const x = pos - target;
+  const e = Math.exp(-omega * dt);
+  const k = vel + omega * x;
+  return { pos: target + (x + k * dt) * e, vel: (vel - omega * k * dt) * e };
+}
+
+/** The zoom level `step` places away from `base` on the allowed list (driving steps out by one). */
+export function offsetZoom(base: number, step: number, levels: readonly number[]): number {
+  const sorted = [...levels].sort((a, b) => a - b);
+  const i = sorted.indexOf(base);
+  if (i < 0) return base;
+  return sorted[Math.min(sorted.length - 1, Math.max(0, i + step))] as number;
+}

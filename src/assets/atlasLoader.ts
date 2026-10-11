@@ -13,6 +13,8 @@ export interface FrameInfo extends FrameDef {
 }
 
 const registry = new Map<string, FrameInfo>();
+/** Atlas pixels, kept for per-pixel tests (occlusion coverage). */
+const pixels = new Map<string, { data: Uint8ClampedArray; width: number }>();
 
 const id = (atlas: AtlasKey, frame: string) => `${atlas}:${frame}`;
 
@@ -33,6 +35,7 @@ export function registerAtlases(textures: Phaser.Textures.TextureManager): void 
     if (!ctx) throw new Error('2D canvas unavailable');
     ctx.drawImage(img, 0, 0);
     const data = ctx.getImageData(0, 0, img.width, img.height).data;
+    pixels.set(key, { data, width: img.width });
     for (const def of parseAtlas(ATLASES[key].json).values()) {
       const frame = tex.add(def.name, 0, def.x, def.y, def.w, def.h);
       if (!frame) throw new Error(`duplicate frame ${key}:${def.name}`);
@@ -73,4 +76,15 @@ export function framePixels(
   if (!ctx) throw new Error('2D canvas unavailable');
   ctx.drawImage(img, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
   return ctx.getImageData(0, 0, f.w, f.h);
+}
+
+/**
+ * Is the pixel at (u, v) of a frame's cell opaque? Coordinates are relative to the cell's top-left. Frames from
+ * textures made at runtime (rims) aren't known here: callers use the plain frame instead.
+ */
+export function opaqueAt(atlas: string, frame: string, u: number, v: number): boolean {
+  const f = registry.get(`${atlas}:${frame}`);
+  const p = pixels.get(atlas);
+  if (!f || !p || u < 0 || v < 0 || u >= f.w || v >= f.h) return false;
+  return (p.data[((f.y + v) * p.width + f.x + u) * 4 + 3] as number) > 0;
 }
