@@ -161,21 +161,36 @@ test('carjack: picks a parked car, hotwires it and drives off', async ({ page })
   for (let attempt = 0; attempt < 6; attempt++) {
     await page.keyboard.press('KeyE');
     await page.waitForFunction(() => window.__DL__.minigame === 'lockpick', null, { timeout: 10_000 });
-    for (let n = 0; n < 12; n++) {
-      const sample = () =>
-        page.evaluate(() => {
-          const g = window.__DL__.minigameState as { needle: number; zone: number; done: boolean } | null;
-          return { t: performance.now(), needle: g?.needle ?? 0, zone: g?.zone ?? 0, done: g?.done ?? true };
-        });
-      const a = await sample();
-      await page.waitForTimeout(400);
-      const b = await sample();
-      if (b.done || (await page.evaluate(() => window.__DL__.minigame)) !== 'lockpick') break;
-      const rate = ((((b.needle - a.needle) % 360) + 360) % 360) / (b.t - a.t);
-      const ahead = (((b.zone - b.needle) % 360) + 360) % 360;
-      await page.waitForTimeout(Math.max(0, ahead / rate - 60));
-      await page.keyboard.press('Space');
-      await page.waitForTimeout(500);
+    // poll the needle and press as it crosses into the good zone, as a player watching it would: this doesn't
+    // depend on the frame rate (slow CI frames made a timed prediction miss)
+    const t0 = Date.now();
+    while (Date.now() - t0 < 40_000) {
+      const g = await page.evaluate(() => {
+        const m = window.__DL__.minigameState as {
+          needle: number;
+          zone: number;
+          good: number;
+          passed: number;
+          done: boolean;
+        } | null;
+        if (window.__DL__.minigame !== 'lockpick' || !m) return null;
+        return { needle: m.needle, zone: m.zone, good: m.good, passed: m.passed, done: m.done };
+      });
+      if (!g || g.done) break;
+      const off = ((((g.needle - g.zone) % 360) + 540) % 360) - 180;
+      if (off >= -g.good / 2 + 4 && off <= 0) {
+        await page.keyboard.press('Space');
+        await page
+          .waitForFunction(
+            (passed) => {
+              const m = window.__DL__.minigameState as { passed: number; done: boolean } | null;
+              return !m || m.done || m.passed !== passed || window.__DL__.minigame !== 'lockpick';
+            },
+            g.passed,
+            { timeout: 3_000 },
+          )
+          .catch(() => undefined);
+      } else await page.waitForTimeout(10);
     }
     await page.waitForFunction(() => window.__DL__.minigame === null, null, { timeout: 20_000 });
     await page.waitForTimeout(800);
