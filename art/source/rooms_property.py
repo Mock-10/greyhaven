@@ -141,7 +141,12 @@ def hideout(have=None):
     S.append(it(D.sofa(('brick', 2.0)), '+y', 84, 164, ('box', 22, 9, 12)))
     S.append(it(D.coffee_table(), '+y', 84, 186, ('box', 10, 6, 8)))
     S.append(it(D.floor_lamp(), '+y', 50, 160, ('blob', 3)))
-    S.append(it(D.cardboard_boxes(2, 13), '+y', 128, 208, ('box', 7, 6, 10)))
+    S.append(it(D.cardboard_boxes(2, 13), '+y', 128, 208, ('box', 7, 6, 10), needs='!crewRoom'))
+    # --- the crew room corner (M17): a card table where the crew meets, the roster on the wall
+    S.append(it(D.pub_table(22), '+y', 150, 196, ('box', 11, 7, 16), hl='idle', prompt=('E', 'CREW'), needs='crewRoom'))
+    S.append(it(D.wooden_chair(), '+x', 128, 196, ('blob', 4), needs='crewRoom'))
+    S.append(it(D.wooden_chair(), '-x', 172, 196, ('blob', 4), needs='crewRoom'))
+    S.append(it(D.wooden_chair(), '-y', 150, 214, ('blob', 4), needs='crewRoom'))
     S.append(it(D.storage_shelf(9), '-x', 311, 178, ('box', 6, 15, 30)))
     S.append(it(props2.barrel('teal'), '+y', 304, 214, ('blob', 6)))
     return rooms.compose(W_t, D_t, floor, walls, built(S, have), partitions=parts_)
@@ -152,7 +157,7 @@ ROOMS = ['home_small', 'home_family', 'hideout']
 if __name__ == '__main__':
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'drafts', 'interiors')
     for name in sys.argv[1:] or ROOMS:
-        drafts = ({'': {'stashRoom', 'workbench', 'press', 'chopBay'}, '_bare': set()} if name == 'hideout'
+        drafts = ({'': {'stashRoom', 'workbench', 'press', 'chopBay', 'crewRoom'}, '_bare': set()} if name == 'hideout'
                   else {'': None})
         for suffix, have in drafts.items():
             c = globals()[name](have) if name == 'hideout' else globals()[name]()

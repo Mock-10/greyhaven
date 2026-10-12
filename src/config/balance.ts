@@ -529,6 +529,21 @@ export const BALANCE = {
       raidMinute: 3 * 60,
       raidAboveStars: 3,
     },
+    /** Crews (docs/09): cap, the rep tier to hire, the hire fee and weekly wage ranges (dirty), the operator's cut
+     *  and skill bonus, the driver's cargo loss by smuggling tier and arrest chance, days unpaid before quitting;
+     *  the bar shows this many candidates a day (assumed). */
+    crew: {
+      cap: 4,
+      tier: 2,
+      hireFee: [1000, 3000] as readonly [number, number],
+      wage: [300, 700] as readonly [number, number],
+      operatorCut: 0.15,
+      operatorSkill: [0, 0.2] as readonly [number, number],
+      driverLoss: [0.1, 0.25] as readonly [number, number],
+      driverCaught: 0.05,
+      quitDays: 3,
+      candidates: 3,
+    },
   },
 
   /** Police officers and their cruiser (milestone 4: one car and two officers at 1–2★, docs/15). */

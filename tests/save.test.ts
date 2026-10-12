@@ -310,6 +310,24 @@ describe('saves (docs/12)', () => {
     });
   });
 
+  it('migrates a version 10 save to version 11 (no crew)', () => {
+    const fresh = createState(1, 'downtown', { x: 0, y: 0 });
+    const v10 = JSON.parse(JSON.stringify(fresh)) as Record<string, Record<string, unknown>>;
+    delete v10.property!.crew;
+    const old = {
+      game: 'doublelife',
+      version: 10,
+      meta: {},
+      state: v10,
+      checksum: checksum(v10),
+    } as unknown as SaveFile;
+    const r = validate(old);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.file.version).toBe(SAVE_VERSION);
+    expect(r.file.state.property).toEqual(fresh.property);
+  });
+
   it('rotates the two autosaves, keeping the newest', () => {
     expect(nextAutoSlot({})).toBe('auto1');
     const a = makeSave(state(), 'auto1', 100).meta;

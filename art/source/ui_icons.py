@@ -538,6 +538,19 @@ ICONS = {
 for k, f in FACES.items():
     ICONS[f'face/{k}'] = ((lambda f=f: bust(f())), 0.785, 32)
 ICONS['item/mask'] = ((lambda: bust(mask())), 0.785, 32)
+# Phase 5 crew (docs/09 decisions: random names and portraits generated from the character art): eight faces
+CREW_FACES = [
+    dict(skin_tone=1.7, upper=('teal', 2.0), hair=('night', 0.8), hair_style='short', jacket=True),
+    dict(skin_tone=3.1, upper=('red', 2.2), hair=('khaki', 2.6), hair_style='long'),
+    dict(skin_tone=2.4, upper=('sage', 1.8), hair=('wood', 1.2), hat='cap'),
+    dict(skin_tone=2.0, upper=('night', 1.8), hair=('night', 1.0), hair_style='bald', vest=('stone', 2.2)),
+    dict(skin_tone=2.8, upper=('plum', 2.2), hair=('wood', 0.9), hair_style='bun'),
+    dict(skin_tone=1.5, upper=('khaki', 2.0), hair=('night', 0.7), hood=('khaki', 1.6)),
+    dict(skin_tone=3.0, upper=('navy', 2.2), hair=('white', 3.0), hair_style='short', jacket=True),
+    dict(skin_tone=2.2, upper=('brick', 2.2), hair=('khaki', 2.0), hair_style='long', vest=('night', 1.8)),
+]
+for k, kw in enumerate(CREW_FACES):
+    ICONS[f'face/crew{k}'] = ((lambda kw=kw: bust(humans.human(**kw))), 0.785, 32)
 # Phase 4 weapons (docs/07), seen side-on and a little from above
 ICONS.update({
     'weapon/bat': (bat, -0.785, 32), 'weapon/knife': (knife, -0.785, 32),

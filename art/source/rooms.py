@@ -917,7 +917,9 @@ def bar():
     # booths along wall B, facing their tables
     for ty in (124, 190):
         S.append(it(D.booth(26), '+y', 24, ty - 20, ('box', 13, 8, 28)))
-        S.append(it(D.pub_table(22), '+y', 24, ty, ('box', 11, 7, 16)))
+        # the first booth is where crews for hire sit (Phase 5, docs/09: hire at the bar)
+        S.append(it(D.pub_table(22), '+y', 24, ty, ('box', 11, 7, 16),
+                    **({'hl': 'idle', 'prompt': ('E', 'HIRE CREW')} if ty == 124 else {})))
         S.append(it(D.booth(26), '-y', 24, ty + 20, ('box', 13, 8, 28)) if ty + 20 < 214 else it(D.wooden_chair(), '-y', 24, ty + 14, ('blob', 4)))
     S.append(it(D.neon_sign('red', 12, 5), '+x', 0, 150))
     # standing table and the pool table

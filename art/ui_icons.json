@@ -265,273 +265,321 @@
    "w": 32,
    "h": 32
   },
-  "weapon/bat": {
+  "face/crew0": {
    "x": 136,
    "y": 152,
    "w": 32,
    "h": 32
   },
-  "weapon/knife": {
+  "face/crew1": {
    "x": 170,
    "y": 152,
    "w": 32,
    "h": 32
   },
-  "weapon/pistol": {
+  "face/crew2": {
    "x": 204,
    "y": 152,
    "w": 32,
    "h": 32
   },
-  "weapon/revolver": {
+  "face/crew3": {
    "x": 238,
    "y": 152,
    "w": 32,
    "h": 32
   },
-  "weapon/shotgun": {
+  "face/crew4": {
    "x": 272,
    "y": 152,
    "w": 32,
    "h": 32
   },
-  "weapon/smg": {
+  "face/crew5": {
    "x": 0,
+   "y": 186,
+   "w": 32,
+   "h": 32
+  },
+  "face/crew6": {
+   "x": 34,
+   "y": 186,
+   "w": 32,
+   "h": 32
+  },
+  "face/crew7": {
+   "x": 68,
+   "y": 186,
+   "w": 32,
+   "h": 32
+  },
+  "weapon/bat": {
+   "x": 102,
+   "y": 186,
+   "w": 32,
+   "h": 32
+  },
+  "weapon/knife": {
+   "x": 136,
+   "y": 186,
+   "w": 32,
+   "h": 32
+  },
+  "weapon/pistol": {
+   "x": 170,
+   "y": 186,
+   "w": 32,
+   "h": 32
+  },
+  "weapon/revolver": {
+   "x": 204,
+   "y": 186,
+   "w": 32,
+   "h": 32
+  },
+  "weapon/shotgun": {
+   "x": 238,
+   "y": 186,
+   "w": 32,
+   "h": 32
+  },
+  "weapon/smg": {
+   "x": 272,
    "y": 186,
    "w": 32,
    "h": 32
   },
   "weapon/assault_rifle": {
-   "x": 34,
-   "y": 186,
+   "x": 0,
+   "y": 220,
    "w": 32,
    "h": 32
   },
   "weapon/hunting_rifle": {
-   "x": 68,
-   "y": 186,
+   "x": 34,
+   "y": 220,
    "w": 32,
    "h": 32
   },
   "weapon/lmg": {
-   "x": 102,
-   "y": 186,
+   "x": 68,
+   "y": 220,
    "w": 32,
    "h": 32
   },
   "weapon/grenade_launcher": {
-   "x": 136,
-   "y": 186,
+   "x": 102,
+   "y": 220,
    "w": 32,
    "h": 32
   },
   "item/armor": {
-   "x": 170,
-   "y": 186,
+   "x": 136,
+   "y": 220,
    "w": 32,
    "h": 32
   },
   "item/ammo": {
-   "x": 204,
-   "y": 186,
+   "x": 170,
+   "y": 220,
    "w": 32,
    "h": 32
   },
   "app/home": {
-   "x": 238,
-   "y": 186,
+   "x": 204,
+   "y": 220,
    "w": 40,
    "h": 40
   },
   "addon/stashRoom": {
-   "x": 280,
-   "y": 186,
+   "x": 246,
+   "y": 220,
    "w": 32,
    "h": 32
   },
   "addon/garageBay": {
-   "x": 0,
-   "y": 228,
+   "x": 280,
+   "y": 220,
    "w": 32,
    "h": 32
   },
   "addon/workbench": {
-   "x": 34,
-   "y": 228,
+   "x": 0,
+   "y": 262,
    "w": 32,
    "h": 32
   },
   "addon/press": {
-   "x": 68,
-   "y": 228,
+   "x": 34,
+   "y": 262,
    "w": 32,
    "h": 32
   },
   "addon/chopBay": {
-   "x": 102,
-   "y": 228,
+   "x": 68,
+   "y": 262,
    "w": 32,
    "h": 32
   },
   "addon/lab": {
-   "x": 136,
-   "y": 228,
+   "x": 102,
+   "y": 262,
    "w": 32,
    "h": 32
   },
   "addon/crewRoom": {
-   "x": 170,
-   "y": 228,
+   "x": 136,
+   "y": 262,
    "w": 32,
    "h": 32
   },
   "outfit/teal_jacket": {
-   "x": 204,
-   "y": 228,
+   "x": 170,
+   "y": 262,
    "w": 32,
    "h": 32
   },
   "outfit/sage_casual": {
-   "x": 238,
-   "y": 228,
+   "x": 204,
+   "y": 262,
    "w": 32,
    "h": 32
   },
   "outfit/plum_knit": {
-   "x": 272,
-   "y": 228,
+   "x": 238,
+   "y": 262,
    "w": 32,
    "h": 32
   },
   "outfit/grey_hoodie": {
-   "x": 0,
+   "x": 272,
    "y": 262,
    "w": 32,
    "h": 32
   },
   "outfit/work_khaki": {
-   "x": 34,
-   "y": 262,
+   "x": 0,
+   "y": 296,
    "w": 32,
    "h": 32
   },
   "outfit/white_shirt": {
-   "x": 68,
-   "y": 262,
+   "x": 34,
+   "y": 296,
    "w": 32,
    "h": 32
   },
   "outfit/red_jacket": {
-   "x": 102,
-   "y": 262,
+   "x": 68,
+   "y": 296,
    "w": 32,
    "h": 32
   },
   "outfit/clay_coat": {
-   "x": 136,
-   "y": 262,
+   "x": 102,
+   "y": 296,
    "w": 32,
    "h": 32
   },
   "outfit/navy_suit": {
-   "x": 170,
-   "y": 262,
+   "x": 136,
+   "y": 296,
    "w": 32,
    "h": 32
   },
   "outfit/coveralls": {
-   "x": 204,
-   "y": 262,
+   "x": 170,
+   "y": 296,
    "w": 32,
    "h": 32
   },
   "outfit/flannel": {
-   "x": 238,
-   "y": 262,
+   "x": 204,
+   "y": 296,
    "w": 32,
    "h": 32
   },
   "outfit/courier": {
-   "x": 272,
-   "y": 262,
+   "x": 238,
+   "y": 296,
    "w": 32,
    "h": 32
   },
   "car/beater_khaki": {
-   "x": 0,
+   "x": 272,
    "y": 296,
    "w": 32,
    "h": 32
   },
   "car/beater_brick": {
-   "x": 34,
-   "y": 296,
-   "w": 32,
-   "h": 32
-  },
-  "car/sedan_teal": {
-   "x": 68,
-   "y": 296,
-   "w": 32,
-   "h": 32
-  },
-  "car/sedan_clay": {
-   "x": 102,
-   "y": 296,
-   "w": 32,
-   "h": 32
-  },
-  "car/sedan_khaki": {
-   "x": 136,
-   "y": 296,
-   "w": 32,
-   "h": 32
-  },
-  "car/sedan_lav": {
-   "x": 170,
-   "y": 296,
-   "w": 32,
-   "h": 32
-  },
-  "car/pickup_brick": {
-   "x": 204,
-   "y": 296,
-   "w": 32,
-   "h": 32
-  },
-  "car/pickup_sage": {
-   "x": 238,
-   "y": 296,
-   "w": 32,
-   "h": 32
-  },
-  "car/pickup_stone": {
-   "x": 272,
-   "y": 296,
-   "w": 32,
-   "h": 32
-  },
-  "car/sports_red": {
    "x": 0,
    "y": 330,
    "w": 32,
    "h": 32
   },
-  "car/sports_navy": {
+  "car/sedan_teal": {
    "x": 34,
    "y": 330,
    "w": 32,
    "h": 32
   },
-  "car/sports_white": {
+  "car/sedan_clay": {
    "x": 68,
    "y": 330,
    "w": 32,
    "h": 32
   },
-  "car/armored_suv": {
+  "car/sedan_khaki": {
    "x": 102,
    "y": 330,
+   "w": 32,
+   "h": 32
+  },
+  "car/sedan_lav": {
+   "x": 136,
+   "y": 330,
+   "w": 32,
+   "h": 32
+  },
+  "car/pickup_brick": {
+   "x": 170,
+   "y": 330,
+   "w": 32,
+   "h": 32
+  },
+  "car/pickup_sage": {
+   "x": 204,
+   "y": 330,
+   "w": 32,
+   "h": 32
+  },
+  "car/pickup_stone": {
+   "x": 238,
+   "y": 330,
+   "w": 32,
+   "h": 32
+  },
+  "car/sports_red": {
+   "x": 272,
+   "y": 330,
+   "w": 32,
+   "h": 32
+  },
+  "car/sports_navy": {
+   "x": 0,
+   "y": 364,
+   "w": 32,
+   "h": 32
+  },
+  "car/sports_white": {
+   "x": 34,
+   "y": 364,
+   "w": 32,
+   "h": 32
+  },
+  "car/armored_suv": {
+   "x": 68,
+   "y": 364,
    "w": 32,
    "h": 32
   }
