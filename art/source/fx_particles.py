@@ -33,7 +33,7 @@ PAPER = [C('white', 5), C('white', 4), C('stone', 4)]
 RAIN = [C('lavlt', 5), C('lavlt', 4), C('glass', 5)]
 SKID = [C('asph', 0), C('night', 0)]
 BLOOD = [C('red', 2), C('red', 1), C('red', 0), C('plum', 0)]
-SPIKES = [C('stone', 5), C('night', 2), C('night', 4), C('night', 0)]
+SPIKES = [C('white', 5), C('night', 1), C('stone', 2), C('night', 0)]
 
 
 def grid(w, h, cx, cy):
@@ -248,17 +248,17 @@ def spikes(a):
     t = a * np.pi / 4
     d = np.array([np.cos(t) - np.sin(t), (np.cos(t) + np.sin(t)) / 2])
     d = d / np.linalg.norm(d)
-    half = 26.0
+    half = 30.0
     w, h = int(abs(d[0]) * half * 2 + 8), int(abs(d[1]) * half * 2 + 8)
     X, Y, thr = grid(w, h, w / 2, h / 2)
     along = X * d[0] + Y * d[1]
     across = -X * d[1] + Y * d[0]
-    band = (np.abs(along) < half) & (np.abs(across) < 1.3)
-    shadow = (np.abs(along) < half) & (across >= 1.3) & (across < 2.3)
-    # a hinge every 6 px, spikes between them catching the light
-    seg = np.mod(along + half, 6.0)
-    spike = band & (np.abs(seg - 3.0) < 0.7) & (across < 0.2)
-    hinge = band & (seg < 0.8)
+    band = (np.abs(along) < half) & (np.abs(across) < 1.9)
+    shadow = (np.abs(along) < half) & (across >= 1.9) & (across < 3.0)
+    # a hinge every 5 px, pale spike teeth between them catching the light
+    seg = np.mod(along + half, 5.0)
+    spike = band & (np.abs(seg - 2.5) < 0.9) & (across < 0.6)
+    hinge = band & (seg < 0.9)
     img = np.zeros((h, w, 4), np.uint8)
     img[shadow, :3] = SPIKES[3]; img[shadow, 3] = 160
     img[band, :3] = SPIKES[1]; img[band, 3] = 255

@@ -6,6 +6,7 @@
 
 import type Phaser from 'phaser';
 import vehicles2Json from '../../art/vehicles2.json';
+import { FX_TEXTURE } from '../fx/fxAssets';
 import { BALANCE } from '../config/balance';
 import { DIRS, TILE } from '../config/constants';
 import type { Rng } from '../core/rng';
@@ -277,7 +278,13 @@ export class Police {
     const up = this.units.filter((u) => u.parked).length;
     if (!player.driving || up >= max || player.heading === undefined) return;
     const chance = 1 - Math.pow(1 - roadblockChancePerMinute(w.stars, false), dt / 60);
-    if (!this.host.rng.chance(chance)) return;
+    if (this.host.rng.chance(chance)) this.placeRoadblock(player);
+  }
+
+  /** A cruiser across the road ahead of the driving player, its crew out, the spike strip down (also a cheat). */
+  placeRoadblock(player: PlayerView): void {
+    const R = BALANCE.police.roadblock;
+    if (player.heading === undefined) return;
     const ax = player.x + Math.cos(player.heading) * R.aheadTiles * TILE;
     const ay = player.y + Math.sin(player.heading) * R.aheadTiles * TILE;
     const r = onRoad(this.host.roads, ax, ay);
@@ -296,7 +303,12 @@ export class Police {
       (a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y),
     )[0]!;
     const sp = worldToScreen(near.x, near.y);
-    const img = this.scene.add.image(Math.round(sp.x), Math.round(sp.y), 'fx', `spikes/${DIRS[dir]}`);
+    const img = this.scene.add.image(
+      Math.round(sp.x),
+      Math.round(sp.y),
+      FX_TEXTURE.fx,
+      `spikes/${DIRS[dir]}`,
+    );
     img.setDepth(1e6 - 3);
     this.host.groundLayer.add(img);
     u.spikes = { x: near.x, y: near.y, ang: (dir * Math.PI) / 4, img };

@@ -768,3 +768,50 @@ test('the arms dealer sells a pistol; it draws, aims and fires (Phase 4)', async
   await page.waitForFunction((c) => Number(window.__DL__.weapon!.ammo.split('/')[0]) === c - 1, clip0);
   expect(problems).toEqual([]);
 });
+
+test('Torque & Sons: a hot car stopped in the bay gets a respray that clears it (Phase 4)', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const problems = await boot(page, '?scene=world&zoom=3&time=10:00&x=828&y=1830');
+  await cheat(page, 'bank 9000');
+  await cheat(page, 'car pickup_sage 828 1791 2');
+  await page.waitForFunction(() => window.__DL__.target === 'car:cheat0');
+  await page.keyboard.press('KeyF');
+  await page.waitForFunction(() => window.__DL__.target === 'zone:garage_service', null, { timeout: 15_000 });
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'service');
+  await page.waitForTimeout(400);
+  // RESPRAY is the seventh row (repair, five upgrades, respray)
+  await page.keyboard.press('7');
+  await page.waitForFunction(() => window.__DL__.bank === 9000 - 400);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  const car = await page.evaluate(() => window.__DL__.cars.find((c) => c.id === 'cheat0'));
+  expect(car).toMatchObject({ hot: false });
+  expect(car!.model).toMatch(/^pickup_/);
+  expect(car!.model).not.toBe('pickup_sage');
+  expect(problems).toEqual([]);
+});
+
+test('pulling a driver out of a stopped traffic car: yours to drive, the driver calls it in (docs/08)', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const problems = await boot(page, '?scene=world&zoom=3&time=12:00');
+  const pos = await page.waitForFunction(
+    () => {
+      const t = (window.__DL__.traffic ?? []).find((c) => c.speed < 2);
+      return t ? { x: t.x + Math.sin(t.heading) * 26, y: t.y - Math.cos(t.heading) * 26 } : null;
+    },
+    null,
+    { timeout: 60_000, polling: 100 },
+  );
+  const p = (await pos.jsonValue())!;
+  await cheat(page, `tp ${Math.round(p.x)} ${Math.round(p.y)}`);
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('jack:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.driving?.startsWith('jacked'));
+  await page.waitForFunction(() => window.__DL__.stars > 0, null, { timeout: 40_000 });
+  expect(problems).toEqual([]);
+});

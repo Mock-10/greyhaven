@@ -53,3 +53,7 @@ The NPC crowd and traffic are **not** saved. They respawn.
 
 ## Phase 3 build (milestone 9, 2026-10-12): save v6
 New fields: `crime` (reputation, waiting payouts, contacts), `heat` (identifications by source), `crimeLog` (when each store, house and ATM was last hit), `goods` (burglary goods for the fence), `masks` and `maskOn`, and `inventory.drill`. Migration 5 → 6 starts everyone with no reputation and nothing on file.
+
+## Phase 4 build (milestone 14, 2026-10-12): save v8
+Each saved car gets `mods` (upgrade levels) and `stash` (its trunk: weapons and goods); `flat` (burst tyres) is optional. Migration 7 → 8 gives every car no upgrades and an empty trunk and drops a wreck's burning timer. (Save v7, milestone 13, added `combat`: the loadout, ammo and the drawn slot.)
+

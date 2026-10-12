@@ -1572,11 +1572,9 @@ export class WorldScene extends Phaser.Scene {
           this.toast('CHEAT', 'CARS ONLY ON THE STREET.');
           return;
         }
-        if (!this.textures.get('vehicles').has(`${c.model}/SE`)) {
-          this.toast(
-            'CHEAT',
-            'MODELS: SEDAN_LAV, SEDAN_TEAL, SEDAN_CLAY, SEDAN_KHAKI, TAXI, VAN_WHITE, VAN_SAGE',
-          );
+        const ref = vehicleFrame(c.model, 0);
+        if (!this.textures.get(ref.atlas).has(ref.frame)) {
+          this.toast('CHEAT', 'MODELS: SEDAN_TEAL, TAXI, VAN_WHITE, PICKUP_SAGE, SPORTS_RED, ARMORED_SUV...');
           return;
         }
         const ang = (st.player.dir * Math.PI) / 4;
@@ -1593,6 +1591,20 @@ export class WorldScene extends Phaser.Scene {
       case 'heal':
         st.player.health = BALANCE.player.maxHealth;
         break;
+      case 'roadblock': {
+        // 3★ and a roadblock with its spike strip ahead of the driven car (Phase 4 testing)
+        const car = this.drivenCar();
+        if (car && st.wanted.stars < 3) addStars(st.wanted, 3 - st.wanted.stars, { x: car.v.x, y: car.v.y });
+        if (car)
+          this.police?.placeRoadblock({
+            x: car.v.x,
+            y: car.v.y,
+            driving: true,
+            speed: 0,
+            heading: car.v.heading,
+          });
+        break;
+      }
       case 'gun': {
         // a weapon with a full reserve, drawn (Phase 4 testing)
         const id = c.weapon as WeaponId;
@@ -4541,6 +4553,13 @@ export class WorldScene extends Phaser.Scene {
     h.goods = this.state.goods.length;
     h.weapon = hudWeapon(this.state.combat);
     h.peds = (this.life?.peds ?? []).map((pv) => ({ x: pv.ped.x, y: pv.ped.y }));
+    h.traffic = (this.life?.cars ?? []).map((cv) => ({
+      id: cv.car.id,
+      x: cv.car.x,
+      y: cv.car.y,
+      speed: cv.car.speed,
+      heading: cv.car.heading,
+    }));
     if (this.player) {
       // the camera's world points under canvas pixels (0,0) and (1,1) give the inverse transform
       const cam = this.cameras.main;
@@ -4564,6 +4583,9 @@ export class WorldScene extends Phaser.Scene {
       looted: !!v.looted,
       model: v.model,
       owned: !!v.owned,
+      hot: v.hotUntil > this.state.minutes,
+      flat: !!v.flat,
+      stash: v.stash ? v.stash.weapons.length + v.stash.goods.length : 0,
     }));
     const tile = worldToTile(p.x, p.y);
     this.game.events.emit('debug:stats', {

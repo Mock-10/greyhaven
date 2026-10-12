@@ -67,3 +67,16 @@
 - **Buying a car:** the salesman's desk in the lot's cabin sells beaters ($1,500; khaki or brick) and sedans ($5,000; teal, clay, khaki or lavender). Clean money: the bank first, then carried clean cash.
 - The car is **registered to you**: unlocked, keyed (F gets in, no hotwire), a full tank, never hot, and its trunk isn't a loot target. It waits in the **pickup bay** (the first bay of the lot's front row) and drives out through a gap in the pennants. While a car stands in the bay, the desk asks you to move it first.
 - **Beater stats** (`BALANCE.vehicles.types.beater`): top speed 198 units/s (70 vs the sedan's 85), acceleration 110, turn rate 2.1, health 70, tank 30. A shorter hatchback body with a primer door, rust and a faded roof (`art/source/cars.py`).
+
+## Phase 4 build (milestone 14, 2026-10-12)
+- **New types** from `art/vehicles2`: the pickup, the sports car and the armored SUV, with the stats and prices in the table. All three are at the used-car lot; a pickup and a sports car stand among the parked cars (the Pewter Street lot, the strip lot, Torque & Sons' yard), and the lot's display rows show them too.
+- **Damage states:** smoke below 50%, fire and −30% top speed below 25%, and at 0 the car burns and explodes 3 s later (blast damage to anyone near, the camera shakes). A bought car that's destroyed comes back at home parking for 10% of its value, paid from the bank.
+- **Torque & Sons service bay:** stop a car on the concrete apron in front of the garage (08:00–18:00) and press E: **CAR SERVICE** lists the repair (5–40% of value by the damage, −20% for mechanics on staff), the five upgrades with their levels and the respray. Clean money only: the bank first, then carried cash. The bay serves any car you can drive (yours or one you've opened).
+- **Upgrades:** engine (+8% top speed and acceleration a level), brakes (+15%), armor (+20% health, the car stays full), tires (+10% steering grip; level 2 resists spike strips), hidden compartment.
+- **Respray:** another colour of the same model, the hot status gone, and −1★ when you're wanted but unseen.
+- **Your trunk:** on a car you own, the trunk prompt reads TRUNK and opens a list: take out what's in it, or store a weapon (its clip goes with it; reserve ammo stays on you) or burglary goods. One slot per item, up to the type's trunk slots.
+- **Police search:** arrested out of a car, the trunk is searched: goods and unregistered weapons are taken, registered ones stay. A hidden compartment passes the search 70% of the time.
+- **Pulling drivers out:** a traffic car stopped or crawling (below 20 units/s) shows PULL OUT DRIVER at its driver's door. The car is yours to drive (hot, like any stolen car), the driver runs and always calls it in (1★); one in four swings at you first (12 damage).
+- **Spike strips:** every roadblock (3★+) lays one across the road a little before it, on your side. Driving over it bursts the tyres (half top speed, 60% steering) unless the tires are level 2; the garage's repair fits new ones ($200 added).
+- **Assumptions:** the cargo-value half of the hidden compartment waits for product cargo (Phase 5); the service bay doesn't need the car to be yours; burst tyres don't need a repair kit fix.
+
