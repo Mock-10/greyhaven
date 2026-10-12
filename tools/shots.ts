@@ -193,6 +193,13 @@ const SHOTS: Shot[] = [
     height: 720,
     wait: 1500,
   },
+  {
+    name: 'p2_traffic',
+    query: '?scene=world&zoom=1&time=17:30&x=1000&y=1900',
+    width: 1280,
+    height: 720,
+    wait: 5000,
+  },
   { name: 'reference_1x', query: '?scene=reference', width: 1900, height: 1280 },
   { name: 'depth_behind_tower', query: '?scene=world&zoom=3&x=150&y=200&debug=1', width: 1280, height: 720 },
   { name: 'camera_edge', query: '?scene=world&zoom=2&x=40&y=40', width: 1280, height: 720 },

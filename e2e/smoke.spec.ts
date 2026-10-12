@@ -232,7 +232,7 @@ test('carjack: picks a parked car, hotwires it and drives off', async ({ page })
 });
 
 test("sells a stolen car in Marlo's dotted spot: he walks out and pays", async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(150_000);
   const problems = await boot(page, '?scene=world&zoom=3&time=16:00&x=1580&y=1045');
   // the cheat console (Ctrl + Shift + F1) puts a stolen sedan in the spot
   await page.keyboard.press('Control+Shift+F1');
@@ -248,7 +248,9 @@ test("sells a stolen car in Marlo's dotted spot: he walks out and pays", async (
   expect(await page.evaluate(() => window.__DL__.target)).toBe('zone:marlo_spot');
   const dirty = await page.evaluate(() => window.__DL__.dirty);
   await page.keyboard.press('KeyE');
-  await page.waitForFunction((d) => window.__DL__.dirty > d, dirty, { timeout: 30_000 });
+  // Marlo's walk is a scene tween, so it runs on Phaser's smoothed clock, which crawls when headless Chromium
+  // drops to a few frames a second on the bigger map: give him time.
+  await page.waitForFunction((d) => window.__DL__.dirty > d, dirty, { timeout: 75_000 });
   expect(await page.evaluate(() => window.__DL__.cars.some((c) => c.id.startsWith('cheat')))).toBe(false);
   expect(problems).toEqual([]);
 });

@@ -385,9 +385,14 @@ export const BALANCE = {
     /** Look this far ahead for obstacles across the lane's width. */
     lookAhead: 150,
     laneHalfWidth: 20,
+    /** Cars about at each hour, per `perLaneUnits` of lane (the 70 × 48 Downtown's lanes add up to about that). */
     byHour: [
       4, 3, 2, 2, 4, 8, 12, 18, 20, 16, 14, 14, 16, 16, 14, 14, 16, 20, 20, 16, 12, 10, 8, 6,
     ] as readonly number[],
+    /** Lane length, in world units, that `byHour` is counted for; a bigger map gets more cars in proportion. */
+    perLaneUnits: 19_000,
+    /** Never more cars than this, however long the lanes (performance). */
+    maxCars: 60,
     /** Traffic lights: a green and a yellow per direction, in seconds; crossings are out of step by `offset`. */
     green: 11,
     yellow: 2,

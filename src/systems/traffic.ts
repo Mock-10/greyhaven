@@ -102,7 +102,17 @@ export function stepTraffic(
   return true;
 }
 
-/** How many cars should be about at this minute of the day. */
-export function trafficTarget(minuteOfDay: number): number {
-  return BALANCE.traffic.byHour[Math.floor(minuteOfDay / 60) % 24] as number;
+/**
+ * How many cars should be about at this minute of the day, on lanes this long in all (world units): the same
+ * density per length of road whatever the map's size (M6a: the 70 × 96 map has about 2.7× Downtown's lanes).
+ */
+export function trafficTarget(minuteOfDay: number, laneUnits: number = BALANCE.traffic.perLaneUnits): number {
+  const T = BALANCE.traffic;
+  const perRef = T.byHour[Math.floor(minuteOfDay / 60) % 24] as number;
+  return Math.min(T.maxCars, Math.round((perRef * laneUnits) / T.perLaneUnits));
+}
+
+/** The total length of these lanes, in world units. */
+export function laneUnits(lanes: readonly Lane[]): number {
+  return lanes.reduce((sum, l) => sum + l.path.len, 0);
 }

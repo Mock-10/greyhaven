@@ -117,6 +117,9 @@ describe('traffic', () => {
 
   it('runs more cars by day than at night', () => {
     expect(trafficTarget(17 * 60)).toBeGreaterThan(trafficTarget(3 * 60));
+    // the same density per length of lane on a bigger map, up to the cap
+    expect(trafficTarget(17 * 60, BALANCE.traffic.perLaneUnits * 2)).toBe(trafficTarget(17 * 60) * 2);
+    expect(trafficTarget(17 * 60, BALANCE.traffic.perLaneUnits * 100)).toBe(BALANCE.traffic.maxCars);
   });
 });
 
