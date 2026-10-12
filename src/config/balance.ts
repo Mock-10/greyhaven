@@ -283,15 +283,88 @@ export const BALANCE = {
         fuelPerSecond: 30 / (15 * 60),
         value: 1500,
       },
+      /** Phase 4 (docs/08): pickup — top speed 80, mid accel and grip, health 120, tank 50, $7,000. */
+      pickup: {
+        topSpeed: 226,
+        reverseSpeed: 70,
+        accel: 135,
+        brake: 310,
+        drag: 70,
+        turnRate: 2.3,
+        halfLength: 40,
+        halfWidth: 16,
+        shadowHeight: 24,
+        health: 120,
+        tank: 50,
+        fuelPerSecond: 50 / (15 * 60),
+        value: 7000,
+      },
+      /** docs/08 sports car: top speed 120, high accel and grip, health 80, tank 45, $25,000. */
+      sports: {
+        topSpeed: 339,
+        reverseSpeed: 80,
+        accel: 210,
+        brake: 380,
+        drag: 70,
+        turnRate: 2.8,
+        halfLength: 38,
+        halfWidth: 15,
+        shadowHeight: 18,
+        health: 80,
+        tank: 45,
+        fuelPerSecond: 45 / (15 * 60),
+        value: 25000,
+      },
+      /** docs/08 armored SUV: top speed 85, mid accel and grip, health 250, tank 70, $40,000. */
+      armoredSuv: {
+        topSpeed: 240,
+        reverseSpeed: 70,
+        accel: 130,
+        brake: 300,
+        drag: 70,
+        turnRate: 2.2,
+        halfLength: 42,
+        halfWidth: 17,
+        shadowHeight: 28,
+        health: 250,
+        tank: 70,
+        fuelPerSecond: 70 / (15 * 60),
+        value: 40000,
+      },
     },
+    /** docs/08 trunk slots by type (the cruiser, SWAT van and armored police SUV have none for the player). */
+    trunkSlots: { sedan: 4, taxi: 4, van: 10, police: 0, swat: 0, armored: 0, beater: 2, pickup: 6, sports: 2, armoredSuv: 4 },
+    /** docs/08 damage states as shares of the car's health: smoke below half, fire and −30% top speed below a
+     *  quarter; at zero it explodes after a few seconds. */
+    smokeShare: 0.5,
+    fireShare: 0.25,
+    explodeSeconds: 3,
+    /** How often a damaged car puffs smoke or flames (seconds). */
+    damageFxSeconds: 0.18,
+    /** The blast of an exploding car: damage at the centre and its radius in tiles (assumed). */
+    explosion: { damage: 90, radiusTiles: 2.5 },
+    explosionShakeMs: 350,
+    /** docs/08 upgrades at the mechanic's garage, clean money: cost per level and the effect per level. */
+    upgrades: {
+      engine: { costs: [1000, 2500, 5000], perLevel: 0.08 },
+      brakes: { costs: [600, 1500, 3000], perLevel: 0.15 },
+      armor: { costs: [1500, 3500, 7000], perLevel: 0.2 },
+      tires: { costs: [800, 2000], perLevel: 0.1 },
+      hidden: { costs: [4000], perLevel: 0 },
+    },
+    /** Respray (docs/08): $400, a new colour, the hot status cleared, −1★ when unseen. */
+    resprayPrice: 400,
+    /** Repairs at a mechanic cost 5–40% of the car's value by the damage (docs/08); the mechanic job's discount. */
+    repairShare: [0.05, 0.4] as readonly [number, number],
+    mechanicDiscount: 0.2,
+    /** docs/08 insurance: a bought car that's destroyed comes back at home for this share of its value. */
+    insuranceShare: 0.1,
     /** Damage per unit of impact speed; below these healths the car smokes / loses 30% top speed (docs/08). */
     damagePerSpeed: 0.12,
     /** Bumps slower than this do no damage (parking, scraping a wall). */
     minImpactSpeed: 40,
     /** A blocked car slides along a wall when at least this share of its heading runs along it. */
     slideMinShare: 0.5,
-    smokeBelow: 50,
-    limpBelow: 25,
     limpFactor: 0.7,
     /** Bounce on impact: share of speed kept, reversed. */
     bounce: 0.25,

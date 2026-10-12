@@ -71,6 +71,7 @@ import { CombatWorld } from '../world/combatWorld';
 import { armsPage } from '../world/arms';
 import {
   addAmmo,
+  hurt,
   cycleWeapon,
   drawnWeapon,
   giveWeapon,
@@ -151,7 +152,7 @@ import {
   type Grade,
 } from '../systems/career';
 import { runCalendar } from '../systems/days';
-import { credit } from '../systems/finance';
+import { credit, debit } from '../systems/finance';
 import { rollTrunk, takeLoot, type LootItem } from '../systems/loot';
 import { lockTool, wearLockpicks } from '../systems/shop';
 import { atmPage, bagPage, phoneRoot, PHONE_SENDERS, type PhoneCtx } from '../world/phone';
@@ -718,6 +719,65 @@ export class WorldScene extends Phaser.Scene {
       },
       playAction: (a) => this.actions.play(a, BALANCE.combatWorld.flashSeconds * 6),
     });
+  }
+
+  /** Smoke and fire from damaged cars, and wrecks that explode (docs/08). */
+  private carDamageTick(dt: number): void {
+    const V = BALANCE.vehicles;
+    this.damageFxT += dt;
+    const puff = this.damageFxT >= V.damageFxSeconds;
+    if (puff) this.damageFxT = 0;
+    for (const c of [...this.cars]) {
+      const v = c.v;
+      const S = stats(v);
+      const share = v.health / S.health;
+      if (puff && !this.inside && v.burning !== -1) {
+        if (share < V.fireShare) this.fx?.emit('fireSmall', v.x, v.y, 14, 1);
+        else if (share < V.smokeShare) this.fx?.emit('smoke', v.x, v.y, 16, 1);
+      }
+      if (!v.wrecked || v.burning === -1) continue;
+      v.burning = (v.burning ?? 0) + dt;
+      if (v.burning < V.explodeSeconds) continue;
+      v.burning = -1;
+      this.carExploded(c);
+    }
+  }
+
+  private damageFxT = 0;
+
+  /** A wreck explodes: the blast hurts whoever is near (the driver most), and a bought car goes to insurance. */
+  private carExploded(c: CarView): void {
+    const v = c.v;
+    const E = BALANCE.vehicles.explosion;
+    const st = this.state;
+    this.combatWorld?.carExplosion(v, E.damage, E.radiusTiles);
+    this.cameras.main.shake(BALANCE.vehicles.explosionShakeMs, 0.004);
+    if (st.driving === v.id) this.leaveCar({ x: v.x + 30, y: v.y + 30 });
+    const p = st.player;
+    const d = Math.hypot(p.x - v.x, p.y - v.y);
+    if (!this.inside && d < E.radiusTiles * TILE) {
+      const r = hurt(p, st.combat, Math.round(E.damage * (1 - d / (E.radiusTiles * TILE)) + 1));
+      if (r.down) {
+        this.playerDown();
+        return;
+      }
+    }
+    // a bought car is insured (docs/08): it waits at home for 10% of its value
+    if (v.owned) {
+      const fee = Math.round(BALANCE.vehicles.types[v.type].value * BALANCE.vehicles.insuranceShare);
+      debit(st.money, st.finance, st.minutes, 'CAR INSURANCE', Math.min(fee, st.money.bank));
+      const home = this.map.zones?.find((z) => z.id === 'home_parking')?.slots?.[0];
+      if (home) {
+        v.x = home.x;
+        v.y = home.y;
+        v.heading = (home.dir * Math.PI) / 4;
+      }
+      v.health = stats(v).health;
+      v.wrecked = false;
+      v.burning = undefined;
+      v.fuel = stats(v).tank;
+      this.toast('INSURANCE', `YOUR ${TYPE_LABEL[v.type]} IS BACK AT HOME. $${fee} FROM THE BANK.`);
+    }
   }
 
   /** What stops a bullet in the street: buildings and every car, as ground boxes. */
@@ -1848,6 +1908,7 @@ export class WorldScene extends Phaser.Scene {
       if (this.lastNpcMinute % 10 === 0) this.updateInteriorObjective();
     }
     if (!this.isReference) this.updateStreetLife(dt);
+    if (!this.isReference) this.carDamageTick(dt);
     if (!this.isReference) {
       this.combatTick(dt);
       this.combatWorld?.update(dt, !!this.inside);

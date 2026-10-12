@@ -28,7 +28,24 @@ export interface Vehicle {
   looted?: boolean;
   /** Bought by the player (the car dealer, M6): never a crime to open or drive. */
   owned?: boolean;
+  /** Mechanic upgrades (docs/08, Phase 4): levels per upgrade; missing means none. */
+  mods?: CarMods;
+  /** What the player keeps in this car's trunk (docs/08, Phase 4): weapons and burglary goods. */
+  stash?: { weapons: { id: string; registered: boolean; clip: number }[]; goods: { kind: string; value: number }[] };
+  /** Seconds since it hit zero health; it explodes after BALANCE.vehicles.explodeSeconds (docs/08). */
+  burning?: number;
 }
+
+/** docs/08 upgrade levels. */
+export interface CarMods {
+  engine: number;
+  brakes: number;
+  armor: number;
+  tires: number;
+  hidden: number;
+}
+
+export const NO_MODS: CarMods = { engine: 0, brakes: 0, armor: 0, tires: 0, hidden: 0 };
 
 export interface DriveInput {
   throttle: number; // -1..1 (negative brakes, then reverses)
@@ -37,8 +54,20 @@ export interface DriveInput {
 }
 
 /** The stats of a car's type. */
-export function stats(v: Pick<Vehicle, 'type'>) {
-  return BALANCE.vehicles.types[v.type];
+export function stats(v: Pick<Vehicle, 'type'> & { mods?: CarMods }) {
+  const base = BALANCE.vehicles.types[v.type];
+  const m = v.mods;
+  if (!m) return base;
+  const U = BALANCE.vehicles.upgrades;
+  const engine = 1 + m.engine * U.engine.perLevel;
+  return {
+    ...base,
+    topSpeed: base.topSpeed * engine,
+    accel: base.accel * engine,
+    brake: base.brake * (1 + m.brakes * U.brakes.perLevel),
+    health: Math.round(base.health * (1 + m.armor * U.armor.perLevel)),
+    turnRate: base.turnRate * (1 + m.tires * U.tires.perLevel),
+  };
 }
 
 /** The sprite direction (0–7) for a heading. */
@@ -72,7 +101,8 @@ export function vehicleSolid(v: Vehicle): Solid {
 
 export function topSpeed(v: Vehicle): number {
   const V = BALANCE.vehicles;
-  return stats(v).topSpeed * (v.health < V.limpBelow ? V.limpFactor : 1);
+  const S = stats(v);
+  return S.topSpeed * (v.health < S.health * V.fireShare ? V.limpFactor : 1);
 }
 
 /**

@@ -367,6 +367,16 @@ export class CombatWorld {
     }
   }
 
+  /** A car blew up (docs/08): people and officers nearby take the blast, with the explosion drawn. */
+  carExplosion(at: { x: number; y: number }, damage: number, radiusTiles: number): void {
+    this.explosion(at);
+    const R = radiusTiles * TILE;
+    for (const t of this.targets()) {
+      const d = Math.hypot(t.x - at.x, t.y - at.y);
+      if (d <= R) this.damage(t.id, Math.round(damage * (1 - d / R) + 1), Math.atan2(t.y - at.y, t.x - at.x));
+    }
+  }
+
   /** Everything off the street (the chase ended in an arrest or a hospital stay, or a load). */
   clear(): void {
     for (const b of this.bodies) {
