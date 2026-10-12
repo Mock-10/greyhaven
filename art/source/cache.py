@@ -11,7 +11,7 @@ os.makedirs(CACHE, exist_ok=True)
 # characters and vehicles are the scale reference (person ~1.75 m = 40 units)
 BLD_SCALE = 2.6
 PROP_SCALE = {'tree_a': 2.0, 'tree_b': 2.0, 'pine': 2.0, 'lamp': 2.2, 'traffic_light': 2.0, 'street_sign': 1.6,
-              'planter': 1.5, 'bench': 1.3, 'bush': 1.4}
+              'planter': 1.5, 'bench': 1.3, 'bush': 1.4, 'fir': 1.6, 'birch': 1.5}
 INT_SCALE = {'desk_paperwork': 1.4, 'cash_register': 1.6, 'safe': 1.2}
 
 
@@ -37,6 +37,11 @@ def factories():
     for k, v in street.DECALS.items():
         f['dec/' + k] = v
     for k, v in street.SEGMENTS.items():
+        f['seg/' + k] = v
+    import suburb
+    for k, v in suburb.PROPS.items():
+        f['prop/' + k] = (lambda v, s: (lambda: scaled(v(), s)))(v, PROP_SCALE.get(k, 1.0))
+    for k, v in suburb.SEGMENTS.items():
         f['seg/' + k] = v
     for k, v in infill.BUILDINGS.items():
         f['bld/' + k] = (lambda v: (lambda: scaled(v(), BLD_SCALE)))(v)

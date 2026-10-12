@@ -93,8 +93,11 @@ export interface MapData {
   zones?: Zone[];
   /** Pedestrian paths along the sidewalks (milestone 4). */
   walkways?: [number, number][][];
-  /** Traffic lanes in driving order, one each way per road (milestone 4). */
-  lanes?: { road: string; p: [number, number][] }[];
+  /** Traffic lanes in driving order (milestone 4): routes from map edge to map edge, one or more each way per road
+   *  (new roads have two each way since 2026-10-11), with turns where a road ends at another. */
+  lanes?: { road: string; p: [number, number][]; stops?: { s: number; c: number }[] }[];
+  /** Road centre lines, for police routing (lanes are offset and can turn). Older maps route on their lanes. */
+  roads?: { road: string; p: [number, number][] }[];
   /** Road crossings: where the traffic lights are. */
   crossings?: { x: number; y: number }[];
   /** Where the player starts, in world units. */

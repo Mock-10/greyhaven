@@ -61,7 +61,7 @@ describe('traffic', () => {
   });
 
   it('stops at a red light and keeps its distance from a car ahead', () => {
-    const lane = lanes.findIndex((l) => l.ew);
+    const lane = lanes.findIndex((l) => l.stops[0]?.ew);
     const stop = lanes[lane]!.stops[0]!;
     const car: TrafficCar = {
       id: 't',

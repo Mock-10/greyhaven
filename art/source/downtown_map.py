@@ -23,11 +23,14 @@ import street
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 T = 32.0
-NW, NH = 70, 48     # map size in tiles: x (east) and y (south)
+NW, NH = 70, 96     # map size in tiles: x (east) and y (south); 48 tall until the Phase 2 map growth
 N = NW
 MAPW = NW * T       # world width (x)
 MAPH = NH * T       # world height (y)
-HW = 2 * T          # road half width
+HW = 2 * T          # road half width (Downtown's streets: one lane each way)
+HW4 = 4 * T         # half width of the new streets (user rule, 2026-10-11: at least two lanes each way)
+LANE = 2 * T        # lane width
+DT_EDGE = 48 * T     # where the old Downtown ended: the Phase 2 band starts here
 SWK = 2 * T         # sidewalk width
 KERB = 3.0          # kerbstone strip
 R_CORNER = 44.0     # kerb radius at street corners
@@ -54,13 +57,33 @@ def gull_x(y):
     return tc(62 + 3 * smooth((y / T - 40.0) / 8.0))
 
 
-Y_SAMPLES = np.linspace(-T, MAPH + T, 401)
+# Hedgerow Way, the new boulevard (Phase 2): two lanes each way, the downtown streets run on south to meet it
+BLVD = 'HEDGEROW WAY'
+BY = tc(61)
+# Ashby Road: Millwright Road's continuation south of the boulevard, two lanes each way, past the house row and
+# bending east through the woods to the map edge
+ASH = 'ASHBY ROAD'
+
+
+def ash_x(y):
+    return tc(41 + 5 * smooth((y / T - 84.0) / 10.0))
+
+
+Y_SAMPLES = np.linspace(-T, BY, 401)
+ASH_LINE = np.stack([ash_x(np.linspace(BY, MAPH + T, 241)), np.linspace(BY, MAPH + T, 241)], 1)
 ROADS_Y = {
     'PEWTER STREET': np.stack([np.full_like(Y_SAMPLES, tc(20)), Y_SAMPLES], 1),
     'MILLWRIGHT ROAD': np.stack([mill_x(Y_SAMPLES), Y_SAMPLES], 1),
     'GULLSWAY': np.stack([gull_x(Y_SAMPLES), Y_SAMPLES], 1),
 }
-ROADS_X = {'OVERCAST AVENUE': tc(20), 'DRIZZLE ROW': tc(37)}
+ROADS_X = {'OVERCAST AVENUE': tc(20), 'DRIZZLE ROW': tc(37), BLVD: BY}
+HWX = {'OVERCAST AVENUE': HW, 'DRIZZLE ROW': HW, BLVD: HW4}
+LANES_PER_DIR = {BLVD: 2, ASH: 2}
+
+
+def hwx(name):
+    """Half width of an east-west road."""
+    return HWX[name]
 
 
 def y_edge(name, y, side, d):
@@ -87,8 +110,8 @@ class Block:
         self.sidewalks = sidewalks if sidewalks is not None else {k for k in 'wens' if getattr(self, k)}
 
     def y_range(self, d):
-        y0 = ROADS_X[self.n] + HW + d if self.n else -2.0
-        y1 = ROADS_X[self.s] - HW - d if self.s else MAPH + 2.0
+        y0 = ROADS_X[self.n] + hwx(self.n) + d if self.n else -2.0
+        y1 = ROADS_X[self.s] - hwx(self.s) - d if self.s else MAPH + 2.0
         return y0, y1
 
     def poly(self, d=0.0, radius=None, sides=None):
@@ -96,8 +119,8 @@ class Block:
         sides = sides if sides is not None else {k for k in 'wens' if getattr(self, k)}
         dn = d if 'n' in sides else 0.0
         ds = d if 's' in sides else 0.0
-        y0 = (ROADS_X[self.n] + HW + dn) if self.n else -2.0
-        y1 = (ROADS_X[self.s] - HW - ds) if self.s else MAPH + 2.0
+        y0 = (ROADS_X[self.n] + hwx(self.n) + dn) if self.n else -2.0
+        y1 = (ROADS_X[self.s] - hwx(self.s) - ds) if self.s else MAPH + 2.0
         if self.e:
             east = y_edge_line(self.e, y0, y1, -1, HW + (d if 'e' in sides else 0.0))
         else:
@@ -149,13 +172,13 @@ BLOCKS = {
     'w': Block('w', None, P, O, D),
     'mid': Block('mid', P, M, O, D),
     'e': Block('e', M, G, O, D, sidewalks={'n', 's'}),
-    'sw': Block('sw', None, P, D, None),
-    's': Block('s', P, M, D, None),
-    'se': Block('se', M, G, D, None, sidewalks={'n'}),
+    'sw': Block('sw', None, P, D, BLVD),
+    's': Block('s', P, M, D, BLVD),
+    'se': Block('se', M, G, D, BLVD, sidewalks={'n', 's'}),
     # the far side of Gullsway: the town's eastern edge, an embankment toward The Works
     'gn': Block('gn', G, None, None, O, sidewalks={'w', 's'}),
     'gm': Block('gm', G, None, O, D, sidewalks={'w', 'n', 's'}),
-    'gs': Block('gs', G, None, D, None, sidewalks={'w', 'n'}),
+    'gs': Block('gs', G, None, D, BLVD, sidewalks={'w', 'n', 's'}),
 }
 
 # ------------------------------------------------------------------ output collections
@@ -325,54 +348,82 @@ def lay_blocks():
     ground('gravel', BLOCKS['e'].poly(KERB + 2, radius=0, sides={'n', 's', 'w', 'e'}))
 
 
+def ns_hw(cx, cy):
+    """Half width of the north-south road(s) at a crossing: Ashby Road (south of the boulevard) is wider."""
+    return HW4 if abs(cy - BY) < 1 and abs(cx - ash_x(BY)) < 1 else HW
+
+
+def road_lines(line, hw, lanes, a, b):
+    """Paint one straight or curved stretch of road between a and b along `line` (sampled, any direction):
+    a double gold centre line, white edge lines and, on wider roads, dashed white lines between same-way lanes."""
+    for dd in (-2.2, 2.2):
+        ground('paint_gold', stroke(offset(line, dd), 1.6))
+    for dd in (-hw + 4, hw - 4):
+        ground('paint_white', stroke(offset(line, dd), 1.8))
+    if lanes > 1:
+        for k in range(1, lanes):
+            for sgn in (-1, 1):
+                for seg in dashes(offset(line, sgn * k * LANE), 1.8, 22.0, 18.0):
+                    ground('paint_white', seg)
+
+
 def lay_markings():
-    # x-roads: double centre line in gold, white edge lines, between the crossings
-    xs = [tc(20), None]
+    # x-roads: double centre line in gold, white edge lines, lane dividers on the boulevard, between the crossings
     for name, cy in ROADS_X.items():
+        h = hwx(name)
         cxs = [float(np.interp(cy, l[:, 1], l[:, 0])) for l in ROADS_Y.values()]
-        gaps = [(c - HW - 40, c + HW + 40) for c in cxs]
+        gaps = [(c - ns_hw(c, cy) - 40, c + ns_hw(c, cy) + 40) for c in cxs]
         spans = []
-        x = 0.0
+        x = -T
         for g0, g1 in sorted(gaps):
             spans.append((x, g0)); x = g1
-        spans.append((x, MAPW))
+        spans.append((x, MAPW + T))
         for a, b in spans:
             if b - a < 8:
                 continue
-            for dy in (-2.2, 2.2):
-                ground('paint_gold', rect(a, cy + dy - 0.8, b, cy + dy + 0.8))
-            for dy in (-HW + 4, HW - 4):
-                ground('paint_white', rect(a, cy + dy - 0.9, b, cy + dy + 0.9))
-        # crosswalks across the x-road on both sides of each crossing
+            road_lines(np.array([[a, cy], [b, cy]]), h, LANES_PER_DIR.get(name, 1), a, b)
+        # crosswalks across the x-road on both sides of each crossing, and the stop lines
         for c in cxs:
-            for x0 in (c - HW - 36, c + HW + 4):
-                for k in range(9):
-                    yy = cy - HW + 8 + k * 14
+            nh = ns_hw(c, cy)
+            for x0 in (c - nh - 36, c + nh + 4):
+                for k in range(int((2 * h - 16) // 14) + 1):
+                    yy = cy - h + 8 + k * 14
                     ground('paint_white', rect(x0, yy, x0 + 32, yy + 7))
-                # stop lines
-            ground('paint_white', rect(c - HW - 44, cy, c - HW - 40, cy + HW - 6))
-            ground('paint_white', rect(c + HW + 40, cy - HW + 6, c + HW + 44, cy))
-    # y-roads, following the bend
+            ground('paint_white', rect(c - nh - 44, cy, c - nh - 40, cy + h - 6))
+            ground('paint_white', rect(c + nh + 40, cy - h + 6, c + nh + 44, cy))
+    # y-roads, following the bend, ending at the boulevard
     for name, line in ROADS_Y.items():
-        gaps = [(ROADS_X[O] - HW - 40, ROADS_X[O] + HW + 40), (ROADS_X[D] - HW - 40, ROADS_X[D] + HW + 40)]
-        spans = [(-T, gaps[0][0]), (gaps[0][1], gaps[1][0]), (gaps[1][1], MAPH + T)]
+        gaps = sorted((cy - hwx(n) - 40, cy + hwx(n) + 40) for n, cy in ROADS_X.items())
+        spans = []
+        y = -T
+        for g0, g1 in gaps:
+            spans.append((y, g0)); y = g1
         for a, b in spans:
             sel = line[(line[:, 1] >= a) & (line[:, 1] <= b)]
             if len(sel) < 2:
                 continue
-            for dd in (-2.2, 2.2):
-                ground('paint_gold', stroke(offset(sel, dd), 1.6))
-            for dd in (-HW + 4, HW - 4):
-                ground('paint_white', stroke(offset(sel, dd), 1.8))
-        for cy in ROADS_X.values():
-            for y0 in (cy - HW - 36, cy + HW + 4):
+            road_lines(sel, HW, 1, a, b)
+        for xname, cy in ROADS_X.items():
+            h = hwx(xname)
+            # the boulevard is a T for Pewter Street and Gullsway: crosswalk and stop line on the north side only
+            for y0 in ((cy - h - 36,) if xname == BLVD else (cy - h - 36, cy + h + 4)):
                 cx = float(np.interp(y0 + 16, line[:, 1], line[:, 0]))
                 for k in range(9):
                     xx = cx - HW + 8 + k * 14
                     ground('paint_white', rect(xx, y0, xx + 7, y0 + 32))
             cx = float(np.interp(cy, line[:, 1], line[:, 0]))
-            ground('paint_white', rect(cx - HW + 6, cy - HW - 44, cx, cy - HW - 40))
-            ground('paint_white', rect(cx, cy + HW + 40, cx + HW - 6, cy + HW + 44))
+            ground('paint_white', rect(cx - HW + 6, cy - h - 44, cx, cy - h - 40))
+            if xname != BLVD:
+                ground('paint_white', rect(cx, cy + h + 40, cx + HW - 6, cy + h + 44))
+    # Ashby Road south of the boulevard: four lanes, a crosswalk and a stop line at the junction
+    sel = ASH_LINE[ASH_LINE[:, 1] >= BY + HW4 + 40]
+    road_lines(sel, HW4, 2, 0, 0)
+    ax = ash_x(BY)
+    y0 = BY + HW4 + 4
+    for k in range(int((2 * HW4 - 16) // 14) + 1):
+        xx = ax - HW4 + 8 + k * 14
+        ground('paint_white', rect(xx, y0, xx + 7, y0 + 32))
+    ground('paint_white', rect(ax, BY + HW4 + 40, ax + HW4 - 6, BY + HW4 + 44))
     # manholes, drains and puddles on the roads
     for (x, y) in ((tc(20), tc(20)), (tc(9), tc(37.6)), (tc(30), tc(19.2)), (mill_x(tc(28)), tc(28)), (tc(20.8), tc(6)),
                    (tc(45), tc(36.5)), (tc(20), tc(44))):
@@ -381,7 +432,7 @@ def lay_markings():
     for name, cy in ROADS_X.items():
         for x in np.arange(tc(3), MAPW, tc(7)):
             for side in (-1, 1):
-                y = cy + side * (HW - 3)
+                y = cy + side * (hwx(name) - 3)
                 ground('grate', rect(x - 6, y - 2.5, x + 6, y + 2.5))
     for (x, y, rx, ry) in ((tc(11), tc(21.2), 22, 9), (tc(26), tc(36.2), 30, 11), (tc(44), tc(18.8), 18, 8), (tc(19.2), tc(30), 9, 20),
                            (mill_x(tc(44)) + 20, tc(44), 10, 18), (tc(6), tc(38.6), 16, 7)):
@@ -805,8 +856,8 @@ def block_s():
     keep_clear(fx + 18, ny + 30, 34)
     building('parking_garage', tc(26.25), tc(44.25), 4)
     building('fire_station', tc(30.15), tc(44.6), 4)
-    ground('cobble', rect(tc(33.3), ny, fx - tc(1.95), MAPH))
-    lawn(rect(tc(24.3), tc(46.35), tc(33.0), MAPH + 4), 20)
+    ground('cobble', rect(tc(33.3), ny, fx - tc(1.95), DT_EDGE))
+    lawn(rect(tc(24.3), tc(46.35), tc(33.0), DT_EDGE + 2), 20)
     prop('tree_b', tc(25.2), tc(47.2)); prop('bush', tc(28.0), tc(47.4)); prop('tree_a', tc(31.2), tc(47.3))
     for y, kind in ((ny + 20, 'dumpster'), (ny + 50, 'bin_navy'), (ny + 80, 'ac_unit'), (ny + 110, 'pallets'), (ny + 150, 'boxes'), (ny + 180, 'trash_bags')):
         prop(kind, tc(33.75), y, dir=6)
@@ -818,8 +869,8 @@ def block_se():
     canopy (the roof is an overhead object: it draws over cars under it and fades while you're under it)."""
     ny = ROADS_X[D] + HW + SWK
     xr = y_edge(M, tc(44), +1, HW) - 1
-    gl = y_edge_line(G, ny, MAPH + 4, -1, HW - 1)
-    ground('lot', [[xr, ny]] + gl + [[xr, MAPH + 4]])
+    gl = y_edge_line(G, ny, DT_EDGE + 2, -1, HW - 1)
+    ground('lot', [[xr, ny]] + gl + [[xr, DT_EDGE + 2]])
     # the kiosk and its apron
     kx = tc(44.45)
     building('fuel_kiosk', kx, front_y('fuel_kiosk', ny + tc(1.75)), 0)
@@ -855,7 +906,7 @@ def block_se():
         ground('paint_white', rect(x - 0.9, ny + 6, x + 0.9, ny + tc(1.6)))
     prop('utility_box', tc(57.9), ny + 14, dir=6); prop('bin_navy', tc(57.3), ny + 12)
     # the south edge: a planting strip with a low wall, and the price sign corner
-    lawn(rect(tc(43.6), tc(47.7), gl[-1][0] - tc(1.2), MAPH + 4), 10)
+    lawn(rect(tc(43.6), tc(47.7), gl[-1][0] - tc(1.2), DT_EDGE + 2), 10)
     segments('wall_brick', [[tc(43.7), tc(47.62)], [tc(58.5), tc(47.62)]])
     for x in (44.6, 47.4, 50.2, 53.0, 55.8, 58.6):
         prop('bush', tc(x), tc(47.95))

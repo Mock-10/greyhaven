@@ -7,10 +7,17 @@ import { makePath, nearestOn, pointAt, type Path } from './paths';
 export interface Lane {
   path: Path;
   road: string;
-  /** Along this lane: where to stop for each crossing, and which crossing it is. */
-  stops: { s: number; crossing: number }[];
-  /** Runs east–west (true) or north–south (false): which light phase it follows. */
-  ew: boolean;
+  /** Along this lane: where to stop for each crossing, which crossing it is, and which light phase it follows there
+   *  (east–west or north–south, from the lane's direction at the stop: a turning lane can follow both). */
+  stops: { s: number; crossing: number; ew: boolean }[];
+}
+
+/** A lane as the map stores it: a route from map edge to map edge (several per road since multi-lane roads), with
+ *  its stop lines when the map script worked them out (`c` is the crossing's index). */
+export interface LaneData {
+  road: string;
+  p: [number, number][];
+  stops?: { s: number; c: number }[];
 }
 
 export interface TrafficCar {
@@ -24,23 +31,25 @@ export interface TrafficCar {
   heading: number;
 }
 
-export function buildLanes(
-  raw: readonly { road: string; p: [number, number][] }[],
-  crossings: readonly { x: number; y: number }[],
-): Lane[] {
+export function buildLanes(raw: readonly LaneData[], crossings: readonly { x: number; y: number }[]): Lane[] {
   const T = BALANCE.traffic;
   return raw.map((l) => {
     const path = makePath(l.p);
-    const a = l.p[0] as [number, number];
-    const b = l.p[l.p.length - 1] as [number, number];
-    const ew = Math.abs(b[0] - a[0]) > Math.abs(b[1] - a[1]);
-    const stops = crossings
-      .map((c, k) => ({ n: nearestOn(path, c.x, c.y), k }))
-      .filter((q) => q.n.d < 48)
-      .map((q) => ({ s: q.n.s - T.stopBack, crossing: q.k }))
+    // stop lines from the map, or (older maps, one lane each way) a fixed distance before each crossing passed
+    const found =
+      l.stops?.map((q) => ({ s: q.s, crossing: q.c })) ??
+      crossings
+        .map((c, k) => ({ n: nearestOn(path, c.x, c.y), k }))
+        .filter((q) => q.n.d < 48)
+        .map((q) => ({ s: q.n.s - T.stopBack, crossing: q.k }));
+    const stops = found
       .filter((q) => q.s > 0)
+      .map((q) => {
+        const at = pointAt(path, q.s);
+        return { ...q, ew: Math.abs(at.dx) > Math.abs(at.dy) };
+      })
       .sort((p, q) => p.s - q.s);
-    return { path, road: l.road, stops, ew };
+    return { path, road: l.road, stops };
   });
 }
 
@@ -74,7 +83,7 @@ export function stepTraffic(
   for (const st of lane.stops) {
     const d = st.s - car.s;
     if (d < -4 || d > T.lookAhead * 2) continue;
-    const light = lightFor(t, st.crossing, lane.ew);
+    const light = lightFor(t, st.crossing, st.ew);
     // a car already at the line when it turns yellow carries on
     if (light === 'red' || (light === 'yellow' && d > (car.speed * car.speed) / (2 * T.brake) - 6))
       room = Math.min(room, d);

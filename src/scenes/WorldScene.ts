@@ -480,7 +480,7 @@ export class WorldScene extends Phaser.Scene {
     });
     const pre = this.map.zones?.find((z) => z.id === 'precinct');
     const base = pre?.slots?.[0] ?? { ...this.map.spawn, dir: 0 };
-    this.roads = buildRoads(this.map.lanes ?? [], this.map.crossings ?? []);
+    this.roads = buildRoads(this.map.roads ?? this.map.lanes ?? [], this.map.crossings ?? []);
     this.police = new Police(this, {
       place,
       ensureWalkAnims: (c) => this.ensureWalkAnims(c),

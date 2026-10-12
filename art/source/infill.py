@@ -306,6 +306,7 @@ _SPECS = {
     'shop_cafe': (lambda lit: shop_building('CAFE', 'render_blue', 2, 13, 12, awning=('sage', 'white'), sign=('night', 'white'), lit=lit, seed=7, trim='white'), (13, 12), 25),
     'shop_tailor': (lambda lit: shop_building('TAILOR', 'brick', 3, 12, 12, awning=('khaki', 'white'), sign=('night', 'white'), lit=lit, seed=8), (12, 12), 37),
     'shop_hardware': (lambda lit: shop_building('HARDWARE', 'concrete', 1, 18, 12, awning=('red', 'red'), sign=('red', 'white'), lit=lit, seed=9, style='flat', roof=True), (18, 12), 13),
+    'shop_clothing': (lambda lit: shop_building('CLOTHING', 'render_lav', 2, 16, 12, awning=('plum', 'white'), sign=('plum', 'white'), lit=lit, seed=11, trim='white'), (16, 12), 25),
     'shop_bakery': (lambda lit: shop_building('BAKERY', 'render_lav', 2, 12, 12, awning=('clay', 'white'), sign=('white', 'brick'), lit=lit, seed=10, trim='white'), (12, 12), 25),
     'walkup_red': (lambda lit: walkup(4, 'redbrick', lit=lit, seed=4, door_col='navy'), (13, 14), 49),
     'walkup_tan': (lambda lit: walkup(3, 'brick', lit=lit, seed=5, door_col='red'), (13, 14), 37),
@@ -334,4 +335,13 @@ _MANY_WINDOWS = {'deco_office', 'glass_tower', 'hotel', 'brownstones', 'corner_r
 for _k, (_f, _fp, _h) in _i2.SPECS.items():
     BUILDINGS[_k] = (lambda f: (lambda: f(0.0)))(_f)
     BUILDINGS[_k + '_night'] = (lambda f, k: (lambda: f(0.42 if k in _MANY_WINDOWS else 1.0)))(_f, _k)
+    FOOTPRINTS[_k] = (_fp[0], _fp[1], _h)
+
+
+# the Phase 2 map growth (2026-10-11): houses, the depot, the garage, the used-car cabin, the site trailer
+import suburb as _sb  # noqa: E402
+
+for _k, (_f, _fp, _h) in _sb.SPECS.items():
+    BUILDINGS[_k] = (lambda f: (lambda: f(0.0)))(_f)
+    BUILDINGS[_k + '_night'] = (lambda f, k: (lambda: f(0.5 if k.startswith('house') else 1.0)))(_f, _k)
     FOOTPRINTS[_k] = (_fp[0], _fp[1], _h)
