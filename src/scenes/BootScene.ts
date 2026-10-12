@@ -7,6 +7,8 @@ import { registerPixelFont } from '../ui/bitmapFont';
 import { setIconSheet } from '../ui/icons';
 import uiIconsPng from '../../art/ui_icons.png';
 import type { Params } from '../debug/params';
+import { queueFx, registerFx } from '../fx/fxAssets';
+import { queuePlayerActions } from '../anim/playerActions';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -30,10 +32,13 @@ export class BootScene extends Phaser.Scene {
     });
     queueAtlases(this.load);
     this.load.image('ui_icons', uiIconsPng);
+    queueFx(this.load);
+    queuePlayerActions(this.load);
   }
 
   create(): void {
     registerAtlases(this.textures);
+    registerFx(this.textures);
     registerPixelFont(this);
     // the UI draws into pixel buffers: hand it the icon sheet's pixels once
     const img = this.textures.get('ui_icons').getSourceImage() as HTMLImageElement;

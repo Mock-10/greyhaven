@@ -9,11 +9,11 @@ import { calendar, darkness, formatClock } from '../systems/clock';
 import {
   C,
   CAR_PANEL,
+  CLOCK_PANEL,
   clear,
   createSurface,
   hintKeys,
   hintKeysWidth,
-  objective,
   plate,
   radar,
   senderIcon,
@@ -32,6 +32,7 @@ import { groundSampler } from '../maps/groundQuery';
 import { money } from './hudFormat';
 import type { Params } from '../debug/params';
 import { SENDER_ICON } from '../data/senders';
+import { HudAnimator, streetSlide, toastSlide } from '../ui/anim/hudAnim';
 
 interface Stats {
   fps: number;
@@ -61,6 +62,10 @@ export class HudScene extends Phaser.Scene {
   private streetMsg: { name: string; t: number } | null = null;
   private acc = 0;
   private objectiveText = 'EXPLORE THE LEDGER (DOWNTOWN)';
+  /** HUD motion: rolling cash, damage trail, star flashes, typed objective (ui/anim/hudAnim.ts). */
+  private anim = new HudAnimator();
+  /** The last car readout, kept while its panel folds away after getting out. */
+  private lastVehicle: HudSnapshot['vehicle'] | null = null;
 
   constructor() {
     super('hud');
@@ -125,7 +130,19 @@ export class HudScene extends Phaser.Scene {
       if (this.streetMsg.t > BALANCE.hud.streetSeconds) this.streetMsg = null;
     }
     this.acc += dt;
-    if (this.acc >= 1 / BALANCE.hud.radarHz) {
+    const snap = this.snap;
+    if (snap)
+      this.anim.update(dt, {
+        clean: snap.money.clean,
+        dirty: snap.money.dirty,
+        health: snap.health,
+        stars: snap.stars,
+        objective: snap.objective || this.objectiveText,
+        hints: snap.surrender ? 's' : snap.vehicle ? 'v' : snap.target ? 't' : 'f',
+        driving: !!snap.vehicle,
+      });
+    // while something moves the HUD redraws every frame, otherwise at the radar's rate
+    if (this.anim.busy || this.acc >= 1 / BALANCE.hud.radarHz) {
       this.acc = 0;
       this.redraw();
     }
@@ -140,7 +157,8 @@ export class HudScene extends Phaser.Scene {
     const snap = this.snap;
     if (snap) {
       const cal = calendar(snap.minutes);
-      topLeft(s, 6, 6, { ammo: '-/-', label: 'UNARMED', hp: snap.health, armor: snap.armor });
+      topLeft(s, 6, 6, { ammo: '-/-', label: 'UNARMED', hp: this.anim.health, armor: snap.armor });
+      this.anim.drawVitals(s, 6, 6);
       stars(
         s,
         Math.floor(W / 2),
@@ -148,13 +166,15 @@ export class HudScene extends Phaser.Scene {
         snap.stars,
         snap.starsFlash && Math.floor(this.time.now / 250) % 2 === 0,
       );
+      this.anim.drawStars(s, Math.floor(W / 2), 5);
       topRight(s, W - 6, 6, {
         day: cal.weekday,
         clock: formatClock(cal.minute),
-        clean: money(snap.money.clean),
-        dirty: money(snap.money.dirty),
+        clean: money(this.anim.clean.value),
+        dirty: money(this.anim.dirty.value),
         night: darkness(cal.minute) > 0.5,
       });
+      this.anim.drawCashPopups(s, W - 6, 6 + CLOCK_PANEL.h);
       radar(s, 52, H - 52, BALANCE.hud.radarRadius, BALANCE.hud.radarScale, {
         px: snap.px,
         py: snap.py,
@@ -174,8 +194,12 @@ export class HudScene extends Phaser.Scene {
         ],
         search: snap.search,
       });
-      objective(s, Math.floor(W / 2), H - 24, snap.objective || this.objectiveText);
-      if (snap.vehicle) vehiclePanel(s, 6, 6 + VITALS.h + 4, snap.vehicle);
+      this.anim.drawObjective(s, Math.floor(W / 2), H - 24, snap.objective || this.objectiveText);
+      if (snap.vehicle) this.lastVehicle = snap.vehicle;
+      if (this.anim.showCarPanel && this.lastVehicle) {
+        vehiclePanel(s, 6, 6 + VITALS.h + 4, this.lastVehicle);
+        this.anim.carPanelTransition(s, { x: 6, y: 6 + VITALS.h + 4, w: CAR_PANEL.w, h: CAR_PANEL.h });
+      }
       const hints: [string, string][] = snap.surrender
         ? [['Y', 'SURRENDER']]
         : snap.vehicle
@@ -202,25 +226,27 @@ export class HudScene extends Phaser.Scene {
       const hintsY = W - 12 - hw < Math.floor(W / 2) + Math.ceil(objW / 2) + 6 ? H - 48 : H - 26;
       plate(s, W - 12 - hw, hintsY, hw + 12, 19, C.LAVLT2, 0.82);
       hintKeys(s, W - 6 - hw, hintsY + 4, hints);
+      this.anim.fadeHints(s, { x: W - 12 - hw, y: hintsY, w: hw + 12, h: 19 });
       let stackY = hintsY - 6;
       if (this.toastMsg) {
         const t = this.toastMsg.t;
-        const out = Math.max(0, t - BALANCE.hud.toastSeconds) / 0.4;
-        const inn = Math.max(0, 0.25 - t) / 0.25;
         const who = this.toastMsg.who;
         stackY -= 40 + 4;
-        toast(s, W - 6, stackY, who, this.toastMsg.text, senderIcon(who, SENDER_ICON), Math.max(out, inn));
+        const slide = toastSlide(t, BALANCE.hud.toastSeconds);
+        toast(s, W - 6, stackY, who, this.toastMsg.text, senderIcon(who, SENDER_ICON), slide);
       }
       if (this.streetMsg) {
         const label = this.streetMsg.name;
         const dist = snap.district;
         const w = Math.max(textWidthPx(label), textWidthPx(dist)) + 14;
         stackY -= 26 + 4;
-        plate(s, W - 6 - w, stackY, w, 26, C.LAVLT2);
-        text(s, W - 6 - w + 7, stackY + 4, label, C.CREAM);
-        text(s, W - 6 - w + 7, stackY + 14, dist, C.MUTED);
+        const x = W - 6 - w + streetSlide(this.streetMsg.t, BALANCE.hud.streetSeconds);
+        plate(s, x, stackY, w, 26, C.LAVLT2);
+        text(s, x + 7, stackY + 4, label, C.CREAM);
+        text(s, x + 7, stackY + 14, dist, C.MUTED);
       }
     }
+    this.anim.drawBursts(s);
     if (this.debugOn && this.stats) {
       const st = this.stats;
       const lines = [

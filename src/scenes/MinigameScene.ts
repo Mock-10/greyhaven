@@ -61,6 +61,8 @@ import {
 import type { LootItem } from '../systems/loot';
 import { buy, type Wallet } from '../systems/shop';
 import { blend, clear, createSurface, type Surface } from '../ui/hudDraw';
+import { dimAlpha, Presence, transition } from '../ui/anim/transition';
+import { Bursts, Shake } from '../ui/anim/motion';
 import {
   DRAG_STRIP,
   PANEL_SIZE,
@@ -146,6 +148,10 @@ export class MinigameScene extends Phaser.Scene {
   private clock = 0;
   private baseX = 0;
   private baseY = 0;
+  private presence = new Presence();
+  private bursts = new Bursts(1);
+  private shake = new Shake();
+  private graded = false;
 
   constructor() {
     super('minigame');
@@ -160,6 +166,10 @@ export class MinigameScene extends Phaser.Scene {
     this.panelDrag = null;
     this.selected = 0;
     this.clock = 0;
+    this.presence = new Presence();
+    this.bursts = new Bursts(req.kind.length);
+    this.shake = new Shake();
+    this.graded = false;
     switch (req.kind) {
       case 'filing':
         this.logic = new FilingGame(new Rng(req.seed));
@@ -530,6 +540,9 @@ export class MinigameScene extends Phaser.Scene {
   update(): void {
     const dt = Math.min(0.1, this.game.loop.rawDelta / 1000);
     this.clock += dt;
+    this.presence.update(dt);
+    this.bursts.update(dt);
+    this.shake.update(dt);
     if (this.message) this.message.t += dt;
     const g = this.logic;
     if (g instanceof ResprayGame && !g.done) {
@@ -545,12 +558,26 @@ export class MinigameScene extends Phaser.Scene {
         if (g.last) g.last.t += dt;
       } else g.update(dt);
       if (g.done) {
-        if (this.resultT < 0) this.resultT = 0;
+        if (this.resultT < 0) {
+          this.resultT = 0;
+          this.celebrate(g.grade);
+        }
         this.resultT += dt;
         if (this.resultT > 1.4) this.close(g.grade);
       }
     }
     this.redraw();
+  }
+
+  /** The result lands: confetti for a good or excellent job, a shake for a fail (ui/anim/motion.ts). */
+  private celebrate(grade: Grade | null): void {
+    if (this.graded) return;
+    this.graded = true;
+    const P = SIZES[this.kind];
+    const { x, y } = this.pos;
+    if (grade === 'excellent' || grade === 'good')
+      this.bursts.emit('confetti', x + P.w / 2, y + P.h / 2, grade === 'excellent' ? 40 : 22, 110);
+    else if (grade === 'fail') this.shake.kick();
   }
 
   private close(grade: Grade | null): void {
@@ -566,8 +593,10 @@ export class MinigameScene extends Phaser.Scene {
     const s = this.surface;
     if (!s || !this.tex) return;
     clear(s);
-    blend(s, 0, s.height, 0, s.width, [20, 14, 24], 0.35); // dim the world
-    const { x, y } = this.pos;
+    blend(s, 0, s.height, 0, s.width, [20, 14, 24], dimAlpha(0.35, this.presence.t)); // dim the world
+    const sh = this.shake.offset;
+    const x = this.pos.x + sh.x;
+    const y = this.pos.y + sh.y;
     const req = this.req;
     const g = this.logic;
     if (req.kind === 'filing' && g instanceof FilingGame) {
@@ -605,6 +634,8 @@ export class MinigameScene extends Phaser.Scene {
         selected: this.selected,
         message: this.message && this.message.t < 3 ? this.message.text : null,
       });
+    transition(s, { x, y, ...SIZES[this.kind] }, this.presence.t);
+    this.bursts.draw(s);
     const ctx = this.tex.getContext();
     const img = ctx.createImageData(s.width, s.height);
     img.data.set(s.data);
