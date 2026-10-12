@@ -144,3 +144,8 @@ Built from the recorded answers (decisions 2026-10-11 and docs/04), for the user
 - **Burglary houses:** `house_bungalow` (8 × 6: bedroom, kitchen, living room), `house_family` (10 × 7: main bedroom, kids room, kitchen, living room), `house_townhouse` (8 × 7: study, bedroom, living room with a dining corner). A SEARCH prompt per room, the alarm keypad on a hall stand by the door (the cut-down partitions can't hold a wall panel), the owner's spot.
 - **Pawn shop** (7 × 5): the fence behind a long glass counter, stock shelves, a safe-room door, a second display counter, second-hand furniture and electronics for sale.
 - **Precinct 1 lobby** (8 × 6): the front desk with the desk sergeant, the barred gate to the cells, wanted posters, waiting chairs, a vending machine and a water cooler.
+
+## Phase 5 build (milestone 15, 2026-10-12)
+- **Homes you own** (`home_small`, `home_family`, art/source/rooms_property.py) are the burglary bungalow and family house drawn in "home" mode (rooms_houses.py `HOME`): no search prompts and no owner, the bed sleeps and saves, the wardrobe changes outfits, a floor stash, and a door in the bedroom down to the hideout.
+- **The hideout** (10 × 7, concrete): one big space per the recorded answer, with a locked stash room in the back corner. Items carry `needs` (`'stashRoom'`, or `'!workbench'` for what stands there before) and the game drops the ones the home's add-ons don't allow (`withAddons`). Drafts: `interior_hideout.png` (all M15 add-ons) and `interior_hideout_bare.png` (none). The chop bay's marked floor by the roll door waits for M16.
+

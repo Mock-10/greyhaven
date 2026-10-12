@@ -5,6 +5,7 @@ import { BALANCE } from '../config/balance';
 import { typeOfModel, type VehicleType } from '../data/vehicles';
 import { collides, type CollisionRules, type Solid } from './movement';
 import type { Obb } from '../iso/staticDepth';
+import type { HomeId } from '../data/property';
 import type { OwnedWeapon } from './combat';
 import type { Goods } from './burglary';
 
@@ -35,6 +36,8 @@ export interface Vehicle {
   mods?: CarMods;
   /** What the player keeps in this car's trunk (docs/08, Phase 4): weapons and burglary goods. */
   stash?: TrunkStash;
+  /** Kept in this home's garage (docs/09): off the street until taken out. */
+  storedAt?: HomeId;
   /** Tyres burst on a police spike strip (docs/05): slow and loose until the garage repairs it. */
   flat?: boolean;
   /** Seconds since it hit zero health; it explodes after BALANCE.vehicles.explodeSeconds (docs/08). */

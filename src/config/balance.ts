@@ -491,6 +491,35 @@ export const BALANCE = {
    *  beside the car's side); some drivers swing at you first. */
   carjack: { maxSpeed: 20, reachTiles: 1.2, doorGap: 6, fightShare: 0.25, fightDamage: 12 },
 
+  /** Property (docs/09, Phase 5): prices in clean money, weekly tax with Monday's rent, parking and add-on slots; the
+   *  add-ons' street-rep tiers and costs; the stash. Industrial units and warehouses come with their districts. */
+  property: {
+    types: {
+      smallHouse: { price: 12000, weeklyTax: 60, parking: 1, slots: 2 },
+      familyHouse: { price: 30000, weeklyTax: 90, parking: 2, slots: 3 },
+      industrialUnit: { price: 45000, weeklyTax: 120, parking: 4, slots: 5 },
+      warehouse: { price: 90000, weeklyTax: 200, parking: 6, slots: 6 },
+    },
+    addons: {
+      stashRoom: { tier: 0, cost: 3000 },
+      garageBay: { tier: 0, cost: 6000 },
+      workbench: { tier: 1, cost: 4000 },
+      press: { tier: 2, cost: 15000 },
+      chopBay: { tier: 2, cost: 20000 },
+      lab: { tier: 3, cost: 30000 },
+      crewRoom: { tier: 2, cost: 8000 },
+    },
+    /** A home's stash holds this many items (weapons, goods); dirty cash takes no slot. The stash room adds more. */
+    stashSlots: 10,
+    stashRoomSlots: 20,
+    garageBayParking: 2,
+    /** docs/09: the garage bay is 30% off for a mechanic of rank 4. */
+    mechanicBayRank: 4,
+    mechanicBayDiscount: 0.3,
+    /** Workbench crafting (assumed): a tool for this share of the hardware store's price. */
+    craftShare: 0.5,
+  },
+
   /** Police officers and their cruiser (milestone 4: one car and two officers at 1–2★, docs/15). */
   police: {
     officers: 2,

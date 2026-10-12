@@ -24,7 +24,8 @@ async function boot(page: Page, query: string): Promise<string[]> {
 /** Type a line into the cheat console (Ctrl + Shift + F1) and close it. */
 async function cheat(page: Page, line: string): Promise<void> {
   await page.keyboard.press('Control+Shift+F1');
-  await page.keyboard.type(line);
+  // one input event, not a key per letter: typing took seconds on CI while the world ran on
+  await page.keyboard.insertText(line);
   await page.keyboard.press('Enter');
   await page.keyboard.press('Escape');
   await page.waitForTimeout(200);
@@ -799,19 +800,76 @@ test('pulling a driver out of a stopped traffic car: yours to drive, the driver 
 }) => {
   test.setTimeout(120_000);
   const problems = await boot(page, '?scene=world&zoom=3&time=12:00');
-  const pos = await page.waitForFunction(
-    () => {
-      const t = (window.__DL__.traffic ?? []).find((c) => c.speed < 2);
-      return t ? { x: t.x + Math.sin(t.heading) * 26, y: t.y - Math.cos(t.heading) * 26 } : null;
-    },
-    null,
-    { timeout: 60_000, polling: 100 },
-  );
-  const p = (await pos.jsonValue())!;
-  await cheat(page, `tp ${Math.round(p.x)} ${Math.round(p.y)}`);
-  await page.waitForFunction(() => window.__DL__.target?.startsWith('jack:'));
+  // a car waiting at a red light can move off while the teleport is typed: try again with another one
+  let ready = false;
+  for (let tries = 0; tries < 8 && !ready; tries++) {
+    const pos = await page.waitForFunction(
+      () => {
+        const t = (window.__DL__.traffic ?? []).find((c) => c.speed < 2);
+        return t ? { x: t.x + Math.sin(t.heading) * 26, y: t.y - Math.cos(t.heading) * 26 } : null;
+      },
+      null,
+      { timeout: 60_000, polling: 100 },
+    );
+    const p = (await pos.jsonValue())!;
+    await cheat(page, `tp ${Math.round(p.x)} ${Math.round(p.y)}`);
+    ready = await page
+      .waitForFunction(() => window.__DL__.target?.startsWith('jack:'), null, { timeout: 3000 })
+      .then(() => true)
+      .catch(() => false);
+  }
+  expect(ready).toBe(true);
   await page.keyboard.press('KeyE');
   await page.waitForFunction(() => window.__DL__.driving?.startsWith('jacked'));
   await page.waitForFunction(() => window.__DL__.stars > 0, null, { timeout: 40_000 });
+  expect(problems).toEqual([]);
+});
+
+test('a house on Linden Avenue: buy it, go down to the basement, build the stash room, stash dirty cash (Phase 5)', async ({
+  page,
+}) => {
+  test.setTimeout(150_000);
+  const problems = await boot(page, '?scene=world&zoom=3&time=11:00&x=176&y=2372');
+  await cheat(page, 'bank 20000');
+  await page.waitForFunction(() => window.__DL__.target === 'sale:linden4');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'sale');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('1');
+  await page.waitForFunction(() => window.__DL__.bank === 20000 - 12000);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  await cheat(page, 'tp 196 2345');
+  await page.waitForFunction(() => window.__DL__.target === 'home:linden4');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.area === 'home_small', null, { timeout: 15_000 });
+  // down the stairs from the bedroom
+  await cheat(page, 'tp 30 82');
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('home_small:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.area === 'hideout', null, { timeout: 15_000 });
+  await cheat(page, 'tp 176 146');
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('hideout:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'plans');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('1');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  await page.waitForFunction(() => window.__DL__.homes?.[0]?.addons.includes('stashRoom'));
+  // the stash room's door is open now; its safe is the stash
+  await cheat(page, 'dirty 900');
+  await cheat(page, 'tp 30 66');
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('hideout:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'stash');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('1');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  await page.waitForFunction(() => window.__DL__.homes?.[0]?.dirty === 900);
+  expect(await page.evaluate(() => window.__DL__.dirty)).toBe(0);
   expect(problems).toEqual([]);
 });

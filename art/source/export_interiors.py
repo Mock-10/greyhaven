@@ -33,7 +33,8 @@ from scene import _hull
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', 'interiors')
 ROOMS = ['apartment', 'store', 'tower_lobby', 'office_floor', 'bar', 'hardware', 'clothing', 'dealer', 'garage', 'depot',
-         'site_trailer', 'house_bungalow', 'house_family', 'house_townhouse', 'pawn', 'precinct']
+         'site_trailer', 'house_bungalow', 'house_family', 'house_townhouse', 'pawn', 'precinct', 'home_small',
+         'home_family', 'hideout']
 
 
 def capture(room):
@@ -191,6 +192,8 @@ def export(room):
             entry['prompt'] = fl['prompt'][1]
         if fl.get('valuable'):
             entry['valuable'] = True
+        if fl.get('needs'):
+            entry['needs'] = fl['needs']
         if kind == 'door_leaf':
             g = door_gap(box, wx, wy)
             if g:

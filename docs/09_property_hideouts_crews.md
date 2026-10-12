@@ -57,3 +57,13 @@ See 02 for laundering numbers. Fronts are bought properties with their own build
 - **No furniture decorating** at first (maybe in Phase 8).
 - **Crew:** random names and portraits generated from the character art.
 - **Front businesses** (laundromat, car wash, nightclub) are all **full interiors**.
+
+## Phase 5 build (milestone 15, 2026-10-12): homes, the stash, the hideout
+- **Two houses for sale on Linden Avenue** (Hedgerow Park, the suburbs): **4 Linden Avenue** (small house, $12,000) and **10 Linden Avenue** (family house, $30,000), each with a FOR SALE sign on the lawn. E on the sign shows the house and BUY (clean money: the bank first, then carried cash). The sign goes; the front door becomes ENTER HOME, and the house is no longer a burglary target (deliveries still come).
+- **A home** is the bungalow or family layout lived in by you: the bed sleeps and saves (a save point even while the apartment is lost), the wardrobe changes outfits, a loose floorboard is the **stash**, and a door in the bedroom leads down to **the basement**. Walking in unseen with 1–2★ clears them (docs/05).
+- **The stash:** dirty cash (no slots) and weapons and goods, one slot each; 10 slots, +20 with the stash room. The rented apartment's stash works the same way.
+- **The basement hideout** (one big concrete space): the stairs up, a lounge corner, the roll door up to the driveway, and the **plans table**, where add-ons are bought with clean money. Bought add-ons appear as stations: the **stash room** (its locked door opens, a safe is the stash), the **workbench** (lockpicks, repair kits and fuel cans at half the store's price; respray the car on the driveway for $400, same as the garage). The garage bay adds 2 to the garage (−30% for a mechanic of rank 4+). The press, chop bay and lab come in M16, the crew room in M17; the plans list them as "coming soon".
+- **The garage is the driveway:** E GARAGE at the end of it stores the car standing there (up to the home's parking: 1 small, 2 family, +2 with the bay) or brings a stored car back out. Stored cars keep their health, fuel and trunk. After loading a save, your last car waits on your driveway.
+- **Tax** is taken with Monday's rent from the bank; what the bank can't cover is owed and taken the next Monday (assumed: no foreclosure).
+- **Assumptions:** the two houses on the market and their numbers (4 and 10); the workbench crafts at half price with clean money; the garage is storage at the driveway rather than extra physical spots; industrial units and the waterfront warehouse come with their districts (Phase 6).
+

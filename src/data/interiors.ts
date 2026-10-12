@@ -23,7 +23,10 @@ export type InteriorId =
   | 'house_family'
   | 'house_townhouse'
   | 'pawn'
-  | 'precinct';
+  | 'precinct'
+  | 'home_small'
+  | 'home_family'
+  | 'hideout';
 
 export type CrimeStep = 'register' | 'safe' | 'cctv' | 'wipe';
 
@@ -55,6 +58,14 @@ export type Action =
   | { kind: 'frontDesk' }
   /** A step of a store robbery (systems/robbery.ts): the register, the safe, the CCTV desk, the DVR. */
   | { kind: 'crime'; step: CrimeStep }
+  /** A stash: the apartment's or a home's (docs/09, Phase 5). */
+  | { kind: 'stash' }
+  /** Down to the hideout under a home you own, and back up. */
+  | { kind: 'basement' }
+  | { kind: 'upstairs' }
+  /** The hideout's plans table (buy add-ons) and workbench. */
+  | { kind: 'plans' }
+  | { kind: 'workbench' }
   | { kind: 'later'; who: string; text: string };
 
 /** How a door leaf behaves: always openable, locked, or open only under a condition. */
@@ -110,10 +121,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     actions: {
       'SLEEP / SAVE': { label: 'SLEEP', action: { kind: 'sleep' } },
       'CHANGE OUTFIT': { label: 'CHANGE OUTFIT', action: { kind: 'wardrobe' } },
-      STASH: {
-        label: 'STASH',
-        action: { kind: 'later', who: 'STASH', text: 'THE STASH OPENS WITH PROPERTY IN PHASE 5.' },
-      },
+      STASH: { label: 'STASH', action: { kind: 'stash' } },
     },
     doors: [],
     npcs: [{ role: 'draft stand-in for the player', hours: null }],
@@ -333,7 +341,52 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     'KIDS ROOM',
   ]),
   house_townhouse: house('house_townhouse', { x: 71, y: 210 }, ['LIVING ROOM', 'STUDY', 'BEDROOM']),
+  // Phase 5 (docs/09): the houses you can own, and the hideout under them (art/source/rooms_property.py)
+  home_small: home('home_small', { x: 211, y: 178 }, { x: 26, y: 80 }),
+  home_family: home('home_family', { x: 261, y: 210 }, { x: 26, y: 88 }),
+  hideout: {
+    id: 'hideout',
+    name: 'THE BASEMENT',
+    street: null,
+    hours: null,
+    // no street door: the stairs are the way out
+    entrance: null,
+    elevator: { x: 26, y: 176 },
+    actions: {
+      UPSTAIRS: { label: 'UPSTAIRS', action: { kind: 'upstairs' } },
+      PLANS: { label: 'PLANS', action: { kind: 'plans' } },
+      WORKBENCH: { label: 'WORKBENCH', action: { kind: 'workbench' } },
+      'STASH ROOM': { label: 'STASH', action: { kind: 'stash' } },
+    },
+    // the stash room's door; the world opens it once the add-on is built
+    doors: [{ kind: 'locked', label: 'LOCKED: BUILD THE STASH ROOM (PLANS)' }],
+    npcs: [],
+  },
 };
+
+/** A home you own: the bed, the wardrobe, the stash, and the door down to the hideout. */
+function home(
+  id: InteriorId,
+  entrance: { x: number; y: number },
+  basement: { x: number; y: number },
+): InteriorDef {
+  return {
+    id,
+    name: 'HOME',
+    street: null,
+    hours: null,
+    entrance,
+    elevator: basement,
+    actions: {
+      'SLEEP / SAVE': { label: 'SLEEP', action: { kind: 'sleep' } },
+      'CHANGE OUTFIT': { label: 'CHANGE OUTFIT', action: { kind: 'wardrobe' } },
+      STASH: { label: 'STASH', action: { kind: 'stash' } },
+      BASEMENT: { label: 'BASEMENT', action: { kind: 'basement' } },
+    },
+    doors: [],
+    npcs: [],
+  };
+}
 
 /** The interior a street door leads to, if any. */
 /** A burglary house: a SEARCH prompt per room (in data/burglary.ts order), the keypad, the owner's spot. */

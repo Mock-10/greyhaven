@@ -5,7 +5,7 @@ import type { GameState } from './store';
 import { ONBOARD_STEPS } from '../data/onboarding';
 
 /** Bump whenever the save shape changes, and add a migration below plus its test (CLAUDE.md rule 5). */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 export const SLOTS = ['slot1', 'slot2', 'slot3'] as const;
 export const AUTO_SLOTS = ['auto1', 'auto2'] as const;
@@ -164,6 +164,11 @@ export const MIGRATIONS: Record<number, (state: Obj) => Obj> = {
         stash: v.stash ?? { weapons: [], goods: [] },
       };
     }),
+  }),
+  /** 8 → 9 (Phase 5, property): no homes owned, no tax owed, an empty apartment stash. */
+  8: (s) => ({
+    ...s,
+    property: { homes: [], taxOwed: 0, apartment: { dirty: 0, goods: [], weapons: [] } },
   }),
 };
 

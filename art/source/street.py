@@ -143,6 +143,34 @@ def sandwich_board():
     return M(parts, [m], (-6, 6, -6, 6, 0, 15))
 
 
+def for_sale_sign():
+    """An estate agent's FOR SALE sign on a front lawn (Phase 5, docs/09): a white post and arm, the red board
+    hanging under it with pale lettering bands, and a small rider on top. The post stands at the origin (the
+    ground point); front is local +y."""
+    def parts(P):
+        post = rbox(P, (0, 0, 13), (0.7, 0.7, 13), 0.2)
+        arm = rbox(P, (6.0, 0, 25.4), (6.8, 0.6, 0.6), 0.2)
+        board = rbox(P, (8.0, 0, 17.5), (5.2, 0.45, 4.2), 0.25)
+        chains = np.minimum(capsule(P, (3.9, 0, 21.6), (3.9, 0, 24.8), 0.25),
+                            capsule(P, (12.1, 0, 21.6), (12.1, 0, 24.8), 0.25))
+        rider = rbox(P, (8.0, 0, 28.0), (3.6, 0.35, 1.3), 0.2)
+        rider_legs = np.minimum(capsule(P, (5.5, 0, 25.9), (5.5, 0, 26.8), 0.2), capsule(P, (10.5, 0, 25.9), (10.5, 0, 26.8), 0.2))
+        return [np.minimum(post, arm), board, np.minimum(chains, rider_legs), rider]
+
+    def brd(p, n):
+        face = np.abs(n[:, 1]) > 0.5
+        x, z = p[:, 0], p[:, 2]
+        letters = face & (np.abs(x - 8.0) < 3.8) & (((np.abs(z - 19.4) < 0.7) | (np.abs(z - 16.6) < 0.7)) &
+                                                     (np.mod(x * 1.3, 1.6) < 1.0))
+        r = np.where(letters, RID['white'], RID['red'])
+        return r, np.where(letters, 4.4, np.where(face, 2.6, 2.0)), np.zeros(len(p))
+
+    def rid(p, n):
+        face = np.abs(n[:, 1]) > 0.5
+        return np.where(face, RID['white'], RID['navy']), np.where(face, 4.0, 2.4), np.zeros(len(p))
+    return M(parts, [solid('white', 3.4), brd, solid('stone', 2.0), rid], (-1.5, 14.5, -2, 2, 0, 30))
+
+
 # ------------------------------------------------------------------ cafe, kiosk, fountain
 def cafe_set(canopy=('sage', 'white')):
     """A round cafe table with two chairs facing it and a striped parasol."""
@@ -461,7 +489,7 @@ DECALS = {
 PROPS = {
     'gas_pump': gas_pump,
     'bus_shelter': bus_shelter, 'phone_booth': phone_booth, 'parking_meter': parking_meter, 'utility_box': utility_box,
-    'bollard': bollard, 'ad_column': ad_column, 'sandwich_board': sandwich_board,
+    'bollard': bollard, 'ad_column': ad_column, 'sandwich_board': sandwich_board, 'for_sale_sign': for_sale_sign,
     'cafe_set': cafe_set, 'cafe_set_red': lambda: cafe_set(('red', 'white')), 'kiosk': kiosk, 'fountain': fountain,
     'pallets': pallets, 'pipes': pipes, 'ac_unit': ac_unit, 'trash_bags': trash_bags,
     'bin_sage': lambda: bin_wheelie('sage'), 'bin_navy': lambda: bin_wheelie('navy'), 'boxes': boxes_alley, 'cones': puddle_cones,
