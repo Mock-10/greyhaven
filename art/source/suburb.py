@@ -10,6 +10,7 @@ Props are in world units at scale 1 like street.py (a person is 40 units tall), 
   garage_torque   Torque & Sons Garage: two service bays (one open, a lift inside), an office corner
   dealer_office   a glass sales cabin with a USED CARS board on the roof
   site_trailer    Ashby Timber's site trailer: a portacabin on blocks with steps
+  car_wash        Squeaky's Car Wash: a wash hall with a drive-through tunnel, roller brushes and a pay office
 
   props: mailbox, stump, log, log_pile, birch, fir, fern, rock, tyre_stack, pennants; segment: picket
 """
@@ -326,6 +327,81 @@ def site_trailer(lit=0.0):
     return Model(parts, mats, (-hx - 2, hx + 2, -hy - 2, hy + 5, 0, H + 3))
 
 
+# ------------------------------------------------------------------ the car wash (milestone 8)
+def car_wash(lit=0.0):
+    """Squeaky's Car Wash: a white wash hall with a drive-through tunnel on the left (two roller brushes and a
+    spray arch inside, open front and back), a pay office on the right, a teal wave stripe, a sign board and three
+    soap bubbles on the roof."""
+    hx, hy, H = 26.0, 14.0, 14.0
+    TX0, TX1 = -22.0, -4.0          # the tunnel's sides (x)
+
+    def parts(P):
+        body = rbox(P, (0, 0, H / 2), (hx, hy, H / 2), 0.5)
+        tunnel = rbox(P, ((TX0 + TX1) / 2, 0, 5.4), ((TX1 - TX0) / 2, hy + 2, 5.4), 0.2)
+        parapet = rbox(P, (0, 0, H + 0.7), (hx + 0.5, hy + 0.5, 0.7), 0.3)
+        board = rbox(P, (-1.0, hy + 0.6, H - 2.0), (14.6, 0.7, 1.7), 0.3)
+        brushes = np.minimum(cyl_z(P, (TX0 + 3.0, 4.0, 5.2), 2.2, 4.4, 0.6), cyl_z(P, (TX1 - 3.0, 4.0, 5.2), 2.2, 4.4, 0.6))
+        arch = np.minimum.reduce([rbox(P, (TX0 + 0.8, -5.0, 5.0), (0.5, 0.5, 5.0), 0.2),
+                                  rbox(P, (TX1 - 0.8, -5.0, 5.0), (0.5, 0.5, 5.0), 0.2),
+                                  rbox(P, ((TX0 + TX1) / 2, -5.0, 9.6), ((TX1 - TX0) / 2 - 0.5, 0.5, 0.5), 0.2)])
+        bubbles = np.minimum.reduce([ell(P, (8.0, -2.0, H + 4.0), (3.2, 3.2, 3.2)),
+                                     ell(P, (13.0, 2.0, H + 2.6), (2.2, 2.2, 2.2)),
+                                     ell(P, (4.6, 3.0, H + 2.2), (1.6, 1.6, 1.6))])
+        return [np.maximum(body, -tunnel), parapet, board, brushes, arch, bubbles]
+
+    def body_m(p, n):
+        front, right, back, left = _faces(n)
+        x, y, z = p[:, 0], p[:, 1], p[:, 2]
+        u = np.where(front | back, x, y)
+        r = np.full(len(p), RID['white']); t = 3.1 + (hash3(np.floor(u / 3), np.floor(z / 3), 3, 23) - 0.5) * 0.3
+        shine = np.zeros(len(p))
+        # the wave stripe: teal, its top edge rippling
+        wave = (z > 1.6) & (z < 3.6 + 0.7 * np.sin(u * 0.55))
+        r = np.where(wave, RID['teal'], r); t = np.where(wave, 2.6, t)
+        # the tunnel: dark, wet tiled walls, a wet floor
+        inside = (x > TX0 - 0.1) & (x < TX1 + 0.1) & (np.abs(y) < hy + 0.5) & (z < 10.9)
+        r = np.where(inside, RID['blueg'], r)
+        t = np.where(inside, 1.4 + (np.mod(z, 1.5) < 0.25) * -0.4 + (lit > 0) * 0.8, t)
+        floor = inside & (n[:, 2] > 0.5)
+        r = np.where(floor, RID['asph'], r); t = np.where(floor, 1.5 + (np.mod(x, 3.0) < 0.6) * 0.5, t)
+        shine = np.where(floor, 0.6, shine)
+        frame = (front | back) & (np.abs(np.abs(x - (TX0 + TX1) / 2) - (TX1 - TX0) / 2 - 0.4) < 0.6) & (z < 11.5)
+        r = np.where(frame, RID['navy'], r); t = np.where(frame, 1.8, t)
+        # yellow-and-night clearance bar over the tunnel mouth would be gold; gold is reserved, so use stripes of red
+        bar = front & (x > TX0) & (x < TX1) & (np.abs(z - 11.4) < 0.5)
+        r = np.where(bar, np.where(np.mod(x, 2.4) < 1.2, RID['red'], RID['white']), r); t = np.where(bar, 2.6, t)
+        # the pay office: a window and a door with a gold handle (it's an entrance), windows down the right side
+        ow = front & (x > 2.0) & (x < 13.0) & (z > 4.0) & (z < 9.6)
+        r, t, shine = _window(ow, z, 4.0, 5.6, np.full(len(p), lit > 0), r, t, shine)
+        od = front & (np.abs(x - 18.0) < 2.2) & (z < 9.4)
+        r = np.where(od, RID['teal'], r); t = np.where(od, 1.8, t)
+        knob = front & (np.abs(x - 16.4) < 0.4) & (np.abs(z - 4.8) < 0.5)
+        r = np.where(knob, RID['gold'], r); t = np.where(knob, 4.0, t)
+        sw = right & (np.abs(np.mod(y + 40, 9.0) - 4.5) < 2.4) & (z > 4.6) & (z < 9.4) & (np.abs(y) < hy - 2)
+        r, t, shine = _window(sw, z, 4.6, 4.8, hash3(np.floor((y + 40) / 9.0), 3, 1, 9) < lit * 0.7, r, t, shine)
+        hw = (back | left) & ~inside & (np.abs(np.mod(u + 40, 8.0) - 4.0) < 2.2) & (z > 6.0) & (z < 9.0) & (np.abs(u) < np.where(back, hx, hy) - 2)
+        r, t, shine = _window(hw, z, 6.0, 3.0, np.zeros(len(p), bool), r, t, shine)
+        t = np.where(z < 1.4, t - 0.5, t)
+        return r, t, shine
+
+    def board_m(p, n):
+        f = n[:, 1] > 0.5
+        txt = f & sign_text(p[:, 0], p[:, 2], "SQUEAKY'S CAR WASH", -1.0, H - 2.0)
+        return np.where(txt, RID['white'], RID['teal']), np.where(txt, 4.4, 1.7 + (lit > 0) * 0.6), np.zeros(len(p))
+
+    def brush_m(p, n):
+        a = np.arctan2(p[:, 1] - 4.0, p[:, 0] - np.where(p[:, 0] < -13.0, TX0 + 3.0, TX1 - 3.0))
+        strand = np.mod(a * 5.0 + p[:, 2] * 0.3, 1.0) < 0.45
+        return np.full(len(p), RID['blueg']), np.where(strand, 3.0, 2.2), np.zeros(len(p))
+
+    def bubble_m(p, n):
+        hi = (n[:, 2] > 0.55) & (n[:, 0] < -0.1)
+        return np.full(len(p), RID['glass']), np.where(hi, 4.4, 3.0), np.full(len(p), 0.9)
+
+    mats = [body_m, solid('lav', 2.0), board_m, brush_m, solid('stone', 2.2), bubble_m]
+    return Model(parts, mats, (-hx - 2, hx + 2, -hy - 4, hy + 4, 0, H + 9))
+
+
 # name: (factory(lit), footprint half extents in model units (hx, hy), height in model units)
 SPECS = {
     'house_sage': (lambda lit: house('sage', lit, 2), (17, 11), 26),
@@ -336,6 +412,7 @@ SPECS = {
     'garage_torque': (garage_torque, (26, 16), 18),
     'dealer_office': (dealer_office, (12, 9), 20),
     'site_trailer': (site_trailer, (15, 6), 12),
+    'car_wash': (car_wash, (26, 14), 23),
 }
 
 
