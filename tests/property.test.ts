@@ -45,7 +45,7 @@ describe('property (docs/09)', () => {
     buyHome(st.property, st.money, st.finance, 0, 'linden4');
     const h = homeOf(st.property, 'linden4')!;
     expect(addonBlock(h, 'workbench', 0)).toBe('tier');
-    expect(addonBlock(h, 'press', 3)).toBe('notYet');
+    expect(addonBlock(h, 'lab', 3)).toBe('notYet');
     expect(buyAddon(h, 'stashRoom', 0, 1, st.money, st.finance, 0)).toBe(true);
     expect(addonBlock(h, 'stashRoom', 0)).toBe('owned');
     expect(buyAddon(h, 'garageBay', 0, 1, st.money, st.finance, 0)).toBe(true);

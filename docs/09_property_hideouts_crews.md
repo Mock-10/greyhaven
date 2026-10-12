@@ -67,3 +67,9 @@ See 02 for laundering numbers. Fronts are bought properties with their own build
 - **Tax** is taken with Monday's rent from the bank; what the bank can't cover is owed and taken the next Monday (assumed: no foreclosure).
 - **Assumptions:** the two houses on the market and their numbers (4 and 10); the workbench crafts at half price with clean money; the garage is storage at the driveway rather than extra physical spots; industrial units and the waterfront warehouse come with their districts (Phase 6).
 
+## Phase 5 build (milestone 16, 2026-10-12): the press and the chop bay
+- **Counterfeit press** (rep tier 2, $15,000): a station by the stash room. RESTOCK THE PRESS pays $1,000 in dirty cash (carried first, then the home's stash) and starts a 2-day run worth $2,600. When it's done the press **stalls**: a phone message, and the home's radar marker turns red until it's restocked. COLLECT opens the **money count** (docs/06): the grade adds a bonus to the fake notes (excellent +15%, good +10%, ok +5%; assumed), paid as dirty cash.
+- **Chop bay** (rep tier 2, $20,000): a lift on the marked floor below the roll door. Drive a stolen car (any car you don't own) onto the driveway, then at the chop bay CHOP THE CAR: the car is gone, and a day later 1.5× what the chop shop would have paid waits as dirty cash.
+- **Raids:** each night at 03:00 (assumed hour), while you're a known face or above 3★, every running operation has a 5% chance of a police raid. It seizes the running batch and, unless the home has a stash room, the stash's dirty cash and goods.
+- **Still to come (M17):** the product lab (its product needs smuggling to sell), operators who restock automatically, and rival hits.
+

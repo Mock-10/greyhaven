@@ -29,7 +29,8 @@ import { MODEL_COLOUR, TYPE_LABEL } from '../data/vehicles';
 import { hasIcon } from '../ui/icons';
 import { tierFor } from '../systems/reputation';
 import type { IconName } from '../ui/icons';
-import type { ListPage, ListRow } from '../ui/listPanel';
+import type { ListAction, ListPage, ListRow } from '../ui/listPanel';
+import { OP_NAMES, minutesLeft, opOf, startPress, type OpId } from '../systems/operations';
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('en-US')}`;
 const P = () => BALANCE.property;
@@ -279,4 +280,81 @@ export function workbenchPage(ctx: WorkbenchCtx): ListPage {
     },
   ];
   return { title: 'WORKBENCH', icon: 'addon/workbench', lines: ['TOOLS FOR HALF THE STORE PRICE.'], rows };
+}
+
+export interface OpsCtx {
+  state: GameState;
+  home: OwnedHome;
+  op: OpId;
+  /** The press's fake cash is counted first (the money count's bonus); the chop bay pays straight out. */
+  collect: () => ListAction | void;
+  /** Chop bay: the stolen car on this home's driveway, and feeding it in. */
+  car: Vehicle | null;
+  chop: (() => boolean) | null;
+}
+
+const hoursLeft = (min: number) =>
+  min >= 120 ? `${Math.round(min / 60)} HOURS` : `${Math.max(1, Math.round(min))} MIN`;
+
+/** An operation's station (docs/09): what it's doing, collect what's waiting, restock it. */
+export function opsPage(ctx: OpsCtx): ListPage {
+  const st = ctx.state;
+  const h = ctx.home;
+  const op = opOf(h, ctx.op);
+  if (!op) return { title: OP_NAMES[ctx.op], rows: [] };
+  const O = BALANCE.property.ops;
+  const left = minutesLeft(op, ctx.op, st.minutes);
+  const rows: ListRow[] = [];
+  if (op.ready > 0)
+    rows.push({
+      label: 'COLLECT',
+      icon: 'hud/dirty',
+      sub: ctx.op === 'press' ? 'COUNT THE NOTES FOR A BONUS' : 'DIRTY CASH',
+      detail: money(op.ready),
+      act: () => ctx.collect(),
+    });
+  if (ctx.op === 'press') {
+    const price = O.press.supplies;
+    rows.push({
+      label: 'RESTOCK THE PRESS',
+      icon: 'addon/press',
+      sub:
+        op.since !== null
+          ? `RUNNING: ${hoursLeft(left)} LEFT`
+          : `PAPER AND INK. ${money(O.press.output)} IN 2 DAYS`,
+      detail: money(price),
+      enabled: op.since === null && st.money.dirty + h.stash.dirty >= price,
+      act: () =>
+        startPress(h, st.money, st.minutes)
+          ? { say: 'THE PRESS IS RUNNING.' }
+          : { say: 'DIRTY CASH ONLY: CARRIED, THEN THE STASH.' },
+    });
+  } else {
+    const car = ctx.car;
+    rows.push({
+      label: car ? `CHOP THE ${TYPE_LABEL[car.type]}` : 'NO CAR TO CHOP',
+      icon: car && hasIcon(`car/${car.model}`) ? (`car/${car.model}` as IconName) : 'addon/chopBay',
+      sub:
+        op.since !== null
+          ? `WORKING: ${hoursLeft(left)} LEFT`
+          : car
+            ? 'THE STOLEN CAR ON THE DRIVEWAY. READY IN A DAY'
+            : 'DRIVE A STOLEN CAR ONTO THE DRIVEWAY',
+      enabled: op.since === null && !!car && !!ctx.chop,
+      act: () => (ctx.chop?.() ? { say: 'IN IT GOES. COME BACK TOMORROW.' } : { say: 'NOT THAT ONE.' }),
+    });
+  }
+  const status =
+    op.since !== null
+      ? `RUNNING, ${hoursLeft(left)} LEFT.`
+      : op.ready > 0
+        ? 'DONE. COLLECT IT.'
+        : 'STALLED. RESTOCK IT.';
+  return {
+    title: OP_NAMES[ctx.op],
+    icon: `addon/${ctx.op}` as IconName,
+    right: HOMES[h.id].address,
+    lines: [status, ctx.op === 'press' ? 'FAKE CASH COUNTS AS DIRTY.' : 'PAID AS DIRTY CASH.'],
+    rows,
+  };
 }

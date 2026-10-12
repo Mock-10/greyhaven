@@ -80,7 +80,12 @@ export interface DebugHook {
   /** Traffic cars (docs/08 pulling drivers out). */
   traffic?: { id: string; x: number; y: number; speed: number; heading: number }[];
   /** Homes owned (docs/09): add-ons and the stash's dirty cash. */
-  homes?: { id: string; addons: string[]; dirty: number }[];
+  homes?: {
+    id: string;
+    addons: string[];
+    dirty: number;
+    ops: Record<string, { running: boolean; ready: number }>;
+  }[];
   /** The player sprite on screen (canvas px), for aiming in tests. */
   playerScreen?: { x: number; y: number };
   /** The drawn weapon and its CLIP/RESERVE (Phase 4). */

@@ -5,7 +5,7 @@ import type { GameState } from './store';
 import { ONBOARD_STEPS } from '../data/onboarding';
 
 /** Bump whenever the save shape changes, and add a migration below plus its test (CLAUDE.md rule 5). */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 export const SLOTS = ['slot1', 'slot2', 'slot3'] as const;
 export const AUTO_SLOTS = ['auto1', 'auto2'] as const;
@@ -170,6 +170,14 @@ export const MIGRATIONS: Record<number, (state: Obj) => Obj> = {
     ...s,
     property: { homes: [], taxOwed: 0, apartment: { dirty: 0, goods: [], weapons: [] } },
   }),
+  /** 9 → 10 (Phase 5 M16, operations): every home starts with no operations running. */
+  9: (s) => {
+    const p = s.property as Obj;
+    return {
+      ...s,
+      property: { ...p, homes: ((p.homes as Obj[]) ?? []).map((h) => ({ ...h, ops: h.ops ?? {} })) },
+    };
+  },
 };
 
 /** Bring a save up to SAVE_VERSION, one migration at a time. Throws for saves from a newer game. */

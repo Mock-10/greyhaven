@@ -518,6 +518,17 @@ export const BALANCE = {
     mechanicBayDiscount: 0.3,
     /** Workbench crafting (assumed): a tool for this share of the hardware store's price. */
     craftShare: 0.5,
+    /** Operations (docs/09): the press's supplies and output, the chop bay's take of the chop-shop price, the cycles in
+     *  in-game minutes; the money count's bonus on the press's fake cash by grade (assumed); the nightly raid. */
+    ops: {
+      press: { supplies: 1000, output: 2600, cycleMinutes: 2 * 1440 },
+      chopBay: { factor: 1.5, cycleMinutes: 1440 },
+      countBonus: { excellent: 0.15, good: 0.1, ok: 0.05, poor: 0, fail: 0 },
+      raidChance: 0.05,
+      /** The night's raid comes at 03:00 (assumed), while you're a known face or above this many stars. */
+      raidMinute: 3 * 60,
+      raidAboveStars: 3,
+    },
   },
 
   /** Police officers and their cruiser (milestone 4: one car and two officers at 1–2★, docs/15). */

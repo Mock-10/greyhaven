@@ -283,6 +283,33 @@ describe('saves (docs/12)', () => {
     expect(Object.keys(r.file.state).sort()).toEqual(Object.keys(fresh).sort());
   });
 
+  it('migrates a version 9 save to version 10 (homes get no operations)', () => {
+    const fresh = createState(1, 'downtown', { x: 0, y: 0 });
+    const v9 = JSON.parse(JSON.stringify(fresh)) as Record<string, unknown>;
+    v9.property = {
+      homes: [{ id: 'linden4', addons: ['stashRoom'], stash: { dirty: 5, goods: [], weapons: [] } }],
+      taxOwed: 0,
+      apartment: { dirty: 0, goods: [], weapons: [] },
+    };
+    const old = {
+      game: 'doublelife',
+      version: 9,
+      meta: {},
+      state: v9,
+      checksum: checksum(v9),
+    } as unknown as SaveFile;
+    const r = validate(old);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.file.version).toBe(SAVE_VERSION);
+    expect(r.file.state.property.homes[0]).toEqual({
+      id: 'linden4',
+      addons: ['stashRoom'],
+      stash: { dirty: 5, goods: [], weapons: [] },
+      ops: {},
+    });
+  });
+
   it('rotates the two autosaves, keeping the newest', () => {
     expect(nextAutoSlot({})).toBe('auto1');
     const a = makeSave(state(), 'auto1', 100).meta;
