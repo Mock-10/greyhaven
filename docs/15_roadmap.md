@@ -2,7 +2,7 @@
 
 Build **one phase at a time**. Each phase ends playable, tested and committed, with a short demo note in `CHANGELOG.md`. Don't start the next phase until the current phase's acceptance checks pass.
 
-Development runs in Claude Code on the web, and the user plays every phase in the browser at the GitHub Pages link (see CLAUDE.md §0).
+Development runs in Claude Code on the web, and the user plays every phase in the browser at the GitHub Pages link (see docs/20_workflow.md).
 
 ## Phase 0: Foundations
 - Vite + TS + Phaser project, lint, tests, and the Playwright smoke test.
