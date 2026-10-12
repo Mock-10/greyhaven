@@ -907,7 +907,7 @@ def bar():
     # the bar: back bar on wall A, counter in front of it, stools face the counter
     S.append(it(D.back_bar(96, 3), '+y', 72, 0))
     S.append(it(D.bar_counter(104), '+y', 76, 44, ('box', 52, 8, 22)))
-    S.append(it(D.beer_taps(3), '+y', 52, 44, None, wz=21.5, z_bias=4))
+    S.append(it(D.beer_taps(3), '+y', 52, 44, None, wz=21.5, z_bias=4, hl='idle', prompt=('E', 'BAR SHIFT')))
     S.append(it(D.vase_tall(), '+y', 112, 44, None, wz=21.5, z_bias=4))
     for x in (38, 58, 78, 98, 118):
         S.append(it(D.bar_stool(), '-y', x, 62, ('blob', 4)))

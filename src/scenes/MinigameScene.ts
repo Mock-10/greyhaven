@@ -31,6 +31,17 @@ import { MeetingGame } from '../minigames/meeting';
 import { ResprayGame } from '../minigames/respray';
 import { RouteGame } from '../minigames/route';
 import { SignatureGame } from '../minigames/signature';
+import { BarShiftGame } from '../minigames/barShift';
+import { CarWashGame } from '../minigames/carWash';
+import {
+  ODD_PANEL_SIZE,
+  barGlass,
+  barTap,
+  carWashArea,
+  carWashBucket,
+  drawBarShift,
+  drawCarWash,
+} from '../ui/panelsOdd';
 import { StampSignGame } from '../minigames/stampSign';
 import { TyreChangeGame, type ArrowDir } from '../minigames/tyreChange';
 import {
@@ -99,11 +110,17 @@ export type MinigameRequest =
   | { kind: 'duffel'; seed: number; label: string }
   | { kind: 'shop'; title: string; shop: ShopId; wallet: Wallet }
   /** The M7 job tasks (ui/panelsJobs.ts): `rank` sets the bolt-torque tier, `mode` what the load task stacks. */
-  | { kind: JobPanelKind; seed: number; task: string; rank: number; mode?: LoadMode };
+  | { kind: JobPanelKind; seed: number; task: string; rank: number; mode?: LoadMode }
+  /** The weekend odd jobs (ui/panelsOdd.ts): `car` picks the car wash's body colour. */
+  | { kind: 'carWash' | 'barShift'; seed: number; task: string; car?: number };
 
 /** Every panel's size: the Phase 1 panels and the job tasks. */
-const SIZES: Record<AnyPanel, { w: number; h: number }> = { ...PANEL_SIZE, ...JOB_PANEL_SIZE };
-type AnyPanel = PanelKind | JobPanelKind;
+const SIZES: Record<AnyPanel, { w: number; h: number }> = {
+  ...PANEL_SIZE,
+  ...JOB_PANEL_SIZE,
+  ...ODD_PANEL_SIZE,
+};
+type AnyPanel = PanelKind | JobPanelKind | 'carWash' | 'barShift';
 const ARROWS: Record<string, ArrowDir> = {
   ARROWUP: 'up',
   W: 'up',
@@ -228,6 +245,12 @@ export class MinigameScene extends Phaser.Scene {
       case 'signature':
         this.logic = new SignatureGame(new Rng(req.seed));
         break;
+      case 'carWash':
+        this.logic = new CarWashGame(new Rng(req.seed), req.car ?? 0);
+        break;
+      case 'barShift':
+        this.logic = new BarShiftGame(new Rng(req.seed));
+        break;
       default:
         this.logic = null;
     }
@@ -337,6 +360,7 @@ export class MinigameScene extends Phaser.Scene {
 
   private onKeyUp(e: KeyboardEvent): void {
     this.held.delete(e.key.toUpperCase());
+    if (e.key === ' ' && this.logic instanceof BarShiftGame) this.logic.pour(false);
   }
 
   /** Keys for the job tasks (PR #15's wiring table). True when the key was theirs. */
@@ -372,6 +396,13 @@ export class MinigameScene extends Phaser.Scene {
       else if (e.key === ' ' || e.key === 'Enter') g.deliver();
     } else if (g instanceof SignatureGame) {
       // traced with the mouse only
+    } else if (g instanceof CarWashGame) {
+      // the sponge moves while a key is held (update); Space scrubs, B dunks, Enter calls the car done
+      if (k === 'B' || k === 'E') g.dunk();
+      else if (e.key === 'Enter') g.finish();
+    } else if (g instanceof BarShiftGame) {
+      if (n >= 0) g.select(n);
+      else if (e.key === ' ' && !e.repeat) g.pour(true);
     } else return false;
     if (e.key === ' ' || k.startsWith('ARROW')) e.preventDefault?.();
     return true;
@@ -404,8 +435,22 @@ export class MinigameScene extends Phaser.Scene {
     } else if (g instanceof SignatureGame) {
       const P = signaturePad(x, y, g);
       if (this.inRect(q, P)) g.penDown((q.x - P.x) / P.w, (q.y - P.y) / P.w);
+    } else if (g instanceof CarWashGame) {
+      if (this.inRect(q, carWashBucket(x, y))) g.dunk();
+      else if (this.inRect(q, carWashArea(x, y, g))) {
+        this.pointerHeld = true;
+        this.aimSponge(g, q);
+      }
+    } else if (g instanceof BarShiftGame) {
+      for (const k of [0, 1, 2]) if (this.inRect(q, barTap(x, y, k))) g.select(k);
+      if (this.inRect(q, barGlass(x, y))) g.pour(true);
     } else return false;
     return true;
+  }
+
+  private aimSponge(g: CarWashGame, q: { x: number; y: number }): void {
+    const a = carWashArea(this.pos.x, this.pos.y, g);
+    g.aim((q.x - a.x) / a.w, (q.y - a.y) / a.h);
   }
 
   private aimRespray(g: ResprayGame, q: { x: number; y: number }): void {
@@ -487,6 +532,7 @@ export class MinigameScene extends Phaser.Scene {
       return;
     }
     if (this.logic instanceof ResprayGame && this.pointerHeld) this.aimRespray(this.logic, q);
+    else if (this.logic instanceof CarWashGame && this.pointerHeld) this.aimSponge(this.logic, q);
     else if (this.logic instanceof SignatureGame) {
       const P = signaturePad(this.pos.x, this.pos.y, this.logic);
       this.logic.penMove((q.x - P.x) / P.w, (q.y - P.y) / P.w);
@@ -511,6 +557,7 @@ export class MinigameScene extends Phaser.Scene {
   private onUp(p: Phaser.Input.Pointer): void {
     this.pointerHeld = false;
     if (this.logic instanceof SignatureGame) this.logic.penUp();
+    if (this.logic instanceof BarShiftGame) this.logic.pour(false);
     if (this.panelDrag) {
       // keep the clamped spot, so a panel pushed against an edge comes straight back when dragged again
       const { x, y } = this.pos;
@@ -551,6 +598,13 @@ export class MinigameScene extends Phaser.Scene {
       const dy = (h.has('ARROWDOWN') || h.has('S') ? 1 : 0) - (h.has('ARROWUP') || h.has('W') ? 1 : 0);
       if (dx || dy) g.move(dx, dy, dt);
       g.spray(this.pointerHeld || h.has(' '));
+    }
+    if (g instanceof CarWashGame && !g.done) {
+      const h = this.held;
+      const dx = (h.has('ARROWRIGHT') || h.has('D') ? 1 : 0) - (h.has('ARROWLEFT') || h.has('A') ? 1 : 0);
+      const dy = (h.has('ARROWDOWN') || h.has('S') ? 1 : 0) - (h.has('ARROWUP') || h.has('W') ? 1 : 0);
+      if (dx || dy) g.move(dx, dy, dt);
+      g.scrub(this.pointerHeld || h.has(' '));
     }
     if (g) {
       // a held paper doesn't fall
@@ -625,6 +679,9 @@ export class MinigameScene extends Phaser.Scene {
     else if (g instanceof FellGame && 'task' in req) drawFell(s, x, y, g, req.task);
     else if (g instanceof DoorstepGame && 'task' in req) drawDoorstep(s, x, y, g, req.task);
     else if (g instanceof SignatureGame && 'task' in req) drawSignature(s, x, y, g, req.task);
+    else if (g instanceof CarWashGame && req.kind === 'carWash')
+      drawCarWash(s, x, y, g, req.task, req.car ?? 0);
+    else if (g instanceof BarShiftGame && 'task' in req) drawBarShift(s, x, y, g, req.task);
     else if (req.kind === 'shop')
       drawShop(s, x, y, {
         title: req.title,

@@ -214,11 +214,17 @@ export class HudScene extends Phaser.Scene {
                 ['E', 'USE'],
                 ['TAB', 'NEXT'],
               ]
-            : [
-                ['P', 'PHONE'],
-                ['I', 'BAG'],
-                ['SHIFT', 'SPRINT'],
-              ];
+            : snap.guide
+              ? [
+                  ['P', 'PHONE'],
+                  ['I', 'BAG'],
+                  ['F2', 'SKIP GUIDE'],
+                ]
+              : [
+                  ['P', 'PHONE'],
+                  ['I', 'BAG'],
+                  ['SHIFT', 'SPRINT'],
+                ];
       // a plate behind the hints, so they read over light pavement (handover known issue)
       const hw = hintKeysWidth(hints) - 10;
       // the hint strip sits beside the objective, or a row above it when both don't fit (the driving hints)

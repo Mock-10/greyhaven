@@ -1057,7 +1057,24 @@ def block_boulevard_band():
     # the bay apron across the sidewalk, so cars can drive in
     ground('concrete', rect(gx - 50, fy, gx + 10, BY - HW4 - 2))
     keep_clear(gx - 20, fy + 20, 50)
-    yx0 = gx + half('garage_torque')[0] + 8
+    # Squeaky's Car Wash (milestone 8) beside the garage: the tunnel opens on the boulevard over a wash apron, where
+    # the weekend car wash gig runs at a waiting dirty car with the attendant beside it
+    cx0 = gx + half('garage_torque')[0] + 10
+    chx, chy = half('car_wash')
+    cwx = cx0 + chx
+    cw_front = fy - tc(1.4)
+    building('car_wash', cwx, cw_front - chy, 0)
+    ground('concrete', rect(cwx - chx - 4, cw_front, cwx + chx + 4, BY - HW4 - 2))
+    tx = cwx - 13.0 * B
+    car('sedan_khaki', tx, cw_front + 34, 2, parked=True)
+    ZONES.append({'id': 'gig_carWash', 'x0': round(tx + 18, 1), 'y0': round(cw_front + 14, 1),
+                  'x1': round(tx + 44, 1), 'y1': round(cw_front + 54, 1),
+                  'npc': {'x': round(tx + 34, 1), 'y': round(cw_front + 20, 1)}})
+    keep_clear(tx, cw_front + 34, 44)
+    keep_clear(tx + 30, cw_front + 34, 24)
+    for (dx, kind) in ((chx - 10, 'barrel_teal'), (chx + 2, 'crate')):
+        prop(kind, cwx + dx, cw_front + 10)
+    yx0 = cwx + chx + 10
     yx1 = mill_x(fy) - HW - SWK - 6
     ground('lot', rect(yx0, top, yx1, fy))
     for x in np.arange(yx0 + 26, yx1 - 20, tc(1.4)):

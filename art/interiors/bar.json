@@ -272,7 +272,8 @@
    "y": 44,
    "wz": 21.5,
    "zBias": 4,
-   "ang": 0.0
+   "ang": 0.0,
+   "prompt": "BAR SHIFT"
   },
   {
    "frame": "item_3_vase_tall",

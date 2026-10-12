@@ -2,9 +2,10 @@
 // checksum. Pure code: storage lives in core/storage.ts, the menus in scenes/MenuScene.ts.
 
 import type { GameState } from './store';
+import { ONBOARD_STEPS } from '../data/onboarding';
 
 /** Bump whenever the save shape changes, and add a migration below plus its test (CLAUDE.md rule 5). */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export const SLOTS = ['slot1', 'slot2', 'slot3'] as const;
 export const AUTO_SLOTS = ['auto1', 'auto2'] as const;
@@ -121,6 +122,13 @@ export const MIGRATIONS: Record<number, (state: Obj) => Obj> = {
     const shift = career.shift as Obj | null;
     return { ...s, career: { ...career, shift: shift ? { ...shift, done: [] } : null } };
   },
+  /** 4 → 5 (Phase 2 M8, odd jobs and the guided first day): no gig in progress, and the guide counts as done for a
+   *  game that's already under way. */
+  4: (s) => ({
+    ...s,
+    oddJobs: { gig: null, lastDay: { carWash: 0, barShift: 0 } },
+    onboarding: { step: ONBOARD_STEPS.length, skipped: false, tipSent: true },
+  }),
 };
 
 /** Bring a save up to SAVE_VERSION, one migration at a time. Throws for saves from a newer game. */

@@ -1,7 +1,8 @@
 # Double Life — expected-value economy pacing sim. Run: python3 tools/econ_sim.py
 # Keep these constants in sync with src/config/balance.ts and docs/02_economy.md.
 PAY=[180,260,370,510,700]; XPNEED=[40,70,110,160]; BONUS=[250,500,900,1500]
-GIG=0.6
+GIG=0.6; GIG_TIPS=0.1                     # weekend odd jobs: 60% of shift pay, tips at a typical 'good'
+GIGS_PER_DAY={'civ':2,'mix':1,'crim':0}  # civ works the car wash and the bar shift; mix only the car wash (nights are crime)
 RENT_DAY=350/7; UPKEEP_DAY=20
 REP_T=[0,400,1800,5000,11000]
 NIGHT_DIRTY=[400,750,1500,3000,5500]
@@ -19,7 +20,7 @@ def run(mode, days=42, xps=11):
             if not wk:
                 clean+=PAY[rank]; xp+=xps
                 if rank<4 and xp>=XPNEED[rank]: xp-=XPNEED[rank]; clean+=BONUS[rank]; rank+=1
-            elif mode=='civ': clean+=PAY[rank]*GIG
+            else: clean+=PAY[rank]*GIG*(1+GIG_TIPS)*GIGS_PER_DAY[mode]
         nights = {'civ':0,'mix':1,'crim':1+DAY_CRIME_MULT}[mode]
         if nights:
             t=tier(rep); g=NIGHT_DIRTY[t]*nights

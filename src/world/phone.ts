@@ -7,8 +7,12 @@
 import { BALANCE } from '../config/balance';
 import type { GameState } from '../core/store';
 import { JOBS, type JobId } from '../data/jobs';
+import { GIGS, GIG_IDS, type GigId } from '../data/oddJobs';
+import { BALANCE_ODD } from '../config/balanceOdd';
 import { coverShift, coverable, frozen, rankTitle, xpNeeded } from '../systems/career';
 import { calendar, formatClock } from '../systems/clock';
+import { canStartGig } from '../systems/oddJobs';
+import { onboardEvent } from '../systems/onboarding';
 import { debit, deposit, moveBackIn, moveInCost, payOwed, withdraw } from '../systems/finance';
 import { useFirstAid, type Wallet } from '../systems/shop';
 import { SENDER_ICON } from '../data/senders';
@@ -180,6 +184,7 @@ function statementPage(ctx: PhoneCtx): ListPage {
 
 export function jobsPage(ctx: PhoneCtx): ListPage {
   const st = ctx.state;
+  onboardEvent(st.onboarding, 'jobBoard');
   const c = st.career;
   const job = c.jobs[c.current];
   const lines = [JOBS[c.current].short, rankTitle(c)];
@@ -203,6 +208,8 @@ export function jobsPage(ctx: PhoneCtx): ListPage {
       },
     };
   });
+  // the weekend odd jobs (docs/02): open to everyone, no XP; worked at the place itself
+  for (const id of GIG_IDS) rows.push(gigRow(st, id));
   rows.push({
     label: 'PERKS',
     icon: JOB_ICON[c.current],
@@ -210,6 +217,25 @@ export function jobsPage(ctx: PhoneCtx): ListPage {
     act: () => ({ open: () => perksPage(ctx) }),
   });
   return { title: 'JOB BOARD', icon: JOB_ICON[c.current], lines, rows };
+}
+
+const GIG_ICON: Record<GigId, IconName> = { carWash: 'car/sedan_teal', barShift: 'item/cash' };
+
+/** A weekend gig on the job board: its hours, and whether it can be started now. */
+function gigRow(st: GameState, id: GigId): ListRow {
+  const G = GIGS[id];
+  const H = BALANCE_ODD.gigs[id];
+  const hours = `SAT-SUN ${formatClock(H.from)}-${formatClock(H.until)}`;
+  const r = canStartGig(st.oddJobs, id, st.minutes);
+  const onThis = st.oddJobs.gig?.id === id;
+  const detail = onThis ? 'ON IT' : r.ok ? 'OPEN' : r.reason === 'alreadyWorked' ? 'DONE' : 'SHUT';
+  return {
+    label: G.name,
+    icon: GIG_ICON[id],
+    sub: hours,
+    detail,
+    act: () => ({ say: r.ok || onThis ? `GO TO ${G.where} AND PRESS E.` : `${G.where}. ${hours}.` }),
+  };
 }
 
 /** The current job's insider perks (docs/03): earned ones, and the ones whose systems come later. */

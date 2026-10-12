@@ -2,6 +2,7 @@
 // in Phase 1, door rules, NPC roles and schedules, entrances and elevator links. The geometry and sprites
 // come from art/interiors/<id>.json (art/source/export_interiors.py).
 
+import type { GigId } from './oddJobs';
 import type { DoorTarget } from '../maps/types';
 import type { ShopId } from './items';
 import type { TaskId } from './jobs';
@@ -35,6 +36,8 @@ export type Action =
   | { kind: 'wardrobe' }
   /** The car dealer's desk: buy a car (systems/dealer.ts). */
   | { kind: 'dealer' }
+  /** A weekend odd job's task spot (data/oddJobs.ts): the bar's taps. */
+  | { kind: 'gig'; gig: GigId }
   | { kind: 'later'; who: string; text: string };
 
 /** How a door leaf behaves: always openable, locked, or open only under a condition. */
@@ -166,6 +169,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
         label: 'LAUNDER',
         action: { kind: 'launder' },
       },
+      'BAR SHIFT': { label: 'BAR SHIFT', action: { kind: 'gig', gig: 'barShift' } },
     },
     doors: [{ kind: 'staffHours', from: 18 * 60, to: 2 * 60, closedLabel: 'STAFF ONLY' }],
     npcs: [

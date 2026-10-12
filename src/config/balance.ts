@@ -1,6 +1,8 @@
 // Every tunable number in the game lives here (CLAUDE.md §2: no magic numbers in systems).
 // Phase 0 only needs the camera, the debug walker and the render settings.
 
+import { BALANCE_ODD } from './balanceOdd';
+
 export const BALANCE = {
   sim: {
     /** Fixed simulation rate (docs/14: fixed timestep, e.g. 30 Hz). */
@@ -553,5 +555,16 @@ export const BALANCE = {
     /** Vector-ground chunks are screen-aligned blocks of this many art pixels (a multiple of the swatch size). */
     vectorChunkW: 512,
     vectorChunkH: 256,
+  },
+
+  /** The weekend odd jobs (Phase 2 M8): car wash and bar shift numbers live in balanceOdd.ts. */
+  oddJobs: BALANCE_ODD,
+
+  /** The guided first day (docs/11 "Onboarding"). */
+  onboarding: {
+    /** Minute of the day Dez's tip arrives (the evening step), once the shopping step is done. */
+    tipAt: 17 * 60,
+    /** World units walked on the street that finish the first step when the game starts outdoors (2 tiles). */
+    walkToStart: 64,
   },
 } as const;

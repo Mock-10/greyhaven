@@ -12,11 +12,27 @@ export interface GigDef {
   /** The panel title of a task, and what one task is called ("CAR 2/3"). */
   title: string;
   unit: string;
+  /** Who hands out the gig and pays it (toasts). */
+  boss: string;
 }
 
 export const GIGS: Record<GigId, GigDef> = {
-  carWash: { id: 'carWash', name: 'CAR WASH', where: "SQUEAKY'S CAR WASH", title: 'CAR WASH', unit: 'CAR' },
-  barShift: { id: 'barShift', name: 'BAR SHIFT', where: 'THE LOW TIDE', title: 'BAR SHIFT', unit: 'RUSH' },
+  carWash: {
+    id: 'carWash',
+    name: 'CAR WASH',
+    where: "SQUEAKY'S CAR WASH",
+    title: 'CAR WASH',
+    unit: 'CAR',
+    boss: 'SQUEAKY',
+  },
+  barShift: {
+    id: 'barShift',
+    name: 'BAR SHIFT',
+    where: 'THE LOW TIDE',
+    title: 'BAR SHIFT',
+    unit: 'RUSH',
+    boss: 'BARTENDER',
+  },
 };
 
 export const GIG_IDS: readonly GigId[] = ['carWash', 'barShift'];
