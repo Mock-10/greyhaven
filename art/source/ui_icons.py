@@ -552,6 +552,10 @@ for k, (top, bot) in OUTFIT_COLOURS.items():
 # cars the used-car lot sells (milestone 6b)
 for k in ('beater_khaki', 'beater_brick', 'sedan_teal', 'sedan_clay', 'sedan_khaki', 'sedan_lav'):
     ICONS[f'car/{k}'] = ((lambda k=k: cars.VEHICLES[k]()), -0.6, 32)
+# Phase 4: the pickups, sports cars and the armored SUV (art/source/cars2.py)
+import cars2
+for k in ('pickup_brick', 'pickup_sage', 'pickup_stone', 'sports_red', 'sports_navy', 'sports_white', 'armored_suv'):
+    ICONS[f'car/{k}'] = ((lambda k=k: cars2.VEHICLES2[k]()), -0.6, 32)
 
 
 def fit(factory, ang, size):

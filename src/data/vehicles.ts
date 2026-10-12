@@ -18,6 +18,13 @@ export const MODEL_TYPE: Record<string, VehicleType> = {
   armored_suv_police: 'armored',
   beater_khaki: 'beater',
   beater_brick: 'beater',
+  pickup_brick: 'pickup',
+  pickup_sage: 'pickup',
+  pickup_stone: 'pickup',
+  sports_red: 'sports',
+  sports_navy: 'sports',
+  sports_white: 'sports',
+  armored_suv: 'armoredSuv',
 };
 
 export const TYPE_LABEL: Record<VehicleType, string> = {
@@ -28,6 +35,9 @@ export const TYPE_LABEL: Record<VehicleType, string> = {
   swat: 'SWAT VAN',
   armored: 'ARMORED',
   beater: 'BEATER',
+  pickup: 'PICKUP',
+  sports: 'SPORTS',
+  armoredSuv: 'ARMORED SUV',
 };
 
 export function typeOfModel(model: string): VehicleType {
@@ -42,6 +52,14 @@ export const DEALER_STOCK: readonly string[] = [
   'sedan_clay',
   'sedan_khaki',
   'sedan_lav',
+  // Phase 4 (docs/08 catalogue; assumed sold at the same lot)
+  'pickup_sage',
+  'pickup_brick',
+  'pickup_stone',
+  'sports_red',
+  'sports_navy',
+  'sports_white',
+  'armored_suv',
 ];
 
 /** Colour names for the dealer's list. */
@@ -52,4 +70,17 @@ export const MODEL_COLOUR: Record<string, string> = {
   sedan_clay: 'CLAY',
   sedan_khaki: 'KHAKI',
   sedan_lav: 'LAVENDER',
+  pickup_sage: 'SAGE',
+  pickup_brick: 'BRICK',
+  pickup_stone: 'STONE',
+  sports_red: 'RED',
+  sports_navy: 'NAVY',
+  sports_white: 'WHITE',
+  armored_suv: 'BLACK',
 };
+
+/** Every colour of a type, for the respray (docs/08). */
+export function coloursOf(model: string): string[] {
+  const t = typeOfModel(model);
+  return Object.keys(MODEL_TYPE).filter((m) => MODEL_TYPE[m] === t);
+}

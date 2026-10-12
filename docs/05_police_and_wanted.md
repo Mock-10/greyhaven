@@ -86,4 +86,4 @@ Built from PR #17's logic.
 - **Roadblocks** from 3★: a 20% chance a minute while you drive of a cruiser parked across the road about 9 tiles ahead, its officers on foot beside it; cleared when 30 tiles away.
 - **Sustained 4★** in police sight for 120 s goes to 5★.
 - **Precinct 1** has a walkable lobby: the desk sergeant reads your record; after an arrest you're released inside it.
-- Not built yet: spike strips, police gunfire (combat is Phase 4).
+- Spike strips and police gunfire came in Phase 4 (see docs/07 and docs/08 "Phase 4 build").

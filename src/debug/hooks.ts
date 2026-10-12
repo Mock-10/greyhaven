@@ -57,6 +57,9 @@ export interface DebugHook {
     looted: boolean;
     model: string;
     owned: boolean;
+    hot: boolean;
+    flat: boolean;
+    stash: number;
   }[];
   /** Depth of a placed object by sprite key (first match). */
   depthOf: (sprite: string) => number | null;
@@ -74,6 +77,8 @@ export interface DebugHook {
   robbing?: boolean;
   /** People on the street (screen-shot and combat tests). */
   peds?: { x: number; y: number }[];
+  /** Traffic cars (docs/08 pulling drivers out). */
+  traffic?: { id: string; x: number; y: number; speed: number; heading: number }[];
   /** The player sprite on screen (canvas px), for aiming in tests. */
   playerScreen?: { x: number; y: number };
   /** The drawn weapon and its CLIP/RESERVE (Phase 4). */

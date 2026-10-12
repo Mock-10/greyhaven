@@ -6,7 +6,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 - [x] Phase 1 — Vertical slice
 - [x] Phase 2 — Economy and careers
 - [x] Phase 3 — Crime breadth and police
-- [ ] Phase 4 — Combat and vehicles
+- [x] Phase 4 — Combat and vehicles
 - [ ] Phase 5 — Property, hideouts, operations, crews
 - [ ] Phase 6 — Full town
 - [ ] Phase 7 — Late game
@@ -15,7 +15,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
 ## START HERE (cold start for a new session)
-**Phase 4 (combat and vehicles) is in progress.** M13 (combat in the street, the arms dealer, save v7) is on `claude/p4-combat-vehicles` (PR "Phase 4 M13"). Next: **M14 vehicles**.
+**Phase 4 is done** (PRs #27 and the M14 PR). Next: **Phase 5 — property, hideouts, operations, crews** (docs/15).
 
 **First command:**
 ```
@@ -23,12 +23,13 @@ export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_nopr
 git fetch origin && git checkout main && git pull origin main && npm install && npx tsc --noEmit
 ```
 
-**Read only these, nothing else:** `CLAUDE.md`, this section, the "Phase 4" checklist below, `docs/08_vehicles.md` for M14. Use `grep -n` to find spots in `WorldScene.ts`; don't read it whole.
+**Read only these, nothing else:** `CLAUDE.md`, this section, `docs/09_property_hideouts_crews.md` for Phase 5 (and `docs/18_interiors.md` "questions" before any new interior). Use `grep -n` to find spots in `WorldScene.ts`; don't read it whole.
 
 **Next steps, in order:**
-1. If the M13 PR isn't merged: check its CI, merge when green. Then branch from main.
-2. **M14 vehicles** (docs/08): the pickup, sports car and armored SUV from `art/vehicles2` (types, stats, a few parked on the map, the used-car lot), damage states (smoke < 50%, fire and −30% speed < 25%, explode 3 s after 0), mechanic services at Torque & Sons (repair 5–40% of value, upgrades: engine, brakes, armor, tires, hidden compartment; respray $400 clears hot and −1★ unseen) with save v8 for car mods, your own car's trunk storage (weapons, goods), insured bought cars respawning at home for 10%, pulling drivers out of traffic cars.
-3. **Close Phase 4:** spike strips (tires level 2 resist), econ sim if prices moved, docs, e2e, screenshots, tick, PR, merge, note.
+1. If the M14 PR isn't merged: check its CI, merge when green. Then branch from main.
+2. **M15 property:** houses to buy, the stash, garage add-ons (more parking, stored cars keep trunk contents), entering owned property unseen clears 1–2★ (already in `response.ts`). Interiors from recorded answers (docs/18); ask the user only for open questions in `docs/16`.
+3. **M16 operations:** counterfeit press, chop bay, lab (product in 3 abstract tiers), operators and drivers.
+4. **M17 crews and pressure:** raids, smuggling in 3 tiers (the hidden compartment's cargo cut), airdrops, light rivals. Then close Phase 5 (econ sim, docs, e2e, screenshots, tick, PR, merge, note).
 
 **Paste-ready resume prompt:**
 > Resume Double Life. Read CLAUDE.md, then only the "START HERE" section at the top of CHANGELOG.md on main, and follow its numbered steps in order. Read only the files each step names. Keep token use low: no side threads, no re-reading big docs, e2e and screenshots only at the end of the milestone. Commit and push WIP before stopping.
@@ -256,8 +257,8 @@ They are recorded in docs 01, 02, 08 and 11.
 - **Saves:** `SAVE_VERSION` is 4 (v1 → v2 → v3 → v4; v3 adds the look and the wardrobe, v4 the shift's done tasks). Bump it and add a migration and its test whenever the save shape changes.
 - **Jobs (M7):** `src/data/jobs.ts` holds `JOBS` (site, boss, tasks, uniform, perks) and `TASKS` (each task's minigame); `taskBlock()` in `systems/career.ts` says why a task can't start. Interior prompts map to `{kind: 'job', task}`, `clock` and `locker` actions; outdoor spots are map zones `job_<task>` and `drop_<n>`. The cheat `job mechanic` switches job off shift; the debug hook has `job`, `shiftDone` and `objective`.
 
-## Phase 4 — Combat and vehicles (in progress)
-Milestones: M13 combat (done, this PR), M14 vehicles, the close.
+## Phase 4 — Combat and vehicles (done 2026-10-12)
+Milestones: M13 combat (PR #27), M14 vehicles and the close.
 
 - [x] Weapons, ammo, the arms dealer (van in the Overcast alley, 18:00–04:00), armor. (M13)
 - [x] Shooting and melee in the street: aim, raise, fire, reload, slots, crosshair, the weapon panel. (M13)
@@ -265,8 +266,21 @@ Milestones: M13 combat (done, this PR), M14 vehicles, the close.
 - [x] Police combat: fire at 2★+ or once you shoot; weapon by stars; known face + visible weapon +1★. (M13)
 - [x] Death: wake at St. Brine's infirmary at 06:00, pay 10%. (M13; the hospital comes with the full town.)
 - [x] Trunks sometimes hold a gun; unregistered weapons are seized on a repeat-offense jail stay. (M13)
-- [ ] All vehicle types, damage states, upgrades, respray, repair, trunk storage, insurance, pulling drivers out. (M14)
-- [ ] Spike strips; the legal gun store comes with the full Downtown (Phase 6). (Close)
+- [x] All vehicle types, damage states, upgrades, respray, repair, trunk storage, insurance, pulling drivers out. (M14)
+- [x] Spike strips (M14); the legal gun store comes with the full Downtown (Phase 6).
+
+### Milestone 14: vehicles and the phase close (2026-10-12)
+**Built:** see docs/08 "Phase 4 build (milestone 14)". Save v8 (cars' `mods` and `stash`). The pickup, sports car and armored SUV on the lot and parked about; smoke, fire, explosions and insurance; Torque & Sons' CAR SERVICE bay (repair, five upgrades, respray); your own trunk; the police search of it; pulling drivers out of traffic; spike strips at roadblocks. New art: the spike strip decal (`fx_particles.py`), the new cars in the map renderer's cache.
+
+**How to try:** drive any car onto the concrete apron in front of Torque & Sons (08:00–18:00), stop, E. Walk up to a car waiting at a red light, E at the driver's door. Cheats: `car pickup_sage`, `roadblock` (3★ and a roadblock with spikes ahead of the car you drive).
+
+**Assumptions:** the bay serves any car you can drive; one in four drivers swings at you (12 damage); spike strips with every roadblock, 2.5 tiles before it; burst tyres halve top speed and cut steering to 60%, $200 to replace; the hidden compartment's cargo-value cut waits for product cargo (Phase 5).
+
+**Art debt:** none new.
+
+**Known issues:** the driver's door is on the car's left, which is the far side on screen for cars heading one way.
+
+**Screenshots:** `docs/screenshots/p4/` (m14_service_bay, m14_service_panel, m14_pull_out, m14_pulled, m14_spikes).
 
 ### Milestone 13: combat in the street (2026-10-12)
 **Built:** see docs/07 "Phase 4 build (milestone 13)". Save v7 (`combat`). New art: weapon poses for the player in every style (aim pistol / rifle / heavy, bat swing, knife stab; the masked style now has every tool animation too), weapon, ammo and armor icons, blood pool and spatter decals. The map gains the dealer's van and zone.

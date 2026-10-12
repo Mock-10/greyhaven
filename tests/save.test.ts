@@ -11,6 +11,7 @@ import {
   type SaveFile,
 } from '../src/core/save';
 import { createState } from '../src/core/store';
+import { NO_MODS, parkedCar } from '../src/systems/vehicle';
 
 const state = () => {
   const s = createState(7, 'downtown', { x: 100, y: 200 });
@@ -236,9 +237,31 @@ describe('saves (docs/12)', () => {
     const r = validate(old);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.file.version).toBe(7);
+    expect(r.file.version).toBe(SAVE_VERSION);
     expect(r.file.state.combat).toEqual(fresh.combat);
     expect(Object.keys(r.file.state).sort()).toEqual(Object.keys(fresh).sort());
+  });
+
+  it('migrates a version 7 save to version 8 (cars get no upgrades and an empty trunk)', () => {
+    const fresh = createState(1, 'downtown', { x: 0, y: 0 });
+    const v7 = JSON.parse(JSON.stringify(fresh)) as Record<string, unknown>;
+    v7.vehicles = [{ ...parkedCar('car1', 'sedan_teal', 10, 20, 0), owned: true, burning: 1 }];
+    const old = {
+      game: 'doublelife',
+      version: 7,
+      meta: {},
+      state: v7,
+      checksum: checksum(v7),
+    } as unknown as SaveFile;
+    const r = validate(old);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.file.version).toBe(8);
+    const car = r.file.state.vehicles[0]!;
+    expect(car.mods).toEqual(NO_MODS);
+    expect(car.stash).toEqual({ weapons: [], goods: [] });
+    expect(car.burning).toBeUndefined();
+    expect(car.owned).toBe(true);
   });
 
   it('rotates the two autosaves, keeping the newest', () => {

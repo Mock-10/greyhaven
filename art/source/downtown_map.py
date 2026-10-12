@@ -673,7 +673,7 @@ def block_n():
     segments('wall_brick', [[tc(24.1), tc(9.9)], [tc(24.1), tc(13.1)]])
     segments('wall_brick', [[tc(24.1), tc(4.4)], [tc(24.1), tc(7.3)]])
     for name, x, y, dr in (('sedan_lav', 24.9, 5.75, 2), ('sedan_teal', 27.7, 5.75, 2), ('van_white', 30.5, 5.8, 2),
-                           ('sedan_clay', 26.3, 11.75, 6), ('taxi', 29.1, 11.75, 6)):
+                           ('pickup_stone', 26.3, 11.75, 6), ('taxi', 29.1, 11.75, 6)):
         car(name, tc(x) + 0.0, tc(y), dr, parked=True)
     prop('lamp', tc(28.0), tc(9.0)); prop('trash_can', tc(31.5), tc(8.3))
     # north edge: a walk-up, the hardware store facing the lot, bins
@@ -1051,7 +1051,7 @@ def block_boulevard_band():
     ground('lot', rect(0, top, xr, fy - tc(3.4)))
     for x in np.arange(tc(1.0), xr - tc(1.0), tc(1.4)):
         ground('paint_white', rect(x - 0.9, top + 6, x + 0.9, top + 70))
-    for k, (name, x) in enumerate((('sedan_teal', 2.4), ('sedan_khaki', 5.2), ('van_white', 9.4), ('sedan_lav', 12.2))):
+    for k, (name, x) in enumerate((('sedan_teal', 2.4), ('sports_navy', 5.2), ('van_white', 9.4), ('sedan_lav', 12.2))):
         car(name, tc(x) - tc(0.7), top + 40, 2, parked=True)
     segments('hedge', [[tc(0.4), top - 2], [xr - tc(0.4), top - 2]])
     for x in (tc(2.4), tc(5.0)):
@@ -1065,6 +1065,10 @@ def block_boulevard_band():
     # the bay apron across the sidewalk, so cars can drive in
     ground('concrete', rect(gx - 50, fy, gx + 10, BY - HW4 - 2))
     keep_clear(gx - 20, fy + 20, 50)
+    # the service bay (Phase 4, docs/08): stop a car on the apron and E opens CAR SERVICE
+    ZONES.append({'id': 'garage_service', 'x0': round(gx - 50, 1), 'y0': round(fy, 1),
+                  'x1': round(gx + 10, 1), 'y1': round(BY - HW4 - 2, 1),
+                  'npc': {'x': round(gx - 20, 1), 'y': round(fy + 20, 1)}})
     # Squeaky's Car Wash (milestone 8) beside the garage: the tunnel opens on the boulevard over a wash apron, where
     # the weekend car wash gig runs at a waiting dirty car with the attendant beside it
     cx0 = gx + half('garage_torque')[0] + 10
@@ -1087,7 +1091,7 @@ def block_boulevard_band():
     ground('lot', rect(yx0, top, yx1, fy))
     for x in np.arange(yx0 + 26, yx1 - 20, tc(1.4)):
         ground('paint_white', rect(x - 0.9, top + 30, x + 0.9, top + 110))
-    for k, (name, dr) in enumerate((('sedan_clay', 2), ('sedan_teal', 2), ('van_sage', 2), ('sedan_khaki', 2))):
+    for k, (name, dr) in enumerate((('pickup_brick', 2), ('sedan_teal', 2), ('van_sage', 2), ('sports_red', 2))):
         x = yx0 + 26 + tc(1.4) * k + tc(0.7)
         if x < yx1 - 30:
             car(name, x, top + 70, dr, parked=True)
@@ -1103,7 +1107,7 @@ def block_boulevard_band():
     ground('lot', rect(lx0, top, lx1, fy))
     building('dealer_office', lx0 + half('dealer_office')[0] + 10, front_y('dealer_office', fy - 6), 0, door=(4.0, 'dealer', 'USED CARS'))
     cx0 = lx0 + 2 * half('dealer_office')[0] + 40
-    names = ['sedan_lav', 'sedan_khaki', 'van_white', 'sedan_teal', 'sedan_clay', 'taxi', 'sedan_lav', 'van_sage']
+    names = ['sedan_lav', 'sedan_khaki', 'pickup_sage', 'sedan_teal', 'sports_white', 'taxi', 'sedan_lav', 'van_sage']
     k = 0
     for row_y, n in ((top + 40, 4), (top + 140, 4)):
         x = cx0

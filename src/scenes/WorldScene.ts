@@ -65,12 +65,17 @@ import {
   type House,
 } from '../systems/burglary';
 import { GOODS_NAMES, LAYOUTS } from '../data/burglary';
-import { changedOutfit, emptyChase, tickChaos, type ChaseState } from '../systems/response';
+import { changedOutfit, dropStars, emptyChase, tickChaos, type ChaseState } from '../systems/response';
 import { fencePage } from '../world/fence';
 import { CombatWorld } from '../world/combatWorld';
 import { armsPage } from '../world/arms';
+import { servicePage, type ServiceCtx } from '../world/garageService';
+import { respray } from '../systems/carService';
+import { searchTrunk } from '../systems/trunk';
+import { trunkPage } from '../world/trunkPage';
 import {
   addAmmo,
+  hurt,
   cycleWeapon,
   drawnWeapon,
   giveWeapon,
@@ -151,7 +156,7 @@ import {
   type Grade,
 } from '../systems/career';
 import { runCalendar } from '../systems/days';
-import { credit } from '../systems/finance';
+import { credit, debit } from '../systems/finance';
 import { rollTrunk, takeLoot, type LootItem } from '../systems/loot';
 import { lockTool, wearLockpicks } from '../systems/shop';
 import { atmPage, bagPage, phoneRoot, PHONE_SENDERS, type PhoneCtx } from '../world/phone';
@@ -198,6 +203,7 @@ import {
   parkAtHome,
   parkedCar,
   parkedIn,
+  onStrip,
   stats,
   pourCan,
   refuel,
@@ -499,6 +505,17 @@ export class WorldScene extends Phaser.Scene {
             placed: null,
             door: null,
           });
+        // Torque & Sons' service bay (Phase 4, docs/08): shows with a car stopped on the apron
+        else if (z.id === 'garage_service' && z.npc)
+          this.usables.push({
+            id: 'zone:garage_service',
+            x: z.npc.x,
+            y: z.npc.y,
+            label: 'CAR SERVICE',
+            placed: null,
+            door: null,
+            hidden: true,
+          });
         // the arms dealer's open van in the alley (Phase 4, docs/07)
         else if (z.id === 'arms_dealer' && z.npc)
           this.usables.push({
@@ -718,6 +735,85 @@ export class WorldScene extends Phaser.Scene {
       },
       playAction: (a) => this.actions.play(a, BALANCE.combatWorld.flashSeconds * 6),
     });
+  }
+
+  /** Police spike strips (docs/05 3★): driving over one bursts the tyres, unless they're level 2 (docs/08). */
+  private spikesTick(): void {
+    const car = this.drivenCar();
+    const strips = this.police?.spikeStrips() ?? [];
+    const v = car?.v;
+    const on = !!v && strips.some((s) => onStrip(v, s));
+    if (v && on && !this.onSpikes) {
+      if ((v.mods?.tires ?? 0) >= BALANCE.vehicles.flat.resistLevel)
+        this.toast('CAR', 'RUN-FLATS. THE SPIKES DO NOTHING.');
+      else if (!v.flat) {
+        v.flat = true;
+        v.speed = Math.min(v.speed, topSpeed(v));
+        this.toast('CAR', 'SPIKES! THE TYRES ARE GONE.');
+      }
+    }
+    this.onSpikes = on;
+  }
+
+  private onSpikes = false;
+
+  /** Smoke and fire from damaged cars, and wrecks that explode (docs/08). */
+  private carDamageTick(dt: number): void {
+    const V = BALANCE.vehicles;
+    this.damageFxT += dt;
+    const puff = this.damageFxT >= V.damageFxSeconds;
+    if (puff) this.damageFxT = 0;
+    for (const c of [...this.cars]) {
+      const v = c.v;
+      const S = stats(v);
+      const share = v.health / S.health;
+      if (puff && !this.inside && v.burning !== -1) {
+        if (share < V.fireShare) this.fx?.emit('fireSmall', v.x, v.y, 14, 1);
+        else if (share < V.smokeShare) this.fx?.emit('smoke', v.x, v.y, 16, 1);
+      }
+      if (!v.wrecked || v.burning === -1) continue;
+      v.burning = (v.burning ?? 0) + dt;
+      if (v.burning < V.explodeSeconds) continue;
+      v.burning = -1;
+      this.carExploded(c);
+    }
+  }
+
+  private damageFxT = 0;
+
+  /** A wreck explodes: the blast hurts whoever is near (the driver most), and a bought car goes to insurance. */
+  private carExploded(c: CarView): void {
+    const v = c.v;
+    const E = BALANCE.vehicles.explosion;
+    const st = this.state;
+    this.combatWorld?.carExplosion(v, E.damage, E.radiusTiles);
+    this.cameras.main.shake(BALANCE.vehicles.explosionShakeMs, 0.004);
+    if (st.driving === v.id) this.leaveCar({ x: v.x + 30, y: v.y + 30 });
+    const p = st.player;
+    const d = Math.hypot(p.x - v.x, p.y - v.y);
+    if (!this.inside && d < E.radiusTiles * TILE) {
+      const r = hurt(p, st.combat, Math.round(E.damage * (1 - d / (E.radiusTiles * TILE)) + 1));
+      if (r.down) {
+        this.playerDown();
+        return;
+      }
+    }
+    // a bought car is insured (docs/08): it waits at home for 10% of its value
+    if (v.owned) {
+      const fee = Math.round(BALANCE.vehicles.types[v.type].value * BALANCE.vehicles.insuranceShare);
+      debit(st.money, st.finance, st.minutes, 'CAR INSURANCE', Math.min(fee, st.money.bank));
+      const home = this.map.zones?.find((z) => z.id === 'home_parking')?.slots?.[0];
+      if (home) {
+        v.x = home.x;
+        v.y = home.y;
+        v.heading = (home.dir * Math.PI) / 4;
+      }
+      v.health = stats(v).health;
+      v.wrecked = false;
+      v.burning = undefined;
+      v.fuel = stats(v).tank;
+      this.toast('INSURANCE', `YOUR ${TYPE_LABEL[v.type]} IS BACK AT HOME. $${fee} FROM THE BANK.`);
+    }
   }
 
   /** What stops a bullet in the street: buildings and every car, as ground boxes. */
@@ -968,7 +1064,10 @@ export class WorldScene extends Phaser.Scene {
     const repLost = arrested(st.crime);
     const car = this.drivenCar();
     let impounded = false;
+    let trunkTaken = 0;
     if (car) {
+      // docs/08: the police search the trunk (the hidden compartment passes it most of the time)
+      trunkTaken = searchTrunk(car.v, this.rng);
       this.leaveCar({ x: car.v.x, y: car.v.y });
       if (car.v.hotUntil > 0) {
         this.removeCar(car);
@@ -986,7 +1085,7 @@ export class WorldScene extends Phaser.Scene {
     sighted(st.heat, 'police', { masked: false, uniform: false }, st.minutes);
     this.prompt?.setVisible(false);
     this.scene.pause();
-    const done = () => this.booked(s, arrestedAt, impounded, repLost);
+    const done = () => this.booked(s, arrestedAt, impounded, repLost, trunkTaken);
     if (lawyerOffered(s) || judgeOffered(s, tierFor(st.crime.rep))) this.jailScreen(s, done);
     else done();
   }
@@ -1044,7 +1143,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Book the arrest: the fine, any seizure, jail time, the career record, release at Precinct 1. */
-  private booked(s: Sentence, arrestedAt: number, impounded: boolean, repLost: number): void {
+  private booked(s: Sentence, arrestedAt: number, impounded: boolean, repLost: number, trunkTaken = 0): void {
     const st = this.state;
     const o = book(s, st.money, st.record, {}, st.minutes);
     st.minutes = o.releaseAt;
@@ -1073,6 +1172,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.combatWorld?.clear();
     if (impounded) lines.push('THE STOLEN CAR WAS IMPOUNDED');
+    if (trunkTaken > 0) lines.push(`TRUNK SEARCHED: ${trunkTaken} ITEM${trunkTaken > 1 ? 'S' : ''} TAKEN`);
     if (repLost > 0) lines.push(`STREET REP LOST: ${repLost}`);
     lines.push(`PROMOTION FROZEN ${BALANCE.careers.freezeDays} DAYS, EXTRA WORK AFTER`);
     lines.push('RELEASED AT PRECINCT 1, PEWTER STREET');
@@ -1472,11 +1572,9 @@ export class WorldScene extends Phaser.Scene {
           this.toast('CHEAT', 'CARS ONLY ON THE STREET.');
           return;
         }
-        if (!this.textures.get('vehicles').has(`${c.model}/SE`)) {
-          this.toast(
-            'CHEAT',
-            'MODELS: SEDAN_LAV, SEDAN_TEAL, SEDAN_CLAY, SEDAN_KHAKI, TAXI, VAN_WHITE, VAN_SAGE',
-          );
+        const ref = vehicleFrame(c.model, 0);
+        if (!this.textures.get(ref.atlas).has(ref.frame)) {
+          this.toast('CHEAT', 'MODELS: SEDAN_TEAL, TAXI, VAN_WHITE, PICKUP_SAGE, SPORTS_RED, ARMORED_SUV...');
           return;
         }
         const ang = (st.player.dir * Math.PI) / 4;
@@ -1493,6 +1591,20 @@ export class WorldScene extends Phaser.Scene {
       case 'heal':
         st.player.health = BALANCE.player.maxHealth;
         break;
+      case 'roadblock': {
+        // 3★ and a roadblock with its spike strip ahead of the driven car (Phase 4 testing)
+        const car = this.drivenCar();
+        if (car && st.wanted.stars < 3) addStars(st.wanted, 3 - st.wanted.stars, { x: car.v.x, y: car.v.y });
+        if (car)
+          this.police?.placeRoadblock({
+            x: car.v.x,
+            y: car.v.y,
+            driving: true,
+            speed: 0,
+            heading: car.v.heading,
+          });
+        break;
+      }
       case 'gun': {
         // a weapon with a full reserve, drawn (Phase 4 testing)
         const id = c.weapon as WeaponId;
@@ -1848,6 +1960,8 @@ export class WorldScene extends Phaser.Scene {
       if (this.lastNpcMinute % 10 === 0) this.updateInteriorObjective();
     }
     if (!this.isReference) this.updateStreetLife(dt);
+    if (!this.isReference) this.carDamageTick(dt);
+    if (!this.isReference) this.spikesTick();
     if (!this.isReference) {
       this.combatTick(dt);
       this.combatWorld?.update(dt, !!this.inside);
@@ -2080,6 +2194,10 @@ export class WorldScene extends Phaser.Scene {
     if (!u) return;
     // reach out to whatever is used
     this.actions.play('use');
+    if (u.id.startsWith('jack:')) {
+      this.pullOut(u.id.slice(5));
+      return;
+    }
     if (u.id.startsWith('witness:')) {
       const ped = this.life?.peds.find((pv) => `witness:${pv.ped.id}` === u.id)?.ped;
       if (ped) {
@@ -2103,6 +2221,7 @@ export class WorldScene extends Phaser.Scene {
     else if (u.id.startsWith('house:')) this.breakIn(u.id.slice(6), u);
     else if (u.id.startsWith('drop:')) this.takeDrop(u.id);
     else if (u.id === 'zone:arms_dealer') this.openArms();
+    else if (u.id === 'zone:garage_service') this.openService();
     else if (u.id === 'owner') this.scareOff();
     else if (u.id.startsWith('job:')) this.jobTask(u.id.slice(4) as TaskId);
     else if (u.id.startsWith('gig:')) this.gigAction(u.id.slice(4) as GigId);
@@ -2864,6 +2983,36 @@ export class WorldScene extends Phaser.Scene {
     this.openPanel('arms', () => armsPage(this.state));
   }
 
+  /** The car stopped in Torque & Sons' bay: one you can drive (yours, or one you've opened). */
+  private carForService(): CarView | null {
+    const z = this.map.zones?.find((q) => q.id === 'garage_service');
+    if (!z) return null;
+    return this.cars.find((c) => (c.v.owned || !c.v.locked) && parkedIn(c.v, z)) ?? null;
+  }
+
+  /** CAR SERVICE at Torque & Sons (docs/08): repair, upgrades and the respray, in the garage's hours. */
+  private openService(): void {
+    const H = INTERIORS.garage.hours;
+    if (H && !isOpen(H, this.minuteOfDay())) {
+      this.toast('TORQUE & SONS', `CLOSED. ${formatClock(H.from)} TO ${formatClock(H.to)}.`);
+      return;
+    }
+    const car = this.carForService();
+    if (!car) return;
+    const st = this.state;
+    const ctx: ServiceCtx = {
+      state: st,
+      car: car.v,
+      respray: () => {
+        const m = respray(car.v, this.rng);
+        // docs/08: −1★ if nobody sees the car go in
+        if (st.wanted.stars > 0 && !st.wanted.seen) dropStars(st.wanted, 1);
+        return m;
+      },
+    };
+    this.openPanel('service', () => servicePage(ctx));
+  }
+
   /** Precinct 1's desk sergeant reads out your record (docs/05). */
   private frontDesk(): void {
     const st = this.state;
@@ -3581,10 +3730,29 @@ export class WorldScene extends Phaser.Scene {
         u.key = 'F';
         u.label = v.running ? 'GET IN' : 'HOTWIRE';
       }
-      // the trunk: not on a car you own or drive, and only once (docs/12: a looted car stays looted)
-      c.trunk.hidden = !!v.looted || !!v.owned || v.wrecked || this.state.driving === v.id;
+      // your own car's trunk is storage (docs/08); anyone else's is loot, once (docs/12: a looted car stays looted)
+      c.trunk.label = v.owned ? 'TRUNK' : 'LOOT TRUNK';
+      c.trunk.hidden = (!v.owned && !!v.looted) || v.wrecked || this.state.driving === v.id;
     }
-    this.usables = this.usables.filter((u) => !u.id.startsWith('witness:'));
+    this.usables = this.usables.filter((u) => !u.id.startsWith('witness:') && !u.id.startsWith('jack:'));
+    // docs/08: a traffic car stopped (or crawling) close by can be taken from its driver, at the driver's door
+    const J = BALANCE.carjack;
+    if (!this.state.driving)
+      for (const cv of this.life?.cars ?? []) {
+        const t = cv.car;
+        if (t.speed > J.maxSpeed) continue;
+        const side = stats({ type: typeOfModel(t.model) }).halfWidth + J.doorGap;
+        const door = { x: t.x + Math.sin(t.heading) * side, y: t.y - Math.cos(t.heading) * side };
+        if (Math.hypot(door.x - this.state.player.x, door.y - this.state.player.y) > J.reachTiles * TILE)
+          continue;
+        this.usables.push({
+          id: `jack:${t.id}`,
+          ...door,
+          label: 'PULL OUT DRIVER',
+          placed: null,
+          door: null,
+        });
+      }
     const reach = BALANCE.wanted.scareTiles * TILE;
     for (const pv of this.life?.peds ?? []) {
       const q = pv.ped;
@@ -3600,6 +3768,8 @@ export class WorldScene extends Phaser.Scene {
     }
     const spot = this.usables.find((u) => u.id === 'zone:marlo_spot');
     if (spot) spot.hidden = this.marloWalker !== null || !this.carForMarlo();
+    const bay = this.usables.find((u) => u.id === 'zone:garage_service');
+    if (bay) bay.hidden = !this.carForService();
     const c = this.state.career;
     for (const u of this.usables) {
       if (!u.id.startsWith('job:')) continue;
@@ -3628,7 +3798,7 @@ export class WorldScene extends Phaser.Scene {
     for (const u of this.usables) {
       if (u.hidden) continue;
       // from a car only Marlo's yard counts as a zone (the shelter is for people on foot)
-      const zone = u.id === 'zone:marlo_spot';
+      const zone = u.id === 'zone:marlo_spot' || u.id === 'zone:garage_service';
       const reach = u.id.startsWith('pump') ? V.pumpReach : zone ? 0 : -1;
       if (reach < 0) continue;
       const d = zone ? 0 : distToCar(car.v, u.x, u.y);
@@ -3693,6 +3863,47 @@ export class WorldScene extends Phaser.Scene {
       this.openMinigame({ kind: 'hotwire', seed: this.rng.int(1, 2 ** 30), bonusSeconds: bonus });
     } else this.getIn(near);
   }
+
+  /** docs/08 pulling drivers out: the car is yours to drive (hot, like any stolen car), the driver runs and calls
+   *  it in; some swing at you first. */
+  private pullOut(id: string): void {
+    if (this.busy || !this.life) return;
+    const t = this.life.takeCar(id);
+    if (!t) return;
+    const J = BALANCE.carjack;
+    const st = this.state;
+    const p = st.player;
+    if (this.rng.chance(J.fightShare)) {
+      const r = hurt(p, st.combat, J.fightDamage);
+      this.toast('DRIVER', 'THE DRIVER SWINGS AT YOU, THEN RUNS.');
+      if (r.down) {
+        this.playerDown();
+        return;
+      }
+    }
+    const v = parkedCar(`jacked${this.jackSeq++}`, t.model, t.x, t.y, dirOf(t.heading));
+    v.heading = t.heading;
+    v.locked = false;
+    v.running = true;
+    v.hotUntil = st.minutes + BALANCE.crime.hotMinutes;
+    st.vehicles.push(v);
+    this.addCarView(v);
+    const driver = this.life.addDriver(p.x, p.y, { x: t.x, y: t.y });
+    const at = { x: t.x, y: t.y };
+    this.crime(BALANCE.wanted.crimeStars.carjack, at);
+    // the driver saw it all: always a witness
+    if (driver && !driver.call)
+      driver.call = {
+        t: BALANCE.wanted.callSeconds[1] ?? 0,
+        at,
+        stars: BALANCE.wanted.crimeStars.carjack,
+        crime: this.crimeSeq,
+      };
+    const c = this.cars.find((x) => x.v.id === v.id);
+    if (c) this.getIn(c);
+  }
+
+  private jackSeq = 0;
 
   private getIn(c: CarView): void {
     this.state.driving = c.v.id;
@@ -3785,6 +3996,10 @@ export class WorldScene extends Phaser.Scene {
   /** E at a car's rear: a 1★ crime if seen; pick the lock unless the car is open, then search the trunk. */
   private lootTrunk(id: string): void {
     const c = this.cars.find((x) => x.v.id === id);
+    if (c?.v.owned) {
+      this.openPanel('trunk', () => trunkPage(this.state, c.v));
+      return;
+    }
     // a trunk already being opened (the moment between the picked lock and the search panel) isn't opened twice
     if (!c || this.busy || c.v.looted || this.pendingTrunk) return;
     this.crime(BALANCE.wanted.crimeStars.trunk, { x: c.trunk.x, y: c.trunk.y });
@@ -4338,6 +4553,13 @@ export class WorldScene extends Phaser.Scene {
     h.goods = this.state.goods.length;
     h.weapon = hudWeapon(this.state.combat);
     h.peds = (this.life?.peds ?? []).map((pv) => ({ x: pv.ped.x, y: pv.ped.y }));
+    h.traffic = (this.life?.cars ?? []).map((cv) => ({
+      id: cv.car.id,
+      x: cv.car.x,
+      y: cv.car.y,
+      speed: cv.car.speed,
+      heading: cv.car.heading,
+    }));
     if (this.player) {
       // the camera's world points under canvas pixels (0,0) and (1,1) give the inverse transform
       const cam = this.cameras.main;
@@ -4361,6 +4583,9 @@ export class WorldScene extends Phaser.Scene {
       looted: !!v.looted,
       model: v.model,
       owned: !!v.owned,
+      hot: v.hotUntil > this.state.minutes,
+      flat: !!v.flat,
+      stash: v.stash ? v.stash.weapons.length + v.stash.goods.length : 0,
     }));
     const tile = worldToTile(p.x, p.y);
     this.game.events.emit('debug:stats', {
