@@ -104,6 +104,9 @@ export const BALANCE = {
     shiftXp: [6, 9, 11, 14] as readonly number[],
     /** Office rank that gets the building key card (docs/03 perk). */
     keyCardRank: 2,
+    /** Office rank 4 perk (docs/03 expense account): this much off legal purchases (shops, clothes, cars). */
+    expenseRank: 4,
+    expenseDiscount: 0.1,
     /** docs/03: a missed workday costs this much promotion XP (never below 0) and pays nothing. Day 1 (the guided
      *  first day) never counts as missed. */
     missedXp: 5,

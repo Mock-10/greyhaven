@@ -265,38 +265,56 @@
    "w": 32,
    "h": 32
   },
-  "car/beater_khaki": {
+  "outfit/coveralls": {
    "x": 136,
    "y": 152,
    "w": 32,
    "h": 32
   },
-  "car/beater_brick": {
+  "outfit/flannel": {
    "x": 170,
    "y": 152,
    "w": 32,
    "h": 32
   },
-  "car/sedan_teal": {
+  "outfit/courier": {
    "x": 204,
    "y": 152,
    "w": 32,
    "h": 32
   },
-  "car/sedan_clay": {
+  "car/beater_khaki": {
    "x": 238,
    "y": 152,
    "w": 32,
    "h": 32
   },
-  "car/sedan_khaki": {
+  "car/beater_brick": {
    "x": 272,
    "y": 152,
    "w": 32,
    "h": 32
   },
-  "car/sedan_lav": {
+  "car/sedan_teal": {
    "x": 0,
+   "y": 186,
+   "w": 32,
+   "h": 32
+  },
+  "car/sedan_clay": {
+   "x": 34,
+   "y": 186,
+   "w": 32,
+   "h": 32
+  },
+  "car/sedan_khaki": {
+   "x": 68,
+   "y": 186,
+   "w": 32,
+   "h": 32
+  },
+  "car/sedan_lav": {
+   "x": 102,
    "y": 186,
    "w": 32,
    "h": 32

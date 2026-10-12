@@ -357,7 +357,8 @@
    "y": 34,
    "wz": 0.0,
    "zBias": 0,
-   "ang": -1.5707963267948966
+   "ang": -1.5707963267948966,
+   "prompt": "PLAN ROUTE"
   },
   {
    "frame": "item_4_table_chairs",

@@ -49,7 +49,17 @@ export interface Zone {
 
 /** Interiors a street door can lead to (milestone 2; the Hedgerow Way shops and the car dealer in milestone 6b). */
 export type DoorTarget =
-  'tower_lobby' | 'store' | 'apartment' | 'bar' | 'chop_shop' | 'hardware' | 'clothing' | 'dealer';
+  | 'tower_lobby'
+  | 'store'
+  | 'apartment'
+  | 'bar'
+  | 'chop_shop'
+  | 'hardware'
+  | 'clothing'
+  | 'dealer'
+  | 'garage'
+  | 'depot'
+  | 'site_trailer';
 
 /** A street door: a hotspot on the pavement in front of an entrance. */
 export interface Door {

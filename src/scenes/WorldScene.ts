@@ -58,11 +58,15 @@ import { districtAt } from '../maps/groundQuery';
 import { advance, calendar, darkness, formatClock, sleepUntil, tintAt } from '../systems/clock';
 import {
   arrestEffects,
+  canClockIn,
   clockIn,
   clockOut,
+  deliveryDrops,
   hasKeyCard,
+  legalDiscount,
   rankTitle,
   recordTask,
+  taskBlock,
   tasksLeft,
   type Grade,
 } from '../systems/career';
@@ -71,12 +75,12 @@ import { credit } from '../systems/finance';
 import { rollTrunk, takeLoot, type LootItem } from '../systems/loot';
 import { lockTool, wearLockpicks } from '../systems/shop';
 import { atmPage, bagPage, phoneRoot, PHONE_SENDERS, type PhoneCtx } from '../world/phone';
-import { clothingPage, dealerPage, wardrobePage, type ShopCtx } from '../world/shops';
+import { clothingPage, dealerPage, lockerPage, wardrobePage, type ShopCtx } from '../world/shops';
 import type { ListPage } from '../ui/listPanel';
 import { bayFree, boughtCar, payDealer } from '../systems/dealer';
 import type { ListRequest } from './ListScene';
 import { INTERIORS, interiorForDoor, isOpen, type InteriorDef, type InteriorId } from '../data/interiors';
-import { JOBS, TASK_NAMES, type TaskId } from '../data/jobs';
+import { JOBS, TASKS, jobAtSite, jobOfTask, type JobId, type TaskId } from '../data/jobs';
 import { TYPE_LABEL } from '../data/vehicles';
 import { ATLASES } from '../assets/manifest';
 import {
@@ -227,6 +231,8 @@ export interface HudSnapshot {
   starsFlash: boolean;
   search: { x: number; y: number; r: number } | null;
   police: { x: number; y: number }[];
+  /** Gold objective marks on the radar: the job's drops, yard spots, or where to clock in. */
+  marks: { x: number; y: number }[];
   /** An officer is busting the player: the surrender prompt. */
   surrender: boolean;
 }
@@ -373,7 +379,31 @@ export class WorldScene extends Phaser.Scene {
             placed: null,
             door: null,
           });
+        // the lumberjack's spots in the timber yard (milestone 7)
+        else if (z.id.startsWith('job_') && z.npc) {
+          const task = z.id.slice(4) as TaskId;
+          this.usables.push({
+            id: `job:${task}`,
+            x: z.npc.x,
+            y: z.npc.y,
+            label: TASKS[task].name,
+            placed: null,
+            door: null,
+            hidden: true,
+          });
+        }
       }
+      // the delivery drops move to the day's two Linden Avenue doors (refreshStreetLabels)
+      for (const task of ['doorstep', 'signature'] as const)
+        this.usables.push({
+          id: `job:${task}`,
+          x: 0,
+          y: 0,
+          label: TASKS[task].name,
+          placed: null,
+          door: null,
+          hidden: true,
+        });
       this.createEntranceOutlines();
       this.createPlayer();
       this.createCars();
@@ -662,13 +692,19 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** The shop lists (milestone 6b): the clothing store, the wardrobe and fitting booths, the used-car desk. */
-  private openShopList(name: 'clothing' | 'wardrobe' | 'dealer'): void {
+  private openShopList(name: 'clothing' | 'wardrobe' | 'dealer' | 'locker'): void {
     const ctx: ShopCtx = {
       state: this.state,
       wear: (outfit) => this.setLook({ ...this.state.look, outfit }),
       buyCar: (model) => this.buyCar(model),
     };
-    const root = { clothing: clothingPage, wardrobe: wardrobePage, dealer: dealerPage }[name];
+    const job = this.siteJob() ?? this.state.career.current;
+    const root = {
+      clothing: clothingPage,
+      wardrobe: wardrobePage,
+      dealer: dealerPage,
+      locker: (c: ShopCtx) => lockerPage(c, job),
+    }[name];
     this.openPanel(name, () => root(ctx));
   }
 
@@ -1534,6 +1570,7 @@ export class WorldScene extends Phaser.Scene {
     else if (u.id.startsWith('trunk:')) this.lootTrunk(u.id.slice(6));
     else if (u.id.startsWith('pump')) this.usePump(u);
     else if (u.id.startsWith('atm')) this.openList('atm');
+    else if (u.id.startsWith('job:')) this.jobTask(u.id.slice(4) as TaskId);
   }
 
   // ---------------------------------------------------------------- interiors (docs/18)
@@ -1753,8 +1790,15 @@ export class WorldScene extends Phaser.Scene {
         u.blocked = d.blocked;
       } else if (sp.kind === 'action' && sp.action.kind === 'clock') {
         const c = this.state.career;
-        u.label = c.shift ? (tasksLeft(c) === 0 ? 'CLOCK OUT' : `TASKS LEFT: ${tasksLeft(c)}`) : 'CLOCK IN';
-        u.blocked = !!c.shift && tasksLeft(c) > 0;
+        const mine = !!c.shift && c.shift.job === this.siteJob();
+        u.label = mine ? (tasksLeft(c) === 0 ? 'CLOCK OUT' : `TASKS LEFT: ${tasksLeft(c)}`) : 'CLOCK IN';
+        u.blocked = mine && tasksLeft(c) > 0;
+      } else if (sp.kind === 'action' && sp.action.kind === 'job') {
+        const t = TASKS[sp.action.task];
+        const why = this.state.career.shift ? taskBlock(this.state.career, sp.action.task) : null;
+        u.label =
+          why === 'rank' ? `${t.name} (RANK ${t.minRank}+)` : why === 'done' ? `${t.name}: DONE` : t.name;
+        u.blocked = why === 'rank' || why === 'done' || why === 'needs';
       }
     }
   }
@@ -1809,6 +1853,9 @@ export class WorldScene extends Phaser.Scene {
       case 'wardrobe':
         this.openShopList('wardrobe');
         break;
+      case 'locker':
+        this.openShopList('locker');
+        break;
       case 'dealer':
         this.openShopList('dealer');
         break;
@@ -1858,42 +1905,57 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
+  /** The job whose time clock is in the interior the player is in, if any. */
+  private siteJob(): JobId | null {
+    return this.inside ? jobAtSite(this.inside.def.id) : null;
+  }
+
   private clockAction(): void {
     const c = this.state.career;
+    const job = this.siteJob() ?? c.current;
+    const J = JOBS[job];
     if (c.shift) {
+      if (c.shift.job !== job) {
+        this.toast(J.boss, `YOU'RE ON SHIFT AT ${JOBS[c.shift.job].where}.`);
+        return;
+      }
       const left = tasksLeft(c);
       if (left > 0) {
-        this.toast('MS. HOLLIS', `${left} TASK${left > 1 ? 'S' : ''} LEFT. FILING CABINETS OR YOUR DESK.`);
+        this.toast(J.boss, `${left} TASK${left > 1 ? 'S' : ''} LEFT. ${J.taskHint}.`);
         return;
       }
       const res = clockOut(c, this.state.minutes);
       if (!res) return;
       const st = this.state;
-      credit(st.money, st.finance, st.minutes, `PAY, ${JOBS[c.current].short}`, res.pay);
+      credit(st.money, st.finance, st.minutes, `PAY, ${J.short}`, res.pay);
       credit(st.money, st.finance, st.minutes, 'PROMOTION BONUS', res.bonus);
       this.toast(
-        'MS. HOLLIS',
+        J.boss,
         res.frozen
           ? `+$${res.pay} TO THE BANK. NO XP: YOUR PROMOTION IS FROZEN.`
           : `GOOD WORK. +$${res.pay} TO THE BANK, +${res.xp} XP.`,
       );
       void this.autosave();
-      if (res.promoted)
+      if (res.promoted) {
+        const card = job === 'office' && hasKeyCard(c) ? ' HERE IS YOUR KEY CARD.' : '';
         this.time.delayedCall(2200, () =>
-          this.toast(
-            'MS. HOLLIS',
-            `PROMOTED TO ${rankTitle(c)}! +$${res.bonus} BONUS TO THE BANK.${hasKeyCard(c) ? ' HERE IS YOUR KEY CARD.' : ''}`,
-          ),
+          this.toast(J.boss, `PROMOTED TO ${rankTitle(c, job)}! +$${res.bonus} BONUS TO THE BANK.${card}`),
         );
+      }
       this.updateInteriorObjective();
       return;
     }
-    const r = clockIn(c, this.state.minutes);
+    // the uniform goes on at the locker before clocking in (docs/03 decisions)
+    if (canClockIn(c, this.state.minutes, job).ok && J.uniform && this.state.look.outfit !== J.uniform) {
+      this.toast(J.boss, 'UNIFORM FIRST. YOUR LOCKER IS IN THE STAFF ROOM.');
+      return;
+    }
+    const r = clockIn(c, this.state.minutes, job);
     if (r.ok) {
       const n = tasksLeft(c);
-      const extra = n > JOBS[c.current].tasksPerShift ? ' ONE EXTRA, AFTER YOUR LITTLE ADVENTURE.' : '';
+      const extra = n > J.tasksPerShift ? ' ONE EXTRA, AFTER YOUR LITTLE ADVENTURE.' : '';
       this.toast(
-        'MS. HOLLIS',
+        J.boss,
         r.late
           ? `YOU'RE LATE. THAT'S 80% PAY TODAY. ${n} TASKS.${extra}`
           : `MORNING. ${n} TASKS TODAY.${extra}`,
@@ -1905,26 +1967,38 @@ export class WorldScene extends Phaser.Scene {
         tooLate: 'CLOCK-IN CLOSED AT 10:00. TRY TOMORROW.',
         alreadyWorked: 'YOU ALREADY WORKED TODAY.',
         onShift: 'YOU ARE ALREADY ON SHIFT.',
+        otherJob: `YOU DON'T WORK HERE. TAKE THE JOB ON YOUR PHONE'S JOB BOARD.`,
       };
-      this.toast('MS. HOLLIS', why[r.reason]);
+      this.toast(J.boss, why[r.reason]);
     }
     this.updateInteriorObjective();
   }
 
   private jobTask(task: TaskId): void {
     const c = this.state.career;
-    if (!c.shift) {
-      this.toast('MS. HOLLIS', 'CLOCK IN WITH ME FIRST. MY OFFICE, BACK RIGHT.');
+    const T = TASKS[task];
+    const job = jobOfTask(task);
+    const why = taskBlock(c, task);
+    if (why) {
+      const J = JOBS[job];
+      const text: Record<typeof why, string> = {
+        noShift: this.siteJob() === job ? 'CLOCK IN WITH ME FIRST.' : `CLOCK IN FIRST: ${J.goTo}.`,
+        otherJob: `YOU'RE ON SHIFT AT ${JOBS[c.shift?.job ?? c.current].where}.`,
+        shiftDone: "THAT'S ENOUGH FOR TODAY. CLOCK OUT.",
+        rank: `THAT'S FOR ${J.ranks[(T.minRank ?? 1) - 1]}S AND UP.`,
+        needs: `${(T.after ?? []).map((t) => TASKS[t].name).join(' AND ')} FIRST.`,
+        done: 'ALREADY DONE THIS SHIFT.',
+      };
+      this.toast(J.boss, text[why]);
       return;
     }
-    if (tasksLeft(c) === 0) {
-      this.toast('MS. HOLLIS', "THAT'S ENOUGH FOR TODAY. CLOCK OUT WITH ME.");
-      return;
-    }
-    const total = c.shift.tasks;
-    const done = total - tasksLeft(c);
+    const shift = c.shift;
+    if (!shift) return;
+    const label = `TASK ${shift.tasks - tasksLeft(c) + 1}/${shift.tasks}`;
+    const seed = this.rng.int(1, 2 ** 30);
     this.pendingTask = task;
-    this.openMinigame({ kind: task, seed: this.rng.int(1, 2 ** 30), task: `TASK ${done + 1}/${total}` });
+    if (T.game === 'filing' || T.game === 'dataEntry') this.openMinigame({ kind: T.game, seed, task: label });
+    else this.openMinigame({ kind: T.game, seed, task: label, rank: c.jobs[shift.job].rank, mode: T.mode });
   }
 
   private pendingTask: TaskId | null = null;
@@ -1935,6 +2009,7 @@ export class WorldScene extends Phaser.Scene {
     return {
       money: this.state.money,
       inventory: this.state.inventory,
+      discount: legalDiscount(this.state.career),
       get health() {
         return p.health;
       },
@@ -1962,17 +2037,19 @@ export class WorldScene extends Phaser.Scene {
     if (this.pendingTrunk) this.trunkMinigameDone(r);
     else if (r.kind === 'lockpick' || r.kind === 'hotwire') this.carMinigameDone(r);
     if (r.kind === 'duffel') this.launderDone(r);
-    if ((r.kind === 'filing' || r.kind === 'dataEntry') && this.pendingTask) {
+    if (this.pendingTask && r.kind === TASKS[this.pendingTask].game) {
       const task = this.pendingTask;
       this.pendingTask = null;
-      if (r.grade) {
-        recordTask(this.state.career, task, r.grade as Grade);
-        const left = tasksLeft(this.state.career);
+      const c = this.state.career;
+      if (r.grade && c.shift) {
+        const boss = JOBS[c.shift.job].boss;
+        recordTask(c, task, r.grade as Grade);
+        const left = tasksLeft(c);
         this.toast(
-          TASK_NAMES[task],
+          TASKS[task].name,
           left > 0
             ? `${r.grade.toUpperCase()}. ${left} TO GO.`
-            : `${r.grade.toUpperCase()}. CLOCK OUT WITH MS. HOLLIS.`,
+            : `${r.grade.toUpperCase()}. CLOCK OUT WITH ${boss}.`,
         );
       }
       this.updateInteriorObjective();
@@ -1981,22 +2058,21 @@ export class WorldScene extends Phaser.Scene {
 
   private updateInteriorObjective(): void {
     const c = this.state.career;
+    const here = this.siteJob();
     if (c.shift) {
+      const J = JOBS[c.shift.job];
       const left = tasksLeft(c);
-      this.objective(
-        left > 0
-          ? `DO ${left} MORE TASK${left > 1 ? 'S' : ''}: FILING CABINETS OR YOUR DESK`
-          : 'CLOCK OUT WITH MS. HOLLIS',
-      );
+      if (left === 0)
+        this.objective(here === c.shift.job ? `CLOCK OUT WITH ${J.boss}` : `CLOCK OUT: ${J.goTo}`);
+      else this.objective(this.shiftObjective(left));
       return;
     }
+    const J = JOBS[c.current];
     const m = this.minuteOfDay();
     const workday = BALANCE.careers.workdays.includes((calendar(this.state.minutes).day - 1) % 7);
     if (workday && c.lastShiftDay !== calendar(this.state.minutes).day && m < BALANCE.careers.clockInUntil)
       this.objective(
-        this.inside?.def.id === 'office_floor'
-          ? 'CLOCK IN WITH MS. HOLLIS (08:00-10:00)'
-          : 'GO TO WORK: PELLRIDGE TOWER, FLOOR 4 (08:00-10:00)',
+        here === c.current ? `CLOCK IN WITH ${J.boss} (08:00-10:00)` : `GO TO WORK: ${J.goTo} (08:00-10:00)`,
       );
     else
       this.objective(
@@ -2004,6 +2080,65 @@ export class WorldScene extends Phaser.Scene {
           ? 'GO HOME AND SLEEP: DRIZZLE ROW RESIDENCES'
           : 'EXPLORE THE LEDGER (DOWNTOWN)',
       );
+  }
+
+  /** What's next on a shift with `left` tasks to go. */
+  private shiftObjective(left: number): string {
+    const s = this.state.career.shift;
+    if (!s) return '';
+    const J = JOBS[s.job];
+    const more = `${left} MORE TASK${left > 1 ? 'S' : ''}`;
+    if (s.job === 'delivery') {
+      const prep = (['loadVan', 'route'] as const).filter((t) => !s.done.includes(t));
+      if (prep.length) return `AT THE DEPOT: ${prep.map((t) => TASKS[t].name).join(' AND ')}`;
+      const drops = (['doorstep', 'signature'] as const)
+        .filter((t) => !s.done.includes(t))
+        .map((t) => this.dropFor(t)?.n)
+        .filter((n) => n !== undefined);
+      if (drops.length) return `DELIVER TO ${drops.join(' AND ')} LINDEN AVENUE`;
+    }
+    if (s.job === 'lumberjack') return `DO ${more} IN THE YARD: FELL, CHOP OR LOAD LOGS`;
+    return `DO ${more}: ${J.taskHint}`;
+  }
+
+  /** Today's delivery drop for a step: the house's front door and its number (null off a delivery shift). */
+  private dropFor(task: 'doorstep' | 'signature'): { x: number; y: number; n: number } | null {
+    const s = this.state.career.shift;
+    if (!s || s.job !== 'delivery') return null;
+    const drops = (this.map.zones ?? [])
+      .filter((z) => z.id.startsWith('drop_') && z.npc)
+      .map((z) => ({ x: z.npc!.x, y: z.npc!.y, n: Number(z.id.slice(5)) }))
+      .sort((p, q) => p.n - q.n);
+    if (drops.length < 2) return null;
+    const [a, b] = deliveryDrops(s.day, drops.length);
+    return drops[task === 'doorstep' ? a : b] ?? null;
+  }
+
+  /** Gold radar marks for the job (docs/11 objective blips): the drops, the yard spots, or the place to clock. */
+  private jobMarks(): { x: number; y: number }[] {
+    if (this.inside) return [];
+    const c = this.state.career;
+    const s = c.shift;
+    if (s && tasksLeft(c) > 0) {
+      if (s.job === 'delivery')
+        return (['doorstep', 'signature'] as const)
+          .filter((t) => !taskBlock(c, t))
+          .map((t) => this.dropFor(t))
+          .filter((d): d is { x: number; y: number; n: number } => d !== null);
+      if (s.job === 'lumberjack')
+        return this.usables.filter(
+          (u) => u.id.startsWith('job:') && jobOfTask(u.id.slice(4) as TaskId) === 'lumberjack',
+        );
+      return [];
+    }
+    const job = s?.job ?? c.current;
+    const today = calendar(this.state.minutes).day;
+    const toClockIn = !s && c.lastShiftDay !== today && this.minuteOfDay() < BALANCE.careers.clockInUntil;
+    if (!s && !toClockIn) return [];
+    const site = INTERIORS[JOBS[job].site as InteriorId];
+    const target = site.street ?? (job === 'office' ? 'tower_lobby' : null);
+    const door = (this.map.doors ?? []).find((d) => d.target === target);
+    return door ? [{ x: door.x, y: door.y }] : [];
   }
 
   /** NPCs come and go with their hours. */
@@ -2073,7 +2208,8 @@ export class WorldScene extends Phaser.Scene {
     const slot = this.map.zones?.find((z) => z.id === 'dealer_pickup')?.slots?.[0];
     if (!slot) return 'NO CARS TODAY.';
     if (!bayFree(st.vehicles, slot)) return 'MOVE THE CAR IN THE PICKUP BAY FIRST.';
-    if (!payDealer(st.money, st.finance, st.minutes, model)) return 'NOT ENOUGH CLEAN MONEY.';
+    if (!payDealer(st.money, st.finance, st.minutes, model, legalDiscount(st.career)))
+      return 'NOT ENOUGH CLEAN MONEY.';
     const v = boughtCar(`bought${Math.floor(st.minutes)}_${st.vehicles.length}`, model, slot);
     st.vehicles.push(v);
     this.addCarView(v);
@@ -2293,6 +2429,24 @@ export class WorldScene extends Phaser.Scene {
     }
     const spot = this.usables.find((u) => u.id === 'zone:marlo_spot');
     if (spot) spot.hidden = this.marloWalker !== null || !this.carForMarlo();
+    const c = this.state.career;
+    for (const u of this.usables) {
+      if (!u.id.startsWith('job:')) continue;
+      const task = u.id.slice(4) as TaskId;
+      if (task === 'doorstep' || task === 'signature') {
+        const at = this.dropFor(task);
+        u.hidden = !at || taskBlock(c, task) !== null;
+        if (at) {
+          u.x = at.x;
+          u.y = at.y;
+        }
+      } else {
+        // the yard spots show for lumberjacks; off shift they say so in red
+        const job = jobOfTask(task);
+        u.hidden = c.current !== job;
+        u.blocked = c.shift?.job !== job;
+      }
+    }
   }
 
   /** While driving, E reaches the pumps and Marlo's yard from the car. */
@@ -2975,6 +3129,7 @@ export class WorldScene extends Phaser.Scene {
             ? { ...this.state.wanted.lastKnown, r: searchRadius(this.state.wanted.stars) }
             : null,
         police: this.police?.blips() ?? [],
+        marks: this.jobMarks().map((m) => ({ x: m.x, y: m.y })),
         surrender: this.bustT > 0,
       };
       this.game.events.emit('hud:frame', snap);

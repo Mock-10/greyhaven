@@ -4,7 +4,7 @@
 import type { GameState } from './store';
 
 /** Bump whenever the save shape changes, and add a migration below plus its test (CLAUDE.md rule 5). */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export const SLOTS = ['slot1', 'slot2', 'slot3'] as const;
 export const AUTO_SLOTS = ['auto1', 'auto2'] as const;
@@ -113,6 +113,13 @@ export const MIGRATIONS: Record<number, (state: Obj) => Obj> = {
       look: { name: 'ALEX', style: 'short', skin: 'fair', hair: 'brown', outfit: 'teal_jacket' },
       wardrobe: ['teal_jacket', 'sage_casual', 'plum_knit'],
     };
+  },
+  /** 3 → 4 (Phase 2 M7, the three new jobs): a shift in progress remembers the tasks done (delivery steps run in
+   *  order, once each). An office shift saved mid-way has done none that matter. */
+  3: (s) => {
+    const career = s.career as Obj;
+    const shift = career.shift as Obj | null;
+    return { ...s, career: { ...career, shift: shift ? { ...shift, done: [] } : null } };
   },
 };
 

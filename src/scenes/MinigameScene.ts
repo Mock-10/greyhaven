@@ -23,11 +23,14 @@ import type { Grade } from '../systems/career';
 import { BoltTorqueGame } from '../minigames/boltTorque';
 import { ChopGame } from '../minigames/chop';
 import { DiagnoseGame } from '../minigames/diagnose';
+import { DoorstepGame } from '../minigames/doorstep';
+import { FellGame } from '../minigames/fell';
 import { jobTier } from '../minigames/jobGrade';
 import { LoadGame, type LoadMode } from '../minigames/load';
 import { MeetingGame } from '../minigames/meeting';
 import { ResprayGame } from '../minigames/respray';
 import { RouteGame } from '../minigames/route';
+import { SignatureGame } from '../minigames/signature';
 import { StampSignGame } from '../minigames/stampSign';
 import { TyreChangeGame, type ArrowDir } from '../minigames/tyreChange';
 import {
@@ -37,6 +40,11 @@ import {
   drawBoltTorque,
   drawChop,
   drawDiagnose,
+  drawDoorstep,
+  drawFell,
+  drawSignature,
+  doorstepHouse,
+  signaturePad,
   drawLoad,
   drawMeeting,
   drawRespray,
@@ -201,6 +209,15 @@ export class MinigameScene extends Phaser.Scene {
       case 'meeting':
         this.logic = new MeetingGame(new Rng(req.seed));
         break;
+      case 'fell':
+        this.logic = new FellGame(new Rng(req.seed));
+        break;
+      case 'doorstep':
+        this.logic = new DoorstepGame(new Rng(req.seed));
+        break;
+      case 'signature':
+        this.logic = new SignatureGame(new Rng(req.seed));
+        break;
       default:
         this.logic = null;
     }
@@ -337,6 +354,14 @@ export class MinigameScene extends Phaser.Scene {
       if (e.key === ' ') g.press();
     } else if (g instanceof MeetingGame) {
       if (n >= 0) g.choose(n);
+    } else if (g instanceof FellGame) {
+      if (e.key === ' ') g.cut();
+    } else if (g instanceof DoorstepGame) {
+      if (k === 'ARROWLEFT' || k === 'A') g.move(-1);
+      else if (k === 'ARROWRIGHT' || k === 'D') g.move(1);
+      else if (e.key === ' ' || e.key === 'Enter') g.deliver();
+    } else if (g instanceof SignatureGame) {
+      // traced with the mouse only
     } else return false;
     if (e.key === ' ' || k.startsWith('ARROW')) e.preventDefault?.();
     return true;
@@ -363,7 +388,13 @@ export class MinigameScene extends Phaser.Scene {
     else if (g instanceof ChopGame) {
       if (this.inRect(q, chopMeter(x, y))) g.swing();
     } else if (g instanceof StampSignGame) g.press();
-    else return false;
+    else if (g instanceof FellGame) g.cut();
+    else if (g instanceof DoorstepGame) {
+      for (let k = 0; k < g.numbers.length; k++) if (this.inRect(q, doorstepHouse(x, y, k))) g.goTo(k);
+    } else if (g instanceof SignatureGame) {
+      const P = signaturePad(x, y, g);
+      if (this.inRect(q, P)) g.penDown((q.x - P.x) / P.w, (q.y - P.y) / P.w);
+    } else return false;
     return true;
   }
 
@@ -446,7 +477,10 @@ export class MinigameScene extends Phaser.Scene {
       return;
     }
     if (this.logic instanceof ResprayGame && this.pointerHeld) this.aimRespray(this.logic, q);
-    else if (this.logic instanceof LoadGame) {
+    else if (this.logic instanceof SignatureGame) {
+      const P = signaturePad(this.pos.x, this.pos.y, this.logic);
+      this.logic.penMove((q.x - P.x) / P.w, (q.y - P.y) / P.w);
+    } else if (this.logic instanceof LoadGame) {
       const bed = loadBed(this.pos.x, this.pos.y, this.logic);
       if (q.x >= bed.x && q.x < bed.x + bed.w) this.logic.moveTo(Math.floor((q.x - bed.x) / LOAD_CELL));
     }
@@ -466,6 +500,7 @@ export class MinigameScene extends Phaser.Scene {
 
   private onUp(p: Phaser.Input.Pointer): void {
     this.pointerHeld = false;
+    if (this.logic instanceof SignatureGame) this.logic.penUp();
     if (this.panelDrag) {
       // keep the clamped spot, so a panel pushed against an edge comes straight back when dragged again
       const { x, y } = this.pos;
@@ -558,11 +593,15 @@ export class MinigameScene extends Phaser.Scene {
     else if (g instanceof RouteGame && 'task' in req) drawRoute(s, x, y, g, req.task);
     else if (g instanceof StampSignGame && 'task' in req) drawStampSign(s, x, y, g, req.task);
     else if (g instanceof MeetingGame && 'task' in req) drawMeeting(s, x, y, g, req.task);
+    else if (g instanceof FellGame && 'task' in req) drawFell(s, x, y, g, req.task);
+    else if (g instanceof DoorstepGame && 'task' in req) drawDoorstep(s, x, y, g, req.task);
+    else if (g instanceof SignatureGame && 'task' in req) drawSignature(s, x, y, g, req.task);
     else if (req.kind === 'shop')
       drawShop(s, x, y, {
         title: req.title,
         stock: SHOP_STOCK[req.shop],
         clean: req.wallet.money.clean,
+        discount: req.wallet.discount ?? 0,
         selected: this.selected,
         message: this.message && this.message.t < 3 ? this.message.text : null,
       });
