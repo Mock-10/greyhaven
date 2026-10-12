@@ -73,3 +73,10 @@ See 02 for laundering numbers. Fronts are bought properties with their own build
 - **Raids:** each night at 03:00 (assumed hour), while you're a known face or above 3★, every running operation has a 5% chance of a police raid. It seizes the running batch and, unless the home has a stash room, the stash's dirty cash and goods.
 - **Still to come (M17):** the product lab (its product needs smuggling to sell), operators who restock automatically, and rival hits.
 
+## Phase 5 build (milestone 17a, 2026-10-12): crews
+- **Crew room** (rep tier 2, $8,000): a card table in the hideout's lounge corner (CREW). Needed to hire.
+- **Hiring at The Low Tide:** the first booth by the window (HIRE CREW) has three people for hire each day, with a portrait from the character art and a random name. Fee $1,000–3,000 and wage $300–700 a week, both dirty; the better ones cost more. Hiring needs the crew room, rep tier 2 and a free place (cap 4). The fee comes from carried dirty cash, then the crew room home's stash.
+- **Operators:** at the crew table, pick someone to put them on the press (or take them off). An operator banks each finished batch in the stash (+ their skill, − their 15% cut) and restocks the press from the stash. When the stash can't pay for supplies the press stalls and they phone. Operators don't run the chop bay: it needs the cars you bring (assumed).
+- **Wages** come out of the crew room home's stash every Monday at 06:00. Anyone unpaid for 3 days quits.
+- **Drivers** come with smuggling (M17b), so the bar only offers operators for now.
+

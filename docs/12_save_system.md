@@ -63,3 +63,6 @@ Each saved car gets `mods` (upgrade levels) and `stash` (its trunk: weapons and 
 ## Phase 5 build (milestone 16, 2026-10-12): save v10
 Each owned home gains `ops` (per operation: when the running batch started, what it will be worth, and what's waiting to be collected). Migration 9 → 10 gives every home an empty `ops`.
 
+## Phase 5 build (milestone 17a, 2026-10-12): save v11
+`property.crew` (members with their posts and unpaid days, today's candidates at the bar) and `property.hits` (Saltgate Union hits under way). Migration 10 → 11 starts with nobody hired and no hits.
+

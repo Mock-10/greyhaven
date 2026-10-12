@@ -126,3 +126,11 @@ Built from PR #18's logic. Assumptions are marked (assumed).
 ## Phase 3 build (milestones 11–12, 2026-10-12)
 - **House burglary:** every front door on Linden Avenue (the delivery houses) can be picked (TAB at the door: BREAK IN). Each house has a fixed layout (bungalow, family house or townhouse) and alarm, rolled from the game's seed. By day, half the driveways have cars on a given day (assumed); no cars means nobody's home. At night the owners are usually asleep: picking and searching make noise, and a woken owner calls the police after 6–10 s unless you SCARE THEM OFF (E at them). An alarmed house's keypad by the door has 10 s (cut the wires in order). Each room is one search grid; cash tins are dirty cash at once, the rest goes in the bag for the fence. 1★, 2★ with someone home. A burgled house is empty for a week. (Assumed: goods show in the grid as phone and watch icons until they get their own pictures.)
 - **The pawn shop** is enterable (10:00–22:00): the fence deals at the glass counter (the street-door stand-in from M10 is gone).
+
+## Phase 5 build (milestone 17a, 2026-10-12): Saltgate Union hits
+- From street rep tier 2, each night at 22:00 (assumed hour) every running operation has a 4% chance of a **hideout hit** (one per home at a time). A phone message from an unknown number gives the address and the operation; 3–5 Saltgate Union rivals (grey peacoats, red armbands) gather on the front path.
+- They shoot at you within 9 tiles (pistols and SMGs, rounds hit a little softer than police fire; assumed). Each one that goes down drops their gun. Beat them all inside the in-game hour and the batch is safe; otherwise they take that operation's batch, running and waiting, and leave. The stash is never touched.
+- Shooting at them is a crime like any other: witnesses and police nearby still count.
+- **Still to come (M17b):** shipment ambushes on smuggling runs and airdrops.
+- **Art debt:** rivals stand in their idle pose (no aiming pose), like the police.
+
