@@ -14,7 +14,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
-## Handover (updated 2026-10-12, session 6) — read this first in a new session
+## Handover (updated 2026-10-12, session 6, M7) — read this first in a new session
 This is the only handover section; it replaces the old "Resume here" block and the session 4 handover.
 
 ### Where we are
@@ -29,8 +29,8 @@ This is the only handover section; it replaces the old "Resume here" block and t
     - District areas: Hedgerow Park and Far Acres.
     - Multi-lane traffic.
     - See "Milestone 6a" below for the full list.
-  - **M6b, shops and the character creator:** built on **`claude/p2-map-shops-do5oew`** (see "Milestone 6b" below): the creator with palette-swapped player sprites, the hardware store, the clothing store (outfits, fitting booths, the wardrobe), and the used-car lot's cabin (buy a beater or a sedan). Its PR merges once CI is green.
-  - **M7:** the three new jobs (mechanic, lumberjack, delivery) with their interiors and minigames, the office stamp-and-sign and meeting tasks, uniforms and lockers, and rank perks.
+  - **M6b, shops and the character creator:** done, on main (PR #13): the creator with palette-swapped player sprites, the hardware store, the clothing store, and the used-car lot's cabin.
+  - **M7, the three new jobs:** built on **`claude/p2-map-shops-do5oew`** (see "Milestone 7" below): the mechanic, lumberjack and delivery jobs with their sites, all twelve job minigames, the office stamp-and-sign and meeting, uniforms and lockers, and rank perks. It also carries PRs #14 (job interiors) and #15 (job minigames), which close when it merges. Its PR merges once CI is green.
   - **M8:** weekend odd jobs (car wash, bar shift), the guided first day, the econ sim re-run, and the phase close.
 - **Autopilot is on** (CLAUDE.md):
   - I merge my own PRs once CI is green.
@@ -52,9 +52,14 @@ This is the only handover section; it replaces the old "Resume here" block and t
    - docs 00 and 15;
    - docs 01 (the new district and the street-width rule), 02, 03, 08, 11 (the UI redesign spec), 13 and 18;
    - `art/STYLE_GUIDE.md`.
-3. **If M6b's PR is still open**, check out `claude/p2-map-shops-do5oew`, get its CI green and merge it.
-4. **Then M7 and M8**, in that order (above).
-   - The user allowed splitting work across parallel threads when they can't collide (2026-10-12). Two M7 pieces were offered to the coordinator as new-file-only threads: the job interiors art (`claude/p2-job-interiors`: `art/source/rooms_jobs.py`, `decor_jobs.py`, `art/interiors/{garage,depot,site_trailer}`) and the job minigames (`claude/p2-job-minigames`: `src/minigames/<name>.ts`, `src/ui/panelsJobs.ts`, `src/config/balanceJobs.ts`, tests). Check `list_project_prs` / the threads for their state; the main M7 thread owns the wiring (scenes, map doors, save, balance.ts, uniforms) and this file.
+3. **If M7's PR is still open**, check out `claude/p2-map-shops-do5oew`, get its CI green and merge it.
+4. **Then M8** (above).
+   - The user allowed splitting work across parallel threads when they can't collide (2026-10-12), and on 2026-10-12 asked to look past Phase 2 for more. Parallel new-file-only pieces (each merges to main on its own once green; nothing imports them until the main thread wires them in its phase):
+     - `claude/p2-odd-jobs`: car wash and bar shift minigames (`src/minigames/{carWash,barShift}.ts`, `src/ui/panelsOdd.ts`, `src/config/balanceOdd.ts`). Wire them in M8.
+     - `claude/sfx`: procedural sound effects (`src/audio/*`). Wire to events and settings later.
+     - `claude/p3-crime-logic` (PR #18), `claude/p3-police-logic` (PR #17): Phase 3 logic (robbery, burglary, ATM crime, reputation; response table, identification, jail).
+     - `claude/p4-combat-logic` (PR #16): weapons and combat logic. `claude/p4-art`: new vehicles (`art/vehicles2.*`) and effects (`art/effects.*`).
+     - Check `list_project_prs` / the threads for their state. The main thread owns the shared files (scenes, `balance.ts`, `manifest.ts`, data catalogues, the map, saves, docs) and this file; fold each piece's balance file into `balance.ts` and its doc notes into the docs when wiring it.
    - Work one milestone at a time: plan, build, test (`npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run test:e2e`), screenshots (`npm run shots`), update this file, open the PR, merge it when green, send the user a short note with screenshots, then start the next milestone.
    - New UI must follow the redesign: the 5 × 7 font, pictures from `art/source/ui_icons.py`, and the sizes in docs/11.
    - New interiors follow docs/18: build from the recorded answers, render a draft with `art/source/interiors.py`, and let the user review afterwards (they are not heists).
@@ -63,11 +68,8 @@ This is the only handover section; it replaces the old "Resume here" block and t
 
 ### What's left in Phase 2
 (Details are in the checklist below.)
-- **M6b merge** if its PR is still open.
-- **Office:** the stamp-and-sign and meeting tasks (rank 3+).
-- **Jobs:** mechanic, lumberjack and delivery. The buildings stand, but there are no interiors or minigames yet.
-- **Rank perks; uniforms and lockers.**
-- **Odd jobs:** car wash and a bar shift.
+- **M7 merge** if its PR is still open.
+- **Odd jobs:** car wash and a bar shift (minigames possibly ready on `claude/p2-odd-jobs`).
 - **Guided first day.**
 - **Econ sim re-run and the phase close.**
 
@@ -83,7 +85,12 @@ This is the only handover section; it replaces the old "Resume here" block and t
   - The camera has no world bounds: panning can show the background past the map edge.
   - At 720p the open phone covers the cash panel (the world is paused while it's open).
   - The title, the phone and the minigame panels assume the HUD's UI scale (2× at 720p, 3× at 1080p).
-- **Doors:** a door added to the map without an interior falls back to Marlo's chop-shop message. Don't add doors to the garage, the depot or the site trailer until their interiors exist (M7).
+- **Doors:** a door added to the map without an interior falls back to Marlo's chop-shop message.
+- **Jobs (M7):**
+  - The delivery stops are walked or driven to in your own car; the depot's van stays parked (borrowing work vehicles comes with the truck licence perk, Phase 5).
+  - The doorstep task's house numbers are its own strip of houses, not the Linden Avenue numbers; the world shows the two stops as radar marks.
+  - Haul (the log truck to the mill) waits for the mill (Phase 6).
+  - The minigame accessibility assists are not hooked up to job tasks (Phase 8).
 - **Shops:** a car bought at the lot waits in the pickup bay; while a car stands in the bay the desk asks you to move it first.
 - **Tests and tooling:**
   - Headless Chromium runs at about 12 fps, so e2e runs and screenshots are slow (real GPUs are fine).
@@ -123,7 +130,13 @@ They are recorded in docs 01, 02, 08 and 11.
   - Outfit prices $60–$300 in clean carried cash (docs are silent). The wardrobe and the fitting booths change outfits for free.
   - The car desk takes clean money: the bank card first, then carried clean cash. Bought cars are owned, unlocked, keyed, full, never hot. The beater's stats follow docs/08 (top speed 70 vs the sedan's 85, health 70, tank 30).
   - The creator's six skin tones and five hair colours are palette ramps, some shifted one tone (docs/11).
-- **The garage, the depot and the site trailer** are still facades until M7.
+- **Jobs (M7), see docs/03 "Phase 2 build (milestone 7)":**
+  - Bosses are roles (SHOP FOREMAN, SITE BOSS, DISPATCH) until you name them.
+  - Uniform colours: blue-grey coveralls, red flannel, navy and khaki for the courier. A uniform is needed to clock in at the three new jobs; it comes from the site locker and comes off at any locker or wardrobe.
+  - Shifts: 3 tasks for the office, mechanic and lumberjack, 4 for delivery (van, route, two stops, in order). Tasks can repeat within a shift except the delivery steps.
+  - The office's stamp-and-sign is at the copier and the meeting at the whiteboard (rank 3+).
+  - The sites keep 08:00–18:00 (the garage's hours from the decisions; the depot and the trailer the same).
+  - The office expense account (rank 4) takes 10% off every legal shop, clothes and cars. The other perks show on the phone as LATER.
 - **UI redesign:**
   - It keeps the palette, the plate style, the gold rules and the screen positions of the hud.py mockups. Only the sizes, the font (5 × 7) and the pictures (rendered with the game's 3D renderer) changed.
   - Contact portraits are rendered from the person models, so faces are small and simple at 32 px.
@@ -136,13 +149,14 @@ They are recorded in docs 01, 02, 08 and 11.
 - **Shop names:** the three new shops use plain trade names until you name them.
 - **The extras you said you'd name later** ("I'll tell you later"): still waiting on you.
 - **Heist interiors** (jewellery store, bank) need your approval before they're built (Phases 3 and 7).
+- **The job sites (M7)** were built from the recorded answers; please review `art/drafts/interiors/interior_{garage,depot,site_trailer}.png`, the boss role names and the meeting dialogue (`src/data/meetings.ts`).
 
 ### Art debt
 - None. All new art (the suburb buildings, woods props, UI pictures and font) is made with `art/source/` and committed as PNG + JSON.
 
 ### Git state
-- **`main`:** PRs #9–#12 merged (M6a is live). Pages deploys from main: https://mock-10.github.io/greyhaven/.
-- **`claude/p2-map-shops-do5oew`:** M6b (shops and the creator). After its merge the same branch name is reused for the next milestone, restarted from main.
+- **`main`:** PRs #9–#13 merged (M6b is live). Pages deploys from main: https://mock-10.github.io/greyhaven/.
+- **`claude/p2-map-shops-do5oew`:** M7 (the three jobs), including PRs #14 and #15. After its merge the same branch name is reused for the next milestone, restarted from main.
 - Other `claude/*` branches are merged and can be ignored.
 
 ### Answered decisions, in short (full text in the docs)
@@ -221,7 +235,8 @@ They are recorded in docs 01, 02, 08 and 11.
   - The simulation runs on `game.loop.rawDelta`, because Phaser's smoothed delta crawls in headless Chromium.
   - `MinigameScene` and `ListScene` ignore repeated key events; `ListScene` also ignores keys for 300 ms after opening.
   - Skill-check e2e tests poll `minigameState` and press inside the good zone. Keep that pattern, because fixed timings are frame-rate dependent in CI.
-- **Saves:** `SAVE_VERSION` is 3 (v1 → v2 → v3; v3 adds the look and the wardrobe). Bump it and add a migration and its test whenever the save shape changes.
+- **Saves:** `SAVE_VERSION` is 4 (v1 → v2 → v3 → v4; v3 adds the look and the wardrobe, v4 the shift's done tasks). Bump it and add a migration and its test whenever the save shape changes.
+- **Jobs (M7):** `src/data/jobs.ts` holds `JOBS` (site, boss, tasks, uniform, perks) and `TASKS` (each task's minigame); `taskBlock()` in `systems/career.ts` says why a task can't start. Interior prompts map to `{kind: 'job', task}`, `clock` and `locker` actions; outdoor spots are map zones `job_<task>` and `drop_<n>`. The cheat `job mechanic` switches job off shift; the debug hook has `job`, `shiftDone` and `objective`.
 
 ## Phase 2 — Economy and careers (in progress)
 Status key: [x] done and playable · [~] partly done (what's left is said) · [ ] not started. Milestones: M5 money and phone (done, PR #10), the UI redesign (done, PR #11), M6a map growth (done, PR #12), M6b shops and the creator (built on `claude/p2-map-shops-do5oew`), M7 the three new jobs, M8 odd jobs, the first day and the close.
@@ -233,12 +248,12 @@ Status key: [x] done and playable · [~] partly done (what's left is said) · [ 
 - [x] Bank account: carried vs banked clean cash, ATMs, pay into the bank. (M5)
 - [x] Rent auto-paid on Monday 06:00, late fees, eviction after two missed weeks, shelter (sleep and save). (M5)
 - [x] Character creator (palette-swap sprites, as specced) before the first day. (M6b: name, hair style, skin, hair colour, starting outfit, a spinning preview.)
-- [ ] Office: stamp-and-sign and meeting tasks (rank 3+). (Not started; M7.)
-- [ ] Car mechanic: garage interior (bay, lift, spray booth, office), diagnose, bolt torque, tyre change, respray. (The Torque & Sons building stands on Hedgerow Way, without a door or interior; M7.)
-- [ ] Lumberjack: chop, fell direction, load logs, haul with the log truck; site trailer to clock in. (The Ashby Timber yard and site trailer stand east of Ashby Road, without an interior; M7.)
-- [ ] Delivery: depot interior, load van, route, doorstep, signature; marked doors on the house row. (The depot and the Linden Avenue house row stand, without interiors or marked doors; M7.)
-- [~] Rank ladders and perks for the 4 jobs (stub the perks that need later systems). (All four jobs and their rank titles are in `data/jobs.ts`; the three new ones are marked "not hiring yet" until M7. Perks not started.)
-- [ ] Work uniforms and lockers (change by hand). (Not started; M7.)
+- [x] Office: stamp-and-sign and meeting tasks (rank 3+). (M7: the copier and the whiteboard.)
+- [x] Car mechanic: garage interior (bay, lift, spray booth, office), diagnose, bolt torque, tyre change, respray. (M7.)
+- [~] Lumberjack: chop, fell direction, load logs, haul with the log truck; site trailer to clock in. (M7: all but haul, which waits for the mill in Phase 6.)
+- [x] Delivery: depot interior, load van, route, doorstep, signature; marked doors on the house row. (M7: two radar-marked stops a day on Linden Avenue.)
+- [x] Rank ladders and perks for the 4 jobs (stub the perks that need later systems). (M7: the phone's PERKS page; the key card and the expense account work, the rest are LATER.)
+- [x] Work uniforms and lockers (change by hand). (M7.)
 - [ ] Weekend odd jobs: car wash and a bar shift at The Low Tide. (Not started; M8.)
 - [x] Shops: full corner store, clothing store, hardware store, car dealer (beater and sedan). (M5: the corner store. M6b: the hardware store (lockpicks, toolbox, repair kit), the clothing store (6 outfits, fitting booths, the wardrobe at home), and the used-car desk (beaters and sedans in 6 colours).)
 - [x] Arrest effects on careers (freeze, missed shifts, extra work, HR bribes on the phone), clean-record bonus. (M5)
@@ -248,7 +263,29 @@ Status key: [x] done and playable · [~] partly done (what's left is said) · [ 
 - [ ] Econ sim re-run, tests, screenshots, notes, PR. (Not started; M8, the phase close.)
 - [x] UI redesign: larger text (5 × 7 font), more pictures (rendered icon atlas), a bigger HUD, the handset phone, picture grids. (Your request, 2026-10-12; merged in PR #11.)
 
-### Milestone 6b: shops and the character creator (2026-10-12; on `claude/p2-map-shops-do5oew`)
+### Milestone 7: the three new jobs (2026-10-12; on `claude/p2-map-shops-do5oew`)
+**Built:**
+- **Three job sites open from the street:** Torque & Sons garage (Hedgerow Way), the Swiftish Couriers depot (Linden Avenue) and Ashby Timber's site office (east of Ashby Road). Interiors from PR #14 (`art/source/rooms_jobs.py`, `decor_jobs.py`); the depot's route map became PLAN ROUTE.
+- **All four jobs are hiring**, each with a time clock, a boss, its tasks and a uniform (docs/03 "Phase 2 build (milestone 7)"):
+  - **Mechanic:** diagnose, torque bolts, change tyre, respray.
+  - **Lumberjack:** chop, fell trees and load logs at three spots in the yard.
+  - **Delivery:** load van and plan route at the depot, then two radar-marked stops on Linden Avenue (deliver parcels, get a signature).
+  - **Office:** stamp and sign at the copier and the meeting at the whiteboard (rank 3+).
+- **Twelve job minigames** from PR #15 wired into the panel scene with keys and mouse (docs/06).
+- **Lockers and uniforms:** coveralls, flannel and the courier uniform; needed to clock in; off at any locker or wardrobe. New `outfit/*` pictures.
+- **Perks:** a PERKS page on the phone's job board; the office expense account (rank 4, 10% off legal purchases) is live.
+- **Radar marks** (gold) for the site door at clock-in time, the yard spots and the delivery stops.
+- **Saves:** `SAVE_VERSION` 4 (the shift remembers its done tasks), with a migration and test.
+- **Tests:** `tests/jobs.test.ts` (catalogue, clock-in rules, delivery order, the meeting rank, drops, the expense account, the locker), door and interior checks for the new sites; e2e: a full garage shift (no clock-in out of uniform, the locker, three tasks, pay, the change-out reminder).
+- Screenshots: `docs/screenshots/phase2_m7/`.
+
+**How to try:** open the phone (P), JOB BOARD, and pick a job. On a weekday between 08:00 and 10:00 go to its site (the gold radar mark), take the uniform from the LOCKER, CLOCK IN, do the tasks, and clock out. Delivery: load the van and plan the route, then follow the two radar marks on Linden Avenue.
+
+**Assumptions:** see "Decisions and assumptions" (Jobs) in the handover.
+
+**Art debt:** none; the uniforms are palette swaps and the new art comes from `art/source/`.
+
+### Milestone 6b: shops and the character creator (2026-10-12; merged in PR #13)
 **Built:**
 - **Character creator** (docs/11), between the title and the first day: name (16 characters), hair style (short, long, bun, bald), 6 skin tones, 5 hair colours, the 3 starting outfits, and a live 8-direction preview that spins. Keys (W/S rows, A/D change, typing on the name row, Enter starts) and the mouse both work. `src/ui/creator.ts`, `src/scenes/CreatorScene.ts`.
 - **Palette-swapped player:** `art/source/pack_player.py` renders the player once per hair style with marker colours; the game repaints the `player` texture in your look (`src/assets/playerLook.ts`, `src/systems/lookSwap.ts`), so a change of clothes is instant everywhere.

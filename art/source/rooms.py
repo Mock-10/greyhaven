@@ -852,7 +852,7 @@ def office_floor():
     for k, y in enumerate((76, 92, 108)):
         fl = dict(hl='idle', prompt=('E', 'FILE PAPERWORK')) if k == 1 else {}
         S.append(it(fc, '+x', 8, y, ('box', 6, 6, 24), **fl))
-    S.append(it(D.whiteboard(), '+x', 0, 140))
+    S.append(it(D.whiteboard(), '+x', 0, 140, None, hl='idle', prompt=('E', 'MEETING')))
     S.append(it(D.bookshelf(5), '+x', 6, 168, ('box', 5, 11, 30)))
     # cubicles (open side +y); chairs face -y toward the monitors; your desk is the front-left one
     for k, (cx, cy) in enumerate(((76, 70), (124, 70), (76, 140), (124, 140))):
@@ -863,7 +863,7 @@ def office_floor():
         S.append(it(D.plant_small(k), '+y', cx - 13, cy - 8, None, wz=17.3, z_bias=3))
         S.append(it(D.trash_bin(), '+y', cx + 14, cy + 9, ('blob', 3)))
     # break corner along wall A
-    S.append(it(I.copier(), '+y', 210, 12, ('box', 8, 7, 16)))
+    S.append(it(I.copier(), '+y', 210, 12, ('box', 8, 7, 16), hl='idle', prompt=('E', 'STAMP AND SIGN')))
     S.append(it(D.vending_machine('soda'), '+y', 236, 10, ('box', 8, 7, 30)))
     S.append(it(I.water_cooler(), '+y', 256, 11, ('blob', 5)))
     S.append(it(D.side_table(False), '+y', 276, 40, ('blob', 4)))

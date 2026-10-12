@@ -9,6 +9,7 @@ export type Cheat =
   | { kind: 'time'; minute: number }
   | { kind: 'day'; day: number }
   | { kind: 'rank'; rank: number }
+  | { kind: 'job'; job: string }
   | { kind: 'tp'; x: number; y: number }
   | { kind: 'car'; model: string; x: number | null; y: number | null; dir: number }
   | { kind: 'stars'; stars: number }
@@ -16,7 +17,7 @@ export type Cheat =
   | { kind: 'help' };
 
 export const CHEAT_HELP =
-  'CASH N · DIRTY N · BANK N · ITEM NAME N · TIME HH:MM · DAY N · RANK 1-5 · STARS 0-5 · TP X Y · CAR MODEL [X Y DIR] · HEAL';
+  'CASH N · DIRTY N · BANK N · ITEM NAME N · TIME HH:MM · DAY N · RANK 1-5 · JOB NAME · STARS 0-5 · TP X Y · CAR MODEL [X Y DIR] · HEAL';
 
 const num = (s: string | undefined): number | null => {
   if (s === undefined || s.trim() === '') return null;
@@ -53,6 +54,8 @@ export function parseCheat(line: string): Cheat | { error: string } {
       return a[0] && a[0] >= 1 && a[0] <= 5
         ? { kind: 'rank', rank: Math.floor(a[0]) }
         : { error: 'RANK 1-5' };
+    case 'job':
+      return args[0] ? { kind: 'job', job: args[0] } : { error: 'JOB OFFICE|MECHANIC|LUMBERJACK|DELIVERY' };
     case 'tp':
       return typeof a[0] === 'number' && typeof a[1] === 'number'
         ? { kind: 'tp', x: a[0], y: a[1] }

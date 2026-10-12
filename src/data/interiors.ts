@@ -4,14 +4,28 @@
 
 import type { DoorTarget } from '../maps/types';
 import type { ShopId } from './items';
+import type { TaskId } from './jobs';
 
 export type InteriorId =
-  'apartment' | 'store' | 'tower_lobby' | 'office_floor' | 'bar' | 'hardware' | 'clothing' | 'dealer';
+  | 'apartment'
+  | 'store'
+  | 'tower_lobby'
+  | 'office_floor'
+  | 'bar'
+  | 'hardware'
+  | 'clothing'
+  | 'dealer'
+  | 'garage'
+  | 'depot'
+  | 'site_trailer';
 
 export type Action =
   | { kind: 'sleep' }
-  | { kind: 'job'; task: 'filing' | 'dataEntry' }
+  | { kind: 'job'; task: TaskId }
+  /** The time clock of the job whose site this interior is (data/jobs.ts `site`). */
   | { kind: 'clock' }
+  /** A work locker: the site's uniform, or back into your own clothes. */
+  | { kind: 'locker' }
   | { kind: 'elevator'; to: InteriorId }
   | { kind: 'shop'; shop?: ShopId }
   | { kind: 'launder' }
@@ -130,6 +144,8 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
       ELEVATOR: { label: 'ELEVATOR DOWN', action: { kind: 'elevator', to: 'tower_lobby' } },
       'FILE PAPERWORK': { label: 'FILE PAPERWORK', action: { kind: 'job', task: 'filing' } },
       'DATA ENTRY': { label: 'DATA ENTRY', action: { kind: 'job', task: 'dataEntry' } },
+      'STAMP AND SIGN': { label: 'STAMP AND SIGN', action: { kind: 'job', task: 'stampSign' } },
+      MEETING: { label: 'MEETING', action: { kind: 'job', task: 'meeting' } },
       'CLOCK IN': { label: 'CLOCK IN', action: { kind: 'clock' } },
     },
     doors: [{ kind: 'open' }],
@@ -204,6 +220,63 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     },
     doors: [],
     npcs: [{ role: 'salesman', hours: h(9, 18) }],
+  },
+  // Phase 2 jobs (milestone 7; docs/03 decisions): the garage keeps 08:00-18:00, the depot and the site office too
+  garage: {
+    id: 'garage',
+    name: 'TORQUE & SONS GARAGE',
+    street: 'garage',
+    hours: h(8, 18),
+    entrance: { x: 32, y: 244 },
+    actions: {
+      'CLOCK IN': { label: 'CLOCK IN', action: { kind: 'clock' } },
+      LOCKER: { label: 'LOCKER', action: { kind: 'locker' } },
+      DIAGNOSE: { label: 'DIAGNOSE', action: { kind: 'job', task: 'diagnose' } },
+      'TORQUE BOLTS': { label: 'TORQUE BOLTS', action: { kind: 'job', task: 'boltTorque' } },
+      'CHANGE TYRE': { label: 'CHANGE TYRE', action: { kind: 'job', task: 'tyreChange' } },
+      RESPRAY: { label: 'RESPRAY', action: { kind: 'job', task: 'respray' } },
+    },
+    doors: [],
+    npcs: [
+      { role: 'shop foreman', hours: h(8, 18) },
+      { role: 'mechanic', hours: h(8, 18) },
+    ],
+  },
+  depot: {
+    id: 'depot',
+    name: 'SWIFTISH COURIERS',
+    street: 'depot',
+    hours: h(8, 18),
+    entrance: { x: 52, y: 244 },
+    actions: {
+      'CLOCK IN': { label: 'CLOCK IN', action: { kind: 'clock' } },
+      LOCKER: { label: 'LOCKER', action: { kind: 'locker' } },
+      'LOAD VAN': { label: 'LOAD VAN', action: { kind: 'job', task: 'loadVan' } },
+      'PLAN ROUTE': { label: 'PLAN ROUTE', action: { kind: 'job', task: 'route' } },
+    },
+    doors: [{ kind: 'open' }],
+    npcs: [
+      { role: 'dispatch', hours: h(8, 18) },
+      { role: 'customer', hours: h(9, 17) },
+      { role: 'loader', hours: h(8, 18) },
+      { role: 'courier', hours: h(8, 16) },
+    ],
+  },
+  site_trailer: {
+    id: 'site_trailer',
+    name: 'ASHBY TIMBER - SITE OFFICE',
+    street: 'site_trailer',
+    hours: h(8, 18),
+    entrance: { x: 112, y: 116 },
+    actions: {
+      'CLOCK IN': { label: 'CLOCK IN', action: { kind: 'clock' } },
+      LOCKER: { label: 'LOCKER', action: { kind: 'locker' } },
+    },
+    doors: [],
+    npcs: [
+      { role: 'site boss', hours: h(8, 18) },
+      { role: 'crew', hours: h(8, 17) },
+    ],
   },
 };
 

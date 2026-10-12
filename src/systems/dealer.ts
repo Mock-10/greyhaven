@@ -7,8 +7,8 @@ import { typeOfModel, TYPE_LABEL } from '../data/vehicles';
 import { record, type Finance, type Money } from './finance';
 import { parkedCar, type Vehicle } from './vehicle';
 
-export function carPrice(model: string): number {
-  return BALANCE.vehicles.types[typeOfModel(model)].value;
+export function carPrice(model: string, discount = 0): number {
+  return Math.round(BALANCE.vehicles.types[typeOfModel(model)].value * (1 - discount));
 }
 
 /** Can the buyer afford it with the bank and carried clean cash together? */
@@ -17,8 +17,8 @@ export function canAfford(m: Money, price: number): boolean {
 }
 
 /** Pay the dealer: the bank first (a statement line), then carried clean cash. False when it can't be covered. */
-export function payDealer(m: Money, f: Finance, at: number, model: string): boolean {
-  const price = carPrice(model);
+export function payDealer(m: Money, f: Finance, at: number, model: string, discount = 0): boolean {
+  const price = carPrice(model, discount);
   if (!canAfford(m, price)) return false;
   const fromBank = Math.min(m.bank, price);
   m.bank -= fromBank;

@@ -1052,7 +1052,8 @@ def block_boulevard_band():
     # Pewter Street to Millwright Road: Torque & Sons, its yard of waiting cars, a cafe on the corner
     x0 = tc(20) + HW + SWK
     gx = x0 + tc(0.4) + half('garage_torque')[0]
-    building('garage_torque', gx, front_y('garage_torque', fy), 0)
+    building('garage_torque', gx, front_y('garage_torque', fy), 0, door=(12.0, 'garage', 'TORQUE & SONS GARAGE'))
+    keep_clear(DOORS[-1]['x'], DOORS[-1]['y'], 24)
     # the bay apron across the sidewalk, so cars can drive in
     ground('concrete', rect(gx - 50, fy, gx + 10, BY - HW4 - 2))
     keep_clear(gx - 20, fy + 20, 50)
@@ -1118,7 +1119,7 @@ def block_linden():
     dhx, dhy = half('courier_depot')
     dx = xr - dhx - 8
     dfy = fy - tc(1.6)
-    building('courier_depot', dx, dfy - dhy, 0)
+    building('courier_depot', dx, dfy - dhy, 0, door=(15.0, 'depot', 'SWIFTISH COURIERS'))
     ground('concrete', rect(dx - dhx - 6, dfy, xr, fy))
     car('van_white', dx - 30, dfy + 26, 0, parked=True)
     keep_clear(dx, fy + 10, 60)
@@ -1145,6 +1146,10 @@ def block_linden():
         if k % 3 != 1:
             car(['sedan_teal', 'sedan_clay', 'sedan_khaki', 'sedan_lav'][k % 4], dwx + 17, house_front - 20, 2, parked=True)
         prop('mailbox', cx + 22, fy - 6, dir=0)
+        # a delivery drop (milestone 7): the front door at the top of the path; even numbers from the west end
+        ZONES.append({'id': f'drop_{2 + 2 * k}', 'x0': round(cx - 10, 1), 'y0': round(house_front, 1),
+                      'x1': round(cx + 10, 1), 'y1': round(house_front + 16, 1),
+                      'npc': {'x': round(float(cx), 1), 'y': round(float(house_front + 8), 1)}})
         # a picket fence along the front, with gaps for the path and the driveway
         segments('picket', [[x + 2, fy - 3], [cx - 10, fy - 3]])
         segments('picket', [[cx + 10, fy - 3], [dwx - 2, fy - 3]])
@@ -1193,12 +1198,17 @@ def block_timber():
     # a gravel drive from Ashby Road into the yard
     ground('gravel', rect(west(tc(74)) - 4, tc(73), west(tc(74)) + 40, tc(75.4)))
     keep_clear(west(tc(74)), tc(74.2), 40)
-    building('site_trailer', tc(52), front_y('site_trailer', tc(72)), 0)
+    building('site_trailer', tc(52), front_y('site_trailer', tc(72)), 0, door=(4.0, 'site_trailer', 'ASHBY TIMBER SITE OFFICE'))
     for (x, y, kind, dr) in ((54.6, 76.4, 'log_pile', 0), (57.6, 75.6, 'log_pile', 2), (56.4, 78.0, 'log', 0),
                              (58.8, 72.6, 'log', 2), (50.2, 77.6, 'stump', 0), (59.2, 70.6, 'log_pile', 0),
                              (49.6, 70.6, 'cones', 0), (55.2, 71.0, 'crate', 0), (53.0, 78.4, 'barrel_teal', 0)):
         prop(kind, tc(x), tc(y), dir=dr)
     car('van_sage', tc(51.2), tc(75.2), 2, parked=True)
+    # the lumberjack's work spots (milestone 7): the chopping block by the stump, the log pile for the truck, and the
+    # stand of trees at the yard's north edge to fell
+    for (zid, x, y) in (('job_chop', 50.2, 78.2), ('job_loadLogs', 57.0, 76.6), ('job_fell', 56.0, 69.8)):
+        ZONES.append({'id': zid, 'x0': tc(x) - 12, 'y0': tc(y) - 12, 'x1': tc(x) + 12, 'y1': tc(y) + 12,
+                      'npc': {'x': round(tc(x), 1), 'y': round(tc(y), 1)}})
     segments('fence', [[tc(60.3), tc(69.6)], [tc(60.3), tc(79.2)]])
     segments('fence', [[west(tc(79)) + 8, tc(79.3)], [tc(60.3), tc(79.3)]])
     yard_box = [float(v) for v in (np.asarray(yard)[:, 0].min() - 10, np.asarray(yard)[:, 1].min() - 10,

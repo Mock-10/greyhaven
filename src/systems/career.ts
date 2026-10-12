@@ -2,7 +2,7 @@
 // state objects so they can be tested and saved.
 
 import { BALANCE } from '../config/balance';
-import { JOBS, type JobId, type TaskId } from '../data/jobs';
+import { JOBS, TASKS, type JobId, type TaskId } from '../data/jobs';
 import { calendar } from './clock';
 
 /** Minigame grades (docs/06). Fail counts as Poor for a job task. */
@@ -15,6 +15,8 @@ export interface Shift {
   day: number;
   late: boolean;
   grades: Grade[];
+  /** The tasks done so far, in order (a parcel needs a loaded van; delivery steps happen once). */
+  done: TaskId[];
   /** Tasks this shift needs (one more during the extra-work days after an arrest). */
   tasks: number;
 }
@@ -56,12 +58,14 @@ export function createCareer(): CareerState {
 
 export type ClockInResult =
   | { ok: true; late: boolean }
-  | { ok: false; reason: 'weekend' | 'early' | 'tooLate' | 'alreadyWorked' | 'onShift' };
+  | { ok: false; reason: 'weekend' | 'early' | 'tooLate' | 'alreadyWorked' | 'onShift' | 'otherJob' };
 
-export function canClockIn(c: CareerState, minutes: number): ClockInResult {
+/** Can the player clock in for `job` (the time clock they are at; their current job by default)? */
+export function canClockIn(c: CareerState, minutes: number, job: JobId = c.current): ClockInResult {
   const B = BALANCE.careers;
   const cal = calendar(minutes);
   if (c.shift) return { ok: false, reason: 'onShift' };
+  if (job !== c.current) return { ok: false, reason: 'otherJob' };
   if (c.lastShiftDay === cal.day) return { ok: false, reason: 'alreadyWorked' };
   if (!B.workdays.includes((cal.day - 1) % 7)) return { ok: false, reason: 'weekend' };
   if (cal.minute < B.clockInFrom) return { ok: false, reason: 'early' };
@@ -69,8 +73,8 @@ export function canClockIn(c: CareerState, minutes: number): ClockInResult {
   return { ok: true, late: cal.minute >= B.lateAfter };
 }
 
-export function clockIn(c: CareerState, minutes: number): ClockInResult {
-  const r = canClockIn(c, minutes);
+export function clockIn(c: CareerState, minutes: number, job: JobId = c.current): ClockInResult {
+  const r = canClockIn(c, minutes, job);
   if (r.ok) {
     const extra = minutes < c.extraUntil ? BALANCE.careers.extraTasks : 0;
     c.shift = {
@@ -78,6 +82,7 @@ export function clockIn(c: CareerState, minutes: number): ClockInResult {
       day: calendar(minutes).day,
       late: r.late,
       grades: [],
+      done: [],
       tasks: JOBS[c.current].tasksPerShift + extra,
     };
   }
@@ -89,10 +94,26 @@ export function tasksLeft(c: CareerState): number {
   return Math.max(0, c.shift.tasks - c.shift.grades.length);
 }
 
+export type TaskBlock = 'noShift' | 'otherJob' | 'shiftDone' | 'rank' | 'needs' | 'done';
+
+/** Why a task can't be started now, or null when it can. */
+export function taskBlock(c: CareerState, task: TaskId): TaskBlock | null {
+  const s = c.shift;
+  if (!s) return 'noShift';
+  if (!JOBS[s.job].tasks.includes(task)) return 'otherJob';
+  if (tasksLeft(c) === 0) return 'shiftDone';
+  const t = TASKS[task];
+  if (t.minRank && c.jobs[s.job].rank < t.minRank) return 'rank';
+  if (t.after?.some((a) => !s.done.includes(a))) return 'needs';
+  if (t.once && s.done.includes(task)) return 'done';
+  return null;
+}
+
 /** Record a finished task. Returns false when not on shift or the shift's tasks are already done. */
-export function recordTask(c: CareerState, _task: TaskId, grade: Grade): boolean {
+export function recordTask(c: CareerState, task: TaskId, grade: Grade): boolean {
   if (!c.shift || tasksLeft(c) === 0) return false;
   c.shift.grades.push(grade);
+  c.shift.done.push(task);
   return true;
 }
 
@@ -209,6 +230,24 @@ export function rankTitle(c: CareerState, job: JobId = c.current): string {
   return JOBS[job].ranks[c.jobs[job].rank - 1] as string;
 }
 
+/** The share off legal purchases: the office expense account at rank 4+ (docs/03), else 0. */
+export function legalDiscount(c: CareerState): number {
+  return c.jobs.office.rank >= BALANCE.careers.expenseRank ? BALANCE.careers.expenseDiscount : 0;
+}
+
+/** A legal price after the expense account. */
+export function legalPrice(price: number, discount: number): number {
+  return Math.round(price * (1 - discount));
+}
+
 export function hasKeyCard(c: CareerState): boolean {
   return c.jobs.office.rank >= BALANCE.careers.keyCardRank;
+}
+
+/** The two Linden Avenue houses a delivery shift drops at (parcels, then a signature), by index into `count`
+ *  houses: a different pair each day, never the same house twice. */
+export function deliveryDrops(day: number, count: number): [number, number] {
+  const a = (day * 3) % count;
+  const b = (a + 1 + (day % (count - 1))) % count;
+  return [a, b];
 }

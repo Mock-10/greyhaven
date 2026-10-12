@@ -126,7 +126,7 @@ def depot():
     S.append(it(J.lockers(5, ('navy', 2.5)), '+y', 34, 7, ('box', 22, 6, 40), hl='idle', prompt=('E', 'LOCKER')))
     S.append(it(J.locker_bench(30), '+y', 34, 26, ('box', 15, 4, 8)))
     S.append(it(J.time_clock(), '+y', 74, 0, None, hl='idle', prompt=('E', 'CLOCK IN')))
-    S.append(it(J.wall_map('route', 28, 18), '+x', 0, 34))
+    S.append(it(J.wall_map('route', 28, 18), '+x', 0, 34, None, hl='idle', prompt=('E', 'PLAN ROUTE')))
     S.append(it(I.table_chairs(), '+y', 64, 76, ('box', 11, 8, 10)))
     S.append(it(D.bowl_fruit(), '+y', 62, 74, None, wz=16.8, z_bias=4))
     S.append(it(D.vending_machine('soda'), '+x', 10, 92, ('box', 8, 7, 30)))

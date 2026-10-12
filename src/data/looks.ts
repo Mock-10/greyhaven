@@ -51,8 +51,9 @@ export interface Outfit {
   name: string;
   top: Ramp;
   bottom: Ramp;
-  /** Where it comes from: one of the three starting outfits, or the clothing store. */
-  from: 'start' | 'clothing';
+  /** Where it comes from: one of the three starting outfits, the clothing store, or a work locker (a uniform,
+   *  never in the wardrobe: it comes off at a locker or a wardrobe, docs/03). */
+  from: 'start' | 'clothing' | 'uniform';
 }
 
 /** docs/11: three casual starting outfits; the clothing store sells the rest (docs/02, Phase 2 shops). */
@@ -113,6 +114,28 @@ export const OUTFITS: readonly Outfit[] = [
     top: shifted('navy', -1),
     bottom: shifted('navy', -1),
     from: 'clothing',
+  },
+  // work uniforms (Phase 2 M7): one per job with a locker (data/jobs.ts `uniform`)
+  {
+    id: 'coveralls',
+    name: 'TORQUE & SONS COVERALLS',
+    top: shifted('blueg', -1),
+    bottom: shifted('blueg', -2),
+    from: 'uniform',
+  },
+  {
+    id: 'flannel',
+    name: 'ASHBY TIMBER FLANNEL',
+    top: shifted('red', -1),
+    bottom: shifted('khaki', -1),
+    from: 'uniform',
+  },
+  {
+    id: 'courier',
+    name: 'SWIFTISH COURIERS UNIFORM',
+    top: shifted('navy', 1),
+    bottom: shifted('khaki', 0),
+    from: 'uniform',
   },
 ];
 

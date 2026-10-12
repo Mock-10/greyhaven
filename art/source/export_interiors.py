@@ -32,7 +32,8 @@ from scene import _hull
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', 'interiors')
-ROOMS = ['apartment', 'store', 'tower_lobby', 'office_floor', 'bar', 'hardware', 'clothing', 'dealer', 'garage', 'depot', 'site_trailer']
+ROOMS = ['apartment', 'store', 'tower_lobby', 'office_floor', 'bar', 'hardware', 'clothing', 'dealer', 'garage', 'depot',
+         'site_trailer']
 
 
 def capture(room):

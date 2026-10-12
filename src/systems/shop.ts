@@ -9,17 +9,19 @@ export interface Wallet {
   money: { clean: number; dirty: number };
   health: number;
   inventory: Inventory;
+  /** Share off the price (the office expense account, systems/career.ts legalDiscount). */
+  discount?: number;
 }
 
 export type BuyResult = { ok: true; text: string } | { ok: false; text: string };
 
-export function priceOf(id: ItemId): number {
-  return BALANCE.shop[id].price;
+export function priceOf(id: ItemId, discount = 0): number {
+  return Math.round(BALANCE.shop[id].price * (1 - discount));
 }
 
 /** Buy one item: pay in clean cash, then eat it (heal) or put it in the bag. */
 export function buy(w: Wallet, id: ItemId): BuyResult {
-  const price = priceOf(id);
+  const price = priceOf(id, w.discount);
   const item = ITEMS[id];
   if (item.single && item.slot && w.inventory[item.slot] > 0)
     return { ok: false, text: `YOU ALREADY HAVE A ${item.name}` };

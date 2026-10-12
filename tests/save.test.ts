@@ -140,6 +140,43 @@ describe('saves (docs/12)', () => {
     expect(Object.keys(st).sort()).toEqual(Object.keys(fresh).sort());
   });
 
+  it('migrates a version 3 save to version 4 (the shift remembers its tasks)', () => {
+    const fresh = createState(1, 'downtown', { x: 0, y: 0 });
+    const v3 = JSON.parse(JSON.stringify(fresh)) as Record<string, unknown>;
+    (v3.career as Record<string, unknown>).shift = {
+      job: 'office',
+      day: 2,
+      late: false,
+      grades: ['good'],
+      tasks: 3,
+    };
+    const old = { game: 'doublelife', version: 3, meta: {}, state: v3, checksum: '' } as unknown as SaveFile;
+    old.checksum = checksum(v3);
+    const r = validate(old);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.file.version).toBe(4);
+    expect(r.file.state.career.shift).toEqual({
+      job: 'office',
+      day: 2,
+      late: false,
+      grades: ['good'],
+      done: [],
+      tasks: 3,
+    });
+    // no shift in progress stays no shift
+    const idle = JSON.parse(JSON.stringify(fresh)) as Record<string, unknown>;
+    const old2 = {
+      game: 'doublelife',
+      version: 3,
+      meta: {},
+      state: idle,
+      checksum: checksum(idle),
+    } as unknown as SaveFile;
+    const r2 = validate(old2);
+    expect(r2.ok && r2.file.state.career.shift).toBe(null);
+  });
+
   it('rotates the two autosaves, keeping the newest', () => {
     expect(nextAutoSlot({})).toBe('auto1');
     const a = makeSave(state(), 'auto1', 100).meta;

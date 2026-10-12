@@ -203,7 +203,27 @@ export function jobsPage(ctx: PhoneCtx): ListPage {
       },
     };
   });
+  rows.push({
+    label: 'PERKS',
+    icon: JOB_ICON[c.current],
+    sub: JOBS[c.current].short,
+    act: () => ({ open: () => perksPage(ctx) }),
+  });
   return { title: 'JOB BOARD', icon: JOB_ICON[c.current], lines, rows };
+}
+
+/** The current job's insider perks (docs/03): earned ones, and the ones whose systems come later. */
+export function perksPage(ctx: PhoneCtx): ListPage {
+  const c = ctx.state.career;
+  const J = JOBS[c.current];
+  const rank = c.jobs[c.current].rank;
+  const lines: string[] = [];
+  for (const p of J.perks) {
+    const state = rank < p.rank ? 'LOCKED' : p.live ? 'ON' : 'LATER';
+    lines.push(...wrap(`RANK ${p.rank} (${state}): ${p.text}`), '');
+  }
+  lines.push(...wrap('LATER: COMES WITH ITS PHASE.'));
+  return { title: 'PERKS', icon: JOB_ICON[c.current], lines, rows: [] };
 }
 
 /** A contact's card: their portrait and what they have to say. */
