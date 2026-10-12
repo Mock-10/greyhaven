@@ -80,6 +80,7 @@ import {
   moveFactor,
   pickUp,
   reload,
+  rollTrunkWeapon,
   revive,
   seizeUnregistered,
   selectSlot,
@@ -615,7 +616,7 @@ export class WorldScene extends Phaser.Scene {
   private police: Police | null = null;
   private combatWorld: CombatWorld | null = null;
   /** Mouse buttons in the street (Phase 4): left fires, right raises the weapon. */
-  private mouse = { left: false, right: false, x: 0, y: 0 };
+  private mouse = { left: false, right: false, x: 0, y: 0, clicked: false };
   private roads: RoadGraph | null = null;
   private buildingBoxes: [number, number, number, number][] = [];
   /** Seconds an officer has been close enough to bust the player (docs/05). */
@@ -755,13 +756,16 @@ export class WorldScene extends Phaser.Scene {
     const can = this.playing && !this.inside && !st.driving && !hook().minigame && !this.busy;
     setRaised(st.combat, can && this.mouse.right);
     if (!can) {
+      this.mouse.clicked = false;
       this.combatWorld?.trigger(0, false);
       return;
     }
-    const aiming = st.combat.raised || this.mouse.left;
+    const pull = this.mouse.left || this.mouse.clicked;
+    this.mouse.clicked = false;
+    const aiming = st.combat.raised || pull;
     const angle = this.aimAngle();
     if (aiming) st.player.dir = facingFromWorld(Math.cos(angle), Math.sin(angle));
-    this.combatWorld?.trigger(angle, this.mouse.left);
+    this.combatWorld?.trigger(angle, pull);
     const w = drawnWeapon(st.combat);
     const cls = w ? WEAPONS[w.id].cls : null;
     const pose =
@@ -1355,7 +1359,11 @@ export class WorldScene extends Phaser.Scene {
     this.input.on('pointerdown', (ptr: Phaser.Input.Pointer) => {
       this.mouse.x = ptr.x;
       this.mouse.y = ptr.y;
-      if (ptr.leftButtonDown()) this.mouse.left = true;
+      if (ptr.leftButtonDown()) {
+        this.mouse.left = true;
+        // a click shorter than a frame still fires once (consumed by the next step)
+        this.mouse.clicked = true;
+      }
       if (ptr.rightButtonDown()) this.mouse.right = true;
     });
     this.input.on('pointerup', (ptr: Phaser.Input.Pointer) => {
@@ -3813,6 +3821,16 @@ export class WorldScene extends Phaser.Scene {
     c.v.looted = true;
     const got = takeLoot(haul, this.state.money, this.state.inventory);
     this.guide('looted');
+    // docs/04: sometimes a gun in the trunk (Phase 4); unregistered, so it's seized in jail
+    const gun = rollTrunkWeapon(this.rng);
+    if (gun) {
+      const r = pickUp(this.state.combat, gun);
+      if (r.text) this.toast('TRUNK', `${r.text}.`);
+      if (r.dropped) {
+        const p = this.state.player;
+        this.combatWorld?.dropAt(p.x + 8, p.y + 8, { weapon: r.dropped.id, rounds: r.dropped.clip });
+      }
+    }
     // reputation counts the haul at what it's worth: the cash plus the fence's price for phones and watches
     const F = BALANCE_CRIME.fence;
     const worth =
@@ -4319,6 +4337,14 @@ export class WorldScene extends Phaser.Scene {
     h.robbing = !!this.robbery;
     h.goods = this.state.goods.length;
     h.weapon = hudWeapon(this.state.combat);
+    h.peds = (this.life?.peds ?? []).map((pv) => ({ x: pv.ped.x, y: pv.ped.y }));
+    if (this.player) {
+      // the camera's world points under canvas pixels (0,0) and (1,1) give the inverse transform
+      const cam = this.cameras.main;
+      const a = cam.getWorldPoint(0, 0);
+      const b = cam.getWorldPoint(1, 1);
+      h.playerScreen = { x: (this.player.x - a.x) / (b.x - a.x), y: (this.player.y - a.y) / (b.y - a.y) };
+    }
     h.masked = !!this.state.maskOn;
     this.syncMoneyHook();
     h.driving = this.state.driving;

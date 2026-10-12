@@ -72,6 +72,10 @@ export interface DebugHook {
   /** Street reputation points and the robbery in progress, for the e2e tests. */
   rep?: number;
   robbing?: boolean;
+  /** People on the street (screen-shot and combat tests). */
+  peds?: { x: number; y: number }[];
+  /** The player sprite on screen (canvas px), for aiming in tests. */
+  playerScreen?: { x: number; y: number };
   /** The drawn weapon and its CLIP/RESERVE (Phase 4). */
   weapon?: { label: string; ammo: string };
   /** Burglary goods carried for the fence. */
