@@ -115,7 +115,11 @@ export type MinigameRequest =
   | { kind: 'carWash' | 'barShift'; seed: number; task: string; car?: number };
 
 /** Every panel's size: the Phase 1 panels and the job tasks. */
-const SIZES: Record<AnyPanel, { w: number; h: number }> = { ...PANEL_SIZE, ...JOB_PANEL_SIZE, ...ODD_PANEL_SIZE };
+const SIZES: Record<AnyPanel, { w: number; h: number }> = {
+  ...PANEL_SIZE,
+  ...JOB_PANEL_SIZE,
+  ...ODD_PANEL_SIZE,
+};
 type AnyPanel = PanelKind | JobPanelKind | 'carWash' | 'barShift';
 const ARROWS: Record<string, ArrowDir> = {
   ARROWUP: 'up',
@@ -675,7 +679,8 @@ export class MinigameScene extends Phaser.Scene {
     else if (g instanceof FellGame && 'task' in req) drawFell(s, x, y, g, req.task);
     else if (g instanceof DoorstepGame && 'task' in req) drawDoorstep(s, x, y, g, req.task);
     else if (g instanceof SignatureGame && 'task' in req) drawSignature(s, x, y, g, req.task);
-    else if (g instanceof CarWashGame && req.kind === 'carWash') drawCarWash(s, x, y, g, req.task, req.car ?? 0);
+    else if (g instanceof CarWashGame && req.kind === 'carWash')
+      drawCarWash(s, x, y, g, req.task, req.car ?? 0);
     else if (g instanceof BarShiftGame && 'task' in req) drawBarShift(s, x, y, g, req.task);
     else if (req.kind === 'shop')
       drawShop(s, x, y, {

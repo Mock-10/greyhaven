@@ -24,7 +24,8 @@ describe('the guided first day (docs/11)', () => {
 
   it("holds the trunk step until Dez's evening tip", () => {
     const o = createOnboarding();
-    for (const ev of ['leftHome', 'jobBoard', 'clockedIn', 'shiftDone', 'bought'] as const) onboardEvent(o, ev);
+    for (const ev of ['leftHome', 'jobBoard', 'clockedIn', 'shiftDone', 'bought'] as const)
+      onboardEvent(o, ev);
     expect(currentStepId(o)).toBe('trunk');
     expect(onboardHint(o)).toBe(ONBOARD_WAIT_HINT);
     expect(onboardEvent(o, 'looted')).toBe(false);

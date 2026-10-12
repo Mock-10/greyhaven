@@ -2,14 +2,7 @@
 // Each step shows a hint on the objective strip and ends on one game event. The hints can be skipped.
 
 export type OnboardEvent =
-  | 'leftHome'
-  | 'jobBoard'
-  | 'clockedIn'
-  | 'shiftDone'
-  | 'bought'
-  | 'looted'
-  | 'clear'
-  | 'slept';
+  'leftHome' | 'jobBoard' | 'clockedIn' | 'shiftDone' | 'bought' | 'looted' | 'clear' | 'slept';
 
 export interface OnboardStep {
   id: string;

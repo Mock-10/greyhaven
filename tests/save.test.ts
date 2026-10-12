@@ -183,7 +183,13 @@ describe('saves (docs/12)', () => {
     const v4 = JSON.parse(JSON.stringify(fresh)) as Record<string, unknown>;
     delete v4.oddJobs;
     delete v4.onboarding;
-    const old = { game: 'doublelife', version: 4, meta: {}, state: v4, checksum: checksum(v4) } as unknown as SaveFile;
+    const old = {
+      game: 'doublelife',
+      version: 4,
+      meta: {},
+      state: v4,
+      checksum: checksum(v4),
+    } as unknown as SaveFile;
     const r = validate(old);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
