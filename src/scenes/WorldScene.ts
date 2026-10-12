@@ -2388,7 +2388,8 @@ export class WorldScene extends Phaser.Scene {
   /** E at a car's rear: a 1★ crime if seen; pick the lock unless the car is open, then search the trunk. */
   private lootTrunk(id: string): void {
     const c = this.cars.find((x) => x.v.id === id);
-    if (!c || this.busy || c.v.looted) return;
+    // a trunk already being opened (the moment between the picked lock and the search panel) isn't opened twice
+    if (!c || this.busy || c.v.looted || this.pendingTrunk) return;
     this.crime(BALANCE.wanted.crimeStars.trunk, { x: c.trunk.x, y: c.trunk.y });
     this.pendingTrunk = { car: id, items: null };
     if (c.v.locked) this.openLockpick('TRUNK');
