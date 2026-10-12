@@ -32,6 +32,7 @@ LEAF = [[C('sage', 4), C('sage', 3), C('sage', 2)], [C('khaki', 4), C('khaki', 3
 PAPER = [C('white', 5), C('white', 4), C('stone', 4)]
 RAIN = [C('lavlt', 5), C('lavlt', 4), C('glass', 5)]
 SKID = [C('asph', 0), C('night', 0)]
+BLOOD = [C('red', 2), C('red', 1), C('red', 0), C('plum', 0)]
 
 
 def grid(w, h, cx, cy):
@@ -208,6 +209,38 @@ def skid(a):
     return img, 5, 5
 
 
+def blood_pool(f):
+    """A pool of blood spreading on the ground under someone who went down (user 2026-10-11: blood is allowed).
+    Flat on the ground: an iso ellipse (twice as wide as tall) with a ragged edge; frame f grows it."""
+    r = 3.0 + f * 2.2
+    w, h = int(2 * r * 2 + 6), int(2 * r + 6)
+    X, Y, thr = grid(w, h, w / 2, h / 2)
+    d = np.sqrt((X / 2.0) ** 2 + Y ** 2)
+    edge = r * (0.82 + 0.3 * noise(X + 40, Y * 2 + 40, 7 + f, 2.6))
+    body = d < edge
+    # darker in the middle where it's deepest, a lighter rim catching the light at the upper left
+    field = np.clip(1 - d / max(edge.max(), 1e-6), 0, 1)
+    lit = (X < 0) & (Y < 0) & (d > edge - 1.2)
+    idx = np.where(lit, 0, np.where(field > 0.55, 2, 1))
+    img = np.zeros((h, w, 4), np.uint8)
+    img[body, :3] = np.array(BLOOD, np.uint8)[idx[body]]
+    img[body, 3] = 255
+    return img, w // 2, h // 2
+
+
+def blood_drop(f):
+    """A few spatter drops where a hit lands (anchor: impact point); f picks the pattern."""
+    w, h = 13, 9
+    img = np.zeros((h, w, 4), np.uint8)
+    rng = np.random.default_rng(11 + f)
+    for _ in range(4 + f):
+        x, y = int(rng.integers(1, w - 2)), int(rng.integers(1, h - 2))
+        img[y, x, :3] = BLOOD[1]; img[y, x, 3] = 255
+        if rng.random() < 0.5:
+            img[y, x + 1, :3] = BLOOD[2]; img[y, x + 1, 3] = 255
+    return img, w // 2, h // 2
+
+
 def frames():
     out = {}
     for f in range(6):
@@ -228,6 +261,10 @@ def frames():
         out[f'streak/{v}'] = streak(v)
     for a, dn in enumerate(DIRS):
         out[f'skid/{dn}'] = skid(a)
+    for f in range(4):
+        out[f'blood_pool/{f}'] = blood_pool(f)
+    for f in range(3):
+        out[f'blood_drop/{f}'] = blood_drop(f)
     return out
 
 
@@ -244,6 +281,8 @@ ANIMS = {
     'splash': {'frames': 4, 'note': 'raindrop hitting the ground (anchor: impact point)'},
     'streak': {'frames': 2, 'note': 'rain streak variants (anchor: bottom end); draw at ~45% opacity'},
     'skid': {'frames': 1, 'per_direction': True, 'note': 'tyre-mark decal on the ground, fades slowly'},
+    'blood_pool': {'frames': 4, 'note': 'ground decal under someone who went down; step the frames as it spreads'},
+    'blood_drop': {'frames': 3, 'note': 'spatter variants where a hit lands (ground decal)'},
 }
 
 

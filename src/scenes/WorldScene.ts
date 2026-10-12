@@ -1657,11 +1657,7 @@ export class WorldScene extends Phaser.Scene {
     } else {
       this.player.stop();
       // standing: a tool or interact animation if one is playing, else the idle sprite
-      // the masked sprite has no tool animations yet (art debt): it stands
-      const action =
-        p.costume.startsWith('player/') && p.costume !== MASKED_COSTUME
-          ? this.actions.frame(p.costume.slice(7), p.dir)
-          : null;
+      const action = p.costume.startsWith('player/') ? this.actions.frame(p.costume.slice(7), p.dir) : null;
       const ref = action
         ? { atlas: ACTIONS_TEXTURE, frame: action }
         : characterFrame(p.costume, 'idle', p.dir);

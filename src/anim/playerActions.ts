@@ -27,7 +27,12 @@ export type ActionName =
   | 'search'
   | 'stamp'
   | 'type'
-  | 'breathe';
+  | 'breathe'
+  | 'aim_pistol'
+  | 'aim_rifle'
+  | 'aim_heavy'
+  | 'swing'
+  | 'stab';
 
 interface ActionInfo {
   frames: number;
