@@ -14,6 +14,30 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
+## Resume here (updated 2026-10-12) — the first thing a new session reads
+1. **Read**, in order:
+   - `CLAUDE.md` (the rules; autopilot is on);
+   - this file's Phase 2 checklist and the "Handover" section below;
+   - `docs/00_GAME_DESIGN.md` and `docs/15_roadmap.md` (Phase 2);
+   - the system docs for the next milestone: 01 (streets, the two-lanes-each-way rule), 02 (shops), 03 (jobs), 08 (vehicles, the car dealer), 11 (creator, phone), 18 (interiors: the questions and drafts), 13 (art);
+   - `art/STYLE_GUIDE.md` before any art.
+2. **Check where the code is.** Run `git fetch origin`, then look at the open PRs:
+   - **Milestone 5 (money and phone)** is PR #10 from `claude/p2-money-phone`. If it is still open and its CI is green, merge it (autopilot). If CI is red, fix it first.
+   - **Milestone 6 (map growth, shops, creator)** was started on `claude/p2-map-shops`, with **unfinished, untested** work committed as "WIP Phase 2 milestone 6". It holds:
+     - `art/source/suburb.py`: houses, the Swiftish Couriers depot, the Torque & Sons garage, the dealer cabin, Ashby Timber's site trailer, and woods props;
+     - multi-lane road support started in `art/source/downtown_map.py`;
+     - `src/maps/types.ts`: lanes with stop lines, and a separate `roads` centre-line list;
+     - `src/systems/traffic.ts`: a light phase per stop line, so lanes can turn.
+     Continue on that branch: merge `main` into it once PR #10 is in, then run `npx tsc --noEmit`, `npm test` and the map pipeline (`downtown_map.py --no-render` → `check_city.py` → `pack_city.py`) to see where it stands.
+3. **Set up the container** before npm, preview or Playwright:
+   - `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1`
+   - `npm install`
+   - `pip install numpy pillow` if missing.
+   - The art sprite cache isn't committed, so the first map render takes a few minutes.
+4. **Work one milestone at a time:** plan → build → test (`npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run test:e2e`) → screenshots (`npm run shots`) → update this file → PR → merge when green → a short note to the user with screenshots → the next milestone. Follow the remaining Phase 2 order: M6 (map growth, two-lane roads, shops, car dealer, creator), M7 (three new jobs, office tasks, uniforms and lockers), M8 (odd jobs, guided first day, econ sim, phase close).
+5. **Before you stop**, commit and push all work: the container is discarded. Unfinished work goes on its branch with a "WIP" commit, and this block says where it is.
+
+
 ## Phase 2 — Economy and careers (in progress)
 Status key: [x] done and playable · [~] partly done (what's left is said) · [ ] not started. Milestones: M5 money and phone (done), M6 map growth, shops and the creator, M7 the three new jobs, M8 odd jobs, the first day and the close.
 
