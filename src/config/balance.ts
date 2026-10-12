@@ -443,12 +443,13 @@ export const BALANCE = {
     /** The street name shows for this long after entering a new street. */
     streetSeconds: 4,
     /** Radar radius in UI pixels and its world scale (docs/11: radius 38, about 0.13). */
-    radarRadius: 38,
+    radarRadius: 44,
     radarScale: 0.13,
     radarHz: 15,
     /** World prompts stay inside these UI-pixel margins, clear of the top panels, the objective and hint strip at
      *  the bottom and the radar (which takes this square in the bottom-left corner). */
-    promptSafe: { top: 46, bottom: 26, side: 4, radar: 90 },
+    /** Room kept clear of the HUD panels for world prompts, in UI pixels (sized for the UI redesign of 2026-10-12). */
+    promptSafe: { top: 66, bottom: 30, side: 4, radar: 104 },
   },
 
   walker: {

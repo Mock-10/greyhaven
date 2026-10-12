@@ -2,7 +2,7 @@
 // and a cream label. Pixel-for-pixel port of prompt() in art/source/scene.py.
 
 import type { Pixels } from '../assets/highlight';
-import { textBits } from './pixelFont';
+import { fontHeight, textBits } from './pixelFont';
 
 const PLATE = [45, 34, 46, 235];
 const EDGE = [185, 143, 58, 255];
@@ -17,9 +17,13 @@ const RED = [208, 132, 120, 255];
 export function promptPixels(key: string, label: string, blocked = false): Pixels {
   const kt = textBits(key);
   const lt = textBits(label);
+  const ktw = (kt[0] as boolean[]).length;
   const ltw = (lt[0] as boolean[]).length;
-  const w = 3 + 7 + 3 + ltw + 4;
-  const h = 11;
+  const fh = fontHeight();
+  // body font (5 × 7, UI redesign 2026-10-12): a keycap 4 px wider than its letter, 2 px of plate around
+  const kw = ktw + 5;
+  const h = fh + 8;
+  const w = 3 + kw + 4 + ltw + 5;
   const H = h + 3;
   const data = new Uint8ClampedArray(w * H * 4);
   const set = (x: number, y: number, c: number[]) => {
@@ -40,9 +44,9 @@ export function promptPixels(key: string, label: string, blocked = false): Pixel
   fill(cx - 1, cx + 2, h + 1, h + 2, EDGE);
   set(cx, h + 2, EDGE);
   fill(cx - 1, cx + 2, h - 1, h, PLATE);
-  fill(3, 10, 2, 9, GOLD);
-  fill(3, 10, 8, 9, GOLD_SHADE);
-  kt.forEach((row, y) => row.forEach((on, x) => on && set(5 + x, 3 + y, KEY_INK)));
-  lt.forEach((row, y) => row.forEach((on, x) => on && set(13 + x, 3 + y, blocked ? RED : CREAM)));
+  fill(3, 3 + kw, 2, h - 2, GOLD);
+  fill(3, 3 + kw, h - 3, h - 2, GOLD_SHADE);
+  kt.forEach((row, y) => row.forEach((on, x) => on && set(5 + x, 3 + y + 1, KEY_INK)));
+  lt.forEach((row, y) => row.forEach((on, x) => on && set(3 + kw + 4 + x, 4 + y, blocked ? RED : CREAM)));
   return { width: w, height: H, data };
 }

@@ -39,7 +39,8 @@ describe('HUD primitives (hud.py)', () => {
     const items: [string, string][] = [['E', 'USE']];
     const s = createSurface(60, 12);
     expect(hintKeys(s, 0, 0, items)).toBe(hintKeysWidth(items));
-    expect(textWidthPx('USE')).toBe(11);
+    expect(textWidthPx('USE')).toBe(17); // the 5 × 7 body font
+    expect(textWidthPx('USE', 1, 'small')).toBe(11);
   });
 
   it('colours the radar by ground kind', () => {

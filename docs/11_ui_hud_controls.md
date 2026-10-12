@@ -1,5 +1,33 @@
 # 11 — UI, HUD and Controls
 
+## UI redesign (user request, 2026-10-12): larger text and more pictures
+The user asked for "better graphics and larger text" and for UIs that "use more images, as it's better for conveying information". This section **supersedes the sizes and fonts** in the mockups and the table below; the palette, the plate style, the gold rules and the screen positions stay.
+- **Text:** a 5 × 7 pixel font (`art/source/pixfont7.py` → `src/ui/font7.json`; specimen `art/drafts/hud/font7_specimen.png`) for everything people read: HUD, prompts, panels, menus, the title. Letters are proportional and digits keep a fixed width, so money and clocks don't jitter. The old 3 × 5 font stays only for tiny captions (CLEAN and DIRTY labels, the phone's status bar, badges). Titles use the 5 × 7 font at 2×.
+- **Pictures:** `art/source/ui_icons.py` renders small SDF models with the world's own renderer, the same light, ramps, dithering and outline, into `art/ui_icons.png/.json` (contact sheet `art/drafts/hud/ui_icons_sheet.png`):
+  - items, 32 px: soda, chips, sandwich, fuel can, first-aid kit, lockpicks, toolbox, repair kit, and trunk loot (phone, wallet, cash, watch, junk);
+  - phone apps and services, 40 px: messages, bank, job board, contacts, bag, shelter;
+  - job pictures, 32 px: an axe and a parcel;
+  - HUD badges, 16 px: heart, vest, clean and dirty bills, sun, moon, pump, wrench;
+  - contact portraits, 32 px: head and shoulders of person models for Ms. Hollis, Dez, Marlo, HR, the landlord and the player.
+  Gold stays reserved for valuables (the watch) and interactables.
+- **HUD:**
+  - Vitals panel: 140 × 50, with heart and vest icons, bars and numbers.
+  - Stars: drawn at 2×.
+  - Clock and cash panel: 132 × 58, with a sun or moon and the bill icons.
+  - Radar: radius 44.
+  - Car readout: 140 × 50, with pump and wrench icons.
+  - Phone messages: show the sender's picture (a portrait for people, an object for services; `src/data/senders.ts`) and up to two lines of text.
+  - Key hints: on bigger keycaps. They move up a row when they would collide with the objective, as the driving hints do.
+- **Panels:**
+  - Minigames are 248 × 176 with a 26 px drag strip. The lockpick panel shows the tool's picture and uses left.
+  - The shop has picture cards (300 × 236). The trunk search grid shows the loot pictures (216 × 196).
+  - The pause menu is 360 × 236.
+- **The phone** is drawn as a handset: a body, a status bar with the clock, a screen and a home button.
+  - Its home screen is a grid of app tiles with badges: unread messages, and "!" when rent is late.
+  - Every list row carries a picture and a second line. Contacts open a card with the portrait.
+  - The ATM is a grid of cash buttons. The bag is a grid of item tiles with counts; the selected tile's detail shows at the bottom.
+- **Reference screenshots** of the redesign: `docs/screenshots/ui_redesign/`. Regenerate them with `npm run build && node tools/ui_shots.ts`.
+
 ## HUD (classic GTA layout, pixel style)
 **Reference mockups (match these):**
 - `art/drafts/hud/hud_mockup_street.png`: 2★ escape after a store robbery, radar search area, phone message, loot prompt.
