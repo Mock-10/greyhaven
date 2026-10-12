@@ -47,6 +47,13 @@ export function crewHome(p: PropertyState): OwnedHome | null {
 
 const round10 = (n: number) => Math.round(n / 10) * 10;
 
+/** A name nobody in the crew or at the bar already has (first names differ too). */
+function freshName(c: CrewState, rng: Rng): string {
+  const taken = [...c.members, ...c.candidates].map((q) => q.name.split(' ')[0]);
+  const free = CREW_FIRST.filter((n) => !taken.includes(n));
+  return `${rng.pick(free.length ? free : CREW_FIRST)} "${rng.pick(CREW_NICK)}"`;
+}
+
 /** Today's candidates at the bar: rolled once a day (operators until smuggling brings drivers). */
 export function candidatesFor(c: CrewState, rng: Rng, day: number): CrewMember[] {
   if (c.candidatesDay === day) return c.candidates;
@@ -58,7 +65,7 @@ export function candidatesFor(c: CrewState, rng: Rng, day: number): CrewMember[]
     const share = skill / K.operatorSkill[1];
     c.candidates.push({
       id: c.nextId++,
-      name: `${rng.pick(CREW_FIRST)} "${rng.pick(CREW_NICK)}"`,
+      name: freshName(c, rng),
       face: rng.int(0, CREW_FACES - 1),
       role,
       skill: Math.round(skill * 100) / 100,

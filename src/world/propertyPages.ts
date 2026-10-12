@@ -28,6 +28,8 @@ import { stats, type Vehicle } from '../systems/vehicle';
 import { MODEL_COLOUR, TYPE_LABEL } from '../data/vehicles';
 import { hasIcon } from '../ui/icons';
 import { tierFor } from '../systems/reputation';
+import { assign, fire, hire, hireBlock, type CrewMember } from '../systems/crew';
+import { ROLE_NAMES } from '../data/crew';
 import type { IconName } from '../ui/icons';
 import type { ListAction, ListPage, ListRow } from '../ui/listPanel';
 import { OP_NAMES, minutesLeft, opOf, startPress, type OpId } from '../systems/operations';
@@ -355,6 +357,93 @@ export function opsPage(ctx: OpsCtx): ListPage {
     icon: `addon/${ctx.op}` as IconName,
     right: HOMES[h.id].address,
     lines: [status, ctx.op === 'press' ? 'FAKE CASH COUNTS AS DIRTY.' : 'PAID AS DIRTY CASH.'],
+    rows,
+  };
+}
+
+const crewIcon = (face: number) => `face/crew${face}` as IconName;
+const pct = (n: number) => `${Math.round(n * 100)}%`;
+
+const HIRE_TEXT = {
+  room: 'BUILD A CREW ROOM FIRST',
+  tier: `NEEDS REP TIER ${BALANCE.property.crew.tier}`,
+  cap: `CREW FULL (${BALANCE.property.crew.cap})`,
+  money: 'NOT ENOUGH DIRTY CASH',
+} as const;
+
+/** The crew booth at The Low Tide (docs/09): today's candidates, their fee and weekly wage, in dirty cash. */
+export function hirePage(st: GameState, candidates: readonly CrewMember[]): ListPage {
+  const tier = tierFor(st.crime.rep);
+  const rows: ListRow[] = candidates.map((c) => {
+    const why = hireBlock(st.property, st.money, c, tier);
+    return {
+      label: c.name,
+      icon: crewIcon(c.face),
+      sub: `${ROLE_NAMES[c.role]}, SKILL +${pct(c.skill)}. $${c.wage} A WEEK`,
+      detail: why ? HIRE_TEXT[why] : money(c.fee),
+      enabled: !why,
+      act: () =>
+        hire(st.property, st.money, c.id, tier)
+          ? { say: `${c.name} IS IN. FIND THEM AT YOUR CREW TABLE.` }
+          : { say: 'NOT NOW.' },
+    };
+  });
+  const crew = st.property.crew.members.length;
+  return {
+    title: 'CREW FOR HIRE',
+    icon: 'face/gang',
+    right: `${crew}/${BALANCE.property.crew.cap} HIRED`,
+    lines: [
+      rows.length ? 'NEW FACES EVERY DAY. FEE AND WAGES IN DIRTY CASH.' : 'NOBODY LEFT TODAY. TRY TOMORROW.',
+      'WAGES COME OUT OF THE CREW ROOM STASH ON MONDAYS.',
+    ],
+    rows,
+  };
+}
+
+/** The crew table in the hideout: post operators to this home's operations, or let people go. */
+export function crewPage(st: GameState, home: HomeId): ListPage {
+  const p = st.property;
+  const h = homeOf(p, home);
+  const rows: ListRow[] = [];
+  for (const c of p.crew.members) {
+    const post = c.post ? `${OP_NAMES[c.post.op]}, ${HOMES[c.post.home].address}` : 'NO POST';
+    const unpaid = c.unpaidSince !== null ? ' UNPAID!' : '';
+    // operators run the press (the chop bay needs cars you bring)
+    const canPress = !!h?.addons.includes('press');
+    rows.push({
+      label: c.name,
+      icon: crewIcon(c.face),
+      sub: `${ROLE_NAMES[c.role]} +${pct(c.skill)}: ${post}.${unpaid}`,
+      detail: `$${c.wage}/WK`,
+      enabled: canPress,
+      act: () => {
+        const on = c.post?.home === home && c.post.op === 'press';
+        assign(p, c.id, on ? null : { home, op: 'press' });
+        return { say: on ? `${c.name} IS OFF THE PRESS.` : `${c.name} RUNS THE PRESS NOW.` };
+      },
+    });
+  }
+  for (const c of p.crew.members)
+    rows.push({
+      label: `LET ${c.name.split(' ')[0]} GO`,
+      icon: crewIcon(c.face),
+      sub: 'NO NOTICE, NO HARD FEELINGS',
+      act: () => {
+        fire(p, c.id);
+        return { say: `${c.name} IS GONE.` };
+      },
+    });
+  return {
+    title: 'THE CREW',
+    icon: 'face/gang',
+    right: `${p.crew.members.length}/${BALANCE.property.crew.cap}`,
+    lines: [
+      rows.length
+        ? 'PICK SOMEONE TO PUT THEM ON THE PRESS, OR TAKE THEM OFF.'
+        : 'NOBODY YET. HIRE AT THE LOW TIDE.',
+      `OPERATORS BANK THE BATCH IN THE STASH, TAKE ${pct(BALANCE.property.crew.operatorCut)}, AND RESTOCK.`,
+    ],
     rows,
   };
 }

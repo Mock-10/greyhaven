@@ -69,6 +69,9 @@ export type Action =
   | { kind: 'workbench' }
   /** An operation's station (systems/operations.ts): the press, the chop bay. */
   | { kind: 'op'; op: OpId }
+  /** The Low Tide's crew booth (hire) and the hideout's crew table (posts, firing): docs/09 crews. */
+  | { kind: 'hireCrew' }
+  | { kind: 'crew' }
   | { kind: 'later'; who: string; text: string };
 
 /** How a door leaf behaves: always openable, locked, or open only under a condition. */
@@ -201,6 +204,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
         action: { kind: 'launder' },
       },
       'BAR SHIFT': { label: 'BAR SHIFT', action: { kind: 'gig', gig: 'barShift' } },
+      'HIRE CREW': { label: 'HIRE CREW', action: { kind: 'hireCrew' } },
     },
     doors: [{ kind: 'staffHours', from: 18 * 60, to: 2 * 60, closedLabel: 'STAFF ONLY' }],
     npcs: [
@@ -362,6 +366,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
       'STASH ROOM': { label: 'STASH', action: { kind: 'stash' } },
       PRESS: { label: 'THE PRESS', action: { kind: 'op', op: 'press' } },
       'CHOP BAY': { label: 'THE CHOP BAY', action: { kind: 'op', op: 'chopBay' } },
+      CREW: { label: 'THE CREW', action: { kind: 'crew' } },
     },
     // the stash room's door; the world opens it once the add-on is built
     doors: [{ kind: 'locked', label: 'LOCKED: BUILD THE STASH ROOM (PLANS)' }],

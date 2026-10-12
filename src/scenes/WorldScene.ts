@@ -188,8 +188,11 @@ import { MODEL_COLOUR, TYPE_LABEL } from '../data/vehicles';
 import { HOMES, HOME_IDS, PROPERTY_TYPES, type HomeId } from '../data/property';
 import { homeOf, stashAt } from '../systems/property';
 import { collect, nightlyRaids, runOps, startChop, stalled, type OpId } from '../systems/operations';
+import { candidatesFor } from '../systems/crew';
 import {
+  crewPage,
   garagePage,
+  hirePage,
   opsPage,
   type OpsCtx,
   plansPage,
@@ -2605,6 +2608,18 @@ export class WorldScene extends Phaser.Scene {
       case 'op':
         this.openOps(a.op);
         break;
+      case 'hireCrew': {
+        const day = Math.floor(this.state.minutes / 1440);
+        this.openPanel('hire', () =>
+          hirePage(this.state, candidatesFor(this.state.property.crew, this.rng, day)),
+        );
+        break;
+      }
+      case 'crew': {
+        const home = this.homeHere;
+        if (home) this.openPanel('crew', () => crewPage(this.state, home));
+        break;
+      }
       case 'elevator': {
         const to = INTERIORS[a.to];
         this.fade(() => this.enterInterior(to, to.elevator ?? to.entrance ?? { x: 40, y: 40 }));
