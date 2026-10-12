@@ -1,0 +1,909 @@
+{
+ "image": "effects.png",
+ "cell": [
+  126,
+  82
+ ],
+ "note": "Effects. Frame keys: <effect>/<frame> or <effect>/<dir>/<frame> (dirs SE,S,SW,W,NW,N,NE,E). anchor = the effect's origin (see anims.<effect>.anchor). Rows have their own cell sizes; use each frame's rect. blend ADD = draw with additive blending (light pools).",
+ "anims": {
+  "muzzle_flash": {
+   "frames": 2,
+   "fps": 30,
+   "loop": false,
+   "per_direction": true,
+   "anchor": "barrel tip; draw over the shooter, 1-2 frames per shot"
+  },
+  "tracer": {
+   "frames": 1,
+   "per_direction": true,
+   "anchor": "the bright head; move it along the shot for ~0.1 s"
+  },
+  "smoke": {
+   "frames": 8,
+   "fps": 8,
+   "loop": false,
+   "anchor": "spawn point on the ground; the puff rises and thins"
+  },
+  "smoke_dark": {
+   "frames": 8,
+   "fps": 8,
+   "loop": false,
+   "anchor": "as smoke: wrecks, engine fires, after explosions"
+  },
+  "fire_small": {
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "anchor": "base of the flame on the burning surface"
+  },
+  "fire_large": {
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "anchor": "base of the flame"
+  },
+  "explosion": {
+   "frames": 10,
+   "fps": 14,
+   "loop": false,
+   "anchor": "ground point of the blast; follow with smoke_dark + fire_large"
+  },
+  "hit_spark": {
+   "frames": 4,
+   "fps": 24,
+   "loop": false,
+   "anchor": "impact point (bullet on metal, wall, ground)"
+  },
+  "siren_glow_red": {
+   "frames": 3,
+   "fps": 8,
+   "loop": true,
+   "blend": "ADD",
+   "anchor": "ground under the light bar; alternate red and blue (red 0-1-2 while blue 2-1-0)"
+  },
+  "siren_glow_blue": {
+   "frames": 3,
+   "fps": 8,
+   "loop": true,
+   "blend": "ADD",
+   "anchor": "ground under the light bar; alternate red and blue (red 0-1-2 while blue 2-1-0)"
+  },
+  "siren_flare_red": {
+   "frames": 2,
+   "fps": 8,
+   "loop": true,
+   "blend": "ADD",
+   "anchor": "the light bar on the roof"
+  },
+  "siren_flare_blue": {
+   "frames": 2,
+   "fps": 8,
+   "loop": true,
+   "blend": "ADD",
+   "anchor": "the light bar on the roof"
+  },
+  "searchlight": {
+   "frames": 1,
+   "blend": "ADD",
+   "anchor": "centre of the helicopter searchlight pool on the ground"
+  },
+  "rain_splash": {
+   "frames": 4,
+   "fps": 16,
+   "loop": false,
+   "anchor": "where the drop hits the ground"
+  }
+ },
+ "frames": {
+  "muzzle_flash/SE/0": {
+   "x": 0,
+   "y": 0,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/SE/1": {
+   "x": 28,
+   "y": 0,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/S/0": {
+   "x": 0,
+   "y": 28,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/S/1": {
+   "x": 28,
+   "y": 28,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/SW/0": {
+   "x": 0,
+   "y": 56,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/SW/1": {
+   "x": 28,
+   "y": 56,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/W/0": {
+   "x": 0,
+   "y": 84,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/W/1": {
+   "x": 28,
+   "y": 84,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/NW/0": {
+   "x": 0,
+   "y": 112,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/NW/1": {
+   "x": 28,
+   "y": 112,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/N/0": {
+   "x": 0,
+   "y": 140,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/N/1": {
+   "x": 28,
+   "y": 140,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/NE/0": {
+   "x": 0,
+   "y": 168,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/NE/1": {
+   "x": 28,
+   "y": 168,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/E/0": {
+   "x": 0,
+   "y": 196,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "muzzle_flash/E/1": {
+   "x": 28,
+   "y": 196,
+   "w": 28,
+   "h": 28,
+   "anchor": [
+    14,
+    14
+   ]
+  },
+  "tracer/SE": {
+   "x": 0,
+   "y": 224,
+   "w": 52,
+   "h": 52,
+   "anchor": [
+    26,
+    26
+   ]
+  },
+  "tracer/S": {
+   "x": 52,
+   "y": 224,
+   "w": 52,
+   "h": 52,
+   "anchor": [
+    26,
+    26
+   ]
+  },
+  "tracer/SW": {
+   "x": 104,
+   "y": 224,
+   "w": 52,
+   "h": 52,
+   "anchor": [
+    26,
+    26
+   ]
+  },
+  "tracer/W": {
+   "x": 156,
+   "y": 224,
+   "w": 52,
+   "h": 52,
+   "anchor": [
+    26,
+    26
+   ]
+  },
+  "tracer/NW": {
+   "x": 208,
+   "y": 224,
+   "w": 52,
+   "h": 52,
+   "anchor": [
+    26,
+    26
+   ]
+  },
+  "tracer/N": {
+   "x": 260,
+   "y": 224,
+   "w": 52,
+   "h": 52,
+   "anchor": [
+    26,
+    26
+   ]
+  },
+  "tracer/NE": {
+   "x": 312,
+   "y": 224,
+   "w": 52,
+   "h": 52,
+   "anchor": [
+    26,
+    26
+   ]
+  },
+  "tracer/E": {
+   "x": 364,
+   "y": 224,
+   "w": 52,
+   "h": 52,
+   "anchor": [
+    26,
+    26
+   ]
+  },
+  "smoke/0": {
+   "x": 0,
+   "y": 276,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke/1": {
+   "x": 38,
+   "y": 276,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke/2": {
+   "x": 76,
+   "y": 276,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke/3": {
+   "x": 114,
+   "y": 276,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke/4": {
+   "x": 152,
+   "y": 276,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke/5": {
+   "x": 190,
+   "y": 276,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke/6": {
+   "x": 228,
+   "y": 276,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke/7": {
+   "x": 266,
+   "y": 276,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke_dark/0": {
+   "x": 0,
+   "y": 318,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke_dark/1": {
+   "x": 38,
+   "y": 318,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke_dark/2": {
+   "x": 76,
+   "y": 318,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke_dark/3": {
+   "x": 114,
+   "y": 318,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke_dark/4": {
+   "x": 152,
+   "y": 318,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke_dark/5": {
+   "x": 190,
+   "y": 318,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke_dark/6": {
+   "x": 228,
+   "y": 318,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "smoke_dark/7": {
+   "x": 266,
+   "y": 318,
+   "w": 38,
+   "h": 42,
+   "anchor": [
+    19,
+    37
+   ]
+  },
+  "fire_small/0": {
+   "x": 0,
+   "y": 360,
+   "w": 20,
+   "h": 30,
+   "anchor": [
+    10,
+    27
+   ]
+  },
+  "fire_small/1": {
+   "x": 20,
+   "y": 360,
+   "w": 20,
+   "h": 30,
+   "anchor": [
+    10,
+    27
+   ]
+  },
+  "fire_small/2": {
+   "x": 40,
+   "y": 360,
+   "w": 20,
+   "h": 30,
+   "anchor": [
+    10,
+    27
+   ]
+  },
+  "fire_small/3": {
+   "x": 60,
+   "y": 360,
+   "w": 20,
+   "h": 30,
+   "anchor": [
+    10,
+    27
+   ]
+  },
+  "fire_small/4": {
+   "x": 80,
+   "y": 360,
+   "w": 20,
+   "h": 30,
+   "anchor": [
+    10,
+    27
+   ]
+  },
+  "fire_small/5": {
+   "x": 100,
+   "y": 360,
+   "w": 20,
+   "h": 30,
+   "anchor": [
+    10,
+    27
+   ]
+  },
+  "fire_large/0": {
+   "x": 0,
+   "y": 390,
+   "w": 36,
+   "h": 48,
+   "anchor": [
+    18,
+    45
+   ]
+  },
+  "fire_large/1": {
+   "x": 36,
+   "y": 390,
+   "w": 36,
+   "h": 48,
+   "anchor": [
+    18,
+    45
+   ]
+  },
+  "fire_large/2": {
+   "x": 72,
+   "y": 390,
+   "w": 36,
+   "h": 48,
+   "anchor": [
+    18,
+    45
+   ]
+  },
+  "fire_large/3": {
+   "x": 108,
+   "y": 390,
+   "w": 36,
+   "h": 48,
+   "anchor": [
+    18,
+    45
+   ]
+  },
+  "fire_large/4": {
+   "x": 144,
+   "y": 390,
+   "w": 36,
+   "h": 48,
+   "anchor": [
+    18,
+    45
+   ]
+  },
+  "fire_large/5": {
+   "x": 180,
+   "y": 390,
+   "w": 36,
+   "h": 48,
+   "anchor": [
+    18,
+    45
+   ]
+  },
+  "explosion/0": {
+   "x": 0,
+   "y": 438,
+   "w": 86,
+   "h": 82,
+   "anchor": [
+    43,
+    67
+   ]
+  },
+  "explosion/1": {
+   "x": 86,
+   "y": 438,
+   "w": 86,
+   "h": 82,
+   "anchor": [
+    43,
+    67
+   ]
+  },
+  "explosion/2": {
+   "x": 172,
+   "y": 438,
+   "w": 86,
+   "h": 82,
+   "anchor": [
+    43,
+    67
+   ]
+  },
+  "explosion/3": {
+   "x": 258,
+   "y": 438,
+   "w": 86,
+   "h": 82,
+   "anchor": [
+    43,
+    67
+   ]
+  },
+  "explosion/4": {
+   "x": 344,
+   "y": 438,
+   "w": 86,
+   "h": 82,
+   "anchor": [
+    43,
+    67
+   ]
+  },
+  "explosion/5": {
+   "x": 430,
+   "y": 438,
+   "w": 86,
+   "h": 82,
+   "anchor": [
+    43,
+    67
+   ]
+  },
+  "explosion/6": {
+   "x": 516,
+   "y": 438,
+   "w": 86,
+   "h": 82,
+   "anchor": [
+    43,
+    67
+   ]
+  },
+  "explosion/7": {
+   "x": 602,
+   "y": 438,
+   "w": 86,
+   "h": 82,
+   "anchor": [
+    43,
+    67
+   ]
+  },
+  "explosion/8": {
+   "x": 688,
+   "y": 438,
+   "w": 86,
+   "h": 82,
+   "anchor": [
+    43,
+    67
+   ]
+  },
+  "explosion/9": {
+   "x": 774,
+   "y": 438,
+   "w": 86,
+   "h": 82,
+   "anchor": [
+    43,
+    67
+   ]
+  },
+  "hit_spark/0": {
+   "x": 0,
+   "y": 520,
+   "w": 22,
+   "h": 22,
+   "anchor": [
+    11,
+    11
+   ]
+  },
+  "hit_spark/1": {
+   "x": 22,
+   "y": 520,
+   "w": 22,
+   "h": 22,
+   "anchor": [
+    11,
+    11
+   ]
+  },
+  "hit_spark/2": {
+   "x": 44,
+   "y": 520,
+   "w": 22,
+   "h": 22,
+   "anchor": [
+    11,
+    11
+   ]
+  },
+  "hit_spark/3": {
+   "x": 66,
+   "y": 520,
+   "w": 22,
+   "h": 22,
+   "anchor": [
+    11,
+    11
+   ]
+  },
+  "siren_glow_red/0": {
+   "x": 0,
+   "y": 542,
+   "w": 126,
+   "h": 66,
+   "anchor": [
+    63,
+    33
+   ]
+  },
+  "siren_glow_red/1": {
+   "x": 126,
+   "y": 542,
+   "w": 126,
+   "h": 66,
+   "anchor": [
+    63,
+    33
+   ]
+  },
+  "siren_glow_red/2": {
+   "x": 252,
+   "y": 542,
+   "w": 126,
+   "h": 66,
+   "anchor": [
+    63,
+    33
+   ]
+  },
+  "siren_glow_blue/0": {
+   "x": 378,
+   "y": 542,
+   "w": 126,
+   "h": 66,
+   "anchor": [
+    63,
+    33
+   ]
+  },
+  "siren_glow_blue/1": {
+   "x": 504,
+   "y": 542,
+   "w": 126,
+   "h": 66,
+   "anchor": [
+    63,
+    33
+   ]
+  },
+  "siren_glow_blue/2": {
+   "x": 630,
+   "y": 542,
+   "w": 126,
+   "h": 66,
+   "anchor": [
+    63,
+    33
+   ]
+  },
+  "siren_flare_red/0": {
+   "x": 0,
+   "y": 608,
+   "w": 24,
+   "h": 16,
+   "anchor": [
+    12,
+    8
+   ]
+  },
+  "siren_flare_red/1": {
+   "x": 24,
+   "y": 608,
+   "w": 24,
+   "h": 16,
+   "anchor": [
+    12,
+    8
+   ]
+  },
+  "siren_flare_blue/0": {
+   "x": 48,
+   "y": 608,
+   "w": 24,
+   "h": 16,
+   "anchor": [
+    12,
+    8
+   ]
+  },
+  "siren_flare_blue/1": {
+   "x": 72,
+   "y": 608,
+   "w": 24,
+   "h": 16,
+   "anchor": [
+    12,
+    8
+   ]
+  },
+  "searchlight/0": {
+   "x": 0,
+   "y": 624,
+   "w": 94,
+   "h": 50,
+   "anchor": [
+    47,
+    25
+   ]
+  },
+  "rain_splash/0": {
+   "x": 0,
+   "y": 674,
+   "w": 14,
+   "h": 10,
+   "anchor": [
+    7,
+    6
+   ]
+  },
+  "rain_splash/1": {
+   "x": 14,
+   "y": 674,
+   "w": 14,
+   "h": 10,
+   "anchor": [
+    7,
+    6
+   ]
+  },
+  "rain_splash/2": {
+   "x": 28,
+   "y": 674,
+   "w": 14,
+   "h": 10,
+   "anchor": [
+    7,
+    6
+   ]
+  },
+  "rain_splash/3": {
+   "x": 42,
+   "y": 674,
+   "w": 14,
+   "h": 10,
+   "anchor": [
+    7,
+    6
+   ]
+  }
+ }
+}

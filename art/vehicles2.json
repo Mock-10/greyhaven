@@ -1,0 +1,1126 @@
+{
+ "image": "vehicles2.png",
+ "cell": [
+  277,
+  199
+ ],
+ "note": "anchor = pixel inside the cell that sits on the object's ground point (footprint centre). Directions: SE,S,SW,W,NW,N,NE,E. Rows have their own cell sizes; use each frame's rect. helicopter: the body anchors on the ground point under it; when airborne draw helicopter_shadow/<dir> at the ground point and the body (and rotor) lifted by the altitude in px. helicopter_rotor/f0-f3: the spinning main rotor, any direction, ~20 fps, anchored at the hub; draw it over the body at body anchor + mounts.helicopter_rotor[dir].",
+ "mounts": {
+  "helicopter_rotor": {
+   "SE": [
+    2,
+    -40
+   ],
+   "S": [
+    0,
+    -40
+   ],
+   "SW": [
+    -2,
+    -40
+   ],
+   "W": [
+    -3,
+    -41
+   ],
+   "NW": [
+    -2,
+    -42
+   ],
+   "N": [
+    0,
+    -43
+   ],
+   "NE": [
+    2,
+    -42
+   ],
+   "E": [
+    3,
+    -41
+   ]
+  }
+ },
+ "frames": {
+  "pickup_brick/SE": {
+   "x": 0,
+   "y": 0,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_brick/S": {
+   "x": 156,
+   "y": 0,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    77,
+    77
+   ]
+  },
+  "pickup_brick/SW": {
+   "x": 312,
+   "y": 0,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_brick/W": {
+   "x": 468,
+   "y": 0,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    99
+   ]
+  },
+  "pickup_brick/NW": {
+   "x": 624,
+   "y": 0,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_brick/N": {
+   "x": 780,
+   "y": 0,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    77,
+    77
+   ]
+  },
+  "pickup_brick/NE": {
+   "x": 936,
+   "y": 0,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_brick/E": {
+   "x": 1092,
+   "y": 0,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    99
+   ]
+  },
+  "pickup_sage/SE": {
+   "x": 0,
+   "y": 117,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_sage/S": {
+   "x": 156,
+   "y": 117,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    77,
+    77
+   ]
+  },
+  "pickup_sage/SW": {
+   "x": 312,
+   "y": 117,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_sage/W": {
+   "x": 468,
+   "y": 117,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    99
+   ]
+  },
+  "pickup_sage/NW": {
+   "x": 624,
+   "y": 117,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_sage/N": {
+   "x": 780,
+   "y": 117,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    77,
+    77
+   ]
+  },
+  "pickup_sage/NE": {
+   "x": 936,
+   "y": 117,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_sage/E": {
+   "x": 1092,
+   "y": 117,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    99
+   ]
+  },
+  "pickup_stone/SE": {
+   "x": 0,
+   "y": 234,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_stone/S": {
+   "x": 156,
+   "y": 234,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    77,
+    77
+   ]
+  },
+  "pickup_stone/SW": {
+   "x": 312,
+   "y": 234,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_stone/W": {
+   "x": 468,
+   "y": 234,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    99
+   ]
+  },
+  "pickup_stone/NW": {
+   "x": 624,
+   "y": 234,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_stone/N": {
+   "x": 780,
+   "y": 234,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    77,
+    77
+   ]
+  },
+  "pickup_stone/NE": {
+   "x": 936,
+   "y": 234,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    78
+   ]
+  },
+  "pickup_stone/E": {
+   "x": 1092,
+   "y": 234,
+   "w": 156,
+   "h": 117,
+   "anchor": [
+    78,
+    99
+   ]
+  },
+  "sports_red/SE": {
+   "x": 0,
+   "y": 351,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_red/S": {
+   "x": 140,
+   "y": 351,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    64
+   ]
+  },
+  "sports_red/SW": {
+   "x": 280,
+   "y": 351,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_red/W": {
+   "x": 420,
+   "y": 351,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    82
+   ]
+  },
+  "sports_red/NW": {
+   "x": 560,
+   "y": 351,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_red/N": {
+   "x": 700,
+   "y": 351,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    64
+   ]
+  },
+  "sports_red/NE": {
+   "x": 840,
+   "y": 351,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_red/E": {
+   "x": 980,
+   "y": 351,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    82
+   ]
+  },
+  "sports_navy/SE": {
+   "x": 0,
+   "y": 451,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_navy/S": {
+   "x": 140,
+   "y": 451,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    64
+   ]
+  },
+  "sports_navy/SW": {
+   "x": 280,
+   "y": 451,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_navy/W": {
+   "x": 420,
+   "y": 451,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    82
+   ]
+  },
+  "sports_navy/NW": {
+   "x": 560,
+   "y": 451,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_navy/N": {
+   "x": 700,
+   "y": 451,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    64
+   ]
+  },
+  "sports_navy/NE": {
+   "x": 840,
+   "y": 451,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_navy/E": {
+   "x": 980,
+   "y": 451,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    82
+   ]
+  },
+  "sports_white/SE": {
+   "x": 0,
+   "y": 551,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_white/S": {
+   "x": 140,
+   "y": 551,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    64
+   ]
+  },
+  "sports_white/SW": {
+   "x": 280,
+   "y": 551,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_white/W": {
+   "x": 420,
+   "y": 551,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    82
+   ]
+  },
+  "sports_white/NW": {
+   "x": 560,
+   "y": 551,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_white/N": {
+   "x": 700,
+   "y": 551,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    64
+   ]
+  },
+  "sports_white/NE": {
+   "x": 840,
+   "y": 551,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    70,
+    64
+   ]
+  },
+  "sports_white/E": {
+   "x": 980,
+   "y": 551,
+   "w": 140,
+   "h": 100,
+   "anchor": [
+    69,
+    82
+   ]
+  },
+  "armored_suv/SE": {
+   "x": 0,
+   "y": 651,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv/S": {
+   "x": 156,
+   "y": 651,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv/SW": {
+   "x": 312,
+   "y": 651,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv/W": {
+   "x": 468,
+   "y": 651,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    105
+   ]
+  },
+  "armored_suv/NW": {
+   "x": 624,
+   "y": 651,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv/N": {
+   "x": 780,
+   "y": 651,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv/NE": {
+   "x": 936,
+   "y": 651,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv/E": {
+   "x": 1092,
+   "y": 651,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    105
+   ]
+  },
+  "armored_suv_police/SE": {
+   "x": 0,
+   "y": 774,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv_police/S": {
+   "x": 156,
+   "y": 774,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv_police/SW": {
+   "x": 312,
+   "y": 774,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv_police/W": {
+   "x": 468,
+   "y": 774,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    105
+   ]
+  },
+  "armored_suv_police/NW": {
+   "x": 624,
+   "y": 774,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv_police/N": {
+   "x": 780,
+   "y": 774,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv_police/NE": {
+   "x": 936,
+   "y": 774,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    83
+   ]
+  },
+  "armored_suv_police/E": {
+   "x": 1092,
+   "y": 774,
+   "w": 156,
+   "h": 123,
+   "anchor": [
+    78,
+    105
+   ]
+  },
+  "log_truck/SE": {
+   "x": 0,
+   "y": 897,
+   "w": 277,
+   "h": 199,
+   "anchor": [
+    139,
+    139
+   ]
+  },
+  "log_truck/S": {
+   "x": 277,
+   "y": 897,
+   "w": 277,
+   "h": 199,
+   "anchor": [
+    138,
+    129
+   ]
+  },
+  "log_truck/SW": {
+   "x": 554,
+   "y": 897,
+   "w": 277,
+   "h": 199,
+   "anchor": [
+    137,
+    139
+   ]
+  },
+  "log_truck/W": {
+   "x": 831,
+   "y": 897,
+   "w": 277,
+   "h": 199,
+   "anchor": [
+    137,
+    181
+   ]
+  },
+  "log_truck/NW": {
+   "x": 1108,
+   "y": 897,
+   "w": 277,
+   "h": 199,
+   "anchor": [
+    137,
+    137
+   ]
+  },
+  "log_truck/N": {
+   "x": 1385,
+   "y": 897,
+   "w": 277,
+   "h": 199,
+   "anchor": [
+    138,
+    127
+   ]
+  },
+  "log_truck/NE": {
+   "x": 1662,
+   "y": 897,
+   "w": 277,
+   "h": 199,
+   "anchor": [
+    139,
+    137
+   ]
+  },
+  "log_truck/E": {
+   "x": 1939,
+   "y": 897,
+   "w": 277,
+   "h": 199,
+   "anchor": [
+    140,
+    181
+   ]
+  },
+  "swat_van/SE": {
+   "x": 0,
+   "y": 1096,
+   "w": 164,
+   "h": 133,
+   "anchor": [
+    81,
+    92
+   ]
+  },
+  "swat_van/S": {
+   "x": 164,
+   "y": 1096,
+   "w": 164,
+   "h": 133,
+   "anchor": [
+    82,
+    90
+   ]
+  },
+  "swat_van/SW": {
+   "x": 328,
+   "y": 1096,
+   "w": 164,
+   "h": 133,
+   "anchor": [
+    83,
+    92
+   ]
+  },
+  "swat_van/W": {
+   "x": 492,
+   "y": 1096,
+   "w": 164,
+   "h": 133,
+   "anchor": [
+    83,
+    115
+   ]
+  },
+  "swat_van/NW": {
+   "x": 656,
+   "y": 1096,
+   "w": 164,
+   "h": 133,
+   "anchor": [
+    83,
+    92
+   ]
+  },
+  "swat_van/N": {
+   "x": 820,
+   "y": 1096,
+   "w": 164,
+   "h": 133,
+   "anchor": [
+    82,
+    92
+   ]
+  },
+  "swat_van/NE": {
+   "x": 984,
+   "y": 1096,
+   "w": 164,
+   "h": 133,
+   "anchor": [
+    81,
+    92
+   ]
+  },
+  "swat_van/E": {
+   "x": 1148,
+   "y": 1096,
+   "w": 164,
+   "h": 133,
+   "anchor": [
+    80,
+    115
+   ]
+  },
+  "armored_truck/SE": {
+   "x": 0,
+   "y": 1229,
+   "w": 178,
+   "h": 144,
+   "anchor": [
+    89,
+    100
+   ]
+  },
+  "armored_truck/S": {
+   "x": 178,
+   "y": 1229,
+   "w": 178,
+   "h": 144,
+   "anchor": [
+    89,
+    98
+   ]
+  },
+  "armored_truck/SW": {
+   "x": 356,
+   "y": 1229,
+   "w": 178,
+   "h": 144,
+   "anchor": [
+    89,
+    100
+   ]
+  },
+  "armored_truck/W": {
+   "x": 534,
+   "y": 1229,
+   "w": 178,
+   "h": 144,
+   "anchor": [
+    89,
+    126
+   ]
+  },
+  "armored_truck/NW": {
+   "x": 712,
+   "y": 1229,
+   "w": 178,
+   "h": 144,
+   "anchor": [
+    89,
+    100
+   ]
+  },
+  "armored_truck/N": {
+   "x": 890,
+   "y": 1229,
+   "w": 178,
+   "h": 144,
+   "anchor": [
+    89,
+    98
+   ]
+  },
+  "armored_truck/NE": {
+   "x": 1068,
+   "y": 1229,
+   "w": 178,
+   "h": 144,
+   "anchor": [
+    89,
+    100
+   ]
+  },
+  "armored_truck/E": {
+   "x": 1246,
+   "y": 1229,
+   "w": 178,
+   "h": 144,
+   "anchor": [
+    89,
+    126
+   ]
+  },
+  "helicopter/SE": {
+   "x": 0,
+   "y": 1373,
+   "w": 164,
+   "h": 130,
+   "anchor": [
+    109,
+    106
+   ]
+  },
+  "helicopter/S": {
+   "x": 164,
+   "y": 1373,
+   "w": 164,
+   "h": 130,
+   "anchor": [
+    81,
+    107
+   ]
+  },
+  "helicopter/SW": {
+   "x": 328,
+   "y": 1373,
+   "w": 164,
+   "h": 130,
+   "anchor": [
+    55,
+    106
+   ]
+  },
+  "helicopter/W": {
+   "x": 492,
+   "y": 1373,
+   "w": 164,
+   "h": 130,
+   "anchor": [
+    44,
+    116
+   ]
+  },
+  "helicopter/NW": {
+   "x": 656,
+   "y": 1373,
+   "w": 164,
+   "h": 130,
+   "anchor": [
+    55,
+    78
+   ]
+  },
+  "helicopter/N": {
+   "x": 820,
+   "y": 1373,
+   "w": 164,
+   "h": 130,
+   "anchor": [
+    81,
+    69
+   ]
+  },
+  "helicopter/NE": {
+   "x": 984,
+   "y": 1373,
+   "w": 164,
+   "h": 130,
+   "anchor": [
+    109,
+    78
+   ]
+  },
+  "helicopter/E": {
+   "x": 1148,
+   "y": 1373,
+   "w": 164,
+   "h": 130,
+   "anchor": [
+    120,
+    116
+   ]
+  },
+  "helicopter_shadow/SE": {
+   "x": 0,
+   "y": 1503,
+   "w": 158,
+   "h": 83,
+   "anchor": [
+    101,
+    62
+   ]
+  },
+  "helicopter_shadow/S": {
+   "x": 158,
+   "y": 1503,
+   "w": 158,
+   "h": 83,
+   "anchor": [
+    79,
+    63
+   ]
+  },
+  "helicopter_shadow/SW": {
+   "x": 316,
+   "y": 1503,
+   "w": 158,
+   "h": 83,
+   "anchor": [
+    55,
+    62
+   ]
+  },
+  "helicopter_shadow/W": {
+   "x": 474,
+   "y": 1503,
+   "w": 158,
+   "h": 83,
+   "anchor": [
+    38,
+    71
+   ]
+  },
+  "helicopter_shadow/NW": {
+   "x": 632,
+   "y": 1503,
+   "w": 158,
+   "h": 83,
+   "anchor": [
+    56,
+    38
+   ]
+  },
+  "helicopter_shadow/N": {
+   "x": 790,
+   "y": 1503,
+   "w": 158,
+   "h": 83,
+   "anchor": [
+    79,
+    22
+   ]
+  },
+  "helicopter_shadow/NE": {
+   "x": 948,
+   "y": 1503,
+   "w": 158,
+   "h": 83,
+   "anchor": [
+    102,
+    39
+   ]
+  },
+  "helicopter_shadow/E": {
+   "x": 1106,
+   "y": 1503,
+   "w": 158,
+   "h": 83,
+   "anchor": [
+    120,
+    71
+   ]
+  },
+  "helicopter_rotor/f0": {
+   "x": 0,
+   "y": 1586,
+   "w": 212,
+   "h": 113,
+   "anchor": [
+    106,
+    57
+   ]
+  },
+  "helicopter_rotor/f1": {
+   "x": 212,
+   "y": 1586,
+   "w": 212,
+   "h": 113,
+   "anchor": [
+    105,
+    56
+   ]
+  },
+  "helicopter_rotor/f2": {
+   "x": 424,
+   "y": 1586,
+   "w": 212,
+   "h": 113,
+   "anchor": [
+    105,
+    56
+   ]
+  },
+  "helicopter_rotor/f3": {
+   "x": 636,
+   "y": 1586,
+   "w": 212,
+   "h": 113,
+   "anchor": [
+    105,
+    56
+   ]
+  }
+ }
+}
