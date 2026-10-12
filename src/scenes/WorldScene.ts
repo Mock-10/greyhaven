@@ -52,6 +52,7 @@ import { depthAmong, depthRange, obbFirst, staticOrder, type Box, type Obb } fro
 import { DOWNTOWN } from '../maps/downtown';
 import { tileSeed as referenceSeed, TEST_MAP } from '../maps/testMap';
 import type { Door, MapData, Placement } from '../maps/types';
+import { districtAt } from '../maps/groundQuery';
 import { advance, calendar, darkness, formatClock, sleepUntil, tintAt } from '../systems/clock';
 import {
   arrestEffects,
@@ -480,7 +481,7 @@ export class WorldScene extends Phaser.Scene {
     });
     const pre = this.map.zones?.find((z) => z.id === 'precinct');
     const base = pre?.slots?.[0] ?? { ...this.map.spawn, dir: 0 };
-    this.roads = buildRoads(this.map.lanes ?? [], this.map.crossings ?? []);
+    this.roads = buildRoads(this.map.roads ?? this.map.lanes ?? [], this.map.crossings ?? []);
     this.police = new Police(this, {
       place,
       ensureWalkAnims: (c) => this.ensureWalkAnims(c),
@@ -2890,7 +2891,7 @@ export class WorldScene extends Phaser.Scene {
         stars: this.state.wanted.stars,
         health: p.health / BALANCE.player.maxHealth,
         armor: p.armor,
-        district: this.map.name ?? '',
+        district: districtAt(this.map, this.state.player.x, this.state.player.y),
         street: this.inside ? this.inside.def.name : this.street,
         map: this.map,
         buildings: this.radarBuildings,

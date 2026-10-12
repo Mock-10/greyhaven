@@ -92,7 +92,6 @@ This is the only handover section; it replaces the old "Resume here" block and t
   - Traffic doesn't stop for pedestrians, and pedestrians can't be hit yet.
   - Traffic only turns right (no left turns or lane changes yet).
   - Where two lane routes overlap at a junction, cars can stack on each other.
-  - Traffic may look sparse on the larger map: the car count per hour (`byHour`, max 20) was tuned for the 70 × 48 map.
 - **UI:**
   - Save thumbnails are stored but not shown anywhere.
   - The camera has no world bounds: panning can show the background past the map edge.
@@ -102,7 +101,7 @@ This is the only handover section; it replaces the old "Resume here" block and t
 - **Tests and tooling:**
   - Headless Chromium runs at about 12 fps, so e2e runs and screenshots are slow (real GPUs are fine).
   - The trunk e2e test was flaky before its fix in PR #10 (a race on the E key); watch it in CI.
-  - **Unverified:** e2e on the 70 × 96 map.
+  - Headless Chromium can drop to a few frames a second on the 70 × 96 map; scene tweens (Marlo's walk) then crawl, so e2e waits are generous.
 - **Map art:**
   - The parking garage's parked cars are simple shapes, readable only up close.
   - The map drafts were stale (70 × 48) until this session; they are now re-rendered on the branch, but main still has the old ones until M6a merges.
@@ -285,9 +284,11 @@ Status key: [x] done and playable · [~] partly done (what's left is said) · [ 
 
 **Art debt:** none.
 
+**Finished in session 6 (2026-10-12):**
+- **E2E on the 70 × 96 map:** all 17 tests pass. The only failure was Marlo's sale: his walk is a scene tween on Phaser's smoothed clock, which crawls when headless Chromium drops to a few frames a second, so the test now gives him 75 s (CI was already green).
+- **Traffic density:** the car count now scales with the total lane length (`BALANCE.traffic.perLaneUnits`, cap `maxCars` 60). The new map has about 2.7× Downtown's lanes, so the evening peak is about 54 cars instead of 20, the same density per street as before. Screenshot: `docs/screenshots/phase2_m6a/p2_traffic.png` (Hedgerow Way at 17:30, 1×).
+
 **Known issues:**
-- The e2e suite has not been run on the 70 × 96 map.
-- Traffic may look sparse on the bigger map.
 - The new buildings have no doors yet (a door without an interior would fall back to Marlo's message).
 
 ### UI redesign: larger text and more pictures (your request, 2026-10-12)

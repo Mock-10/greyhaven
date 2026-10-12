@@ -43,3 +43,9 @@ export function groundSampler(map: MapData): (x: number, y: number) => string | 
   cache.set(map, fn);
   return fn;
 }
+
+/** The district name at a world point: the first district area containing it, else the map's own name. */
+export function districtAt(map: MapData, x: number, y: number): string {
+  const d = map.districts?.find((q) => x >= q.x0 && x < q.x1 && y >= q.y0 && y < q.y1);
+  return d?.name ?? map.name ?? '';
+}

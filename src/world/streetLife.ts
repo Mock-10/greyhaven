@@ -14,7 +14,14 @@ import type { Obb } from '../iso/staticDepth';
 import type { MapData } from '../maps/types';
 import { buildWalkways, crowdTarget, spawnPed, stepPed, type Ped, type Walkways } from '../systems/crowd';
 import { pointAt } from '../systems/paths';
-import { buildLanes, stepTraffic, trafficTarget, type Lane, type TrafficCar } from '../systems/traffic';
+import {
+  buildLanes,
+  laneUnits,
+  stepTraffic,
+  trafficTarget,
+  type Lane,
+  type TrafficCar,
+} from '../systems/traffic';
 import { dirOf, stats } from '../systems/vehicle';
 
 export interface StreetHost {
@@ -45,6 +52,8 @@ interface CarView {
 export class StreetLife {
   readonly walk: Walkways;
   readonly lanes: Lane[];
+  /** All the lanes' length together, which sets how many cars are about. */
+  private readonly laneLength: number;
   peds: PedView[] = [];
   cars: CarView[] = [];
   private nextId = 1;
@@ -57,6 +66,7 @@ export class StreetLife {
   ) {
     this.walk = buildWalkways(map.walkways ?? []);
     this.lanes = buildLanes(map.lanes ?? [], map.crossings ?? []);
+    this.laneLength = laneUnits(this.lanes);
   }
 
   /** Real seconds of traffic-light time. */
@@ -91,7 +101,7 @@ export class StreetLife {
     });
     // traffic
     if (this.lanes.length) {
-      const want = trafficTarget(minuteOfDay);
+      const want = trafficTarget(minuteOfDay, this.laneLength);
       // at the start, fill the lanes; after that, cars come in at the lanes' ends
       if (this.t <= dt * 1.5)
         for (let k = 0; k < want * 3 && this.cars.length < want; k++) this.trySpawnCar(true);

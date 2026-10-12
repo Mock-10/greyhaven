@@ -91,3 +91,7 @@ The sim script is in `tools/econ_sim.py`. Re-run it after any change to pay, pay
 - **Eviction** comes 14 days after the first unpaid rent. It clears the debt, your belongings go to city storage, and the apartment door refuses you. Moving back in costs a week's rent plus the $200 storage fee, from the phone's BANK app. Meanwhile you sleep and save at **St. Brine's Mission**, the chapel on Pewter Street (open to anyone, any time).
 - **Clean-record bonus:** 15% of the week's job pay, paid to the bank on Monday 06:00 before rent, unless the week had an arrest.
 - **HR bribes** come from the bank: $150 covers a missed shift from the last 7 days (the −5 XP comes back, no pay), $600 lifts a promotion freeze.
+
+## Phase 2 build (milestone 6a, 2026-10-12)
+- The hardware store, the clothing store and the car dealer's lot now stand on Hedgerow Way, but they are **facades** until milestone 6b builds their doors, interiors and stock. Until then, lockpicks, the toolbox and repair kits come only from trunks (or the cheat console).
+

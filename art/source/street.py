@@ -473,4 +473,5 @@ SEGMENTS = {
     'railing': lambda: railing(16.0), 'fence': lambda: chain_fence(32.0), 'bed': lambda: planter_bed(16.0),
     'hedge': lambda: hedge(16.0),
 }
-SEGMENT_LEN = {'wall_brick': 16.0, 'wall_stone': 16.0, 'railing': 16.0, 'fence': 32.0, 'bed': 16.0, 'hedge': 16.0}
+SEGMENT_LEN = {'wall_brick': 16.0, 'wall_stone': 16.0, 'railing': 16.0, 'fence': 32.0, 'bed': 16.0, 'hedge': 16.0,
+               'picket': 16.0}
