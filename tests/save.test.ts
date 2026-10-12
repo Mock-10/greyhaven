@@ -256,12 +256,31 @@ describe('saves (docs/12)', () => {
     const r = validate(old);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.file.version).toBe(8);
+    expect(r.file.version).toBe(SAVE_VERSION);
     const car = r.file.state.vehicles[0]!;
     expect(car.mods).toEqual(NO_MODS);
     expect(car.stash).toEqual({ weapons: [], goods: [] });
     expect(car.burning).toBeUndefined();
     expect(car.owned).toBe(true);
+  });
+
+  it('migrates a version 8 save to version 9 (no homes owned)', () => {
+    const fresh = createState(1, 'downtown', { x: 0, y: 0 });
+    const v8 = JSON.parse(JSON.stringify(fresh)) as Record<string, unknown>;
+    delete v8.property;
+    const old = {
+      game: 'doublelife',
+      version: 8,
+      meta: {},
+      state: v8,
+      checksum: checksum(v8),
+    } as unknown as SaveFile;
+    const r = validate(old);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.file.version).toBe(SAVE_VERSION);
+    expect(r.file.state.property).toEqual(fresh.property);
+    expect(Object.keys(r.file.state).sort()).toEqual(Object.keys(fresh).sort());
   });
 
   it('rotates the two autosaves, keeping the newest', () => {

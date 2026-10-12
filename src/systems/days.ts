@@ -7,6 +7,7 @@ import { BALANCE } from '../config/balance';
 import { checkMissed, closeWeek, type CareerState } from './career';
 import { MINUTES_PER_DAY } from './clock';
 import { credit, rentDaily, rentDue, type Finance, type Money, type RentEvent } from './finance';
+import { chargeTax, type PropertyState } from './property';
 
 export interface DayMessage {
   who: string;
@@ -17,6 +18,7 @@ export interface CalendarState {
   money: Money;
   finance: Finance;
   career: CareerState;
+  property?: PropertyState;
 }
 
 /** Minute of the day for the Sunday rent reminder. */
@@ -44,6 +46,14 @@ function morning(st: CalendarState, at: number, monday: boolean, out: DayMessage
       credit(st.money, st.finance, at, 'CLEAN-RECORD BONUS', bonus);
       out.push({ who: 'PAYROLL', text: `CLEAN-RECORD BONUS: +$${bonus} TO THE BANK.` });
     }
+    // property tax (docs/09) goes with the rent
+    const tax = st.property ? chargeTax(st.property, st.money, st.finance, at) : null;
+    if (tax)
+      out.push(
+        tax.owed > 0
+          ? { who: 'CITY HALL', text: `PROPERTY TAX: $${tax.owed} OWED. THE BANK COULDN'T COVER IT.` }
+          : { who: 'BANK', text: `PROPERTY TAX PAID: $${tax.paid}.` },
+      );
     const due = rentDue(st.money, st.finance, at);
     const daily = rentDaily(st.money, st.finance, at, true);
     const e = daily ?? due;
