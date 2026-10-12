@@ -50,3 +50,6 @@ The NPC crowd and traffic are **not** saved. They respawn.
 - **SAVE_VERSION 2.** The v1 → v2 migration adds the bank balance, the statement and rent, the calendar marker, the phone's messages, the career's freeze and extra-work timers, missed shifts and the week's pay, entries for all four jobs, and the fuller bag (fuel cans, first-aid kits, repair kits, lockpick uses, toolbox, stolen phones and watches). Cars keep a `looted` flag (optional, so no migration needed).
 - **Autosave** also on clock-out and every morning at 06:00 when not wanted (sleeping still autosaves once).
 - **Manual save** also at St. Brine's shelter (stand at its door). While evicted, the apartment doesn't count as home.
+
+## Phase 3 build (milestone 9, 2026-10-12): save v6
+New fields: `crime` (reputation, waiting payouts, contacts), `heat` (identifications by source), `crimeLog` (when each store, house and ATM was last hit), `goods` (burglary goods for the fence), `masks` and `maskOn`, and `inventory.drill`. Migration 5 → 6 starts everyone with no reputation and nothing on file.

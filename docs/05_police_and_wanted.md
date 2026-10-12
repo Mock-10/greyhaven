@@ -72,3 +72,10 @@ Wake at the nearest hospital at the next 06:00. Pay 10% of carried clean cash (m
 ## Phase 2 fixes (milestone 5, 2026-10-11)
 - **One crime, one set of stars:** several witnesses of the same crime raise its stars once; later calls only move the search circle. (Before this fix, three witnesses of one lockpick gave 3★.) A new crime while wanted still stacks.
 - Trunk looting is a 1★ crime.
+
+## Phase 3 build (milestones 9–10, 2026-10-12)
+Built from PR #17's logic.
+- **Arrest:** the court sentence first, then (with jail time) a jail screen: HIRE A LAWYER ($1,500 clean, −1 day) and, at Connected, BRIBE THE JUDGE ($5,000 dirty, a fine instead of jail); then booking (the fine, a repeat offense seizes dirty cash). The BUSTED card lists what happened, including street rep lost.
+- **On-scene bribe:** at 1–3★ the phone's CONTACTS shows A COP ON THE TAKE ($300 / $800 / $2,000 dirty, once per chase).
+- **Identification:** an officer who sees a bare face during a chase files it; booking files it too; robbery and ATM cameras file theirs. A known face makes witnesses call 30% faster. Escaping clears old files after 2 in-game days.
+- **Masks:** M puts the fence's mask on or off (one masked sprite for all three masks for now). Changing it unseen during a chase cuts the escape timer by 25%.
