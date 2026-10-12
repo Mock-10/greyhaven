@@ -68,7 +68,7 @@ export const ADDONS: Record<AddonId, AddonDef> = {
   press: { name: 'COUNTERFEIT PRESS', effect: '$1,000 SUPPLIES, $2,600 FAKE CASH IN 2 DAYS', ready: true },
   chopBay: { name: 'CHOP BAY', effect: 'A STOLEN CAR, 1.5X THE CHOP PRICE IN A DAY', ready: true },
   lab: { name: 'PRODUCT LAB', effect: 'LAB OPERATION', ready: false },
-  crewRoom: { name: 'CREW ROOM', effect: 'NEEDED TO HIRE CREW (CAP 4)', ready: false },
+  crewRoom: { name: 'CREW ROOM', effect: 'NEEDED TO HIRE CREW (CAP 4)', ready: true },
 };
 
 export const ADDON_IDS = Object.keys(ADDONS) as AddonId[];

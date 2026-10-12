@@ -8,6 +8,7 @@ import { checkMissed, closeWeek, type CareerState } from './career';
 import { MINUTES_PER_DAY } from './clock';
 import { credit, rentDaily, rentDue, type Finance, type Money, type RentEvent } from './finance';
 import { chargeTax, type PropertyState } from './property';
+import { payWages, quitters } from './crew';
 
 export interface DayMessage {
   who: string;
@@ -46,6 +47,8 @@ function morning(st: CalendarState, at: number, monday: boolean, out: DayMessage
       credit(st.money, st.finance, at, 'CLEAN-RECORD BONUS', bonus);
       out.push({ who: 'PAYROLL', text: `CLEAN-RECORD BONUS: +$${bonus} TO THE BANK.` });
     }
+    // the crew's wages (docs/09) come out of the stash on Monday
+    if (st.property) out.push(...payWages(st.property, at));
     // property tax (docs/09) goes with the rent
     const tax = st.property ? chargeTax(st.property, st.money, st.finance, at) : null;
     if (tax)
@@ -58,8 +61,10 @@ function morning(st: CalendarState, at: number, monday: boolean, out: DayMessage
     const daily = rentDaily(st.money, st.finance, at, true);
     const e = daily ?? due;
     if (e) out.push(rentText(e));
+    if (st.property) out.push(...quitters(st.property, at));
     return;
   }
+  if (st.property) out.push(...quitters(st.property, at));
   const e = rentDaily(st.money, st.finance, at, false);
   if (e) out.push(rentText(e));
 }

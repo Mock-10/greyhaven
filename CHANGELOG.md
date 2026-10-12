@@ -15,7 +15,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
 ## START HERE (cold start for a new session)
-**Phase 5 (property, hideouts, operations, crews) is in progress.** M15 is merged (PR #29). M16 (the press and the chop bay, save v10) is on `claude/p5-operations` (PR "Phase 5 M16"). Next: **M17 crews and pressure**.
+**Phase 5 (property, hideouts, operations, crews) is in progress.** M15 (PR #29) and M16 (PR #30) are merged. M17a (crews and Saltgate Union hits, save v11) is on `claude/p5-crew` (PR "Phase 5 M17a"). Next: **M17b: the lab, smuggling, drivers, airdrops, shipment ambushes**, which waits on the user's answer about the Docks and the Outskirts.
 
 **First command:**
 ```
@@ -26,8 +26,8 @@ git fetch origin && git checkout main && git pull origin main && npm install && 
 **Read only these, nothing else:** `CLAUDE.md`, this section, the "Phase 5" checklist below, `docs/09_property_hideouts_crews.md` (Operations, Crews, "Phase 5 build"). Use `grep -n` to find spots in `WorldScene.ts`; don't read it whole.
 
 **Next steps, in order:**
-1. If the M16 PR isn't merged: check its CI, merge when green. Then branch from main.
-2. **M17 crews and pressure:** the product lab (`ready: false` in `src/data/property.ts`; a station with `needs='lab'` in `art/source/rooms_property.py`; abstract product, docs/00), the crew room, hiring at the bar (operators, drivers), wages from the stash, smuggling in 3 tiers, airdrops, light rivals (shipment ambush, hideout hit). **Ask the user first** where the Docks supplier and the Outskirts airdrop fields go before Phase 6 lays out those districts (see the question in the M15 note).
+1. If the M17a PR isn't merged: check its CI, merge when green. Then branch from main.
+2. **M17b, once the user has answered** where the Docks supplier and the Outskirts airdrop fields go before Phase 6 (stand-ins on the current map, the full town first, or wait): the product lab (`ready: false` in `src/data/property.ts`; a station with `needs='lab'` in `art/source/rooms_property.py`; abstract product, docs/00), smuggling in 3 tiers (the hidden compartment's cargo cut), drivers at the bar, airdrops, shipment ambushes (`systems/rivals.ts`).
 3. Close Phase 5 (econ sim, docs, e2e, screenshots, tick, PR, merge, note).
 
 **Paste-ready resume prompt:**
@@ -257,14 +257,28 @@ They are recorded in docs 01, 02, 08 and 11.
 - **Jobs (M7):** `src/data/jobs.ts` holds `JOBS` (site, boss, tasks, uniform, perks) and `TASKS` (each task's minigame); `taskBlock()` in `systems/career.ts` says why a task can't start. Interior prompts map to `{kind: 'job', task}`, `clock` and `locker` actions; outdoor spots are map zones `job_<task>` and `drop_<n>`. The cheat `job mechanic` switches job off shift; the debug hook has `job`, `shiftDone` and `objective`.
 
 ## Phase 5 — Property, hideouts, operations, crews (in progress)
-Milestones: M15 homes and the hideout (PR #29), M16 the press and the chop bay (this PR), M17 the lab, crews and pressure, the close.
+Milestones: M15 homes and the hideout (PR #29), M16 the press and the chop bay (PR #30), M17a crews and hideout hits (this PR), M17b the lab and smuggling, the close.
 
 - [x] Two houses for sale on Linden Avenue (small $12,000, family $30,000), bought with clean money; weekly tax with the rent. (M15)
 - [x] Homes: bed (sleep, save), wardrobe, stash, the basement; unseen entry clears 1–2★; the apartment's stash opens. (M15)
 - [x] The basement hideout: plans table, add-on slots and rep tiers, the stash room, the workbench, the garage bay; garage storage at the driveway. (M15)
 - [x] Operations: the press and the chop bay; stalls (radar), restocking, collecting with the money count, nightly raids. (M16)
 - [ ] The product lab (with smuggling). (M17)
-- [ ] Crew room, hiring, operators and drivers, wages; smuggling 3 tiers, airdrops, light rivals. (M17)
+- [x] Crew room, hiring at The Low Tide, operators on the press, wages and quitting; Saltgate Union hideout hits. (M17a)
+- [ ] Drivers, smuggling 3 tiers, airdrops, shipment ambushes. (M17b)
+
+### Milestone 17a: crews and Saltgate Union hits (2026-10-12)
+**Built:** see docs/09 "Phase 5 build (milestone 17a)" and docs/04 "Saltgate Union hits". Save v11 (`property.crew`, `property.hits`). New art: eight crew portraits (ui_icons.py), the Saltgate Union rival costume (humans.py `rival`, appended to the character sheets by the new `pack_costumes_add.py`), the HIRE CREW booth at The Low Tide, the crew table in the hideout.
+
+**How to try:** own a home with a crew room (`rep 100000`), `dirty 5000`, the first booth at The Low Tide after 16:00; the crew table in the hideout posts operators. `hit` starts a Saltgate Union hit on your first home; `gun smg` to answer it.
+
+**Assumptions:** three candidates a day, operators only until smuggling; operators don't run the chop bay; hits at 22:00; rivals fire within 9 tiles, softer than police.
+
+**Art debt:** rivals have no aiming pose.
+
+**Known issues:** none known.
+
+**Screenshots:** `docs/screenshots/p5/` (hire, rivals).
 
 ### Milestone 16: the press and the chop bay (2026-10-12)
 **Built:** see docs/09 "Phase 5 build (milestone 16)". Save v10 (`ops` per home). New art: the counterfeit press and a counting table, the chop bay's lift with a car, an engine stand and tyres (rooms_property.py); the radar marks your homes, red while an operation stalls.

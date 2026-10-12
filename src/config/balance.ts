@@ -529,6 +529,39 @@ export const BALANCE = {
       raidMinute: 3 * 60,
       raidAboveStars: 3,
     },
+    /** Crews (docs/09): cap, the rep tier to hire, the hire fee and weekly wage ranges (dirty), the operator's cut
+     *  and skill bonus, the driver's cargo loss by smuggling tier and arrest chance, days unpaid before quitting;
+     *  the bar shows this many candidates a day (assumed). */
+    crew: {
+      cap: 4,
+      tier: 2,
+      hireFee: [1000, 3000] as readonly [number, number],
+      wage: [300, 700] as readonly [number, number],
+      operatorCut: 0.15,
+      operatorSkill: [0, 0.2] as readonly [number, number],
+      driverLoss: [0.1, 0.25] as readonly [number, number],
+      driverCaught: 0.05,
+      quitDays: 3,
+      candidates: 3,
+    },
+    /** Rivals (docs/04 "Rivals (light)"): from rep tier 2, a 4% chance a night per running operation that the
+     *  Saltgate Union hits the hideout (at 22:00, assumed); an in-game hour to defend it against 3–5 of them, armed
+     *  with pistols and SMGs; their health, fire rate and how hard their rounds hit (assumed, like the police). */
+    rivals: {
+      tier: 2,
+      hitChance: 0.04,
+      hitMinute: 22 * 60,
+      defendMinutes: 60,
+      count: [3, 5] as readonly [number, number],
+      health: 60,
+      shootEvery: [2.2, 3.6] as readonly [number, number],
+      damageShare: 0.2,
+      /** They open fire only this close (tiles), and wait this long after turning up (seconds). */
+      fireTiles: 9,
+      firstShot: [2.5, 4.5] as readonly [number, number],
+      /** How far from the front door they stand, in world units. */
+      spread: 40,
+    },
   },
 
   /** Police officers and their cruiser (milestone 4: one car and two officers at 1–2★, docs/15). */

@@ -9,6 +9,7 @@ import { ADDONS, HOMES, type AddonId } from '../data/property';
 import { MINUTES_PER_DAY } from './clock';
 import type { Money } from './finance';
 import type { OwnedHome, PropertyState } from './property';
+import { operatorAt } from './crew';
 
 export type OpId = 'press' | 'chopBay';
 export const OP_IDS: readonly OpId[] = ['press', 'chopBay'];
@@ -89,11 +90,33 @@ export function runOps(p: PropertyState, to: number): OpEvent[] {
   for (const h of p.homes)
     for (const id of OP_IDS) {
       const op = h.ops?.[id];
-      if (!op || op.since === null || op.since + cycleMinutes(id) > to) continue;
-      op.ready += op.batch;
-      op.batch = 0;
-      op.since = null;
-      out.push({ who: HOMES[h.id].address, text: `${NAME[id]} IS DONE. COLLECT IT AND RESTOCK.` });
+      if (!op || op.since === null) continue;
+      // an operator (docs/09) banks each batch in the stash, less their cut and plus their skill, and restocks
+      // from the stash; a batch that finished while time skipped can roll straight into the next
+      const crew = operatorAt(p, h.id, id);
+      while (op.since !== null && op.since + cycleMinutes(id) <= to) {
+        const done: number = (op.since as number) + cycleMinutes(id);
+        if (!crew) {
+          op.ready += op.batch;
+          op.batch = 0;
+          op.since = null;
+          out.push({ who: HOMES[h.id].address, text: `${NAME[id]} IS DONE. COLLECT IT AND RESTOCK.` });
+          break;
+        }
+        const K = BALANCE.property.crew;
+        h.stash.dirty += Math.round(op.batch * (1 + crew.skill) * (1 - K.operatorCut));
+        op.batch = 0;
+        op.since = null;
+        if (id === 'press' && h.stash.dirty >= O().press.supplies) {
+          h.stash.dirty -= O().press.supplies;
+          op.since = done;
+          op.batch = O().press.output;
+        } else
+          out.push({
+            who: crew.name,
+            text: `${NAME[id]}'S BATCH IS IN THE STASH. ${id === 'press' ? 'NO MONEY LEFT FOR SUPPLIES.' : 'BRING ANOTHER CAR.'}`,
+          });
+      }
     }
   return out;
 }

@@ -79,6 +79,10 @@ export interface DebugHook {
   peds?: { x: number; y: number }[];
   /** Traffic cars (docs/08 pulling drivers out). */
   traffic?: { id: string; x: number; y: number; speed: number; heading: number }[];
+  /** Saltgate Union rivals standing at a hit (docs/04). */
+  rivals?: number;
+  /** Crew hired (docs/09). */
+  crew?: number;
   /** Homes owned (docs/09): add-ons and the stash's dirty cash. */
   homes?: {
     id: string;

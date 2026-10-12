@@ -281,7 +281,11 @@ export function fire(c: CombatState, rng: Rng, angle: number, held: boolean): Fi
 
 /** A police officer's shot with their star-level weapon (docs/07): the same weapons, wider spread. */
 export function policeShot(stars: number, rng: Rng, angle: number): Shot {
-  const id = policeWeapon(stars);
+  return npcShot(policeWeapon(stars), rng, angle);
+}
+
+/** A shot from someone else's gun (police, rivals): their spread is wider than the player's hip fire. */
+export function npcShot(id: WeaponId, rng: Rng, angle: number): Shot {
   const s = statsOf(id);
   const spread = (s.spreadHip * B().police.spreadFactor * Math.PI) / 180;
   const angles: number[] = [];
