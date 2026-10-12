@@ -14,64 +14,39 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
-## Handover (updated 2026-10-12, session 6, M7) — read this first in a new session
-This is the only handover section; it replaces the old "Resume here" block and the session 4 handover.
+## Handover (updated 2026-10-12, session 6, M8 started) — read this first in a new session
+This is the only handover section.
+
+### Token budget (user, 2026-10-12)
+The usage limit was hit. **No more side threads:** the main thread finishes everything itself, lean. Read only the files a step needs (this section, the checklist, the one doc a step touches), don't re-read big docs or whole scenes, and keep browser/e2e runs to the end of a milestone.
 
 ### Where we are
 - **Phases 0 and 1 are done and live** at https://mock-10.github.io/greyhaven/.
-- **Phase 2 (economy and careers) is in progress.** It is planned as milestones, one PR each:
-  - **M5, money and phone:** done, merged in PR #10.
-  - **UI redesign** (your request, 2026-10-12: larger text, more pictures): done, merged in PR #11.
-  - **M6a, the new district south of Downtown:** done, merged in PR #12.
-    - The map grew from 70 × 48 to 70 × 96 tiles.
-    - New streets: Hedgerow Way, Ashby Road and Linden Avenue, all two lanes each way.
-    - New places: the hardware and clothing store buildings, Torque & Sons, the used-car lot, the Linden Avenue house row with the Swiftish Couriers depot, the woods, and the Ashby Timber yard.
-    - District areas: Hedgerow Park and Far Acres.
-    - Multi-lane traffic.
-    - See "Milestone 6a" below for the full list.
-  - **M6b, shops and the character creator:** done, on main (PR #13): the creator with palette-swapped player sprites, the hardware store, the clothing store, and the used-car lot's cabin.
-  - **M7, the three new jobs:** built on **`claude/p2-map-shops-do5oew`** (see "Milestone 7" below): the mechanic, lumberjack and delivery jobs with their sites, all twelve job minigames, the office stamp-and-sign and meeting, uniforms and lockers, and rank perks. It also carries PRs #14 (job interiors) and #15 (job minigames), which close when it merges. Its PR merges once CI is green.
-  - **M8:** weekend odd jobs (car wash, bar shift), the guided first day, the econ sim re-run, and the phase close.
-- **Autopilot is on** (CLAUDE.md):
-  - I merge my own PRs once CI is green.
-  - I carry on from milestone to milestone and from phase to phase.
-  - I send a short note with screenshots at each milestone.
-  - Heist interiors still need your approval first.
+- **Phase 2 (economy and careers):** M5 (PR #10), the UI redesign (#11), M6a map growth (#12), M6b shops and creator (#13) and **M7 the three new jobs (#22, merged 2026-10-12)** are on main. **M8 is in progress** on `claude/p2-map-shops-do5oew` (restarted from main after #22).
+- **Autopilot is on** (CLAUDE.md): merge my own PR when CI is green, carry on, a short note with screenshots per milestone; heist interiors still need approval.
 
-### The exact next step
-1. **Set up the container:**
-   ```
-   export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1
-   git fetch origin && git checkout main && git pull origin main
-   npm install
-   pip install numpy pillow   # only if missing
-   ```
-2. **Read:**
-   - `CLAUDE.md`;
-   - this section and the Phase 2 checklist below;
-   - docs 00 and 15;
-   - docs 01 (the new district and the street-width rule), 02, 03, 08, 11 (the UI redesign spec), 13 and 18;
-   - `art/STYLE_GUIDE.md`.
-3. **If M7's PR is still open**, check out `claude/p2-map-shops-do5oew`, get its CI green and merge it.
-4. **Then M8** (above).
-   - The user allowed splitting work across parallel threads when they can't collide (2026-10-12), and on 2026-10-12 asked to look past Phase 2 for more. Parallel new-file-only pieces (each merges to main on its own once green; nothing imports them until the main thread wires them in its phase):
-     - `claude/p2-odd-jobs`: car wash and bar shift minigames (`src/minigames/{carWash,barShift}.ts`, `src/ui/panelsOdd.ts`, `src/config/balanceOdd.ts`). Wire them in M8.
-     - `claude/sfx`: procedural sound effects (`src/audio/*`). Wire to events and settings later.
-     - `claude/p3-crime-logic` (PR #18), `claude/p3-police-logic` (PR #17): Phase 3 logic (robbery, burglary, ATM crime, reputation; response table, identification, jail).
-     - `claude/p4-combat-logic` (PR #16): weapons and combat logic. `claude/p4-art`: new vehicles (`art/vehicles2.*`) and effects (`art/effects.*`).
-     - Check `list_project_prs` / the threads for their state. The main thread owns the shared files (scenes, `balance.ts`, `manifest.ts`, data catalogues, the map, saves, docs) and this file; fold each piece's balance file into `balance.ts` and its doc notes into the docs when wiring it.
-   - Work one milestone at a time: plan, build, test (`npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run test:e2e`), screenshots (`npm run shots`), update this file, open the PR, merge it when green, send the user a short note with screenshots, then start the next milestone.
-   - New UI must follow the redesign: the 5 × 7 font, pictures from `art/source/ui_icons.py`, and the sizes in docs/11.
-   - New interiors follow docs/18: build from the recorded answers, render a draft with `art/source/interiors.py`, and let the user review afterwards (they are not heists).
-5. **After Phase 2:** Phase 3, crime breadth and police (docs/15).
-6. **Before you stop**, commit and push everything; the container is discarded. Unfinished work goes on its branch with a "WIP" commit, and this section says where it is.
+### The exact next step: finish M8
+1. **Setup:** `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1`, `git fetch origin && git checkout claude/p2-map-shops-do5oew`, `npm install`, `pip install numpy pillow` if missing.
+2. **Car wash on the map (started):** `car_wash` model is in `art/source/suburb.py` (WIP commit; not rendered yet). Place it in the empty yard east of Torque & Sons in `block_boulevard_band()` (`downtown_map.py`), add a `gig_carWash` zone with an `npc` point and a dirty parked car on its apron, then the city map pipeline below (delete `cache/bld__car_wash*` after model edits).
+3. **Bar shift prompt:** in `rooms.py` give The Low Tide's `beer_taps` item the prompt `BAR SHIFT`, re-export `bar`, and add `{kind: 'gig', gig: 'barShift'}` to the bar's actions in `src/data/interiors.ts`.
+4. **Odd jobs wiring** (logic merged in #21, nothing imports it yet): fold `BALANCE_ODD` into `BALANCE.oddJobs`; add `OddJobState` (`createOddJobs`) to the game state and bump `SAVE_VERSION` to 5 with a migration and test; MinigameScene kinds `carWash` / `barShift` (inputs: carWash aim/move/scrub/dunk/finish, barShift select/pour; click targets `carWashArea`/`carWashBucket`/`barTap`/`barGlass`/`barSeat` in `src/ui/panelsOdd.ts`); WorldScene starts the gig at the prompt (`startGig`), runs its tasks, `finishGig(rank)` pays to the bank, tips as carried clean cash (not counted toward the clean-record bonus), `quitGig` pays nothing; the phone's JOB BOARD lists the gigs (`openGigs`). Assumptions from #21 to record: 60% of the current job's rank pay; tips 0/5/10/20% by typical grade; Sat–Sun only; car wash 09–16, bar 16–22; each gig once a day.
+5. **Guided first day** (docs/11 "Onboarding", no bus/taxi step, step 5 = trunk looting): a pure step machine in a new `src/systems/onboarding.ts` with tests, saved in v5 too, hints in WorldScene, skippable.
+6. **Phase close:** `python3 tools/econ_sim.py`, update docs/02's pacing table, tick Phase 2, screenshots, PR, merge.
+7. **Polish thread wiring window:** the polish/animation thread (`claude/polish-anim-6zvc8q`, new files: `src/fx/*`, `src/anim/*`, `src/ui/anim/*`, `art/fx.*`) was told it may change BootScene/WorldScene/HudScene/MinigameScene/ListScene/manifest.ts. Under the token rule it should stop and report; check its branch and fold whatever it hasn't merged into the list below.
+
+### Side-thread pieces merged to main but not wired (do each in its phase)
+- **#21 odd jobs** (M8, above).
+- **#20 Phase 4 art:** `art/vehicles2.*`, `art/effects.*` (sources `cars2.py`, `effects.py`). Add to `manifest.ts`; rows have their own cell sizes (use each frame's rect); helicopter = shadow at ground point, body lifted by altitude, `helicopter_rotor/f0-f3` at body anchor + `mounts.helicopter_rotor[dir]`; `effects.json` has an `anims` table (frames, fps, loop, ADD blend, anchors). docs/13 text is in the PR description.
+- **#19 sound effects** (`src/audio/*`): wire to events and the settings volumes.
+- **#18 crime logic** (Phase 3): robbery, burglary, ATM crime, reputation; needs a crime state and a save bump.
+- **#17 police logic** (Phase 3): response table, identification, jail.
+- **#16 combat logic** (Phase 4): weapons and combat.
+- Each PR description lists its integration steps and assumptions; fold its balance file into `balance.ts` and its doc notes into the docs when wiring it.
 
 ### What's left in Phase 2
-(Details are in the checklist below.)
-- **M7 merge** if its PR is still open.
-- **Odd jobs:** car wash and a bar shift (minigames possibly ready on `claude/p2-odd-jobs`).
-- **Guided first day.**
-- **Econ sim re-run and the phase close.**
+- Odd jobs (car wash, bar shift): wiring, map, save (step 2–4 above).
+- Guided first day.
+- Econ sim re-run and the phase close.
 
 ### Bugs and known issues
 - **Traffic:**
