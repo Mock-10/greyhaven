@@ -20,6 +20,8 @@ export type InteriorId =
   | 'depot'
   | 'site_trailer';
 
+export type CrimeStep = 'register' | 'safe' | 'cctv' | 'wipe';
+
 export type Action =
   | { kind: 'sleep' }
   | { kind: 'job'; task: TaskId }
@@ -38,6 +40,8 @@ export type Action =
   | { kind: 'dealer' }
   /** A weekend odd job's task spot (data/oddJobs.ts): the bar's taps. */
   | { kind: 'gig'; gig: GigId }
+  /** A step of a store robbery (systems/robbery.ts): the register, the safe, the CCTV desk, the DVR. */
+  | { kind: 'crime'; step: CrimeStep }
   | { kind: 'later'; who: string; text: string };
 
 /** How a door leaf behaves: always openable, locked, or open only under a condition. */
@@ -72,6 +76,8 @@ export interface InteriorDef {
   elevator?: { x: number; y: number };
   /** The draft's prompt labels: what they do now (null hides the prompt; the object is just furniture). */
   actions: Record<string, { label: string; action: Action } | null>;
+  /** More prompts at the same spot as a draft prompt (TAB picks between them): the store's register robbery. */
+  extra?: Record<string, { label: string; action: Action }[]>;
   /** Door leaves in the order they appear in the export. */
   doors: DoorRule[];
   /** NPC spots in the order they appear in the export. */
@@ -106,13 +112,14 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     hours: h(7, 21),
     entrance: { x: 170, y: 210 },
     actions: {
-      // Phase 1 sells a few basics (decided 2026-10-11); robbery comes in Phase 3
+      // the till sells the basics; TAB at it picks the robbery (Phase 3, docs/04 "Store robbery layout")
       'ROB REGISTER': { label: 'SHOP', action: { kind: 'shop' } },
       'LOCKPICK DOOR': null,
-      'CRACK SAFE': null,
-      'DISABLE CAMERAS': null,
-      'WIPE FOOTAGE': null,
+      'CRACK SAFE': { label: 'CRACK SAFE', action: { kind: 'crime', step: 'safe' } },
+      'DISABLE CAMERAS': { label: 'DISABLE CAMERAS', action: { kind: 'crime', step: 'cctv' } },
+      'WIPE FOOTAGE': { label: 'WIPE FOOTAGE', action: { kind: 'crime', step: 'wipe' } },
     },
+    extra: { 'ROB REGISTER': [{ label: 'ROB THE REGISTER', action: { kind: 'crime', step: 'register' } }] },
     doors: [{ kind: 'locked', label: 'STAFF ONLY' }],
     npcs: [
       { role: 'clerk', hours: h(7, 21) },

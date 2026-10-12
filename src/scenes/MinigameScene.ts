@@ -94,6 +94,26 @@ import {
   type PanelKind,
 } from '../ui/panels';
 
+import {
+  AtmHackGame,
+  BypassGame,
+  DrillGame,
+  IntimidateGame,
+  SafeCrackGame,
+  WipeGame,
+} from '../minigames/crime';
+import {
+  CRIME_PANEL_SIZE,
+  arrowForKey,
+  drawAtmHack,
+  drawBypass,
+  drawDrill,
+  drawIntimidate,
+  drawSafeCrack,
+  drawWipe,
+  type CrimePanelKind,
+} from '../ui/panelsCrime';
+
 export type MinigameRequest =
   | { kind: 'filing' | 'dataEntry'; seed: number; task: string }
   | {
@@ -112,15 +132,19 @@ export type MinigameRequest =
   /** The M7 job tasks (ui/panelsJobs.ts): `rank` sets the bolt-torque tier, `mode` what the load task stacks. */
   | { kind: JobPanelKind; seed: number; task: string; rank: number; mode?: LoadMode }
   /** The weekend odd jobs (ui/panelsOdd.ts): `car` picks the car wash's body colour. */
-  | { kind: 'carWash' | 'barShift'; seed: number; task: string; car?: number };
+  | { kind: 'carWash' | 'barShift'; seed: number; task: string; car?: number }
+  /** The Phase 3 crime minigames (ui/panelsCrime.ts): `tier` for the safe, `tool` (stethoscope), `seconds` for the
+   *  alarm panel's deadline. */
+  | { kind: CrimePanelKind; seed: number; label: string; tier?: number; tool?: boolean; seconds?: number };
 
 /** Every panel's size: the Phase 1 panels and the job tasks. */
 const SIZES: Record<AnyPanel, { w: number; h: number }> = {
   ...PANEL_SIZE,
   ...JOB_PANEL_SIZE,
   ...ODD_PANEL_SIZE,
+  ...CRIME_PANEL_SIZE,
 };
-type AnyPanel = PanelKind | JobPanelKind | 'carWash' | 'barShift';
+type AnyPanel = PanelKind | JobPanelKind | 'carWash' | 'barShift' | CrimePanelKind;
 const ARROWS: Record<string, ArrowDir> = {
   ARROWUP: 'up',
   W: 'up',
@@ -251,6 +275,24 @@ export class MinigameScene extends Phaser.Scene {
       case 'barShift':
         this.logic = new BarShiftGame(new Rng(req.seed));
         break;
+      case 'intimidate':
+        this.logic = new IntimidateGame(new Rng(req.seed));
+        break;
+      case 'safeCrack':
+        this.logic = new SafeCrackGame(new Rng(req.seed), req.tier ?? 0, req.tool ?? false);
+        break;
+      case 'atmHack':
+        this.logic = new AtmHackGame(new Rng(req.seed));
+        break;
+      case 'drill':
+        this.logic = new DrillGame();
+        break;
+      case 'wipe':
+        this.logic = new WipeGame(new Rng(req.seed));
+        break;
+      case 'bypass':
+        this.logic = new BypassGame(new Rng(req.seed), req.seconds ?? 10);
+        break;
       default:
         this.logic = null;
     }
@@ -331,6 +373,7 @@ export class MinigameScene extends Phaser.Scene {
     const k = e.key.toUpperCase();
     this.held.add(k);
     if (this.jobKey(g, e, k)) return;
+    if (this.crimeKey(g, e, k)) return;
     if (g instanceof FilingGame && ['1', '2', '3'].includes(k)) g.file(Number(k) - 1);
     else if (g instanceof DataEntryGame && /^[A-Z]$/.test(k)) g.key(k);
     else if (g instanceof SkillCheckGame && e.key === ' ') g.hit();
@@ -361,6 +404,21 @@ export class MinigameScene extends Phaser.Scene {
   private onKeyUp(e: KeyboardEvent): void {
     this.held.delete(e.key.toUpperCase());
     if (e.key === ' ' && this.logic instanceof BarShiftGame) this.logic.pour(false);
+  }
+
+  /** Keys for the crime minigames (holds and the dial are read each frame in update). True when the key was theirs. */
+  private crimeKey(g: MinigameLogic | null, e: KeyboardEvent, k: string): boolean {
+    if (g instanceof SafeCrackGame) {
+      if (e.key === ' ') g.press();
+    } else if (g instanceof AtmHackGame) {
+      const a = arrowForKey(k);
+      if (a && !e.repeat) g.key(a);
+    } else if (g instanceof BypassGame) {
+      if (/^[1-9]$/.test(k)) g.snip(Number(k) - 1);
+    } else if (!(g instanceof IntimidateGame || g instanceof DrillGame || g instanceof WipeGame))
+      return false;
+    if (e.key === ' ' || k.startsWith('ARROW')) e.preventDefault?.();
+    return true;
   }
 
   /** Keys for the job tasks (PR #15's wiring table). True when the key was theirs. */
@@ -606,6 +664,16 @@ export class MinigameScene extends Phaser.Scene {
       if (dx || dy) g.move(dx, dy, dt);
       g.scrub(this.pointerHeld || h.has(' '));
     }
+    if (!g?.done) {
+      const h = this.held;
+      const space = h.has(' ') || this.pointerHeld;
+      const dir = (h.has('ARROWRIGHT') || h.has('D') ? 1 : 0) - (h.has('ARROWLEFT') || h.has('A') ? 1 : 0);
+      if (g instanceof IntimidateGame || g instanceof DrillGame) g.hold(space);
+      else if (g instanceof WipeGame) {
+        g.hold(space);
+        if (dir) g.move(dir, dt);
+      } else if (g instanceof SafeCrackGame && dir) g.turn(dir, dt);
+    }
     if (g) {
       // a held paper doesn't fall
       if (g instanceof FilingGame && this.paperDrag) {
@@ -682,6 +750,12 @@ export class MinigameScene extends Phaser.Scene {
     else if (g instanceof CarWashGame && req.kind === 'carWash')
       drawCarWash(s, x, y, g, req.task, req.car ?? 0);
     else if (g instanceof BarShiftGame && 'task' in req) drawBarShift(s, x, y, g, req.task);
+    else if (g instanceof IntimidateGame && 'label' in req) drawIntimidate(s, x, y, g, req.label);
+    else if (g instanceof SafeCrackGame && 'label' in req) drawSafeCrack(s, x, y, g, req.label);
+    else if (g instanceof AtmHackGame && 'label' in req) drawAtmHack(s, x, y, g, req.label);
+    else if (g instanceof DrillGame && 'label' in req) drawDrill(s, x, y, g, req.label);
+    else if (g instanceof WipeGame && 'label' in req) drawWipe(s, x, y, g, req.label);
+    else if (g instanceof BypassGame && 'label' in req) drawBypass(s, x, y, g, req.label);
     else if (req.kind === 'shop')
       drawShop(s, x, y, {
         title: req.title,

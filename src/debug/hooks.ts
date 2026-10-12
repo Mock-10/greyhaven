@@ -67,6 +67,11 @@ export interface DebugHook {
   creator?: { name: string; style: string; skin: string; hair: string; outfit: string; row: string };
   /** The look the player wears (docs/11). */
   look?: { name: string; style: string; skin: string; hair: string; outfit: string };
+  /** Wearing a mask (Phase 3). */
+  masked?: boolean;
+  /** Street reputation points and the robbery in progress, for the e2e tests. */
+  rep?: number;
+  robbing?: boolean;
 }
 
 declare global {

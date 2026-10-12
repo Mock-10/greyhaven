@@ -20,15 +20,17 @@ from multiprocessing import Pool
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..')
 DIRS = ['SE', 'S', 'SW', 'W', 'NW', 'N', 'NE', 'E']
-STYLES = ('short', 'long', 'bun', 'bald')
+STYLES = ('short', 'long', 'bun', 'bald', 'masked')  # masked: the fence's balaclava (Phase 3), any outfit
 POSES = (('idle', 0.0), ('walk1', 0.6), ('walk2', -0.6), ('step1', 0.4), ('step2', -0.4))
 MARKERS = ('mk_skin', 'mk_hair', 'mk_top', 'mk_bot')
 
 
 def model(style, walk):
     import humans
+    masked = style == 'masked'
     return humans.human(skin_tone=2.6, skin_ramp='mk_skin', upper=('mk_top', 2.3), lower=('mk_bot', 1.8),
-                        shoes=('night', 1.3), hair=('mk_hair', 2.2), hair_style=style, walk=walk)
+                        shoes=('night', 1.3), hair=('mk_hair', 2.2), hair_style='bald' if masked else style,
+                        mask=masked, hood=('night', 1.6) if masked else None, walk=walk)
 
 
 def job(args):

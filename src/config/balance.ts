@@ -283,6 +283,8 @@ export const BALANCE = {
 
   /** Crime (docs/04): carjacking a parked car and the chop shop. */
   crime: {
+    /** World units in front of the pawn shop's footprint where the fence deals (Phase 3). */
+    fenceDoorOffset: 10,
     /** Trunk looting (docs/04): valuables per trunk, the cash total spread over bills and wallets, junk filler,
      *  what each valuable is (weights), and the uses on a found lockpick set. */
     trunk: {

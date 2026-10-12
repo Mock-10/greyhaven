@@ -99,11 +99,14 @@ describe('interiors in the game', () => {
     expect(spots.some((s) => s.kind === 'exit')).toBe(false);
   });
 
-  it('hides the crime prompts in the store and keeps the shop', () => {
+  it('the store: the shop and the robbery at the till, the safe, the CCTV desk and the DVR (Phase 3)', () => {
     const j = J.store!;
     const spots = useSpots(j, INTERIORS.store, createDoors(j, INTERIORS.store));
     const labels = spots.flatMap((s) => (s.kind === 'action' ? [s.label] : []));
-    expect(labels).toEqual(['SHOP']);
+    expect(labels.sort()).toEqual(['CRACK SAFE', 'DISABLE CAMERAS', 'ROB THE REGISTER', 'SHOP', 'WIPE FOOTAGE']);
+    // the robbery shares the till's spot
+    const at = (l: string) => spots.find((s) => s.kind === 'action' && s.label === l);
+    expect(at('ROB THE REGISTER')?.x).toBe(at('SHOP')?.x);
   });
 
   it('opens the Hedgerow Way shops: hardware stock, clothes, fitting booth, the car desk', () => {

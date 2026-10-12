@@ -107,5 +107,65 @@ export const BALANCE_CRIME = {
     watch: 120,
     /** Burglary goods sell for their rolled value (docs/04 gives the payout in goods). */
     goodsShare: 1,
+    /** Masks, in dirty or clean carried cash (dirty first; assumed). */
+    masks: { bandana: 40, balaclava: 80, hockey: 120 } as Record<string, number>,
+    /** The pawn shop's hours (assumed). */
+    hours: { from: 10 * 60, to: 22 * 60 },
+  },
+
+  /** The crime minigames (docs/06). Seconds are real seconds; all assumed and tuned by play. */
+  minigames: {
+    /** Intimidate: hold to press the clerk. Keep the nerve meter inside the band for `need` seconds before
+     *  `seconds` run out; past `alarmAt` the clerk hits the alarm (a fail). */
+    intimidate: {
+      seconds: 10,
+      need: 3.5,
+      start: 0.25,
+      band: [0.45, 0.8] as readonly [number, number],
+      alarmAt: 0.97,
+      rise: 0.42,
+      fall: 0.3,
+      /** The clerk's mood wanders: a drift that changes direction every `wobble` seconds. */
+      drift: 0.16,
+      wobble: 0.9,
+    },
+    /** Safe crack: turn the dial (0–99) and set each number when the click pulses. `window` is ± numbers;
+     *  the stethoscope widens it. Numbers = base + tier. */
+    safeCrack: {
+      seconds: 40,
+      numbers: 3,
+      turnSpeed: 32,
+      window: 2.2,
+      stethoscope: 1.6,
+      maxMisses: 3,
+    },
+    /** ATM hack (Simon): rounds of a growing arrow sequence; `show` seconds per arrow while it plays. */
+    atmHack: {
+      rounds: [3, 4, 5] as readonly number[],
+      show: 0.55,
+      /** Input seconds per arrow before the grade starts to fall. */
+      perArrow: 0.9,
+    },
+    /** ATM drill: hold to drill; heat builds while drilling and cools when released. Over 1 the bit jams. */
+    drill: {
+      seconds: 30,
+      rate: 0.11,
+      heatUp: 0.42,
+      cool: 0.55,
+      red: 0.8,
+      jamSetback: 0.15,
+      jamHeat: 0.55,
+      maxJams: 3,
+    },
+    /** Wipe footage: hold to erase while the scrub marker stays inside the moving window (docs/06: 10 s). */
+    wipe: {
+      need: 10,
+      seconds: 25,
+      window: 0.16,
+      markerSpeed: 0.7,
+      smear: 0.25,
+    },
+    /** Alarm bypass (store panel at night): cut the panel's wires in the order shown. */
+    bypass: { wires: 4 },
   },
 } as const;

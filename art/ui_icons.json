@@ -79,278 +79,296 @@
    "w": 32,
    "h": 32
   },
-  "app/messages": {
+  "item/drill": {
    "x": 136,
+   "y": 34,
+   "w": 32,
+   "h": 32
+  },
+  "app/messages": {
+   "x": 170,
    "y": 34,
    "w": 40,
    "h": 40
   },
   "app/bank": {
-   "x": 178,
+   "x": 212,
    "y": 34,
    "w": 40,
    "h": 40
   },
   "app/jobs": {
-   "x": 220,
+   "x": 254,
    "y": 34,
    "w": 40,
    "h": 40
   },
   "app/contacts": {
-   "x": 262,
+   "x": 296,
    "y": 34,
    "w": 40,
    "h": 40
   },
   "job/lumber": {
-   "x": 304,
-   "y": 34,
+   "x": 0,
+   "y": 76,
    "w": 32,
    "h": 32
   },
   "job/delivery": {
-   "x": 0,
+   "x": 34,
    "y": 76,
    "w": 32,
    "h": 32
   },
   "app/bag": {
-   "x": 34,
+   "x": 68,
    "y": 76,
    "w": 40,
    "h": 40
   },
   "app/shelter": {
-   "x": 76,
+   "x": 110,
    "y": 76,
    "w": 40,
    "h": 40
   },
   "hud/health": {
-   "x": 118,
+   "x": 152,
    "y": 76,
    "w": 16,
    "h": 16
   },
   "hud/armor": {
-   "x": 136,
+   "x": 170,
    "y": 76,
    "w": 16,
    "h": 16
   },
   "hud/clean": {
-   "x": 154,
+   "x": 188,
    "y": 76,
    "w": 16,
    "h": 16
   },
   "hud/dirty": {
-   "x": 172,
+   "x": 206,
    "y": 76,
    "w": 16,
    "h": 16
   },
   "hud/sun": {
-   "x": 190,
+   "x": 224,
    "y": 76,
    "w": 16,
    "h": 16
   },
   "hud/moon": {
-   "x": 208,
+   "x": 242,
    "y": 76,
    "w": 16,
    "h": 16
   },
   "hud/fuel": {
-   "x": 226,
+   "x": 260,
    "y": 76,
    "w": 16,
    "h": 16
   },
   "hud/condition": {
-   "x": 244,
+   "x": 278,
    "y": 76,
    "w": 16,
    "h": 16
   },
   "face/hollis": {
-   "x": 262,
-   "y": 76,
-   "w": 32,
-   "h": 32
-  },
-  "face/dez": {
    "x": 296,
    "y": 76,
    "w": 32,
    "h": 32
   },
-  "face/marlo": {
+  "face/dez": {
    "x": 0,
+   "y": 118,
+   "w": 32,
+   "h": 32
+  },
+  "face/marlo": {
+   "x": 34,
    "y": 118,
    "w": 32,
    "h": 32
   },
   "face/hr": {
-   "x": 34,
+   "x": 68,
    "y": 118,
    "w": 32,
    "h": 32
   },
   "face/landlord": {
-   "x": 68,
+   "x": 102,
    "y": 118,
    "w": 32,
    "h": 32
   },
   "face/player": {
-   "x": 102,
+   "x": 136,
    "y": 118,
    "w": 32,
    "h": 32
   },
   "face/fence": {
-   "x": 136,
+   "x": 170,
    "y": 118,
    "w": 32,
    "h": 32
   },
   "face/dealer": {
-   "x": 170,
+   "x": 204,
    "y": 118,
    "w": 32,
    "h": 32
   },
   "face/supplier": {
-   "x": 204,
+   "x": 238,
    "y": 118,
    "w": 32,
    "h": 32
   },
   "face/gang": {
-   "x": 238,
+   "x": 272,
    "y": 118,
    "w": 32,
    "h": 32
   },
   "face/cop": {
-   "x": 272,
-   "y": 118,
+   "x": 0,
+   "y": 152,
    "w": 32,
    "h": 32
   },
   "face/masked": {
-   "x": 0,
+   "x": 34,
+   "y": 152,
+   "w": 32,
+   "h": 32
+  },
+  "face/clerk": {
+   "x": 68,
+   "y": 152,
+   "w": 32,
+   "h": 32
+  },
+  "item/mask": {
+   "x": 102,
    "y": 152,
    "w": 32,
    "h": 32
   },
   "outfit/teal_jacket": {
-   "x": 34,
+   "x": 136,
    "y": 152,
    "w": 32,
    "h": 32
   },
   "outfit/sage_casual": {
-   "x": 68,
+   "x": 170,
    "y": 152,
    "w": 32,
    "h": 32
   },
   "outfit/plum_knit": {
-   "x": 102,
+   "x": 204,
    "y": 152,
    "w": 32,
    "h": 32
   },
   "outfit/grey_hoodie": {
-   "x": 136,
+   "x": 238,
    "y": 152,
    "w": 32,
    "h": 32
   },
   "outfit/work_khaki": {
-   "x": 170,
+   "x": 272,
    "y": 152,
    "w": 32,
    "h": 32
   },
   "outfit/white_shirt": {
-   "x": 204,
-   "y": 152,
-   "w": 32,
-   "h": 32
-  },
-  "outfit/red_jacket": {
-   "x": 238,
-   "y": 152,
-   "w": 32,
-   "h": 32
-  },
-  "outfit/clay_coat": {
-   "x": 272,
-   "y": 152,
-   "w": 32,
-   "h": 32
-  },
-  "outfit/navy_suit": {
    "x": 0,
    "y": 186,
    "w": 32,
    "h": 32
   },
-  "outfit/coveralls": {
+  "outfit/red_jacket": {
    "x": 34,
    "y": 186,
    "w": 32,
    "h": 32
   },
-  "outfit/flannel": {
+  "outfit/clay_coat": {
    "x": 68,
    "y": 186,
    "w": 32,
    "h": 32
   },
-  "outfit/courier": {
+  "outfit/navy_suit": {
    "x": 102,
    "y": 186,
    "w": 32,
    "h": 32
   },
-  "car/beater_khaki": {
+  "outfit/coveralls": {
    "x": 136,
    "y": 186,
    "w": 32,
    "h": 32
   },
-  "car/beater_brick": {
+  "outfit/flannel": {
    "x": 170,
    "y": 186,
    "w": 32,
    "h": 32
   },
-  "car/sedan_teal": {
+  "outfit/courier": {
    "x": 204,
    "y": 186,
    "w": 32,
    "h": 32
   },
-  "car/sedan_clay": {
+  "car/beater_khaki": {
    "x": 238,
    "y": 186,
    "w": 32,
    "h": 32
   },
-  "car/sedan_khaki": {
+  "car/beater_brick": {
    "x": 272,
    "y": 186,
    "w": 32,
    "h": 32
   },
-  "car/sedan_lav": {
+  "car/sedan_teal": {
    "x": 0,
+   "y": 220,
+   "w": 32,
+   "h": 32
+  },
+  "car/sedan_clay": {
+   "x": 34,
+   "y": 220,
+   "w": 32,
+   "h": 32
+  },
+  "car/sedan_khaki": {
+   "x": 68,
+   "y": 220,
+   "w": 32,
+   "h": 32
+  },
+  "car/sedan_lav": {
+   "x": 102,
    "y": 220,
    "w": 32,
    "h": 32
