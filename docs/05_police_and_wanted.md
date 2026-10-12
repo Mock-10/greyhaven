@@ -79,3 +79,11 @@ Built from PR #17's logic.
 - **On-scene bribe:** at 1–3★ the phone's CONTACTS shows A COP ON THE TAKE ($300 / $800 / $2,000 dirty, once per chase).
 - **Identification:** an officer who sees a bare face during a chase files it; booking files it too; robbery and ATM cameras file theirs. A known face makes witnesses call 30% faster. Escaping clears old files after 2 in-game days.
 - **Masks:** M puts the fence's mask on or off (one masked sprite for all three masks for now). Changing it unseen during a chase cuts the escape timer by 25%.
+
+## Phase 3 build (milestone 12, 2026-10-12): the full response
+- Units leave Precinct 1 one after another (3 s apart): cruisers (2 officers), SWAT vans from 4★ and armored SUVs at 5★ (4 officers each), using `art/vehicles2`. Each aims a little off the target so they spread out. The counts follow `planResponse` (balancePolice.ts) and stack as the stars rise.
+- **Helicopter** from 4★ (two at 5★): circles the target at altitude with its rotor spinning and a ground shadow, and sees 16 tiles over buildings.
+- **Roadblocks** from 3★: a 20% chance a minute while you drive of a cruiser parked across the road about 9 tiles ahead, its officers on foot beside it; cleared when 30 tiles away.
+- **Sustained 4★** in police sight for 120 s goes to 5★.
+- **Precinct 1** has a walkable lobby: the desk sergeant reads your record; after an arrest you're released inside it.
+- Not built yet: spike strips, police gunfire (combat is Phase 4).

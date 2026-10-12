@@ -138,3 +138,9 @@ Built from the recorded answers (03 decisions), for the user to review afterward
 - **Swiftish Couriers depot** (10 × 8): the front counter, a staff room (LOCKER, CLOCK IN, the route map: PLAN ROUTE) and the loading bay with its roller door (LOAD VAN). 08:00–18:00, dispatch, a loader, a courier and a customer.
 - **Ashby Timber site office** (9 × 4 portacabin): the crew room with lockers (LOCKER) and the boss's desk (CLOCK IN). The work itself is outdoors in the yard.
 - **Office floor additions:** the copier is the STAMP AND SIGN station and the whiteboard holds the MEETING (rank 3+).
+
+## Phase 3 build (milestones 11–12, 2026-10-12): crime interiors
+Built from the recorded answers (decisions 2026-10-11 and docs/04), for the user to review afterwards. Drafts in `art/drafts/interiors/`; models in `art/source/rooms_houses.py` and `rooms_crime.py`.
+- **Burglary houses:** `house_bungalow` (8 × 6: bedroom, kitchen, living room), `house_family` (10 × 7: main bedroom, kids room, kitchen, living room), `house_townhouse` (8 × 7: study, bedroom, living room with a dining corner). A SEARCH prompt per room, the alarm keypad on a hall stand by the door (the cut-down partitions can't hold a wall panel), the owner's spot.
+- **Pawn shop** (7 × 5): the fence behind a long glass counter, stock shelves, a safe-room door, a second display counter, second-hand furniture and electronics for sale.
+- **Precinct 1 lobby** (8 × 6): the front desk with the desk sergeant, the barred gate to the cells, wanted posters, waiting chairs, a vending machine and a water cooler.

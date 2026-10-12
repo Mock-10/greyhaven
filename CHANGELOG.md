@@ -5,7 +5,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 - [x] Phase 0 — Foundations
 - [x] Phase 1 — Vertical slice
 - [x] Phase 2 — Economy and careers
-- [ ] Phase 3 — Crime breadth and police
+- [x] Phase 3 — Crime breadth and police
 - [ ] Phase 4 — Combat and vehicles
 - [ ] Phase 5 — Property, hideouts, operations, crews
 - [ ] Phase 6 — Full town
@@ -15,7 +15,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
 ## START HERE (cold start for a new session)
-**Phase 3 (crime breadth and police) is in progress.** M9 (save v6, reputation, identification, jail screen, bribes) and M10 (store robbery, ATM robbery, the fence, masks) are on `claude/p3-crime-police` (PR "Phase 3 M9–M10"). Next: **M11 house burglary**.
+**Phase 3 (crime breadth and police) is closed** (PR #26 from `claude/p3-crime-police`: M9–M12). **Next: Phase 4, combat and vehicles.**
 
 **First command:**
 ```
@@ -23,13 +23,13 @@ export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_nopr
 git fetch origin && git checkout main && git pull origin main && npm install && npx tsc --noEmit
 ```
 
-**Read only these, nothing else:** `CLAUDE.md`, this section, the "Phase 3" checklist below, then per step only what it names. Use `grep -n` to find spots in `WorldScene.ts`; don't read it whole.
+**Read only these, nothing else:** `CLAUDE.md`, this section, "Side-thread pieces" and "Leftovers from PR #23" below, `docs/15_roadmap.md` "Phase 4", then per step only the doc it names (docs/07, docs/08). Use `grep -n` to find spots in `WorldScene.ts`; don't read it whole.
 
 **Next steps, in order:**
-1. If the M9–M10 PR isn't merged: check its CI, merge when green (fix on its branch if red). Then branch from main.
-2. **M11 house burglary** (docs/04, `src/systems/burglary.ts`, `src/data/burglary.ts`): three house interiors (bungalow, family, townhouse) built with `art/source/rooms.py` like `rooms_jobs.py` (docs/18 decisions: sleeping owners, alarms in ~1 in 3, occupancy from the cars outside; autopilot builds them and the user reviews after). Doors on the Linden Avenue houses (`downtown_map.py`), pick the door, alarm panel, search rooms (search grid), owner wakes on noise, goods to `state.goods` for the fence. Save is already v6 (`crimeLog.houses`, `goods`).
-3. **M12 police:** the full 1–5★ response (`systems/response.ts`: SWAT vans, helicopter from `art/vehicles2.*`, roadblocks), the precinct front desk (docs/18: walkable in Phase 3), the pawn shop interior with the fence (needs a new interior), cameras outdoors if needed.
-4. **Close Phase 3:** econ sim, docs, e2e, screenshots, tick, PR, merge, note.
+1. If PR #26 isn't merged: check its CI, merge when green (fix on its branch if red).
+2. Branch from main; plan Phase 4 as a checklist in a new "## Phase 4" section here (from docs/15: weapons, ammo, dealers, looting, armor, police combat AI, all vehicle types, upgrades, garages, trunks, respray, hot cars).
+3. Start by wiring **#16 combat logic** (`src/systems/combat.ts`, `balanceCombat.ts`, `data/weapons.ts`) and the **Phase 4 art** (#20: `art/vehicles2.*` is already in the manifest for the police; `art/effects.*` for muzzle flashes and hits). Police gunfire at 2★+ (docs/07) and spike strips (docs/05) come with combat.
+4. Then **#19 sound effects** where they fit, and the PR #23 leftovers.
 
 **Paste-ready resume prompt:**
 > Resume Double Life. Read CLAUDE.md, then only the "START HERE" section at the top of CHANGELOG.md on main, and follow its numbered steps in order. Read only the files each step names. Keep token use low: no side threads, no re-reading big docs, e2e and screenshots only at the end of the milestone. Commit and push WIP before stopping.
@@ -173,7 +173,8 @@ They are recorded in docs 01, 02, 08 and 11.
 
 ### Git state
 - **`main`:** PRs #9–#22 merged (M7 is live). Pages deploys from main: https://mock-10.github.io/greyhaven/.
-- **`claude/p2-map-shops-do5oew`:** M8 finished; its PR closes Phase 2.
+- **`claude/p2-map-shops-do5oew`:** merged (#24, Phase 2).
+- **`claude/p3-crime-police`:** Phase 3 (M9–M12), PR #26.
 - **`claude/polish-anim-6zvc8q`:** PR #23, merged (2026-10-12, session 7).
 - Other `claude/*` branches are merged and can be ignored.
 
@@ -256,7 +257,7 @@ They are recorded in docs 01, 02, 08 and 11.
 - **Saves:** `SAVE_VERSION` is 4 (v1 → v2 → v3 → v4; v3 adds the look and the wardrobe, v4 the shift's done tasks). Bump it and add a migration and its test whenever the save shape changes.
 - **Jobs (M7):** `src/data/jobs.ts` holds `JOBS` (site, boss, tasks, uniform, perks) and `TASKS` (each task's minigame); `taskBlock()` in `systems/career.ts` says why a task can't start. Interior prompts map to `{kind: 'job', task}`, `clock` and `locker` actions; outdoor spots are map zones `job_<task>` and `drop_<n>`. The cheat `job mechanic` switches job off shift; the debug hook has `job`, `shiftDone` and `objective`.
 
-## Phase 3 — Crime breadth and police (in progress)
+## Phase 3 — Crime breadth and police (done 2026-10-12)
 Status key: [x] done and playable · [~] partly done · [ ] not started. Milestones: M9 core (save v6, reputation, heat, jail, bribes), M10 store and ATM robbery, the fence, masks, M11 house burglary, M12 police response and the close.
 
 - [x] Trunk looting (Phase 2), now earning reputation. (M9)
@@ -267,10 +268,23 @@ Status key: [x] done and playable · [~] partly done · [ ] not started. Milesto
 - [x] Store robbery: till (intimidate), staff door + safe, CCTV desk, DVR, night job with the alarm panel. (M10)
 - [x] ATM robbery: hack or drill. (M10)
 - [~] Masks and outfits: the fence's three masks (one sprite), M to wear, the outfit-change escape bonus for masks. (M10; changing clothes at a wardrobe during a chase not wired.)
-- [~] The fence: at the pawn shop door (goods, masks, drill). (M10; the pawn shop interior comes in M12.)
-- [ ] House burglary: three house interiors, occupancy, alarms, owners. (M11)
-- [ ] Full 1–5★ police response: SWAT, helicopter, roadblocks; the precinct front desk. (M12)
-- [ ] Econ sim, docs, e2e, screenshots, PR. (Close)
+- [x] The fence: the pawn shop interior with the fence's counter (goods, masks, drill). (M10, M12)
+- [x] House burglary: three house interiors, occupancy, alarms, sleeping owners, scare off, goods for the fence. (M11)
+- [x] Full 1–5★ police response: cruisers, SWAT vans, armored SUVs, helicopters, roadblocks, 4★→5★; the precinct lobby. (M12; spike strips and police gunfire wait for Phase 4 combat.)
+- [x] Econ sim (unchanged: the crime payouts sit inside the sim's tier nights), docs, e2e, screenshots, PR. (Close)
+
+### Milestones 11–12: house burglary, the police response, the pawn shop and the precinct (2026-10-12; PR #26)
+**Built:** see docs/04, 05 and 18 "Phase 3 build (milestones 11–12)". New interiors: three burglary houses, the pawn shop, the Precinct 1 lobby (drafts in `art/drafts/interiors/`, built from the recorded answers for review after). Map: doors for the pawn shop and the precinct. The SWAT van, armored SUV and helicopter from PR #20's art.
+
+**How to try:** Linden Avenue (south, the delivery houses): TAB at a front door for BREAK IN. The pawn shop next to the cafe on Overcast Avenue. Cheat `stars 4` to see the helicopter and SWAT; drive at 3★+ for roadblocks. Get busted to walk out of the precinct lobby.
+
+**Assumptions:** half the driveways have cars on a given day; goods use phone/watch icons in the search grid; the house keypad stands on a hall stand; units leave the precinct 3 s apart; the helicopter sees 16 tiles over buildings.
+
+**Art debt:** no burglary goods icons; the masked player has no tool animations; one masked sprite for three masks.
+
+**Known issues:** spike strips and police gunfire wait for Phase 4; police units can overlap each other (they don't collide among themselves); outdoor street cameras aren't placed.
+
+**Screenshots:** `docs/screenshots/p3/` (house_family, pawn_shop, precinct_lobby, police_4stars_helicopter, plus the M9–M10 shots).
 
 ### Milestones 9–10: crime core, store and ATM robbery (2026-10-12; PR from `claude/p3-crime-police`)
 **Built:** see docs/04, 05, 06 and 12 "Phase 3 build". Save v6. Six crime minigames with panels. New art: contact portraits (fence, dealer, supplier, gang contact, cop, clerk), mask and drill icons, a masked player sprite (`pack_player.py` style `masked`).
