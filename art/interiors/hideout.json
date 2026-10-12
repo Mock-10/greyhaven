@@ -529,7 +529,137 @@
    }
   },
   {
-   "frame": "item_24_plan_table",
+   "frame": "item_24_M",
+   "kind": "M",
+   "x": 132,
+   "y": 60,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 13,
+    "hy": 8,
+    "h": 20
+   },
+   "prompt": "PRESS",
+   "needs": "press"
+  },
+  {
+   "frame": "item_25_counting_table",
+   "kind": "counting_table",
+   "x": 196,
+   "y": 66,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 14,
+    "hy": 7,
+    "h": 15
+   },
+   "needs": "press"
+  },
+  {
+   "frame": "item_26_loose_bills",
+   "kind": "loose_bills",
+   "x": 190,
+   "y": 66,
+   "wz": 15.6,
+   "zBias": 3,
+   "ang": 0.0,
+   "needs": "press"
+  },
+  {
+   "frame": "item_27_cardboard_boxes",
+   "kind": "cardboard_boxes",
+   "x": 128,
+   "y": 62,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 6,
+    "h": 10
+   },
+   "needs": "!press"
+  },
+  {
+   "frame": "item_28_lift_post",
+   "kind": "lift_post",
+   "x": 241,
+   "y": 60,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 4,
+    "hy": 4,
+    "h": 50
+   },
+   "needs": "chopBay"
+  },
+  {
+   "frame": "item_29_lifted_car",
+   "kind": "lifted_car",
+   "x": 266,
+   "y": 60,
+   "wz": 12.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "prompt": "CHOP BAY",
+   "needs": "chopBay"
+  },
+  {
+   "frame": "item_30_lift_post",
+   "kind": "lift_post",
+   "x": 291,
+   "y": 60,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 4,
+    "hy": 4,
+    "h": 50
+   },
+   "needs": "chopBay"
+  },
+  {
+   "frame": "item_31_engine_stand",
+   "kind": "engine_stand",
+   "x": 244,
+   "y": 112,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 7
+   },
+   "needs": "chopBay"
+  },
+  {
+   "frame": "item_32_tyre_stack",
+   "kind": "tyre_stack",
+   "x": 292,
+   "y": 138,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 7
+   },
+   "needs": "chopBay"
+  },
+  {
+   "frame": "item_33_plan_table",
    "kind": "plan_table",
    "x": 176,
    "y": 126,
@@ -545,7 +675,7 @@
    "prompt": "PLANS"
   },
   {
-   "frame": "item_25_wooden_chair",
+   "frame": "item_34_wooden_chair",
    "kind": "wooden_chair",
    "x": 176,
    "y": 150,
@@ -558,7 +688,7 @@
    }
   },
   {
-   "frame": "item_26_rug",
+   "frame": "item_35_rug",
    "kind": "rug",
    "x": 84,
    "y": 184,
@@ -567,7 +697,7 @@
    "ang": 0.0
   },
   {
-   "frame": "item_27_sofa",
+   "frame": "item_36_sofa",
    "kind": "sofa",
    "x": 84,
    "y": 164,
@@ -582,7 +712,7 @@
    }
   },
   {
-   "frame": "item_28_coffee_table",
+   "frame": "item_37_coffee_table",
    "kind": "coffee_table",
    "x": 84,
    "y": 186,
@@ -597,7 +727,7 @@
    }
   },
   {
-   "frame": "item_29_floor_lamp",
+   "frame": "item_38_floor_lamp",
    "kind": "floor_lamp",
    "x": 50,
    "y": 160,
@@ -610,7 +740,7 @@
    }
   },
   {
-   "frame": "item_30_cardboard_boxes",
+   "frame": "item_39_cardboard_boxes",
    "kind": "cardboard_boxes",
    "x": 128,
    "y": 208,
@@ -625,7 +755,7 @@
    }
   },
   {
-   "frame": "item_31_storage_shelf",
+   "frame": "item_40_storage_shelf",
    "kind": "storage_shelf",
    "x": 311,
    "y": 178,
@@ -640,7 +770,7 @@
    }
   },
   {
-   "frame": "item_32_barrel",
+   "frame": "item_41_barrel",
    "kind": "barrel",
    "x": 304,
    "y": 214,
@@ -686,8 +816,8 @@
    ]
   },
   "seg_y112_0": {
-   "x": 922,
-   "y": 932,
+   "x": 588,
+   "y": 1006,
    "w": 34,
    "h": 32,
    "anchor": [
@@ -696,8 +826,8 @@
    ]
   },
   "seg_y112_1": {
-   "x": 957,
-   "y": 932,
+   "x": 623,
+   "y": 1006,
    "w": 34,
    "h": 32,
    "anchor": [
@@ -706,8 +836,8 @@
    ]
   },
   "seg_y112_2": {
-   "x": 0,
-   "y": 1001,
+   "x": 658,
+   "y": 1006,
    "w": 34,
    "h": 32,
    "anchor": [
@@ -716,8 +846,8 @@
    ]
   },
   "seg_y112_3": {
-   "x": 35,
-   "y": 1001,
+   "x": 693,
+   "y": 1006,
    "w": 34,
    "h": 32,
    "anchor": [
@@ -726,8 +856,8 @@
    ]
   },
   "seg_y112_4": {
-   "x": 70,
-   "y": 1001,
+   "x": 728,
+   "y": 1006,
    "w": 34,
    "h": 32,
    "anchor": [
@@ -736,8 +866,8 @@
    ]
   },
   "seg_y112_5": {
-   "x": 105,
-   "y": 1001,
+   "x": 763,
+   "y": 1006,
    "w": 34,
    "h": 32,
    "anchor": [
@@ -746,8 +876,8 @@
    ]
   },
   "seg_x96_0": {
-   "x": 140,
-   "y": 1001,
+   "x": 798,
+   "y": 1006,
    "w": 34,
    "h": 32,
    "anchor": [
@@ -756,8 +886,8 @@
    ]
   },
   "seg_x96_1": {
-   "x": 175,
-   "y": 1001,
+   "x": 833,
+   "y": 1006,
    "w": 34,
    "h": 32,
    "anchor": [
@@ -766,8 +896,8 @@
    ]
   },
   "seg_x96_2": {
-   "x": 342,
-   "y": 1001,
+   "x": 0,
+   "y": 1052,
    "w": 28,
    "h": 29,
    "anchor": [
@@ -776,8 +906,8 @@
    ]
   },
   "seg_x96_3": {
-   "x": 210,
-   "y": 1001,
+   "x": 868,
+   "y": 1006,
    "w": 34,
    "h": 32,
    "anchor": [
@@ -786,8 +916,8 @@
    ]
   },
   "seg_x96_4": {
-   "x": 245,
-   "y": 1001,
+   "x": 903,
+   "y": 1006,
    "w": 34,
    "h": 32,
    "anchor": [
@@ -796,8 +926,8 @@
    ]
   },
   "seg_x96_5": {
-   "x": 280,
-   "y": 1001,
+   "x": 938,
+   "y": 1006,
    "w": 34,
    "h": 32,
    "anchor": [
@@ -806,8 +936,8 @@
    ]
   },
   "item_0_door_leaf": {
-   "x": 973,
-   "y": 643,
+   "x": 351,
+   "y": 932,
    "w": 35,
    "h": 68,
    "anchor": [
@@ -816,8 +946,8 @@
    ]
   },
   "item_1_storage_shelf": {
-   "x": 761,
-   "y": 643,
+   "x": 139,
+   "y": 932,
    "w": 52,
    "h": 72,
    "anchor": [
@@ -826,8 +956,8 @@
    ]
   },
   "item_2_storage_shelf": {
-   "x": 814,
-   "y": 643,
+   "x": 192,
+   "y": 932,
    "w": 52,
    "h": 72,
    "anchor": [
@@ -836,7 +966,7 @@
    ]
   },
   "item_3_cardboard_boxes": {
-   "x": 412,
+   "x": 899,
    "y": 932,
    "w": 40,
    "h": 45,
@@ -846,7 +976,7 @@
    ]
   },
   "item_4_safe": {
-   "x": 314,
+   "x": 761,
    "y": 932,
    "w": 50,
    "h": 49,
@@ -856,8 +986,8 @@
    ]
   },
   "item_5_cash_duffel": {
-   "x": 877,
-   "y": 932,
+   "x": 543,
+   "y": 1006,
    "w": 44,
    "h": 36,
    "anchor": [
@@ -866,7 +996,7 @@
    ]
   },
   "item_6_cardboard_boxes": {
-   "x": 453,
+   "x": 940,
    "y": 932,
    "w": 40,
    "h": 45,
@@ -876,7 +1006,7 @@
    ]
   },
   "item_7_door_leaf": {
-   "x": 0,
+   "x": 387,
    "y": 932,
    "w": 35,
    "h": 68,
@@ -886,8 +1016,8 @@
    ]
   },
   "item_8_fire_extinguisher": {
-   "x": 418,
-   "y": 1001,
+   "x": 76,
+   "y": 1052,
    "w": 18,
    "h": 24,
    "anchor": [
@@ -896,8 +1026,8 @@
    ]
   },
   "item_9_space_heater": {
-   "x": 315,
-   "y": 1001,
+   "x": 973,
+   "y": 1006,
    "w": 26,
    "h": 30,
    "anchor": [
@@ -906,8 +1036,8 @@
    ]
   },
   "item_10_trash_bin": {
-   "x": 437,
-   "y": 1001,
+   "x": 95,
+   "y": 1052,
    "w": 22,
    "h": 23,
    "anchor": [
@@ -916,7 +1046,7 @@
    ]
   },
   "item_11_pegboard": {
-   "x": 365,
+   "x": 852,
    "y": 932,
    "w": 46,
    "h": 46,
@@ -926,7 +1056,7 @@
    ]
   },
   "item_12_workbench": {
-   "x": 116,
+   "x": 503,
    "y": 932,
    "w": 70,
    "h": 60,
@@ -936,7 +1066,7 @@
    ]
   },
   "item_13_tool_chest": {
-   "x": 214,
+   "x": 601,
    "y": 932,
    "w": 44,
    "h": 56,
@@ -946,8 +1076,8 @@
    ]
   },
   "item_14_storage_shelf": {
-   "x": 867,
-   "y": 643,
+   "x": 245,
+   "y": 932,
    "w": 52,
    "h": 72,
    "anchor": [
@@ -956,7 +1086,7 @@
    ]
   },
   "item_15_cardboard_boxes": {
-   "x": 494,
+   "x": 981,
    "y": 932,
    "w": 40,
    "h": 45,
@@ -966,8 +1096,8 @@
    ]
   },
   "item_16_tyre_stack": {
-   "x": 688,
-   "y": 932,
+   "x": 286,
+   "y": 1006,
    "w": 38,
    "h": 39,
    "anchor": [
@@ -976,7 +1106,7 @@
    ]
   },
   "item_17_roll_door": {
-   "x": 553,
+   "x": 838,
    "y": 643,
    "w": 68,
    "h": 88,
@@ -986,8 +1116,8 @@
    ]
   },
   "item_18_floor_lines": {
-   "x": 622,
-   "y": 643,
+   "x": 0,
+   "y": 932,
    "w": 138,
    "h": 73,
    "anchor": [
@@ -996,8 +1126,8 @@
    ]
   },
   "item_19_oil_stain": {
-   "x": 371,
-   "y": 1001,
+   "x": 29,
+   "y": 1052,
    "w": 46,
    "h": 27,
    "anchor": [
@@ -1006,8 +1136,8 @@
    ]
   },
   "item_20_oil_stain": {
-   "x": 491,
-   "y": 1001,
+   "x": 149,
+   "y": 1052,
    "w": 33,
    "h": 20,
    "anchor": [
@@ -1016,8 +1146,8 @@
    ]
   },
   "item_21_drain_pan": {
-   "x": 460,
-   "y": 1001,
+   "x": 118,
+   "y": 1052,
    "w": 30,
    "h": 21,
    "anchor": [
@@ -1026,8 +1156,8 @@
    ]
   },
   "item_22_crate": {
-   "x": 727,
-   "y": 932,
+   "x": 325,
+   "y": 1006,
    "w": 40,
    "h": 39,
    "anchor": [
@@ -1036,8 +1166,8 @@
    ]
   },
   "item_23_cardboard_boxes": {
-   "x": 535,
-   "y": 932,
+   "x": 0,
+   "y": 1006,
    "w": 40,
    "h": 45,
    "anchor": [
@@ -1045,8 +1175,98 @@
     34.0
    ]
   },
-  "item_24_plan_table": {
-   "x": 259,
+  "item_24_M": {
+   "x": 646,
+   "y": 932,
+   "w": 59,
+   "h": 56,
+   "anchor": [
+    31.0,
+    38.0
+   ]
+  },
+  "item_25_counting_table": {
+   "x": 41,
+   "y": 1006,
+   "w": 52,
+   "h": 45,
+   "anchor": [
+    26.0,
+    30.0
+   ]
+  },
+  "item_26_loose_bills": {
+   "x": 366,
+   "y": 1006,
+   "w": 67,
+   "h": 38,
+   "anchor": [
+    33.0,
+    19.0
+   ]
+  },
+  "item_27_cardboard_boxes": {
+   "x": 94,
+   "y": 1006,
+   "w": 40,
+   "h": 45,
+   "anchor": [
+    20.0,
+    34.0
+   ]
+  },
+  "item_28_lift_post": {
+   "x": 690,
+   "y": 643,
+   "w": 73,
+   "h": 95,
+   "anchor": [
+    26.0,
+    70.0
+   ]
+  },
+  "item_29_lifted_car": {
+   "x": 553,
+   "y": 643,
+   "w": 136,
+   "h": 104,
+   "anchor": [
+    68.0,
+    68.0
+   ]
+  },
+  "item_30_lift_post": {
+   "x": 764,
+   "y": 643,
+   "w": 73,
+   "h": 95,
+   "anchor": [
+    46.0,
+    80.0
+   ]
+  },
+  "item_31_engine_stand": {
+   "x": 812,
+   "y": 932,
+   "w": 39,
+   "h": 49,
+   "anchor": [
+    20.0,
+    37.0
+   ]
+  },
+  "item_32_tyre_stack": {
+   "x": 176,
+   "y": 1006,
+   "w": 38,
+   "h": 44,
+   "anchor": [
+    19.0,
+    32.0
+   ]
+  },
+  "item_33_plan_table": {
+   "x": 706,
    "y": 932,
    "w": 54,
    "h": 52,
@@ -1055,9 +1275,9 @@
     37.0
    ]
   },
-  "item_25_wooden_chair": {
-   "x": 768,
-   "y": 932,
+  "item_34_wooden_chair": {
+   "x": 434,
+   "y": 1006,
    "w": 26,
    "h": 38,
    "anchor": [
@@ -1065,9 +1285,9 @@
     30.0
    ]
   },
-  "item_26_rug": {
-   "x": 617,
-   "y": 932,
+  "item_35_rug": {
+   "x": 215,
+   "y": 1006,
    "w": 70,
    "h": 40,
    "anchor": [
@@ -1075,8 +1295,8 @@
     20.0
    ]
   },
-  "item_27_sofa": {
-   "x": 36,
+  "item_36_sofa": {
+   "x": 423,
    "y": 932,
    "w": 79,
    "h": 65,
@@ -1085,9 +1305,9 @@
     44.0
    ]
   },
-  "item_28_coffee_table": {
-   "x": 795,
-   "y": 932,
+  "item_37_coffee_table": {
+   "x": 461,
+   "y": 1006,
    "w": 46,
    "h": 38,
    "anchor": [
@@ -1095,8 +1315,8 @@
     25.0
    ]
   },
-  "item_29_floor_lamp": {
-   "x": 187,
+  "item_38_floor_lamp": {
+   "x": 574,
    "y": 932,
    "w": 26,
    "h": 58,
@@ -1105,9 +1325,9 @@
     50.0
    ]
   },
-  "item_30_cardboard_boxes": {
-   "x": 576,
-   "y": 932,
+  "item_39_cardboard_boxes": {
+   "x": 135,
+   "y": 1006,
    "w": 40,
    "h": 45,
    "anchor": [
@@ -1115,9 +1335,9 @@
     34.0
    ]
   },
-  "item_31_storage_shelf": {
-   "x": 920,
-   "y": 643,
+  "item_40_storage_shelf": {
+   "x": 298,
+   "y": 932,
    "w": 52,
    "h": 72,
    "anchor": [
@@ -1125,9 +1345,9 @@
     58.0
    ]
   },
-  "item_32_barrel": {
-   "x": 842,
-   "y": 932,
+  "item_41_barrel": {
+   "x": 508,
+   "y": 1006,
    "w": 34,
    "h": 38,
    "anchor": [

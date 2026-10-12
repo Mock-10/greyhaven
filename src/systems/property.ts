@@ -7,6 +7,7 @@ import { ADDONS, HOMES, type AddonId, type HomeId } from '../data/property';
 import type { Goods } from './burglary';
 import { drawnWeapon, giveWeapon, selectSlot, type CombatState, type OwnedWeapon } from './combat';
 import { payClean } from './carService';
+import type { OpId, OpState } from './operations';
 import { record, type Finance, type Money } from './finance';
 
 const P = () => BALANCE.property;
@@ -21,6 +22,8 @@ export interface OwnedHome {
   id: HomeId;
   addons: AddonId[];
   stash: Stash;
+  /** The hideout's operations (systems/operations.ts, Phase 5 M16), once their add-ons are built. */
+  ops?: Partial<Record<OpId, OpState>>;
 }
 
 export interface PropertyState {
@@ -51,7 +54,7 @@ export function typeOf(id: HomeId) {
 export function buyHome(p: PropertyState, m: Money, f: Finance, at: number, id: HomeId): boolean {
   if (homeOf(p, id)) return false;
   if (!payClean(m, f, at, `HOME, ${HOMES[id].address}`, typeOf(id).price)) return false;
-  p.homes.push({ id, addons: [], stash: emptyStash() });
+  p.homes.push({ id, addons: [], stash: emptyStash(), ops: {} });
   return true;
 }
 

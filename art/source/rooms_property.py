@@ -16,16 +16,41 @@ when you walk in. Same conventions as rooms.py. Usage: python3 rooms_property.py
 import os, sys, warnings
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 warnings.filterwarnings('ignore')
-from sdf import to_image
+from sdf import solid, to_image
+import numpy as np
+from sdf import rbox, RID
 import decor as D
 import interiors as I
 import props2
 import rooms
 import rooms_houses as RH
 import decor_jobs as J
+import rooms_jobs as RJ
 
 T = rooms.T
 it = rooms.it
+
+
+def counterfeit_press():
+    """The counterfeit press (Phase 5 M16, docs/09): a squat offset printer on a steel cabinet, two inking rollers
+    across the top, a feed stack of blank sheets at the back and printed sheets of notes in the out tray at the front.
+    FRONT (+y) faces the operator."""
+    def parts(P):
+        cab = rbox(P, (0, 0, 7.0), (13.0, 7.0, 7.0), 0.8)
+        head = rbox(P, (0, -1.0, 16.5), (11.0, 5.0, 2.6), 0.8)
+        rollers = np.minimum(J.cyl_x(P, (0, -1.0, 20.0), 1.8, 10.0, 0.3), J.cyl_x(P, (0, 2.6, 19.4), 1.5, 10.0, 0.3))
+        feed = rbox(P, (0, -6.6, 16.8), (7.5, 1.6, 2.4), 0.2)
+        out_tray = rbox(P, (0, 8.6, 10.6), (8.0, 2.4, 0.4), 0.2)
+        out_sheets = rbox(P, (0, 8.6, 11.4), (7.0, 2.0, 0.5), 0.1)
+        panel = rbox(P, (10.4, 6.8, 11.0), (2.0, 0.4, 2.2), 0.2)
+        wheel = J.cyl_x(P, (13.6, 0, 12.0), 3.0, 0.5, 0.2)
+        return [cab, head, rollers, feed, np.minimum(out_tray, panel), out_sheets, wheel]
+
+    def pm(p, n):
+        lit = (n[:, 1] > 0.5) & (np.abs(p[:, 0] - 10.4) < 1.4) & (np.abs(p[:, 2] - 11.4) < 0.6)
+        return (np.where(lit, RID['red'], RID['night']), np.where(lit, 4.4, 2.0), np.zeros(len(p)))
+    return D.M(parts, [solid('blueg', 2.2, 0.4), solid('stone', 3.0, 0.5), solid('night', 1.6, 0.6),
+                       solid('white', 4.4), pm, D._billm(3), solid('stone', 2.4, 0.4)], (-16, 16, -9, 12, 0, 23))
 
 
 def home_small():
@@ -95,6 +120,19 @@ def hideout(have=None):
     S.append(it(J.drain_pan(), '+y', 296, 110, ('blob', 5)))
     S.append(it(props2.crate(5), '+y', 236, 200, ('box', 8, 8, 14)))
     S.append(it(D.cardboard_boxes(3, 15), '+y', 208, 212, ('box', 7, 6, 10)))
+    # --- the counterfeit press (M16) by the stash room, with a counting table for the fresh notes
+    S.append(it(counterfeit_press(), '+y', 132, 60, ('box', 13, 8, 20), hl='idle', prompt=('E', 'PRESS'),
+                needs='press'))
+    S.append(it(D.counting_table(), '+y', 196, 66, ('box', 14, 7, 15), needs='press'))
+    S.append(it(D.loose_bills(), '+y', 190, 66, None, wz=15.6, z_bias=3, needs='press'))
+    S.append(it(D.cardboard_boxes(2, 17), '+y', 128, 62, ('box', 7, 6, 10), needs='!press'))
+    # --- the chop bay (M16) on the marked floor below the roll door: a car on a lift, stripped bit by bit
+    S.append(it(J.lift_post(), '+x', 241, 60, ('box', 4, 4, 50), needs='chopBay'))
+    S.append(it(J.lifted_car(('brick', 2.4)), RJ.CAR_ALONG_Y, 266, 60, None, wz=RJ.LIFT_H, hl='idle',
+                prompt=('E', 'CHOP BAY'), needs='chopBay'))
+    S.append(it(J.lift_post(), '-x', 291, 60, ('box', 4, 4, 50), needs='chopBay'))
+    S.append(it(J.engine_stand(), '+y', 244, 112, ('blob', 7), needs='chopBay'))
+    S.append(it(J.tyre_stack(4, 6), '+y', 292, 138, ('blob', 7), needs='chopBay'))
     # --- the plans table: buy add-ons here
     S.append(it(J.plan_table(), '+y', 176, 126, ('box', 14, 9, 14), hl='idle', prompt=('E', 'PLANS')))
     S.append(it(D.wooden_chair(), '-y', 176, 150, ('blob', 4)))
@@ -114,7 +152,8 @@ ROOMS = ['home_small', 'home_family', 'hideout']
 if __name__ == '__main__':
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'drafts', 'interiors')
     for name in sys.argv[1:] or ROOMS:
-        drafts = {'': {'stashRoom', 'workbench'}, '_bare': set()} if name == 'hideout' else {'': None}
+        drafts = ({'': {'stashRoom', 'workbench', 'press', 'chopBay'}, '_bare': set()} if name == 'hideout'
+                  else {'': None})
         for suffix, have in drafts.items():
             c = globals()[name](have) if name == 'hideout' else globals()[name]()
             to_image(c, 1).save(os.path.join(out, f'interior_{name}{suffix}_1x.png'))

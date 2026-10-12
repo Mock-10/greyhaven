@@ -57,7 +57,7 @@ export type AddonId = 'stashRoom' | 'garageBay' | 'workbench' | 'press' | 'chopB
 export interface AddonDef {
   name: string;
   effect: string;
-  /** Built in this phase's milestones so far: the operations come in M16, the crew in M17. */
+  /** Built so far: the lab comes with smuggling and the crew room with the crew (M17). */
   ready: boolean;
 }
 
@@ -65,8 +65,8 @@ export const ADDONS: Record<AddonId, AddonDef> = {
   stashRoom: { name: 'STASH ROOM', effect: '+20 STASH SLOTS. RAIDS NEVER FIND IT.', ready: true },
   garageBay: { name: 'GARAGE BAY', effect: '+2 PARKING', ready: true },
   workbench: { name: 'WORKBENCH', effect: 'CRAFT TOOLS. RESPRAY AT HOME.', ready: true },
-  press: { name: 'COUNTERFEIT PRESS', effect: 'PRINTING OPERATION', ready: false },
-  chopBay: { name: 'CHOP BAY', effect: 'CHOP SHOP OPERATION', ready: false },
+  press: { name: 'COUNTERFEIT PRESS', effect: '$1,000 SUPPLIES, $2,600 FAKE CASH IN 2 DAYS', ready: true },
+  chopBay: { name: 'CHOP BAY', effect: 'A STOLEN CAR, 1.5X THE CHOP PRICE IN A DAY', ready: true },
   lab: { name: 'PRODUCT LAB', effect: 'LAB OPERATION', ready: false },
   crewRoom: { name: 'CREW ROOM', effect: 'NEEDED TO HIRE CREW (CAP 4)', ready: false },
 };
