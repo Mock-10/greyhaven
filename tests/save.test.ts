@@ -1,3 +1,4 @@
+import { ONBOARD_STEPS } from '../src/data/onboarding';
 import { describe, expect, it } from 'vitest';
 import {
   checksum,
@@ -155,7 +156,7 @@ describe('saves (docs/12)', () => {
     const r = validate(old);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.file.version).toBe(4);
+    expect(r.file.version).toBe(5);
     expect(r.file.state.career.shift).toEqual({
       job: 'office',
       day: 2,
@@ -175,6 +176,21 @@ describe('saves (docs/12)', () => {
     } as unknown as SaveFile;
     const r2 = validate(old2);
     expect(r2.ok && r2.file.state.career.shift).toBe(null);
+  });
+
+  it('migrates a version 4 save to version 5 (odd jobs, and the guide counts as done)', () => {
+    const fresh = createState(1, 'downtown', { x: 0, y: 0 });
+    const v4 = JSON.parse(JSON.stringify(fresh)) as Record<string, unknown>;
+    delete v4.oddJobs;
+    delete v4.onboarding;
+    const old = { game: 'doublelife', version: 4, meta: {}, state: v4, checksum: checksum(v4) } as unknown as SaveFile;
+    const r = validate(old);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.file.version).toBe(5);
+    expect(r.file.state.oddJobs).toEqual({ gig: null, lastDay: { carWash: 0, barShift: 0 } });
+    expect(r.file.state.onboarding.step).toBe(ONBOARD_STEPS.length);
+    expect(Object.keys(r.file.state).sort()).toEqual(Object.keys(fresh).sort());
   });
 
   it('rotates the two autosaves, keeping the newest', () => {

@@ -340,10 +340,10 @@ def car_wash(lit=0.0):
         tunnel = rbox(P, ((TX0 + TX1) / 2, 0, 5.4), ((TX1 - TX0) / 2, hy + 2, 5.4), 0.2)
         parapet = rbox(P, (0, 0, H + 0.7), (hx + 0.5, hy + 0.5, 0.7), 0.3)
         board = rbox(P, (-1.0, hy + 0.6, H - 2.0), (14.6, 0.7, 1.7), 0.3)
-        brushes = np.minimum(cyl_z(P, (TX0 + 3.0, 4.0, 5.2), 2.2, 4.4, 0.6), cyl_z(P, (TX1 - 3.0, 4.0, 5.2), 2.2, 4.4, 0.6))
-        arch = np.minimum.reduce([rbox(P, (TX0 + 0.8, -5.0, 5.0), (0.5, 0.5, 5.0), 0.2),
-                                  rbox(P, (TX1 - 0.8, -5.0, 5.0), (0.5, 0.5, 5.0), 0.2),
-                                  rbox(P, ((TX0 + TX1) / 2, -5.0, 9.6), ((TX1 - TX0) / 2 - 0.5, 0.5, 0.5), 0.2)])
+        brushes = np.minimum(cyl_z(P, (TX0 + 3.2, hy - 4.0, 5.0), 2.4, 4.6, 0.6), cyl_z(P, (TX1 - 3.2, hy - 4.0, 5.0), 2.4, 4.6, 0.6))
+        arch = np.minimum.reduce([rbox(P, (TX0 + 0.8, hy - 9.0, 5.0), (0.5, 0.5, 5.0), 0.2),
+                                  rbox(P, (TX1 - 0.8, hy - 9.0, 5.0), (0.5, 0.5, 5.0), 0.2),
+                                  rbox(P, ((TX0 + TX1) / 2, hy - 9.0, 9.6), ((TX1 - TX0) / 2 - 0.5, 0.5, 0.5), 0.2)])
         bubbles = np.minimum.reduce([ell(P, (8.0, -2.0, H + 4.0), (3.2, 3.2, 3.2)),
                                      ell(P, (13.0, 2.0, H + 2.6), (2.2, 2.2, 2.2)),
                                      ell(P, (4.6, 3.0, H + 2.2), (1.6, 1.6, 1.6))])
@@ -357,7 +357,7 @@ def car_wash(lit=0.0):
         shine = np.zeros(len(p))
         # the wave stripe: teal, its top edge rippling
         wave = (z > 1.6) & (z < 3.6 + 0.7 * np.sin(u * 0.55))
-        r = np.where(wave, RID['teal'], r); t = np.where(wave, 2.6, t)
+        r = np.where(wave, RID['teal'], r); t = np.where(wave, 3.3, t)
         # the tunnel: dark, wet tiled walls, a wet floor
         inside = (x > TX0 - 0.1) & (x < TX1 + 0.1) & (np.abs(y) < hy + 0.5) & (z < 10.9)
         r = np.where(inside, RID['blueg'], r)
@@ -390,7 +390,7 @@ def car_wash(lit=0.0):
         return np.where(txt, RID['white'], RID['teal']), np.where(txt, 4.4, 1.7 + (lit > 0) * 0.6), np.zeros(len(p))
 
     def brush_m(p, n):
-        a = np.arctan2(p[:, 1] - 4.0, p[:, 0] - np.where(p[:, 0] < -13.0, TX0 + 3.0, TX1 - 3.0))
+        a = np.arctan2(p[:, 1] - (hy - 4.0), p[:, 0] - np.where(p[:, 0] < -13.0, TX0 + 3.0, TX1 - 3.0))
         strand = np.mod(a * 5.0 + p[:, 2] * 0.3, 1.0) < 0.45
         return np.full(len(p), RID['blueg']), np.where(strand, 3.0, 2.2), np.zeros(len(p))
 

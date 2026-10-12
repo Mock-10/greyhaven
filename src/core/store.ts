@@ -4,6 +4,8 @@
 
 import { BALANCE } from '../config/balance';
 import { createCareer, type CareerState } from '../systems/career';
+import { createOddJobs, type OddJobState } from '../systems/oddJobs';
+import { createOnboarding, type OnboardState } from '../systems/onboarding';
 import { createFinance, type Finance, type Money } from '../systems/finance';
 import type { InteriorId } from '../data/interiors';
 import { DEFAULT_LOOK, STARTING_OUTFITS, playerCostume, type Look } from '../data/looks';
@@ -67,6 +69,10 @@ export interface GameState {
   /** Street position to return to when leaving an interior. */
   streetReturn: { x: number; y: number } | null;
   career: CareerState;
+  /** Weekend gigs (car wash, bar shift): the gig in progress and the last day each was worked. */
+  oddJobs: OddJobState;
+  /** The guided first day (docs/11). */
+  onboarding: OnboardState;
   inventory: Inventory;
   /** Phone messages, newest first (the phone's MESSAGES app). */
   messages: { at: number; who: string; text: string }[];
@@ -135,6 +141,8 @@ export function createState(
     area: { kind: 'street' },
     streetReturn: null,
     career: createCareer(),
+    oddJobs: createOddJobs(),
+    onboarding: createOnboarding(),
     inventory: emptyInventory(),
     messages: [],
     sight: {},
