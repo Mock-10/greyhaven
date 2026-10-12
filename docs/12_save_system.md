@@ -57,3 +57,6 @@ New fields: `crime` (reputation, waiting payouts, contacts), `heat` (identificat
 ## Phase 4 build (milestone 14, 2026-10-12): save v8
 Each saved car gets `mods` (upgrade levels) and `stash` (its trunk: weapons and goods); `flat` (burst tyres) is optional. Migration 7 → 8 gives every car no upgrades and an empty trunk and drops a wreck's burning timer. (Save v7, milestone 13, added `combat`: the loadout, ammo and the drawn slot.)
 
+## Phase 5 build (milestone 15, 2026-10-12): save v9
+`property`: homes owned (id, add-ons, stash of dirty cash, goods and weapons), tax owed, and the apartment's stash. Cars may carry `storedAt` (the home whose garage keeps them), and the area inside a home or its hideout names the home (`area.home`). Migration 8 → 9 starts everyone with no homes and an empty apartment stash.
+

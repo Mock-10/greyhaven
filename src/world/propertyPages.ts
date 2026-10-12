@@ -137,7 +137,7 @@ export function stashPage(st: GameState, box: StashBox, title: string): ListPage
     title,
     icon: 'addon/stashRoom',
     right: `${stashUsed(s)}/${box.cap}`,
-    lines: [`DIRTY CASH ${money(s.dirty)}. WEAPONS AND GOODS, ONE SLOT EACH.`],
+    lines: [`DIRTY CASH ${money(s.dirty)}.`, 'WEAPONS AND GOODS: ONE SLOT EACH.'],
     rows,
   };
 }
@@ -177,7 +177,10 @@ export function plansPage(st: GameState, id: HomeId, built: () => void): ListPag
     title: 'PLANS',
     icon: 'app/home',
     right: `${h.addons.length}/${T.slots} SLOTS`,
-    lines: [`${HOMES[id].address}. GARAGE ${parkingOf(h)} CARS.`, 'CLEAN MONEY: THE BANK, THEN CASH.'],
+    lines: [
+      `${HOMES[id].address}. THE GARAGE HOLDS ${parkingOf(h)} CAR${parkingOf(h) > 1 ? 'S' : ''}.`,
+      'CLEAN MONEY: THE BANK, THEN CASH.',
+    ],
     rows,
   };
 }

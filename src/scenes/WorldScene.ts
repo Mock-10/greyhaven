@@ -4767,6 +4767,11 @@ export class WorldScene extends Phaser.Scene {
     h.goods = this.state.goods.length;
     h.weapon = hudWeapon(this.state.combat);
     h.peds = (this.life?.peds ?? []).map((pv) => ({ x: pv.ped.x, y: pv.ped.y }));
+    h.homes = this.state.property.homes.map((x) => ({
+      id: x.id,
+      addons: [...x.addons],
+      dirty: x.stash.dirty,
+    }));
     h.traffic = (this.life?.cars ?? []).map((cv) => ({
       id: cv.car.id,
       x: cv.car.x,
@@ -4828,8 +4833,13 @@ export class WorldScene extends Phaser.Scene {
         armor: armorShare(p),
         weapon: hudWeapon(this.state.combat),
         aiming: this.state.combat.raised,
-        district: districtAt(this.map, this.state.player.x, this.state.player.y),
-        street: this.inside ? this.inside.def.name : this.street,
+        // inside, the district is the one outside the door
+        district: districtAt(this.map, onMap.x, onMap.y),
+        street: this.inside
+          ? this.homeHere
+            ? HOMES[this.homeHere].address
+            : this.inside.def.name
+          : this.street,
         map: this.map,
         buildings: this.radarBuildings,
         doors: this.map.doors ?? [],

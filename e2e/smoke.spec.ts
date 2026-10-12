@@ -815,3 +815,52 @@ test('pulling a driver out of a stopped traffic car: yours to drive, the driver 
   await page.waitForFunction(() => window.__DL__.stars > 0, null, { timeout: 40_000 });
   expect(problems).toEqual([]);
 });
+
+test('a house on Linden Avenue: buy it, go down to the basement, build the stash room, stash dirty cash (Phase 5)', async ({
+  page,
+}) => {
+  test.setTimeout(150_000);
+  const problems = await boot(page, '?scene=world&zoom=3&time=11:00&x=176&y=2372');
+  await cheat(page, 'bank 20000');
+  await page.waitForFunction(() => window.__DL__.target === 'sale:linden4');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'sale');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('1');
+  await page.waitForFunction(() => window.__DL__.bank === 20000 - 12000);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  await cheat(page, 'tp 196 2345');
+  await page.waitForFunction(() => window.__DL__.target === 'home:linden4');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.area === 'home_small', null, { timeout: 15_000 });
+  // down the stairs from the bedroom
+  await cheat(page, 'tp 30 82');
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('home_small:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.area === 'hideout', null, { timeout: 15_000 });
+  await cheat(page, 'tp 176 146');
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('hideout:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'plans');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('1');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  await page.waitForFunction(() => window.__DL__.homes?.[0]?.addons.includes('stashRoom'));
+  // the stash room's door is open now; its safe is the stash
+  await cheat(page, 'dirty 900');
+  await cheat(page, 'tp 30 66');
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('hideout:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'stash');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('1');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  await page.waitForFunction(() => window.__DL__.homes?.[0]?.dirty === 900);
+  expect(await page.evaluate(() => window.__DL__.dirty)).toBe(0);
+  expect(problems).toEqual([]);
+});

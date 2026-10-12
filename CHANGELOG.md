@@ -15,7 +15,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
 ## START HERE (cold start for a new session)
-**Phase 4 is done** (PRs #27 and the M14 PR). Next: **Phase 5 — property, hideouts, operations, crews** (docs/15).
+**Phase 5 (property, hideouts, operations, crews) is in progress.** M15 (homes, the stash, the basement hideout, save v9) is on `claude/p5-property` (PR "Phase 5 M15"). Next: **M16 operations**.
 
 **First command:**
 ```
@@ -23,13 +23,13 @@ export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_nopr
 git fetch origin && git checkout main && git pull origin main && npm install && npx tsc --noEmit
 ```
 
-**Read only these, nothing else:** `CLAUDE.md`, this section, `docs/09_property_hideouts_crews.md` for Phase 5 (and `docs/18_interiors.md` "questions" before any new interior). Use `grep -n` to find spots in `WorldScene.ts`; don't read it whole.
+**Read only these, nothing else:** `CLAUDE.md`, this section, the "Phase 5" checklist below, `docs/09_property_hideouts_crews.md` (Operations, Crews, "Phase 5 build"). Use `grep -n` to find spots in `WorldScene.ts`; don't read it whole.
 
 **Next steps, in order:**
-1. If the M14 PR isn't merged: check its CI, merge when green. Then branch from main.
-2. **M15 property:** houses to buy, the stash, garage add-ons (more parking, stored cars keep trunk contents), entering owned property unseen clears 1–2★ (already in `response.ts`). Interiors from recorded answers (docs/18); ask the user only for open questions in `docs/16`.
-3. **M16 operations:** counterfeit press, chop bay, lab (product in 3 abstract tiers), operators and drivers.
-4. **M17 crews and pressure:** raids, smuggling in 3 tiers (the hidden compartment's cargo cut), airdrops, light rivals. Then close Phase 5 (econ sim, docs, e2e, screenshots, tick, PR, merge, note).
+1. If the M15 PR isn't merged: check its CI, merge when green. Then branch from main.
+2. **M16 operations** in the hideout (stations are `needs` items in `art/source/rooms_property.py`; add-ons are `ready: false` in `src/data/property.ts` until built): the counterfeit press ($1,000 dirty supplies → $2,600 in 2 days, money-count bonus), the chop bay (a stolen car driven onto the driveway → 1.5× chop price in a day), the lab ($3,000 → tier 2 product in 2 days); stall when unstocked (red icon on the radar), restock in person, collect; the 5% nightly raid (stash room safe). New station art via art/source (press, lab bench; abstract product, docs/00).
+3. **M17 crews and pressure:** the crew room, hiring at the bar (operators, drivers), wages from the stash, smuggling in 3 tiers, airdrops, light rivals (shipment ambush, hideout hit). **Ask the user first** where the Docks supplier and the Outskirts airdrop fields go before Phase 6 lays out those districts (see the question in the M15 note).
+4. Close Phase 5 (econ sim, docs, e2e, screenshots, tick, PR, merge, note).
 
 **Paste-ready resume prompt:**
 > Resume Double Life. Read CLAUDE.md, then only the "START HERE" section at the top of CHANGELOG.md on main, and follow its numbered steps in order. Read only the files each step names. Keep token use low: no side threads, no re-reading big docs, e2e and screenshots only at the end of the milestone. Commit and push WIP before stopping.
@@ -256,6 +256,28 @@ They are recorded in docs 01, 02, 08 and 11.
   - Skill-check e2e tests poll `minigameState` and press inside the good zone. Keep that pattern, because fixed timings are frame-rate dependent in CI.
 - **Saves:** `SAVE_VERSION` is 4 (v1 → v2 → v3 → v4; v3 adds the look and the wardrobe, v4 the shift's done tasks). Bump it and add a migration and its test whenever the save shape changes.
 - **Jobs (M7):** `src/data/jobs.ts` holds `JOBS` (site, boss, tasks, uniform, perks) and `TASKS` (each task's minigame); `taskBlock()` in `systems/career.ts` says why a task can't start. Interior prompts map to `{kind: 'job', task}`, `clock` and `locker` actions; outdoor spots are map zones `job_<task>` and `drop_<n>`. The cheat `job mechanic` switches job off shift; the debug hook has `job`, `shiftDone` and `objective`.
+
+## Phase 5 — Property, hideouts, operations, crews (in progress)
+Milestones: M15 homes and the hideout (this PR), M16 operations, M17 crews and pressure, the close.
+
+- [x] Two houses for sale on Linden Avenue (small $12,000, family $30,000), bought with clean money; weekly tax with the rent. (M15)
+- [x] Homes: bed (sleep, save), wardrobe, stash, the basement; unseen entry clears 1–2★; the apartment's stash opens. (M15)
+- [x] The basement hideout: plans table, add-on slots and rep tiers, the stash room, the workbench, the garage bay; garage storage at the driveway. (M15)
+- [ ] Operations: press, chop bay, lab; stalls, restocking, collecting, raids. (M16)
+- [ ] Crew room, hiring, operators and drivers, wages; smuggling 3 tiers, airdrops, light rivals. (M17)
+
+### Milestone 15: homes, the stash, the hideout (2026-10-12)
+**Built:** see docs/09 "Phase 5 build (milestone 15)". Save v9 (`property`, `storedAt`, `area.home`). New art: the FOR SALE sign (street.py), the home interiors and the basement hideout (rooms_property.py, home mode in rooms_houses.py), icons for the home app and the add-ons. Interiors can now hide or show items by add-on (`needs`).
+
+**How to try:** Linden Avenue, south of Hedgerow Way: the FOR SALE signs at no. 4 and no. 10. Cheats: `bank 50000`, `rep 400` (for the workbench's tier).
+
+**Assumptions:** which two houses are on the market; tax arrears without foreclosure; the garage stores cars at the driveway; crafting at half price; the apartment's stash has the base 10 slots.
+
+**Art debt:** none new.
+
+**Known issues:** none known.
+
+**Screenshots:** `docs/screenshots/p5/` (sale_sign, sale_panel, home_small, hideout_bare, plans, hideout_built, stash).
 
 ## Phase 4 — Combat and vehicles (done 2026-10-12)
 Milestones: M13 combat (PR #27), M14 vehicles and the close.
