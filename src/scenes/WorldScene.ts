@@ -81,6 +81,17 @@ import { bayFree, boughtCar, payDealer } from '../systems/dealer';
 import type { ListRequest } from './ListScene';
 import { INTERIORS, interiorForDoor, isOpen, type InteriorDef, type InteriorId } from '../data/interiors';
 import { JOBS, TASKS, jobAtSite, jobOfTask, type JobId, type TaskId } from '../data/jobs';
+import { GIGS, type GigId } from '../data/oddJobs';
+import { DEZ_TIP, type OnboardEvent } from '../data/onboarding';
+import { finishGig, gigTasksLeft, quitGig, recordGigTask, startGig } from '../systems/oddJobs';
+import {
+  currentStepId,
+  onboardEvent,
+  onboardHint,
+  onboardingActive,
+  skipOnboarding,
+  tipDue,
+} from '../systems/onboarding';
 import { TYPE_LABEL } from '../data/vehicles';
 import { ATLASES } from '../assets/manifest';
 import {
@@ -238,6 +249,8 @@ export interface HudSnapshot {
   marks: { x: number; y: number }[];
   /** An officer is busting the player: the surrender prompt. */
   surrender: boolean;
+  /** The first-day guide is on: the hint strip offers F2 to skip it. */
+  guide: boolean;
 }
 
 const SHADOW_VALUES = { box: BALANCE.render.shadowBoxValue, blob: BALANCE.render.shadowBlobValue };
@@ -389,6 +402,18 @@ export class WorldScene extends Phaser.Scene {
             placed: null,
             door: null,
           });
+        // the weekend odd jobs' street spots (milestone 8): Squeaky's wash apron
+        else if (z.id.startsWith('gig_') && z.npc) {
+          const gig = z.id.slice(4) as GigId;
+          this.usables.push({
+            id: `gig:${gig}`,
+            x: z.npc.x,
+            y: z.npc.y,
+            label: GIGS[gig].name,
+            placed: null,
+            door: null,
+          });
+        }
         // the lumberjack's spots in the timber yard (milestone 7)
         else if (z.id.startsWith('job_') && z.npc) {
           const task = z.id.slice(4) as TaskId;
@@ -738,7 +763,9 @@ export class WorldScene extends Phaser.Scene {
     this.showContextPose();
     this.scene.pause();
     this.scene.launch('list', req);
+    const cleanBefore = this.state.money.clean;
     this.game.events.once('list:closed', () => {
+      if (name === 'clothing' && this.state.money.clean < cleanBefore) this.guide('bought');
       hook().minigame = null;
       this.scene.resume();
       this.resumedAt = this.time.now;
@@ -916,7 +943,16 @@ export class WorldScene extends Phaser.Scene {
       vehicle: kb.addKey(KEYS.vehicle),
       handbrake: kb.addKey(KEYS.handbrake),
     };
-    kb.addCapture([KEYS.up, KEYS.down, KEYS.left, KEYS.right, KEYS.debugOverlay, KEYS.cycle, KEYS.handbrake]);
+    kb.addCapture([
+      KEYS.up,
+      KEYS.down,
+      KEYS.left,
+      KEYS.right,
+      KEYS.debugOverlay,
+      KEYS.skipGuide,
+      KEYS.cycle,
+      KEYS.handbrake,
+    ]);
     // while a crime minigame is open the world keeps running (docs/06) but its keys belong to the panel
     const free = () => !hook().minigame;
     this.keys.vehicle.on('down', () => free() && this.enterOrExit());
@@ -932,6 +968,11 @@ export class WorldScene extends Phaser.Scene {
       });
     });
     kb.on(`keydown-${KEYS.debugOverlay}`, () => this.setDebug(!this.debugOn));
+    kb.on(`keydown-${KEYS.skipGuide}`, () => {
+      if (!free() || !onboardingActive(this.state.onboarding)) return;
+      skipOnboarding(this.state.onboarding);
+      this.toast('GUIDE', 'GUIDE OFF. YOUR OBJECTIVES STAY ON THE STRIP.');
+    });
     kb.on('keydown-ESC', () => free() && this.openMenu());
     kb.on(`keydown-${KEYS.phone}`, () => free() && this.openList('phone'));
     kb.on(`keydown-${KEYS.bag}`, () => free() && this.openList('bag'));
@@ -1355,6 +1396,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.isReference) {
       this.state.minutes = advance(this.state.minutes, dt, this.settings.dayLengthMinutes);
       this.runDays(true);
+      if (this.playing) this.guideTick();
       // Dez checks in once on the first evening (the HUD mockup's message).
       if (
         !this.dezTold &&
@@ -1606,6 +1648,7 @@ export class WorldScene extends Phaser.Scene {
     else if (u.id.startsWith('pump')) this.usePump(u);
     else if (u.id.startsWith('atm')) this.openList('atm');
     else if (u.id.startsWith('job:')) this.jobTask(u.id.slice(4) as TaskId);
+    else if (u.id.startsWith('gig:')) this.gigAction(u.id.slice(4) as GigId);
   }
 
   // ---------------------------------------------------------------- interiors (docs/18)
@@ -1786,6 +1829,7 @@ export class WorldScene extends Phaser.Scene {
   private exitToStreet(): void {
     const back = this.streetSaved;
     if (!back) return;
+    this.guide('leftHome');
     this.leaveInteriorView();
     this.inGround.setVisible(false);
     this.inObjects.setVisible(false);
@@ -1902,6 +1946,9 @@ export class WorldScene extends Phaser.Scene {
       case 'job':
         this.jobTask(a.task);
         break;
+      case 'gig':
+        this.gigAction(a.gig);
+        break;
     }
   }
 
@@ -1932,6 +1979,7 @@ export class WorldScene extends Phaser.Scene {
     this.fade(() => {
       this.state.minutes = sleepUntil(this.state.minutes, BALANCE.sleep.wakeMinute);
       this.runDays(false);
+      this.guide('slept');
       const cal = calendar(this.state.minutes);
       if (where === 'home') this.toast('HOME', `SLEPT UNTIL 06:00, ${cal.weekday}.`);
       else this.toast('SHELTER', `A COT AT ST. BRINE'S. UP AT 06:00, ${cal.weekday}.`);
@@ -1963,6 +2011,7 @@ export class WorldScene extends Phaser.Scene {
       }
       const res = clockOut(c, this.state.minutes);
       if (!res) return;
+      this.guide('shiftDone');
       const st = this.state;
       credit(st.money, st.finance, st.minutes, `PAY, ${J.short}`, res.pay);
       credit(st.money, st.finance, st.minutes, 'PROMOTION BONUS', res.bonus);
@@ -1989,6 +2038,7 @@ export class WorldScene extends Phaser.Scene {
     }
     const r = clockIn(c, this.state.minutes, job);
     if (r.ok) {
+      this.guide('clockedIn');
       const n = tasksLeft(c);
       const extra = n > J.tasksPerShift ? ' ONE EXTRA, AFTER YOUR LITTLE ADVENTURE.' : '';
       this.toast(
@@ -2039,6 +2089,99 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private pendingTask: TaskId | null = null;
+  private pendingGig: GigId | null = null;
+  /** Clean cash when a shop opened: spending some there is the guide's shop step. */
+  private cleanAtShop = 0;
+
+  // ---------------------------------------------------------------- weekend odd jobs (docs/02, milestone 8)
+
+  /** E at a gig's spot: start the gig, or do its next task. */
+  private gigAction(id: GigId): void {
+    const o = this.state.oddJobs;
+    const G = GIGS[id];
+    if (o.gig && o.gig.id !== id) {
+      this.toast(G.boss, `FINISH YOUR ${GIGS[o.gig.id].name} FIRST.`);
+      return;
+    }
+    if (this.state.career.shift) {
+      this.toast(G.boss, "YOU'RE ON SHIFT ELSEWHERE.");
+      return;
+    }
+    if (!o.gig) {
+      const r = startGig(o, id, this.state.minutes);
+      if (!r.ok) {
+        const H = BALANCE.oddJobs.gigs[id];
+        const hours = `SAT-SUN ${formatClock(H.from)}-${formatClock(H.until)}`;
+        const text: Record<typeof r.reason, string> = {
+          weekday: `WEEKENDS ONLY. ${hours}.`,
+          early: `NOT YET. ${hours}.`,
+          tooLate: `WE'RE DONE FOR TODAY. ${hours}.`,
+          alreadyWorked: "THAT'S YOUR SHIFT FOR TODAY. SEE YOU TOMORROW.",
+          onGig: 'FINISH WHAT YOU STARTED.',
+        };
+        this.toast(G.boss, text[r.reason]);
+        return;
+      }
+      this.toast(G.boss, `${BALANCE.oddJobs.gigs[id].tasks} ${G.unit}S. ESC WALKS OFF THE JOB, UNPAID.`);
+    }
+    const g = o.gig;
+    if (!g) return;
+    this.pendingGig = id;
+    const n = g.grades.length;
+    this.openMinigame({
+      kind: id,
+      seed: this.rng.int(1, 2 ** 30),
+      task: `${G.unit} ${n + 1}/${g.tasks}`,
+      car: id === 'carWash' ? n : undefined,
+    });
+  }
+
+  /** A gig task closed: record it, pay out after the last one, or walk off unpaid on Esc. */
+  private gigTaskDone(r: MinigameResult): void {
+    const o = this.state.oddJobs;
+    const id = this.pendingGig;
+    this.pendingGig = null;
+    if (!id || !o.gig) return;
+    const G = GIGS[id];
+    if (r.grade === null) {
+      quitGig(o);
+      this.toast(G.boss, 'YOU WALKED OFF. NO PAY TODAY.');
+      this.updateInteriorObjective();
+      return;
+    }
+    recordGigTask(o, r.grade as Grade);
+    const left = gigTasksLeft(o);
+    if (left > 0) {
+      this.toast(G.name, `${r.grade.toUpperCase()}. ${left} MORE. PRESS E FOR THE NEXT ${G.unit}.`);
+      this.updateInteriorObjective();
+      return;
+    }
+    const c = this.state.career;
+    const res = finishGig(o, c.jobs[c.current].rank);
+    if (!res.ok) return;
+    const st = this.state;
+    credit(st.money, st.finance, st.minutes, G.name, res.pay);
+    // tips are handed over in cash: clean, carried
+    st.money.clean += res.tips;
+    this.toast(G.boss, `+$${res.pay} TO THE BANK${res.tips > 0 ? `, +$${res.tips} IN TIPS` : ''}. SEE YOU.`);
+    this.syncMoneyHook();
+    void this.autosave();
+    this.updateInteriorObjective();
+  }
+
+  // ---------------------------------------------------------------- the guided first day (docs/11)
+
+  private guide(ev: OnboardEvent): void {
+    onboardEvent(this.state.onboarding, ev);
+  }
+
+  /** Per tick: the cops step ends with no stars, and Dez's evening tip arrives as a phone message. */
+  private guideTick(): void {
+    const o = this.state.onboarding;
+    if (!onboardingActive(o)) return;
+    if (currentStepId(o) === 'cops' && this.state.wanted.stars === 0) this.guide('clear');
+    if (tipDue(o, this.state.minutes)) this.toast('DEZ', DEZ_TIP);
+  }
 
   /** Money, health and inventory as the shop sees them (health lives on the player). */
   private wallet(): Wallet {
@@ -2058,6 +2201,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Job tasks and menus pause the world; crime minigames don't: witnesses and police keep moving (docs/06). */
   private openMinigame(req: MinigameRequest): void {
+    if (req.kind === 'shop') this.cleanAtShop = this.state.money.clean;
     this.prompt?.setVisible(false);
     hook().minigame = req.kind;
     this.showContextPose();
@@ -2075,6 +2219,8 @@ export class WorldScene extends Phaser.Scene {
     if (this.pendingTrunk) this.trunkMinigameDone(r);
     else if (r.kind === 'lockpick' || r.kind === 'hotwire') this.carMinigameDone(r);
     if (r.kind === 'duffel') this.launderDone(r);
+    if (r.kind === 'shop' && this.state.money.clean < this.cleanAtShop) this.guide('bought');
+    if (this.pendingGig && r.kind === this.pendingGig) this.gigTaskDone(r);
     if (this.pendingTask && r.kind === TASKS[this.pendingTask].game) {
       const task = this.pendingTask;
       this.pendingTask = null;
@@ -2096,6 +2242,13 @@ export class WorldScene extends Phaser.Scene {
 
   private updateInteriorObjective(): void {
     const c = this.state.career;
+    const gig = this.state.oddJobs.gig;
+    if (gig) {
+      const G = GIGS[gig.id];
+      const left = gigTasksLeft(this.state.oddJobs);
+      this.objective(`${G.name}: ${left} ${G.unit}${left === 1 ? '' : 'S'} LEFT AT ${G.where}`);
+      return;
+    }
     const here = this.siteJob();
     if (c.shift) {
       const J = JOBS[c.shift.job];
@@ -2691,6 +2844,7 @@ export class WorldScene extends Phaser.Scene {
     const haul = r.haul ?? [];
     c.v.looted = true;
     const got = takeLoot(haul, this.state.money, this.state.inventory);
+    this.guide('looted');
     this.toast('TRUNK', got.summary === 'NOTHING' ? 'NOTHING WORTH TAKING.' : `TOOK ${got.summary}.`);
     if (got.cash > 0 && this.state.wanted.stars === 0)
       this.objective('WASH THE CASH: DEZ, THE LOW TIDE BACK ROOM (18:00-02:00)');
@@ -3235,7 +3389,10 @@ export class WorldScene extends Phaser.Scene {
         buildings: this.radarBuildings,
         doors: this.map.doors ?? [],
         target: this.target,
-        objective: this.state.wanted.stars > 0 ? 'LOSE THE COPS' : this.objectiveText,
+        objective:
+          this.state.wanted.stars > 0
+            ? 'LOSE THE COPS'
+            : (onboardHint(this.state.onboarding) ?? this.objectiveText),
         vehicle: this.vehicleReadout(),
         starsFlash: this.state.wanted.stars > 0 && !this.state.wanted.seen,
         search:
@@ -3245,6 +3402,7 @@ export class WorldScene extends Phaser.Scene {
         police: this.police?.blips() ?? [],
         marks: this.jobMarks().map((m) => ({ x: m.x, y: m.y })),
         surrender: this.bustT > 0,
+        guide: onboardingActive(this.state.onboarding),
       };
       this.game.events.emit('hud:frame', snap);
     }
