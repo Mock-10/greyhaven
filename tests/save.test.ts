@@ -156,7 +156,7 @@ describe('saves (docs/12)', () => {
     const r = validate(old);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.file.version).toBe(5);
+    expect(r.file.version).toBe(SAVE_VERSION);
     expect(r.file.state.career.shift).toEqual({
       job: 'office',
       day: 2,
@@ -193,9 +193,32 @@ describe('saves (docs/12)', () => {
     const r = validate(old);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.file.version).toBe(5);
+    expect(r.file.version).toBe(SAVE_VERSION);
     expect(r.file.state.oddJobs).toEqual({ gig: null, lastDay: { carWash: 0, barShift: 0 } });
     expect(r.file.state.onboarding.step).toBe(ONBOARD_STEPS.length);
+    expect(Object.keys(r.file.state).sort()).toEqual(Object.keys(fresh).sort());
+  });
+
+  it('migrates a version 5 save to version 6 (crime, heat, masks)', () => {
+    const fresh = createState(1, 'downtown', { x: 0, y: 0 });
+    const v5 = JSON.parse(JSON.stringify(fresh)) as Record<string, unknown>;
+    for (const k of ['crime', 'heat', 'crimeLog', 'goods', 'masks', 'maskOn']) delete v5[k];
+    delete (v5.inventory as Record<string, unknown>).drill;
+    const old = {
+      game: 'doublelife',
+      version: 5,
+      meta: {},
+      state: v5,
+      checksum: checksum(v5),
+    } as unknown as SaveFile;
+    const r = validate(old);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.file.version).toBe(6);
+    expect(r.file.state.crime).toEqual(fresh.crime);
+    expect(r.file.state.heat).toEqual({ ids: [] });
+    expect(r.file.state.inventory.drill).toBe(0);
+    expect(r.file.state.maskOn).toBeNull();
     expect(Object.keys(r.file.state).sort()).toEqual(Object.keys(fresh).sort());
   });
 

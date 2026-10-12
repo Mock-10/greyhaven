@@ -2,6 +2,8 @@
 // Phase 0 only needs the camera, the debug walker and the render settings.
 
 import { BALANCE_ODD } from './balanceOdd';
+import { BALANCE_CRIME } from './balanceCrime';
+import { BALANCE_POLICE } from './balancePolice';
 
 export const BALANCE = {
   sim: {
@@ -559,6 +561,10 @@ export const BALANCE = {
 
   /** The weekend odd jobs (Phase 2 M8): car wash and bar shift numbers live in balanceOdd.ts. */
   oddJobs: BALANCE_ODD,
+  /** Phase 3 crime rules (robbery, burglary, ATM, reputation, the fence): numbers live in balanceCrime.ts. */
+  crimeRules: BALANCE_CRIME,
+  /** Phase 3 police rules (1–5★ response, heat, bribes, jail): numbers live in balancePolice.ts. */
+  policeRules: BALANCE_POLICE,
 
   /** The guided first day (docs/11 "Onboarding"). */
   onboarding: {

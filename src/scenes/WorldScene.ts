@@ -12,6 +12,20 @@ import { framePixels, frameInfo, opaqueAt } from '../assets/atlasLoader';
 import type { AtlasKey } from '../assets/manifest';
 import { paintPlayer } from '../assets/playerLook';
 import { outfitOf, playerCostume, type Look } from '../data/looks';
+import { BALANCE_CRIME } from '../config/balanceCrime';
+import { BALANCE_POLICE } from '../config/balancePolice';
+import { arrested, completeCrime, starsCleared, tierFor, type RepChange } from '../systems/reputation';
+import { callSeconds, knownFace, pruneHeat, sighted, type Disguise } from '../systems/identify';
+import { emptyChase, type ChaseState } from '../systems/response';
+import {
+  bribeJudge,
+  book,
+  hireLawyer,
+  judgeOffered,
+  lawyerOffered,
+  sentence,
+  type Sentence,
+} from '../systems/jail';
 import { highlight, HIGHLIGHT_PAD } from '../assets/highlight';
 import { outlinePixels } from '../assets/outline';
 import { addPixelsTexture } from '../assets/runtimeTextures';
@@ -36,15 +50,7 @@ import { StreetLife } from '../world/streetLife';
 import { Police } from '../world/police';
 import { buildRoads, type RoadGraph } from '../systems/roads';
 import { startFlee } from '../systems/crowd';
-import {
-  addStars,
-  arrest,
-  canSee,
-  emptyWanted,
-  reportCrime,
-  searchRadius,
-  tickWanted,
-} from '../systems/wanted';
+import { addStars, canSee, emptyWanted, reportCrime, searchRadius, tickWanted } from '../systems/wanted';
 import { typeOfModel } from '../data/vehicles';
 import { facingFromWorld, roundHalfEven, worldToScreen, worldToTile } from '../iso/projection';
 import { rasterizeShadows, shadowAlpha, shadowShape, type Rect } from '../iso/shadows';
@@ -76,7 +82,7 @@ import { rollTrunk, takeLoot, type LootItem } from '../systems/loot';
 import { lockTool, wearLockpicks } from '../systems/shop';
 import { atmPage, bagPage, phoneRoot, PHONE_SENDERS, type PhoneCtx } from '../world/phone';
 import { clothingPage, dealerPage, lockerPage, wardrobePage, type ShopCtx } from '../world/shops';
-import type { ListPage } from '../ui/listPanel';
+import type { ListPage, ListRow } from '../ui/listPanel';
 import { bayFree, boughtCar, payDealer } from '../systems/dealer';
 import type { ListRequest } from './ListScene';
 import { INTERIORS, interiorForDoor, isOpen, type InteriorDef, type InteriorId } from '../data/interiors';
@@ -513,6 +519,9 @@ export class WorldScene extends Phaser.Scene {
   private bustT = 0;
   /** Crimes are numbered, so several witnesses of one crime raise its stars once (docs/05). */
   private crimeSeq = 0;
+  /** This chase's once-only moves (bribe, outfit change...): reset when the stars clear (systems/response.ts). */
+  private chase: ChaseState = emptyChase();
+  private lastStars = 0;
   private reported = new Set<number>();
   /** A car alarm about to reach the police. */
   private alarm: { t: number; at: { x: number; y: number } } | null = null;
@@ -589,7 +598,13 @@ export class WorldScene extends Phaser.Scene {
       const q = pv.ped;
       if (q.call || !canSee(q, at, range, this.buildingBoxes)) continue;
       const [lo, hi] = W.callSeconds as [number, number];
-      q.call = { t: lo + (hi - lo) * this.rng.next(), at: { ...at }, stars, crime: id };
+      const known = knownFace(this.state.heat, this.state.minutes);
+      const t = callSeconds(lo + (hi - lo) * this.rng.next(), {
+        knownFace: known,
+        watchingMask: false,
+        postalUniform: false,
+      });
+      q.call = { t, at: { ...at }, stars, crime: id };
       startFlee(q, at);
     }
   }
@@ -634,10 +649,14 @@ export class WorldScene extends Phaser.Scene {
       const chance = 1 - Math.pow(1 - W.hotCarChancePerMinute, dt / 60);
       if (this.rng.chance(chance)) addStars(wanted, W.crimeStars.hotCar, street);
     }
+    // an officer who sees a bare face during a chase puts it on file (docs/05)
+    if (seen && wanted.stars > 0) sighted(this.state.heat, 'police', this.disguise(), this.state.minutes);
     if (tickWanted(wanted, dt, seen, street)) {
       this.toast('POLICE', 'YOU LOST THEM.');
       this.reported.clear();
     }
+    if (this.lastStars > 0 && wanted.stars === 0) this.chaseOver();
+    this.lastStars = wanted.stars;
     // people get out of the way of a fast car
     if (car && Math.abs(car.v.speed) > 70)
       for (const pv of this.life.peds) {
@@ -653,6 +672,29 @@ export class WorldScene extends Phaser.Scene {
     } else this.bustT = Math.max(0, this.bustT - dt * 2);
   }
 
+  /** What the player wears for identification: a mask, or a work uniform's name tag (docs/04, docs/05). */
+  private disguise(): Disguise {
+    return { masked: !!this.state.maskOn, uniform: outfitOf(this.state.look.outfit).from === 'uniform' };
+  }
+
+  /** The stars cleared without an arrest (escaped or bribed): waiting reputation pays with the escape bonus. */
+  private chaseOver(): void {
+    this.chase = emptyChase();
+    pruneHeat(this.state.heat, this.state.minutes);
+    this.repNews(starsCleared(this.state.crime));
+  }
+
+  /** A crime is done and its payout in hand (docs/04): reputation now, or after the chase. */
+  private crimeDone(payout: number): void {
+    this.repNews(completeCrime(this.state.crime, payout, this.state.wanted.stars > 0));
+  }
+
+  /** Tier-ups reach the phone from Dez, who hears everything at the bar. */
+  private repNews(ch: RepChange | null): void {
+    if (!ch) return;
+    for (const m of ch.messages) this.toast('DEZ', m);
+  }
+
   /** Arrested (docs/05): the fine, maybe jail and seized dirty cash, the stolen car impounded, release at Precinct 1. */
   private doArrest(surrendered: boolean): void {
     // busted in the middle of a lockpick or a hotwire: the panel closes
@@ -665,7 +707,9 @@ export class WorldScene extends Phaser.Scene {
     const st = this.state;
     const stars = Math.max(1, st.wanted.stars);
     const arrestedAt = st.minutes;
-    const o = arrest(st.money, st.record, stars, st.minutes, surrendered);
+    // the court's sentence first; the jail screen can still change it before booking (systems/jail.ts)
+    const s = sentence(st.record, stars, st.minutes, surrendered);
+    const repLost = arrested(st.crime);
     const car = this.drivenCar();
     let impounded = false;
     if (car) {
@@ -676,12 +720,78 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     st.wanted = emptyWanted();
+    this.chase = emptyChase();
+    this.lastStars = 0;
     this.bustT = 0;
     this.alarm = null;
     for (const pv of this.life?.peds ?? []) pv.ped.call = null;
     this.police?.destroy();
-    const day = Math.floor(st.minutes / 1440);
-    st.minutes = o.jailDays > 0 ? (day + o.jailDays) * 1440 + BALANCE.sleep.wakeMinute : st.minutes + 60;
+    // booked at the precinct: the face goes on file
+    sighted(st.heat, 'police', { masked: false, uniform: false }, st.minutes);
+    this.prompt?.setVisible(false);
+    this.scene.pause();
+    const done = () => this.booked(s, arrestedAt, impounded, repLost);
+    if (lawyerOffered(s) || judgeOffered(s, tierFor(st.crime.rep))) this.jailScreen(s, done);
+    else done();
+  }
+
+  /** The jail screen (docs/05): a lawyer cuts a day, the judge (Connected) turns jail into a fine. */
+  private jailScreen(s: Sentence, done: () => void): void {
+    const st = this.state;
+    const tier = tierFor(st.crime.rep);
+    const page = (): ListPage => {
+      const rows: ListRow[] = [];
+      if (lawyerOffered(s))
+        rows.push({
+          label: 'HIRE A LAWYER',
+          icon: 'app/jobs',
+          sub: 'ONE DAY LESS, CLEAN MONEY',
+          detail: `$${BALANCE_POLICE.bribes.lawyer}`,
+          act: () => ({ say: hireLawyer(s, st.money).text }),
+        });
+      if (judgeOffered(s, tier))
+        rows.push({
+          label: 'BRIBE THE JUDGE',
+          icon: 'item/cash',
+          sub: 'A FINE INSTEAD OF JAIL, DIRTY CASH',
+          detail: `$${BALANCE_POLICE.bribes.judge}`,
+          act: () => ({ say: bribeJudge(s, st.money, tier).text }),
+        });
+      rows.push({
+        label: s.jailDays > 0 ? 'SERVE THE TIME' : 'PAY THE FINE',
+        icon: 'face/cop',
+        sub: s.jailDays > 0 ? `${s.jailDays} DAY${s.jailDays > 1 ? 'S' : ''}` : 'AND WALK OUT',
+        act: () => ({ close: true }),
+      });
+      return {
+        title: 'BOOKED',
+        icon: 'face/cop',
+        lines: [
+          `FINE $${s.fine}`,
+          s.jailDays > 0 ? `JAIL ${s.jailDays} DAY${s.jailDays > 1 ? 'S' : ''}` : 'NO JAIL',
+        ],
+        rows,
+      };
+    };
+    hook().minigame = 'jail';
+    this.scene.launch('list', {
+      style: 'menu',
+      name: 'jail',
+      root: page,
+      onChange: () => this.syncMoneyHook(),
+      clock: () => formatClock(calendar(this.state.minutes).minute),
+    } satisfies ListRequest);
+    this.game.events.once('list:closed', () => {
+      hook().minigame = null;
+      done();
+    });
+  }
+
+  /** Book the arrest: the fine, any seizure, jail time, the career record, release at Precinct 1. */
+  private booked(s: Sentence, arrestedAt: number, impounded: boolean, repLost: number): void {
+    const st = this.state;
+    const o = book(s, st.money, st.record, {}, st.minutes);
+    st.minutes = o.releaseAt;
     // the record follows the person into every job (docs/03): freeze, extra work, no clean-record bonus
     arrestEffects(st.career, arrestedAt, st.minutes);
     const door = this.map.zones?.find((z) => z.id === 'precinct')?.npc ?? this.map.spawn;
@@ -689,16 +799,17 @@ export class WorldScene extends Phaser.Scene {
     st.player.y = door.y;
     this.camCtl.snap();
     const lines = [
-      o.repeat ? 'REPEAT OFFENSE' : 'FIRST OFFENSE: A FINE ONLY',
-      `FINE $${o.fine}${surrendered ? ' (SURRENDERED: -30%)' : ''}${o.paid < o.fine ? `, PAID $${o.paid}` : ''}`,
+      s.repeat ? 'REPEAT OFFENSE' : 'FIRST OFFENSE: A FINE ONLY',
+      `FINE $${s.fine}${s.surrendered ? ' (SURRENDERED: -30%)' : ''}${o.paid < s.fine ? `, PAID $${o.paid}` : ''}`,
     ];
-    if (o.jailDays > 0) lines.push(`${o.jailDays} DAY${o.jailDays > 1 ? 'S' : ''} IN JAIL`);
-    if (o.seized > 0) lines.push(`DIRTY CASH SEIZED: $${o.seized}`);
+    if (s.judge) lines.push('THE JUDGE MADE IT A FINE');
+    else if (o.jailDays > 0)
+      lines.push(`${o.jailDays} DAY${o.jailDays > 1 ? 'S' : ''} IN JAIL${s.lawyer ? ' (LAWYER)' : ''}`);
+    if (o.seizedCash > 0) lines.push(`DIRTY CASH SEIZED: $${o.seizedCash}`);
     if (impounded) lines.push('THE STOLEN CAR WAS IMPOUNDED');
+    if (repLost > 0) lines.push(`STREET REP LOST: ${repLost}`);
     lines.push(`PROMOTION FROZEN ${BALANCE.careers.freezeDays} DAYS, EXTRA WORK AFTER`);
     lines.push('RELEASED AT PRECINCT 1, PEWTER STREET');
-    this.prompt?.setVisible(false);
-    this.scene.pause();
     this.scene.launch('menu', { info: { title: 'BUSTED', lines } });
     this.game.events.once('menu:closed', () => {
       this.scene.resume();
@@ -726,7 +837,7 @@ export class WorldScene extends Phaser.Scene {
    * world until it closes.
    */
   private openList(name: 'phone' | 'atm' | 'bag'): void {
-    const ctx: PhoneCtx = { state: this.state, wallet: this.wallet() };
+    const ctx: PhoneCtx = { state: this.state, wallet: this.wallet(), chase: this.chase };
     const root = { phone: phoneRoot, atm: atmPage, bag: bagPage }[name];
     this.openPanel(name, () => root(ctx));
   }
@@ -2856,6 +2967,13 @@ export class WorldScene extends Phaser.Scene {
     c.v.looted = true;
     const got = takeLoot(haul, this.state.money, this.state.inventory);
     this.guide('looted');
+    // reputation counts the haul at what it's worth: the cash plus the fence's price for phones and watches
+    const F = BALANCE_CRIME.fence;
+    const worth =
+      got.cash +
+      haul.filter((i) => i.kind === 'phone').length * F.phone +
+      haul.filter((i) => i.kind === 'watch').length * F.watch;
+    if (worth > 0) this.crimeDone(worth);
     this.toast('TRUNK', got.summary === 'NOTHING' ? 'NOTHING WORTH TAKING.' : `TOOK ${got.summary}.`);
     if (got.cash > 0 && this.state.wanted.stars === 0)
       this.objective('WASH THE CASH: DEZ, THE LOW TIDE BACK ROOM (18:00-02:00)');
@@ -2953,6 +3071,7 @@ export class WorldScene extends Phaser.Scene {
         }
         this.removeCar(c);
         this.state.money.dirty += price;
+        this.crimeDone(price);
         this.objective('WASH THE CASH: DEZ, THE LOW TIDE BACK ROOM (18:00-02:00)');
         walk(to, home, () => {
           s.destroy();

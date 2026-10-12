@@ -428,6 +428,13 @@ FACES = {
     'hr': lambda: humans.human(skin_tone=3.2, upper=('teal', 2.4), hair=('khaki', 2.8), hair_style='long', jacket=True),
     'landlord': lambda: humans.human(skin_tone=2.6, upper=('wood', 2.2), hair=('white', 3.0), hair_style='bald'),
     'player': lambda: humans.office_worker(),
+    # Phase 3 crime contacts and the cop you bribe
+    'fence': lambda: humans.human(skin_tone=2.2, upper=('wood', 1.6), hair=('night', 2.0), hair_style='short', vest=('khaki', 2.2)),
+    'dealer': lambda: humans.human(skin_tone=1.6, upper=('night', 1.4), hair=('night', 0.8), hair_style='bald', jacket=True),
+    'supplier': lambda: humans.human(skin_tone=3.0, upper=('sage', 2.0), hair=('wood', 2.2), hood=('sage', 1.6)),
+    'gang': lambda: humans.human(skin_tone=2.0, upper=('red', 2.0), hair=('night', 1.0), hat='cap'),
+    'cop': lambda: humans.human(skin_tone=2.8, upper=('navy', 2.4), hair=('wood', 1.4), hat='cap', badge=True),
+    'masked': lambda: humans.human(skin_tone=2.6, upper=('night', 1.6), hair=('night', 1.0), mask=True),
 }
 
 # name -> (model factory, view angle, cell size)
