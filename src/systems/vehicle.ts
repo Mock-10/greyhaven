@@ -24,6 +24,10 @@ export interface Vehicle {
   /** Stolen: hot until this in-game minute (docs/08). */
   hotUntil: number;
   wrecked: boolean;
+  /** The trunk has been searched (docs/12: a looted car stays looted). */
+  looted?: boolean;
+  /** Bought by the player (the car dealer, M6): never a crime to open or drive. */
+  owned?: boolean;
 }
 
 export interface DriveInput {
@@ -166,6 +170,26 @@ export function pourCan(v: Vehicle, inv: { fuelCans: number }): boolean {
   inv.fuelCans--;
   v.fuel = Math.min(stats(v).tank, v.fuel + BALANCE.vehicles.canUnits);
   return true;
+}
+
+/** A repair kit from the bag (docs/08: $150, repairs a car to 50%): only on a car below that and not wrecked. */
+export function repairKit(v: Vehicle, inv: { repairKits: number }): boolean {
+  const to = stats(v).health * BALANCE.tools.repairKitTo;
+  if (inv.repairKits <= 0 || v.wrecked || v.health >= to) return false;
+  inv.repairKits--;
+  v.health = to;
+  return true;
+}
+
+/** Can a repair kit help this car? */
+export function needsRepair(v: Vehicle): boolean {
+  return !v.wrecked && v.health < stats(v).health * BALANCE.tools.repairKitTo;
+}
+
+/** The point behind the car where its trunk is opened (the rear, `trunkReach` of the car's length back). */
+export function trunkSpot(v: Pick<Vehicle, 'x' | 'y' | 'heading' | 'type'>): { x: number; y: number } {
+  const back = 2 * stats(v).halfLength * BALANCE.crime.trunk.reach;
+  return { x: v.x - Math.cos(v.heading) * back, y: v.y - Math.sin(v.heading) * back };
 }
 
 /**

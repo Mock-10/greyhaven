@@ -67,3 +67,8 @@ Settings toggles, each on its own:
 - **Auto-complete job tasks** at an "OK" grade
 
 Assists do not change payouts. Auto-complete caps the grade at OK.
+
+## Phase 2 build (milestone 5, 2026-10-11)
+- **Search** (trunk looting): a 4 × 3 grid with the trunk's valuables (cash, wallets, phones, a watch, sometimes a lockpick set) among junk, 6 seconds. Click the glinting items, or move with the arrows and grab with Space. The watch is the gold item. Grade: every valuable with 35% of the time left is excellent, every valuable is good, two thirds OK, any poor, none fail. Only what you grab is kept. It is a crime minigame, so the world keeps running.
+- **Lockpick tools:** a basic set (hardware store, $40, 10 uses) widens the zones by 15%. Each attempt uses 1, a failure 2. With no picks the prompt reads LOCKPICK (NO TOOLS) and the dial is the bare tier-0 one. Pro picks come later.
+- **Hotwire:** a toolbox in the bag adds 3 seconds to the timer.

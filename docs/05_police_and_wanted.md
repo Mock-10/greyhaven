@@ -68,3 +68,7 @@ Wake at the nearest hospital at the next 06:00. Pay 10% of carried clean cash (m
 - **Arrest:** Phase 1 uses an arrest screen ("fine paid" or "jailed N days"). In Phase 3 the police station gets a walkable front desk (lawyer and judge bribes, lockers with seized items).
 - **Phase 1 police** leave from a small precinct on the test map.
 - **Hospital:** you wake in a ward bed, pay at the discharge desk and walk out.
+
+## Phase 2 fixes (milestone 5, 2026-10-11)
+- **One crime, one set of stars:** several witnesses of the same crime raise its stars once; later calls only move the search circle. (Before this fix, three witnesses of one lockpick gave 3★.) A new crime while wanted still stacks.
+- Trunk looting is a 1★ crime.

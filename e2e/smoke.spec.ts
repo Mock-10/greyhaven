@@ -21,6 +21,51 @@ async function boot(page: Page, query: string): Promise<string[]> {
   return problems;
 }
 
+/** Type a line into the cheat console (Ctrl + Shift + F1) and close it. */
+async function cheat(page: Page, line: string): Promise<void> {
+  await page.keyboard.press('Control+Shift+F1');
+  await page.keyboard.type(line);
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(200);
+}
+
+/**
+ * Play an open lockpick panel like a player watching the needle: press Space as it crosses into the good zone.
+ * Polling the needle doesn't depend on the frame rate (slow CI frames made timed predictions miss).
+ */
+async function playLockpick(page: Page): Promise<void> {
+  const t0 = Date.now();
+  while (Date.now() - t0 < 40_000) {
+    const g = await page.evaluate(() => {
+      const m = window.__DL__.minigameState as {
+        needle: number;
+        zone: number;
+        good: number;
+        passed: number;
+        done: boolean;
+      } | null;
+      if (window.__DL__.minigame !== 'lockpick' || !m) return null;
+      return { needle: m.needle, zone: m.zone, good: m.good, passed: m.passed, done: m.done };
+    });
+    if (!g || g.done) break;
+    const off = ((((g.needle - g.zone) % 360) + 540) % 360) - 180;
+    if (off >= -g.good / 2 + 4 && off <= 0) {
+      await page.keyboard.press('Space');
+      await page
+        .waitForFunction(
+          (passed) => {
+            const m = window.__DL__.minigameState as { passed: number; done: boolean } | null;
+            return !m || m.done || m.passed !== passed || window.__DL__.minigame !== 'lockpick';
+          },
+          g.passed,
+          { timeout: 3_000 },
+        )
+        .catch(() => undefined);
+    } else await page.waitForTimeout(10);
+  }
+}
+
 test('boots, starts from the title and moves the walker', async ({ page }) => {
   const problems = await boot(page, '?seed=1');
   expect(await page.evaluate(() => window.__DL__.started)).toBe(false);
@@ -91,7 +136,6 @@ test('targets the ATM in range and the clock runs', async ({ page }) => {
   await page.waitForTimeout(150);
   await page.keyboard.up('KeyW');
   await page.waitForFunction(() => window.__DL__.target === 'atm_plaza');
-  await page.keyboard.press('KeyE');
   const t0 = await page.evaluate(() => window.__DL__.minutes);
   await page.waitForTimeout(1500);
   const t1 = await page.evaluate(() => window.__DL__.minutes);
@@ -161,37 +205,7 @@ test('carjack: picks a parked car, hotwires it and drives off', async ({ page })
   for (let attempt = 0; attempt < 6; attempt++) {
     await page.keyboard.press('KeyE');
     await page.waitForFunction(() => window.__DL__.minigame === 'lockpick', null, { timeout: 10_000 });
-    // poll the needle and press as it crosses into the good zone, as a player watching it would: this doesn't
-    // depend on the frame rate (slow CI frames made a timed prediction miss)
-    const t0 = Date.now();
-    while (Date.now() - t0 < 40_000) {
-      const g = await page.evaluate(() => {
-        const m = window.__DL__.minigameState as {
-          needle: number;
-          zone: number;
-          good: number;
-          passed: number;
-          done: boolean;
-        } | null;
-        if (window.__DL__.minigame !== 'lockpick' || !m) return null;
-        return { needle: m.needle, zone: m.zone, good: m.good, passed: m.passed, done: m.done };
-      });
-      if (!g || g.done) break;
-      const off = ((((g.needle - g.zone) % 360) + 540) % 360) - 180;
-      if (off >= -g.good / 2 + 4 && off <= 0) {
-        await page.keyboard.press('Space');
-        await page
-          .waitForFunction(
-            (passed) => {
-              const m = window.__DL__.minigameState as { passed: number; done: boolean } | null;
-              return !m || m.done || m.passed !== passed || window.__DL__.minigame !== 'lockpick';
-            },
-            g.passed,
-            { timeout: 3_000 },
-          )
-          .catch(() => undefined);
-      } else await page.waitForTimeout(10);
-    }
+    await playLockpick(page);
     await page.waitForFunction(() => window.__DL__.minigame === null, null, { timeout: 20_000 });
     await page.waitForTimeout(800);
     if (await page.evaluate((cid) => !window.__DL__.cars.find((c) => c.id === cid)?.locked, id)) break;
@@ -290,5 +304,134 @@ test('police: the cruiser comes from Precinct 1, an officer busts the player, a 
   await page.waitForFunction(() => window.__DL__.minigame === null);
   expect(await page.evaluate(() => window.__DL__.stars)).toBe(0);
   expect(await page.evaluate(() => window.__DL__.clean)).toBe(250 - 200);
+  expect(problems).toEqual([]);
+});
+
+test('the ATM: pay carried cash into the bank and take some out (docs/02)', async ({ page }) => {
+  test.setTimeout(120_000);
+  const problems = await boot(page, '?scene=world&zoom=3&x=300&y=318');
+  await page.keyboard.down('KeyW');
+  await page.waitForTimeout(150);
+  await page.keyboard.up('KeyW');
+  await page.waitForFunction(() => window.__DL__.target === 'atm_plaza');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'atm');
+  await page.waitForTimeout(400);
+  // DEPOSIT ALL CLEAN CASH is the fifth row
+  await page.keyboard.press('5');
+  await page.waitForFunction(() => window.__DL__.bank === 250 && window.__DL__.clean === 0);
+  // WITHDRAW $100 is the third
+  await page.keyboard.press('3');
+  await page.waitForFunction(() => window.__DL__.bank === 150 && window.__DL__.clean === 100);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  expect(problems).toEqual([]);
+});
+
+test('the phone (P): the bank app shows the balance and the statement', async ({ page }) => {
+  test.setTimeout(120_000);
+  const problems = await boot(page, '?scene=world&zoom=2&time=10:00');
+  await cheat(page, 'bank 640');
+  await page.keyboard.press('KeyP');
+  await page.waitForFunction(() => window.__DL__.minigame === 'phone');
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => window.__DL__.listPage?.title)).toBe('PHONE');
+  await page.keyboard.press('2'); // BANK
+  await page.waitForFunction(() => window.__DL__.listPage?.title === 'BANK');
+  expect(await page.evaluate(() => window.__DL__.listPage?.lines?.[0])).toBe('BANK $640');
+  await page.keyboard.press('Escape'); // back to the front page
+  await page.waitForFunction(() => window.__DL__.listPage?.title === 'PHONE');
+  await page.keyboard.press('KeyP'); // P closes it
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  expect(problems).toEqual([]);
+});
+
+test('trunk looting: pick the trunk lock, grab the glinting items, dirty cash in hand', async ({ page }) => {
+  test.setTimeout(240_000);
+  // the sedan at the store lot's west end faces +y; stand behind its rear bumper. 04:00: the street is empty, so
+  // no witness calls the police in the middle of the test
+  const problems = await boot(page, '?scene=world&zoom=3&time=04:00&x=797&y=132');
+  await cheat(page, 'item lockpicks 10');
+  for (let k = 0; k < 6; k++) {
+    if ((await page.evaluate(() => window.__DL__.target))?.startsWith('trunk:')) break;
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(150);
+  }
+  const target = await page.evaluate(() => window.__DL__.target as string);
+  expect(target.startsWith('trunk:')).toBe(true);
+  const id = target.slice(6);
+  for (let attempt = 0; attempt < 6; attempt++) {
+    await page.keyboard.press('KeyE');
+    await page.waitForFunction(() => ['lockpick', 'search'].includes(window.__DL__.minigame ?? ''), null, {
+      timeout: 10_000,
+    });
+    if ((await page.evaluate(() => window.__DL__.minigame)) === 'lockpick') await playLockpick(page);
+    // after a picked lock the search panel opens a moment later; a slipped pick leaves no panel
+    const opened = await page
+      .waitForFunction(() => window.__DL__.minigame === 'search', null, { timeout: 8_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (opened) break;
+    await page.waitForFunction(() => window.__DL__.minigame === null, null, { timeout: 20_000 });
+    await page.waitForTimeout(800);
+  }
+  await page.waitForFunction(
+    () => window.__DL__.minigame === 'search' && (window.__DL__.minigameState as { cells?: unknown })?.cells,
+    null,
+    { timeout: 10_000 },
+  );
+  expect(await page.evaluate(() => window.__DL__.inventory.lockpicks)).toBeLessThan(10);
+  // grab the valuables with the keyboard, the money first (the timer is short and headless frames are slow): move the
+  // cursor onto each and press Space
+  const cells = await page.evaluate(() => {
+    const cs = (window.__DL__.minigameState as { cells: { item: { kind: string } | null }[] }).cells;
+    const money = (k: string) => k === 'cash' || k === 'wallet';
+    return cs
+      .map((c, i) => ({ i, kind: c.item?.kind ?? 'junk' }))
+      .filter((c) => c.kind !== 'junk')
+      .sort((a, b) => Number(money(b.kind)) - Number(money(a.kind)))
+      .map((c) => c.i);
+  });
+  for (const cell of cells) {
+    for (let k = 0; k < 12; k++) {
+      const g = await page.evaluate(
+        () => window.__DL__.minigameState as { cursor: number; cols: number; done: boolean } | null,
+      );
+      if (!g || g.done || g.cursor === cell) break;
+      const sameRow = Math.floor(g.cursor / g.cols) === Math.floor(cell / g.cols);
+      await page.keyboard.press(sameRow ? 'ArrowRight' : 'ArrowDown');
+    }
+    await page.keyboard.press('Space');
+  }
+  await page.waitForFunction(() => window.__DL__.minigame === null, null, { timeout: 20_000 });
+  await page.waitForFunction((cid) => window.__DL__.cars.find((c) => c.id === cid)?.looted === true, id);
+  expect(await page.evaluate(() => window.__DL__.dirty)).toBeGreaterThanOrEqual(20);
+  // a looted car stays looted: the trunk prompt is gone
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => window.__DL__.target?.startsWith('trunk:') ?? false)).toBe(false);
+  expect(problems).toEqual([]);
+});
+
+test('unpaid rent ends in eviction: the apartment refuses you, the shelter lets you sleep', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  // St. Brine's Mission is the chapel on Pewter Street, next to the precinct
+  const problems = await boot(page, '?scene=world&zoom=3&time=10:00&x=545&y=1342');
+  // three weeks pass with nothing in the bank: rent is missed on day 8, eviction comes 14 days later
+  await cheat(page, 'day 23');
+  await page.waitForFunction(() => window.__DL__.evicted === true);
+  for (let k = 0; k < 6; k++) {
+    if ((await page.evaluate(() => window.__DL__.target)) === 'zone:shelter') break;
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(150);
+  }
+  expect(await page.evaluate(() => window.__DL__.target)).toBe('zone:shelter');
+  const before = await page.evaluate(() => window.__DL__.minutes);
+  await page.waitForTimeout(400);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction((t) => window.__DL__.minutes > t + 60, before, { timeout: 15_000 });
+  expect(Math.floor((await page.evaluate(() => window.__DL__.minutes)) % 1440)).toBe(6 * 60);
   expect(problems).toEqual([]);
 });

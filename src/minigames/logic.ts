@@ -2,6 +2,7 @@
 // ends in a grade: fail, poor, ok, good or excellent. Job tasks pause the world; crime minigames don't.
 
 import { BALANCE } from '../config/balance';
+import { glints, type LootItem } from '../systems/loot';
 import type { Rng } from '../core/rng';
 import type { Grade } from '../systems/career';
 
@@ -183,12 +184,16 @@ export class SkillCheckGame implements MinigameLogic {
     private rng: Rng,
     tier = 0,
     private maxMisses = BALANCE.minigames.lockpick.maxMisses,
+    /** docs/06 tool tolerance: basic tools widen the zones by 15%; pro tools by 30% and one check fewer. */
+    tool: 'none' | 'basic' | 'pro' = 'none',
   ) {
     const t = BALANCE.minigames.skillTiers[tier] ?? BALANCE.minigames.skillTiers[0]!;
+    const T = BALANCE.minigames.tools;
+    const widen = tool === 'pro' ? T.proWiden : tool === 'basic' ? T.basicWiden : 0;
     this.speed = t.speed;
-    this.good = t.good;
-    this.great = t.great;
-    this.checks = t.checks;
+    this.good = t.good * (1 + widen);
+    this.great = t.great * (1 + widen);
+    this.checks = Math.max(1, t.checks - (tool === 'pro' ? T.proFewerChecks : 0));
     this.newZone();
   }
 
@@ -252,13 +257,14 @@ export class HotwireGame implements MinigameLogic {
   done = false;
   grade: Grade | null = null;
 
-  constructor(rng: Rng) {
+  /** `bonusSeconds`: extra time from a toolbox (the basic hotwiring tool). */
+  constructor(rng: Rng, bonusSeconds = 0) {
     const H = BALANCE.minigames.hotwire;
     this.left = WIRE_COLOURS.slice(0, H.pairs) as WireColour[];
     this.right = rng.shuffle([...this.left]);
     this.connected = this.left.map(() => false);
-    this.timeTotal = H.seconds;
-    this.timeLeft = H.seconds;
+    this.timeTotal = H.seconds + bonusSeconds;
+    this.timeLeft = H.seconds + bonusSeconds;
   }
 
   /** Pick a left wire (0-based). */
@@ -413,6 +419,90 @@ export class DuffelGame implements MinigameLogic {
         this.timeLeft / this.timeTotal > BALANCE.minigames.duffel.excellentTimeShare ? 'excellent' : 'good';
     else if (share >= 0.75 && this.dyedBagged <= 1) this.grade = 'ok';
     else if (share >= 0.5) this.grade = 'poor';
+    else this.grade = 'fail';
+  }
+
+  update(dt: number): void {
+    if (this.flash) this.flash.t += dt;
+    if (this.done) return;
+    this.timeLeft = Math.max(0, this.timeLeft - dt);
+    if (this.timeLeft === 0) this.finish();
+  }
+}
+
+/** One grid cell of the search panel. */
+export interface SearchCell {
+  item: LootItem | null;
+  grabbed: boolean;
+}
+
+/**
+ * Search (docs/06 "Register grab / search"): click the glinting items in a grid before the timer runs out; gold
+ * items are worth more. Used by trunk looting now, and by robberies and burglary later. The grade comes from the
+ * share of valuables grabbed and the time left.
+ */
+export class SearchGame implements MinigameLogic {
+  readonly cells: SearchCell[];
+  readonly cols: number;
+  readonly rows: number;
+  timeLeft: number;
+  readonly timeTotal: number;
+  /** Keyboard cursor (arrows + Space). */
+  cursor = 0;
+  flash: { cell: number; t: number } | null = null;
+  done = false;
+  grade: Grade | null = null;
+
+  constructor(rng: Rng, items: readonly LootItem[]) {
+    const S = BALANCE.minigames.search;
+    this.cols = S.cols;
+    this.rows = S.rows;
+    const n = S.cols * S.rows;
+    const spots = rng.shuffle([...Array(n).keys()]).slice(0, Math.min(n, items.length));
+    this.cells = [...Array(n).keys()].map(() => ({ item: null, grabbed: false }));
+    spots.forEach((c, k) => {
+      (this.cells[c] as SearchCell).item = items[k] ?? null;
+    });
+    this.timeTotal = S.seconds;
+    this.timeLeft = S.seconds;
+  }
+
+  get valuables(): number {
+    return this.cells.filter((c) => c.item && glints(c.item.kind)).length;
+  }
+
+  get taken(): number {
+    return this.cells.filter((c) => c.grabbed && c.item && glints(c.item.kind)).length;
+  }
+
+  /** What was grabbed (junk included: it's worthless). */
+  get haul(): LootItem[] {
+    return this.cells.filter((c) => c.grabbed && c.item).map((c) => c.item as LootItem);
+  }
+
+  grab(cell: number): void {
+    const c = this.cells[cell];
+    if (this.done || !c || c.grabbed || !c.item) return;
+    c.grabbed = true;
+    this.cursor = cell;
+    this.flash = { cell, t: 0 };
+    if (this.taken === this.valuables) this.finish();
+  }
+
+  move(dx: number, dy: number): void {
+    const x = (this.cursor % this.cols) + dx;
+    const y = Math.floor(this.cursor / this.cols) + dy;
+    this.cursor = ((y + this.rows) % this.rows) * this.cols + ((x + this.cols) % this.cols);
+  }
+
+  private finish(): void {
+    this.done = true;
+    const share = this.valuables ? this.taken / this.valuables : 1;
+    if (share === 1)
+      this.grade =
+        this.timeLeft / this.timeTotal > BALANCE.minigames.search.excellentTimeShare ? 'excellent' : 'good';
+    else if (share >= 0.66) this.grade = 'ok';
+    else if (share > 0) this.grade = 'poor';
     else this.grade = 'fail';
   }
 

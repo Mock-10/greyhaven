@@ -104,3 +104,12 @@ A short guided first day of about 15 real minutes, with skippable hints:
 - **Cheat console:** on the Pages build behind a hidden key combo, so the user can playtest (add cash, set stars, set rank or reputation, skip time).
 - **Character creator:** as specced (no body types, no extra hair).
 - **Onboarding:** no bus or taxi step; step 5 uses trunk looting (brought forward to Phase 2).
+
+## Phase 2 build (milestone 5, 2026-10-11)
+- **Phone (P):** MESSAGES (every message from a person or service, the last 30), BANK (balance, rent, PAY RENT NOW or MOVE BACK IN, STATEMENT), JOB BOARD, CONTACTS (HR bribes, the landlord, Dez, Marlo). The map, crew and properties apps arrive with their systems. P or Esc closes it. It pauses the world, like the pause menu.
+- **Bag (I):** a list of what you carry: first-aid kits (USE), fuel cans and repair kits (used at a car), lockpicks with uses left, the toolbox, stolen phones and watches. The weight grid (docs/11 "Inventory") comes with weapons in Phase 4.
+- **ATM:** E at the plaza ATM opens the same list panel.
+- List panels: arrows or W/S to move, Enter, Space, E or a number key to choose, Esc to go back, the mouse to point and click, the wheel to scroll.
+- **Key hints** on foot: P PHONE · I BAG · SHIFT SPRINT (E USE · TAB NEXT near something usable).
+- **Phone messages queue:** when several arrive together (Monday's rent and bonus), each shows for at least 2.2 s before the next.
+- **Prompts:** LOOT TRUNK at a car's rear bumper, USE REPAIR KIT on a car under 50%, SLEEP (SHELTER) at St. Brine's. The world prompt hides while a panel is open.

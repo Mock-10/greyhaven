@@ -84,3 +84,10 @@ The sim script is in `tools/econ_sim.py`. Re-run it after any change to pay, pay
 - **Rent** is taken automatically from the bank on Monday 06:00. If the bank is short, late fees build (+$50 a day) and eviction follows after two missed weeks. **After eviction you sleep at a shelter, which still allows saving.**
 - **Phase 2 shops:** corner store (full: food, fuel can, first-aid kit), clothing store (outfits; masks come in Phase 3), hardware store (basic lockpicks, toolbox, repair kit), car dealer (beater and sedan to start).
 - **Weekend odd jobs** (instead of side gigs of your own job): a **car wash** gig and a **bar shift at The Low Tide** (pour drinks), at the 60% side-gig rate, no promotion XP.
+
+## Phase 2 build (milestone 5, 2026-10-11)
+- **Bank:** carried clean cash and a bank balance. Shift pay and promotion bonuses go to the bank. ATMs (the plaza ATM) deposit all carried clean cash or withdraw $20 / $50 / $100 / $500. Dirty cash never enters the bank. Shops, pumps and fines take only carried clean cash. The phone's BANK app shows the balance, rent and a statement of the last 24 lines.
+- **Rent** ($350) is taken from the bank on Monday 06:00, all or nothing. If the bank can't cover everything owed, nothing is taken and the debt stays. From the next day, each 06:00 adds a $50 late fee and retries the bank. You can also pay from the phone (BANK → PAY RENT NOW). A rent reminder comes on Sunday at 20:00.
+- **Eviction** comes 14 days after the first unpaid rent. It clears the debt, your belongings go to city storage, and the apartment door refuses you. Moving back in costs a week's rent plus the $200 storage fee, from the phone's BANK app. Meanwhile you sleep and save at **St. Brine's Mission**, the chapel on Pewter Street (open to anyone, any time).
+- **Clean-record bonus:** 15% of the week's job pay, paid to the bank on Monday 06:00 before rent, unless the week had an arrest.
+- **HR bribes** come from the bank: $150 covers a missed shift from the last 7 days (the −5 XP comes back, no pay), $600 lifts a promotion freeze.

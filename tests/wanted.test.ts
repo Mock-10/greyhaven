@@ -6,6 +6,7 @@ import {
   blockedBy,
   canSee,
   emptyWanted,
+  reportCrime,
   searchRadius,
   tickWanted,
 } from '../src/systems/wanted';
@@ -20,6 +21,19 @@ describe('wanted level (docs/05)', () => {
     addStars(w, 9, { x: 200, y: 100 });
     expect(w.stars).toBe(5);
     expect(w.lastKnown).toEqual({ x: 200, y: 100 });
+  });
+
+  it('raises the stars once per crime, however many witnesses call it in', () => {
+    const w = emptyWanted();
+    const seen = new Set<number>();
+    expect(reportCrime(w, seen, 1, 1, { x: 0, y: 0 })).toBe(true);
+    expect(reportCrime(w, seen, 1, 1, { x: 40, y: 0 })).toBe(false);
+    expect(reportCrime(w, seen, 1, 1, { x: 80, y: 0 })).toBe(false);
+    expect(w.stars).toBe(1);
+    expect(w.lastKnown).toEqual({ x: 80, y: 0 });
+    // a second crime stacks
+    expect(reportCrime(w, seen, 2, 1, { x: 0, y: 0 })).toBe(true);
+    expect(w.stars).toBe(2);
   });
 
   it('only counts the escape timer down out of sight and outside the circle', () => {

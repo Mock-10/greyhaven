@@ -27,7 +27,7 @@ export interface Ped {
   threat: { x: number; y: number } | null;
   fleeT: number;
   /** A witness on the phone to the police (docs/05): seconds until the call gets through, and what they saw. */
-  call: { t: number; at: { x: number; y: number }; stars: number } | null;
+  call: { t: number; at: { x: number; y: number }; stars: number; crime: number } | null;
 }
 
 export interface Link {

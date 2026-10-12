@@ -9,8 +9,22 @@ import {
   HotwireGame,
   DuffelGame,
   MoneyCountGame,
+  SearchGame,
   SkillCheckGame,
 } from '../src/minigames/logic';
+import { rollTrunk } from '../src/systems/loot';
+import { createState } from '../src/core/store';
+import {
+  atmPage,
+  bagPage,
+  bankPage,
+  contactsPage,
+  jobsPage,
+  phoneRoot,
+  type PhoneCtx,
+} from '../src/world/phone';
+import { drawList, LIST_SIZE, type ListPage, type ListStyle } from '../src/ui/listPanel';
+import { arrestEffects } from '../src/systems/career';
 import {
   beginAudit,
   createSurface,
@@ -35,6 +49,7 @@ import {
   drawLockpick,
   drawDuffel,
   drawMoneyCount,
+  drawSearch,
   drawShop,
   type PanelKind,
 } from '../src/ui/panels';
@@ -118,6 +133,27 @@ describe('panel layouts never overlap', () => {
     );
   });
 
+  it('the hardware shop', () => {
+    check('shop', (s) =>
+      drawShop(s, X, Y, {
+        title: 'HARDWARE',
+        stock: SHOP_STOCK.hardware,
+        clean: 10,
+        selected: 2,
+        message: 'YOU ALREADY HAVE A TOOLBOX',
+      }),
+    );
+  });
+
+  it('the trunk search, in play and at the end', () => {
+    const g = new SearchGame(new Rng(6), rollTrunk(new Rng(7)));
+    g.grab(g.cells.findIndex((c) => c.item && c.item.kind !== 'junk'));
+    check('search', (s) => drawSearch(s, X, Y, g, 'TRUNK', 0.1));
+    g.timeLeft = 0;
+    g.update(0.1);
+    check('search', (s) => drawSearch(s, X, Y, g, 'TRUNK', 2));
+  });
+
   it('the car readout and the driving hints', () => {
     check('hud', (s) => {
       topLeft(s, 6, 6, { ammo: '-/-', label: 'UNARMED', hp: 1, armor: 0 });
@@ -168,5 +204,76 @@ describe('pause menu (docs/11)', () => {
         r.x >= X && r.y >= Y && r.x + r.w <= X + MENU_PANEL.w && r.y + r.h <= Y + MENU_PANEL.h,
         r.what,
       ).toBe(true);
+  });
+});
+
+describe('list panels: the phone, the ATM and the bag (docs/11)', () => {
+  function checkList(style: ListStyle, page: ListPage, message: string | null = null): void {
+    const s = createSurface(640, 360);
+    beginAudit();
+    drawList(s, style, X, Y, page, 1, 0, message, true);
+    const rects = endAudit();
+    const bad = overlaps(rects).map(([a, b]) => `${a.what} @${a.x},${a.y} overlaps ${b.what} @${b.x},${b.y}`);
+    expect(bad, page.title).toEqual([]);
+    const P = LIST_SIZE[style];
+    for (const r of rects)
+      expect(
+        r.x >= X && r.y >= Y && r.x + r.w <= X + P.w && r.y + r.h <= Y + P.h,
+        `${page.title}: ${r.what} leaves the panel`,
+      ).toBe(true);
+  }
+
+  /** A busy game: big balances, rent owed, a frozen promotion, every item in the bag, a long message log. */
+  function busy(): PhoneCtx {
+    const st = createState(1, 'downtown', { x: 0, y: 0 }, 3 * 1440 + 9 * 60);
+    st.money = { clean: 99999, dirty: 99999, bank: 999999 };
+    st.finance.rent.owed = 1250;
+    st.finance.rent.unpaidSince = 0;
+    for (let k = 0; k < 30; k++)
+      st.finance.ledger.push({
+        at: k * 60,
+        text: k % 2 ? 'MOVE IN, DRIZZLE ROW 4B' : 'PAY, DELIVERY',
+        amount: k % 2 ? -550 : 99999,
+      });
+    for (let k = 0; k < 30; k++)
+      st.messages.push({ at: k * 90, who: k % 2 ? 'MS. HOLLIS' : 'LANDLORD', text: 'X' });
+    Object.assign(st.inventory, {
+      fuelCans: 9,
+      firstAid: 9,
+      repairKits: 9,
+      lockpicks: 99,
+      toolbox: 1,
+      phones: 12,
+      watches: 12,
+    });
+    st.career.missed.push(3);
+    arrestEffects(st.career, st.minutes - 60, st.minutes);
+    st.player.health = 40;
+    return { state: st, wallet: { money: st.money, inventory: st.inventory, health: 40 } };
+  }
+
+  it('every page fits, with long values and a message', () => {
+    const ctx = busy();
+    checkList('phone', phoneRoot(ctx), 'HR: CONSIDER IT HANDLED.');
+    checkList('phone', bankPage(ctx), 'NOT ENOUGH IN THE BANK.');
+    checkList('phone', jobsPage(ctx), 'FINISH YOUR SHIFT FIRST.');
+    checkList('phone', contactsPage(ctx), 'MOVE BACK IN FOR $550. BANK APP.');
+    checkList('menu', atmPage(ctx), 'NOT ENOUGH IN THE BANK.');
+    checkList('menu', bagPage(ctx), 'FIRST AID +60 HP');
+    // and the pages behind the rows
+    for (const page of [phoneRoot(ctx), bankPage(ctx)])
+      for (const row of page.rows) {
+        const a = row.act?.();
+        if (a && 'open' in a) checkList('phone', a.open());
+      }
+  });
+
+  it('an evicted player sees MOVE BACK IN', () => {
+    const ctx = busy();
+    ctx.state.finance.rent.evicted = true;
+    ctx.state.finance.rent.storage = true;
+    const bank = bankPage(ctx);
+    expect(bank.rows.map((r) => r.label)).toContain('MOVE BACK IN');
+    checkList('phone', bank);
   });
 });

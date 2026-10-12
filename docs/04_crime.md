@@ -109,3 +109,9 @@ Heists can be replayed after a 7-day cooldown, with −30% payout each replay. E
 - **Rival crew:** **Saltgate Union**, Vance's smuggling syndicate: grey peacoats with red armbands.
 - **Jewellery store heist:** 10 display cases and a rooftop escape down to the alley.
 - **Bank heist:** 2 guards; the vault is in a basement, which adds a stair route to the escape choices.
+
+## Phase 2 build (milestone 5, 2026-10-11): trunk looting
+- Every parked car you don't own shows **LOOT TRUNK** at its rear bumper. It is a 1★ crime if a witness or an officer sees it.
+- A locked car needs the lockpick first (the trunk lock is the car's lock, so the car opens too); an unlocked car goes straight to the search.
+- A trunk holds 2–4 valuables (cash and wallets worth $20–120 dirty in all, stolen phones, a watch, sometimes a lockpick set with 5 uses) plus 2–4 pieces of junk. Phones and watches wait in the bag for the fence (Phase 3). Product and guns join the table in Phases 3–4.
+- A searched trunk stays empty (saved with the car).

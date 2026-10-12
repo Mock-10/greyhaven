@@ -8,17 +8,19 @@ import Phaser from 'phaser';
 import { UI_BASE_H, UI_BASE_W } from '../config/constants';
 import { Rng } from '../core/rng';
 import { hook } from '../debug/hooks';
-import { SHOP_STOCK } from '../data/items';
+import { SHOP_STOCK, type ShopId } from '../data/items';
 import {
   DataEntryGame,
   DuffelGame,
   FilingGame,
   HotwireGame,
   MoneyCountGame,
+  SearchGame,
   SkillCheckGame,
   type MinigameLogic,
 } from '../minigames/logic';
 import type { Grade } from '../systems/career';
+import type { LootItem } from '../systems/loot';
 import { buy, type Wallet } from '../systems/shop';
 import { blend, clear, createSurface, type Surface } from '../ui/hudDraw';
 import {
@@ -32,25 +34,30 @@ import {
   drawHotwire,
   drawLockpick,
   drawMoneyCount,
+  drawSearch,
   drawShop,
   filingLayout,
   hotwireLayout,
+  searchCell,
   shopCard,
   type PanelKind,
 } from '../ui/panels';
 
 export type MinigameRequest =
   | { kind: 'filing' | 'dataEntry'; seed: number; task: string }
-  | { kind: 'lockpick'; seed: number; tier: number; tool: string }
-  | { kind: 'hotwire'; seed: number }
+  | { kind: 'lockpick'; seed: number; tier: number; tool: 'none' | 'basic' | 'pro'; label: string }
+  | { kind: 'hotwire'; seed: number; bonusSeconds: number }
+  | { kind: 'search'; seed: number; label: string; items: LootItem[] }
   | { kind: 'moneyCount'; label: string }
   | { kind: 'duffel'; seed: number; label: string }
-  | { kind: 'shop'; title: string; wallet: Wallet };
+  | { kind: 'shop'; title: string; shop: ShopId; wallet: Wallet };
 
 export interface MinigameResult {
   kind: MinigameRequest['kind'];
   /** Null when quit with Esc. */
   grade: Grade | null;
+  /** The search panel: what was grabbed. */
+  haul?: LootItem[];
 }
 
 const TEX = 'minigame-canvas';
@@ -74,6 +81,8 @@ export class MinigameScene extends Phaser.Scene {
   private stackDrag: { slot: number; x: number; y: number } | null = null;
   private panelDrag: { sx: number; sy: number; ox: number; oy: number } | null = null;
   private selected = 0;
+  /** Seconds since the panel opened (sparkles). */
+  private clock = 0;
   private baseX = 0;
   private baseY = 0;
 
@@ -89,6 +98,7 @@ export class MinigameScene extends Phaser.Scene {
     this.stackDrag = null;
     this.panelDrag = null;
     this.selected = 0;
+    this.clock = 0;
     switch (req.kind) {
       case 'filing':
         this.logic = new FilingGame(new Rng(req.seed));
@@ -97,16 +107,19 @@ export class MinigameScene extends Phaser.Scene {
         this.logic = new DataEntryGame(new Rng(req.seed));
         break;
       case 'lockpick':
-        this.logic = new SkillCheckGame(new Rng(req.seed), req.tier);
+        this.logic = new SkillCheckGame(new Rng(req.seed), req.tier, undefined, req.tool);
         break;
       case 'hotwire':
-        this.logic = new HotwireGame(new Rng(req.seed));
+        this.logic = new HotwireGame(new Rng(req.seed), req.bonusSeconds);
         break;
       case 'moneyCount':
         this.logic = new MoneyCountGame();
         break;
       case 'duffel':
         this.logic = new DuffelGame(new Rng(req.seed));
+        break;
+      case 'search':
+        this.logic = new SearchGame(new Rng(req.seed), req.items);
         break;
       default:
         this.logic = null;
@@ -185,11 +198,17 @@ export class MinigameScene extends Phaser.Scene {
       if (/^[1-5]$/.test(k)) g.pickLeft(Number(k) - 1);
       const r = ['A', 'S', 'D', 'F', 'G'].indexOf(k);
       if (r >= 0) g.pickRight(r);
+    } else if (g instanceof SearchGame) {
+      if (e.key === 'ArrowRight') g.move(1, 0);
+      else if (e.key === 'ArrowLeft') g.move(-1, 0);
+      else if (e.key === 'ArrowDown') g.move(0, 1);
+      else if (e.key === 'ArrowUp') g.move(0, -1);
+      else if (e.key === ' ' || e.key === 'Enter') g.grab(g.cursor);
     } else if (g instanceof MoneyCountGame) {
       if (e.key === ' ') g.count();
       if (k === 'B') g.band();
     } else if (this.req.kind === 'shop') {
-      const n = SHOP_STOCK.store.length;
+      const n = SHOP_STOCK[this.req.shop].length;
       if (/^[1-9]$/.test(k) && Number(k) <= n) this.buy(Number(k) - 1);
       else if (e.key === 'ArrowRight') this.selected = (this.selected + 1) % n;
       else if (e.key === 'ArrowLeft') this.selected = (this.selected + n - 1) % n;
@@ -201,8 +220,9 @@ export class MinigameScene extends Phaser.Scene {
 
   private buy(k: number): void {
     const req = this.req;
-    const id = SHOP_STOCK.store[k];
-    if (req.kind !== 'shop' || !id) return;
+    if (req.kind !== 'shop') return;
+    const id = SHOP_STOCK[req.shop][k];
+    if (!id) return;
     this.selected = k;
     this.message = { text: buy(req.wallet, id).text, t: 0 };
   }
@@ -244,6 +264,10 @@ export class MinigameScene extends Phaser.Scene {
       });
     } else if (g instanceof SkillCheckGame) g.hit();
     else if (g instanceof MoneyCountGame) g.count();
+    else if (g instanceof SearchGame)
+      g.cells.forEach((_, k) => {
+        if (this.inRect(q, searchCell(x, y, k, g.cols))) g.grab(k);
+      });
     else if (g instanceof DuffelGame && !g.done) {
       const L = duffelLayout(x, y, g.stacks.length);
       L.slots.forEach((r, k) => {
@@ -251,7 +275,7 @@ export class MinigameScene extends Phaser.Scene {
           this.stackDrag = { slot: k, x: q.x, y: q.y };
       });
     } else if (this.req.kind === 'shop')
-      SHOP_STOCK.store.forEach((_, k) => {
+      SHOP_STOCK[this.req.shop].forEach((_, k) => {
         if (this.inRect(q, shopCard(x, y, k))) this.buy(k);
       });
   }
@@ -273,7 +297,7 @@ export class MinigameScene extends Phaser.Scene {
       this.paperDrag.y = q.y;
     } else if (this.req.kind === 'shop') {
       const { x, y } = this.pos;
-      SHOP_STOCK.store.forEach((_, k) => {
+      SHOP_STOCK[this.req.shop].forEach((_, k) => {
         if (this.inRect(q, shopCard(x, y, k))) this.selected = k;
       });
     }
@@ -308,6 +332,7 @@ export class MinigameScene extends Phaser.Scene {
 
   update(): void {
     const dt = Math.min(0.1, this.game.loop.rawDelta / 1000);
+    this.clock += dt;
     if (this.message) this.message.t += dt;
     const g = this.logic;
     if (g) {
@@ -326,6 +351,7 @@ export class MinigameScene extends Phaser.Scene {
 
   private close(grade: Grade | null): void {
     const result: MinigameResult = { kind: this.req.kind, grade };
+    if (this.logic instanceof SearchGame) result.haul = this.logic.haul;
     this.scene.stop();
     this.game.events.emit('minigame:done', result);
   }
@@ -345,17 +371,19 @@ export class MinigameScene extends Phaser.Scene {
       drawFiling(s, x, y, g, req.task, d ? { x: d.x - d.dx, y: d.y - d.dy } : null);
     } else if (req.kind === 'dataEntry' && g instanceof DataEntryGame) drawEntry(s, x, y, g, req.task);
     else if (req.kind === 'lockpick' && g instanceof SkillCheckGame)
-      drawLockpick(s, x, y, g, req.tier, req.tool);
+      drawLockpick(s, x, y, g, req.tier, req.label);
     else if (req.kind === 'hotwire' && g instanceof HotwireGame) drawHotwire(s, x, y, g);
     else if (req.kind === 'moneyCount' && g instanceof MoneyCountGame) drawMoneyCount(s, x, y, g, req.label);
     else if (req.kind === 'duffel' && g instanceof DuffelGame) {
       const d = this.stackDrag;
       drawDuffel(s, x, y, g, req.label, d && !g.done ? d.slot : null);
       if (d && !g.done) drawHeldStack(s, d.x, d.y, g.stacks[d.slot]!.dyed);
-    } else if (req.kind === 'shop')
+    } else if (req.kind === 'search' && g instanceof SearchGame)
+      drawSearch(s, x, y, g, req.label, this.clock);
+    else if (req.kind === 'shop')
       drawShop(s, x, y, {
         title: req.title,
-        stock: SHOP_STOCK.store,
+        stock: SHOP_STOCK[req.shop],
         clean: req.wallet.money.clean,
         selected: this.selected,
         message: this.message && this.message.t < 3 ? this.message.text : null,

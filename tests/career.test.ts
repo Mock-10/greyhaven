@@ -28,12 +28,12 @@ describe('careers (docs/03)', () => {
     const c = createCareer();
     expect(clockIn(c, day(1, 8, 10)).ok).toBe(true);
     expect(tasksLeft(c)).toBe(3);
-    expect(clockOut(c)).toBeNull(); // tasks not done
+    expect(clockOut(c, 0)).toBeNull(); // tasks not done
     recordTask(c, 'filing', 'good');
     recordTask(c, 'dataEntry', 'good');
     recordTask(c, 'filing', 'excellent');
     expect(recordTask(c, 'filing', 'good')).toBe(false); // no fourth task
-    const r = clockOut(c);
+    const r = clockOut(c, 0);
     expect(r).toMatchObject({ pay: 180, xp: 11, promoted: false });
     expect(payFor(1, true)).toBe(144);
     expect(canClockIn(c, day(1, 9, 0))).toEqual({ ok: false, reason: 'alreadyWorked' });
@@ -54,7 +54,7 @@ describe('careers (docs/03)', () => {
     for (let d = 1; d <= 5 && !promotedOn; d++) {
       clockIn(c, day(d, 8, 30));
       for (let k = 0; k < 3; k++) recordTask(c, 'filing', 'excellent');
-      const r = clockOut(c);
+      const r = clockOut(c, 0);
       if (r?.promoted) {
         promotedOn = d;
         expect(r.bonus).toBe(250);

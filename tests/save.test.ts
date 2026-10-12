@@ -13,7 +13,7 @@ import { createState } from '../src/core/store';
 
 const state = () => {
   const s = createState(7, 'downtown', { x: 100, y: 200 });
-  s.money = { clean: 900, dirty: 450 };
+  s.money = { clean: 900, dirty: 450, bank: 120 };
   s.wanted.stars = 2;
   return s;
 };
@@ -24,7 +24,7 @@ describe('saves (docs/12)', () => {
     const back = validate(JSON.parse(JSON.stringify(file)));
     expect(back.ok).toBe(true);
     if (!back.ok) return;
-    expect(back.file.state.money).toEqual({ clean: 900, dirty: 450 });
+    expect(back.file.state.money).toEqual({ clean: 900, dirty: 450, bank: 120 });
     expect(back.file.state.wanted.stars).toBe(0);
     expect(back.file.meta).toMatchObject({ slot: 'slot1', clean: 900, dirty: 450, rank: 1 });
     expect(back.file.version).toBe(SAVE_VERSION);
@@ -56,6 +56,64 @@ describe('saves (docs/12)', () => {
     expect(up.checksum).toBe(checksum(up.state));
     expect(() => migrate(old, { 1: steps[1] }, 3)).toThrow();
     expect(() => migrate({ ...file, version: 9 }, {}, 3)).toThrow();
+  });
+
+  it('migrates a version 1 save to version 2 (bank, rent, career week, bag, messages)', () => {
+    const v1 = {
+      seed: 3,
+      minutes: 3000,
+      map: 'downtown',
+      player: {
+        x: 1,
+        y: 2,
+        dir: 0,
+        moving: false,
+        sprinting: false,
+        health: 80,
+        armor: 0,
+        costume: 'office_worker',
+      },
+      money: { clean: 400, dirty: 90 },
+      wanted: { stars: 0, seen: false, lastKnown: null, escape: 0 },
+      area: { kind: 'street' },
+      streetReturn: null,
+      career: {
+        current: 'office',
+        jobs: { office: { rank: 2, xp: 7 } },
+        shift: { job: 'office', day: 3, late: false, grades: ['ok'] },
+        lastShiftDay: 2,
+      },
+      inventory: { fuelCans: 2 },
+      sight: {},
+      vehicles: [],
+      driving: null,
+      lastCar: null,
+      laundered: { day: 0, amount: 0 },
+      record: { arrests: [] },
+      playtime: 50,
+    };
+    const old = { game: 'doublelife', version: 1, meta: {}, state: v1, checksum: '' } as unknown as SaveFile;
+    old.checksum = checksum(v1);
+    const r = validate(old);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const st = r.file.state;
+    expect(r.file.version).toBe(SAVE_VERSION);
+    expect(st.money).toEqual({ clean: 400, dirty: 90, bank: 0 });
+    expect(st.finance.rent).toEqual({ owed: 0, unpaidSince: null, evicted: false, storage: false });
+    expect(st.calendarAt).toBe(3000);
+    expect(st.career.shift?.tasks).toBe(3);
+    expect(st.career.week).toEqual({ pay: 0, offense: false });
+    expect(st.career.jobs.office).toEqual({ rank: 2, xp: 7 });
+    expect(st.career.jobs.delivery).toEqual({ rank: 1, xp: 0 });
+    expect(st.inventory.fuelCans).toBe(2);
+    expect(st.inventory.lockpicks).toBe(0);
+    expect(st.messages).toEqual([]);
+    // the migrated state has every field a new game has
+    const fresh = createState(1, 'downtown', { x: 0, y: 0 });
+    expect(Object.keys(st).sort()).toEqual(Object.keys(fresh).sort());
+    expect(Object.keys(st.career).sort()).toEqual(Object.keys(fresh.career).sort());
+    expect(Object.keys(st.inventory).sort()).toEqual(Object.keys(fresh.inventory).sort());
   });
 
   it('rotates the two autosaves, keeping the newest', () => {

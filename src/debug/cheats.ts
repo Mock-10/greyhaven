@@ -4,6 +4,8 @@
 export type Cheat =
   | { kind: 'cash'; clean: number }
   | { kind: 'dirty'; amount: number }
+  | { kind: 'bank'; amount: number }
+  | { kind: 'item'; item: string; count: number }
   | { kind: 'time'; minute: number }
   | { kind: 'day'; day: number }
   | { kind: 'rank'; rank: number }
@@ -14,7 +16,7 @@ export type Cheat =
   | { kind: 'help' };
 
 export const CHEAT_HELP =
-  'CASH N · DIRTY N · TIME HH:MM · DAY N · RANK 1-5 · STARS 0-5 · TP X Y · CAR MODEL [X Y DIR] · HEAL';
+  'CASH N · DIRTY N · BANK N · ITEM NAME N · TIME HH:MM · DAY N · RANK 1-5 · STARS 0-5 · TP X Y · CAR MODEL [X Y DIR] · HEAL';
 
 const num = (s: string | undefined): number | null => {
   if (s === undefined || s.trim() === '') return null;
@@ -31,6 +33,12 @@ export function parseCheat(line: string): Cheat | { error: string } {
       return a[0] === null || a[0] === undefined ? { error: 'CASH N' } : { kind: 'cash', clean: a[0] };
     case 'dirty':
       return a[0] === null || a[0] === undefined ? { error: 'DIRTY N' } : { kind: 'dirty', amount: a[0] };
+    case 'bank':
+      return a[0] === null || a[0] === undefined ? { error: 'BANK N' } : { kind: 'bank', amount: a[0] };
+    case 'item':
+      return args[0] && typeof a[1] === 'number'
+        ? { kind: 'item', item: args[0], count: Math.max(0, Math.floor(a[1])) }
+        : { error: 'ITEM NAME N (LOCKPICKS, FIRSTAID, REPAIRKITS, FUELCANS, TOOLBOX)' };
     case 'time': {
       const m = /^(\d{1,2}):(\d{2})$/.exec(args[0] ?? '');
       if (!m) return { error: 'TIME HH:MM' };

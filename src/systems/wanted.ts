@@ -36,6 +36,27 @@ export function addStars(w: WantedState, n: number, at: { x: number; y: number }
 }
 
 /**
+ * A report of crime number `crime` reaches the police (docs/05: "each new detected crime adds its stars"). Several
+ * witnesses of the same crime raise its stars once; later calls only update where it happened. Returns true when
+ * the stars went up.
+ */
+export function reportCrime(
+  w: WantedState,
+  reported: Set<number>,
+  crime: number,
+  stars: number,
+  at: { x: number; y: number },
+): boolean {
+  if (reported.has(crime)) {
+    if (w.stars > 0) w.lastKnown = { ...at };
+    return false;
+  }
+  reported.add(crime);
+  addStars(w, stars, at);
+  return true;
+}
+
+/**
  * One step. While police see the player the circle follows them and the timer resets; out of sight the stars
  * flash, and the timer only runs while the player is outside the circle. Returns true when the stars just cleared.
  */
