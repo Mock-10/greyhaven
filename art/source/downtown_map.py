@@ -69,21 +69,81 @@ def ash_x(y):
     return tc(41 + 5 * smooth((y / T - 84.0) / 10.0))
 
 
+# Linden Avenue (Phase 2): two lanes each way, the house row's street, from the west edge to Ashby Road (a T junction)
+LIN = 'LINDEN AVENUE'
+LY = tc(80)
+
 Y_SAMPLES = np.linspace(-T, BY, 401)
 ASH_LINE = np.stack([ash_x(np.linspace(BY, MAPH + T, 241)), np.linspace(BY, MAPH + T, 241)], 1)
 ROADS_Y = {
     'PEWTER STREET': np.stack([np.full_like(Y_SAMPLES, tc(20)), Y_SAMPLES], 1),
     'MILLWRIGHT ROAD': np.stack([mill_x(Y_SAMPLES), Y_SAMPLES], 1),
     'GULLSWAY': np.stack([gull_x(Y_SAMPLES), Y_SAMPLES], 1),
+    ASH: ASH_LINE,
 }
-ROADS_X = {'OVERCAST AVENUE': tc(20), 'DRIZZLE ROW': tc(37), BLVD: BY}
-HWX = {'OVERCAST AVENUE': HW, 'DRIZZLE ROW': HW, BLVD: HW4}
-LANES_PER_DIR = {BLVD: 2, ASH: 2}
+ROADS_X = {'OVERCAST AVENUE': tc(20), 'DRIZZLE ROW': tc(37), BLVD: BY, LIN: LY}
+HWX = {'OVERCAST AVENUE': HW, 'DRIZZLE ROW': HW, BLVD: HW4, LIN: HW4}
+HWY = {ASH: HW4}
+# where each road runs (the downtown streets end at the boulevard; Ashby Road starts there; Linden Avenue ends at
+# Ashby Road)
+XSPAN = {LIN: (-T, float(ash_x(LY)))}
+YSPAN = {ASH: (BY, MAPH + T)}
+LANES_PER_DIR = {BLVD: 2, ASH: 2, LIN: 2}
 
 
 def hwx(name):
     """Half width of an east-west road."""
     return HWX[name]
+
+
+def hwy(name):
+    """Half width of a north-south road."""
+    return HWY.get(name, HW)
+
+
+def xspan(name):
+    return XSPAN.get(name, (-T, MAPW + T))
+
+
+def yspan(name):
+    return YSPAN.get(name, (-T, BY))
+
+
+def y_at(name, y):
+    """A north-south road's centre x at world y."""
+    line = ROADS_Y[name]
+    return float(np.interp(y, line[:, 1], line[:, 0]))
+
+
+def junctions():
+    """Every crossing of an east-west and a north-south road, merged by place (Millwright Road becomes Ashby Road at
+    the boulevard): its centre, the box the roads share (half sizes), and which arms run out of it."""
+    out = []
+    for xn, cy in ROADS_X.items():
+        for yn in ROADS_Y:
+            y0, y1 = yspan(yn)
+            if not (y0 - 1 <= cy <= y1 + 1):
+                continue
+            cx = y_at(yn, cy)
+            x0, x1 = xspan(xn)
+            if not (x0 - 1 <= cx <= x1 + 1):
+                continue
+            j = next((q for q in out if q['x_road'] == xn and abs(q['x'] - cx) < 2), None)
+            if j is None:
+                j = {'x_road': xn, 'x': cx, 'y': cy, 'by': hwx(xn), 'bx': 0.0, 'y_roads': [],
+                     'arms': set(), 'arm_hw': {}}
+                out.append(j)
+            j['y_roads'].append(yn)
+            j['bx'] = max(j['bx'], hwy(yn))
+            if y0 < cy - 1:
+                j['arms'].add('n'); j['arm_hw']['n'] = hwy(yn)
+            if y1 > cy + 1:
+                j['arms'].add('s'); j['arm_hw']['s'] = hwy(yn)
+            if x0 < cx - 1:
+                j['arms'].add('w')
+            if x1 > cx + 1:
+                j['arms'].add('e')
+    return out
 
 
 def y_edge(name, y, side, d):
@@ -122,11 +182,11 @@ class Block:
         y0 = (ROADS_X[self.n] + hwx(self.n) + dn) if self.n else -2.0
         y1 = (ROADS_X[self.s] - hwx(self.s) - ds) if self.s else MAPH + 2.0
         if self.e:
-            east = y_edge_line(self.e, y0, y1, -1, HW + (d if 'e' in sides else 0.0))
+            east = y_edge_line(self.e, y0, y1, -1, hwy(self.e) + (d if 'e' in sides else 0.0))
         else:
             east = [[MAPW + 2.0, y0], [MAPW + 2.0, y1]]
         if self.w:
-            west = y_edge_line(self.w, y0, y1, +1, HW + (d if 'w' in sides else 0.0))
+            west = y_edge_line(self.w, y0, y1, +1, hwy(self.w) + (d if 'w' in sides else 0.0))
         else:
             west = [[-2.0, y0], [-2.0, y1]]
         pts = [west[0]] + east + west[::-1][:-1]
@@ -150,17 +210,17 @@ class Block:
         when walking along it (clockwise on screen)."""
         y0, y1 = self.y_range(d)
         if side == 'n':
-            x0 = y_edge(self.w, y0, +1, HW + d) if self.w else 0.0
-            x1 = y_edge(self.e, y0, -1, HW + d) if self.e else MAPW
+            x0 = y_edge(self.w, y0, +1, hwy(self.w) + d) if self.w else 0.0
+            x1 = y_edge(self.e, y0, -1, hwy(self.e) + d) if self.e else MAPW
             return [[x0, y0], [x1, y0]]
         if side == 's':
-            x0 = y_edge(self.w, y1, +1, HW + d) if self.w else 0.0
-            x1 = y_edge(self.e, y1, -1, HW + d) if self.e else MAPW
+            x0 = y_edge(self.w, y1, +1, hwy(self.w) + d) if self.w else 0.0
+            x1 = y_edge(self.e, y1, -1, hwy(self.e) + d) if self.e else MAPW
             return [[x1, y1], [x0, y1]]
         if side == 'e':
-            return y_edge_line(self.e, y0, y1, -1, HW + d)
+            return y_edge_line(self.e, y0, y1, -1, hwy(self.e) + d)
         if side == 'w':
-            return y_edge_line(self.w, y0, y1, +1, HW + d)[::-1]
+            return y_edge_line(self.w, y0, y1, +1, hwy(self.w) + d)[::-1]
 
 
 P, M, G = 'PEWTER STREET', 'MILLWRIGHT ROAD', 'GULLSWAY'
@@ -179,6 +239,10 @@ BLOCKS = {
     'gn': Block('gn', G, None, None, O, sidewalks={'w', 's'}),
     'gm': Block('gm', G, None, O, D, sidewalks={'w', 'n', 's'}),
     'gs': Block('gs', G, None, D, BLVD, sidewalks={'w', 'n', 's'}),
+    # south of Hedgerow Way (Phase 2): the house row on Linden Avenue, the woods, and Ashby Timber east of Ashby Road
+    'lw': Block('lw', None, ASH, BLVD, LIN, sidewalks={'n', 'e', 's'}),
+    'ls': Block('ls', None, ASH, LIN, None, sidewalks={'n', 'e'}),
+    'ae': Block('ae', ASH, None, BLVD, None, sidewalks={'w', 'n'}),
 }
 
 # ------------------------------------------------------------------ output collections
@@ -205,15 +269,19 @@ PROP = {
     'bin_sage': ('box', 5, 6, 19), 'bin_navy': ('box', 5, 6, 19), 'boxes': ('box', 9, 6, 14), 'cones': ('blob', 5),
     'news_box': ('box', 4, 3.5, 19), 'news_box_blue': ('box', 4, 3.5, 19), 'bike_rack': ('box', 9, 4, 8),
     'street_planter': ('box', 10, 5, 12), 'bus_stop_sign': ('blob', 2),
+    # suburb.py (Phase 2 map growth)
+    'stump': ('blob', 6), 'log': ('box', 22, 4, 7), 'log_pile': ('box', 20, 15, 18), 'birch': ('blob', 20),
+    'fir': ('blob', 24), 'fern': ('blob', 8), 'rock': ('blob', 7), 'tyre_stack': ('blob', 6), 'pennants': ('blob', 2),
 }
-NONSOLID = {'tree_a', 'tree_b', 'pine', 'bush', 'cones', 'trash_bags'}
+NONSOLID = {'tree_a', 'tree_b', 'pine', 'bush', 'cones', 'trash_bags', 'birch', 'fir', 'fern', 'pennants'}
+TREES = {'tree_a', 'tree_b', 'pine', 'birch', 'fir'}
 BUILDING = {
     'pellridge_tower': (28, 28, 125), 'open_most_hours': (24, 15, 31), 'apartment_block': (24, 17, 64),
     'bar': (22, 15, 28), 'chop_shop': (28, 19, 25),
 }
 BUILDING.update(infill.FOOTPRINTS)
 SEG_THICK = {'wall_brick': (3.2, 10), 'wall_stone': (3.2, 10), 'railing': (1.0, 15), 'fence': (1.0, 20), 'bed': (5.0, 12),
-             'hedge': (4.5, 12)}
+             'hedge': (4.5, 12), 'picket': (1.5, 12)}
 
 
 def _fp_box(x, y, hx, hy):
@@ -227,7 +295,7 @@ def prop(kind, x, y, dir=0, solid=None, **kw):
         shadow['hx'], shadow['hy'] = shadow['hy'], shadow['hx']
     r = sh[1]
     fp = _fp_box(x, y, r, r) if sh[0] == 'blob' else _fp_box(x, y, shadow['hx'], shadow['hy'])
-    if kind.startswith('tree') or kind == 'pine':
+    if kind in TREES:
         fp = _fp_box(x, y, 4, 4)        # the trunk: the crown is above the ground
     p = {'sprite': f'prop/{kind}', 'dir': int(dir) % 8, 'x': round(float(x), 2), 'y': round(float(y), 2), 'shadow': shadow,
          'solid': (kind not in NONSOLID) if solid is None else solid, 'fp': fp}
@@ -348,11 +416,6 @@ def lay_blocks():
     ground('gravel', BLOCKS['e'].poly(KERB + 2, radius=0, sides={'n', 's', 'w', 'e'}))
 
 
-def ns_hw(cx, cy):
-    """Half width of the north-south road(s) at a crossing: Ashby Road (south of the boulevard) is wider."""
-    return HW4 if abs(cy - BY) < 1 and abs(cx - ash_x(BY)) < 1 else HW
-
-
 def road_lines(line, hw, lanes, a, b):
     """Paint one straight or curved stretch of road between a and b along `line` (sampled, any direction):
     a double gold centre line, white edge lines and, on wider roads, dashed white lines between same-way lanes."""
@@ -367,70 +430,69 @@ def road_lines(line, hw, lanes, a, b):
                     ground('paint_white', seg)
 
 
+def _spans(lo, hi, gaps):
+    out, x = [], lo
+    for g0, g1 in sorted(gaps):
+        if g1 <= lo or g0 >= hi:
+            continue
+        out.append((x, g0)); x = g1
+    out.append((x, hi))
+    return [(a, b) for a, b in out if b - a > 8]
+
+
 def lay_markings():
-    # x-roads: double centre line in gold, white edge lines, lane dividers on the boulevard, between the crossings
+    """Centre and edge lines, lane dividers on the wide roads, and at every junction a crosswalk across each arm and
+    a stop line on the side traffic arrives on (right-hand traffic)."""
+    J = junctions()
     for name, cy in ROADS_X.items():
         h = hwx(name)
-        cxs = [float(np.interp(cy, l[:, 1], l[:, 0])) for l in ROADS_Y.values()]
-        gaps = [(c - ns_hw(c, cy) - 40, c + ns_hw(c, cy) + 40) for c in cxs]
-        spans = []
-        x = -T
-        for g0, g1 in sorted(gaps):
-            spans.append((x, g0)); x = g1
-        spans.append((x, MAPW + T))
-        for a, b in spans:
-            if b - a < 8:
-                continue
+        gaps = [(j['x'] - j['bx'] - 40, j['x'] + j['bx'] + 40) for j in J if j['x_road'] == name]
+        x0, x1 = xspan(name)
+        for a, b in _spans(x0, x1, gaps):
             road_lines(np.array([[a, cy], [b, cy]]), h, LANES_PER_DIR.get(name, 1), a, b)
-        # crosswalks across the x-road on both sides of each crossing, and the stop lines
-        for c in cxs:
-            nh = ns_hw(c, cy)
-            for x0 in (c - nh - 36, c + nh + 4):
-                for k in range(int((2 * h - 16) // 14) + 1):
-                    yy = cy - h + 8 + k * 14
-                    ground('paint_white', rect(x0, yy, x0 + 32, yy + 7))
-            ground('paint_white', rect(c - nh - 44, cy, c - nh - 40, cy + h - 6))
-            ground('paint_white', rect(c + nh + 40, cy - h + 6, c + nh + 44, cy))
-    # y-roads, following the bend, ending at the boulevard
     for name, line in ROADS_Y.items():
-        gaps = sorted((cy - hwx(n) - 40, cy + hwx(n) + 40) for n, cy in ROADS_X.items())
-        spans = []
-        y = -T
-        for g0, g1 in gaps:
-            spans.append((y, g0)); y = g1
-        for a, b in spans:
+        gaps = [(j['y'] - j['by'] - 40, j['y'] + j['by'] + 40) for j in J if name in j['y_roads']]
+        y0, y1 = yspan(name)
+        for a, b in _spans(y0, y1, gaps):
             sel = line[(line[:, 1] >= a) & (line[:, 1] <= b)]
-            if len(sel) < 2:
+            if len(sel) >= 2:
+                road_lines(sel, hwy(name), LANES_PER_DIR.get(name, 1), a, b)
+    for j in J:
+        cx, cy, bx, by = j['x'], j['y'], j['bx'], j['by']
+        if 'w' in j['arms']:
+            for k in range(int((2 * by - 16) // 14) + 1):
+                yy = cy - by + 8 + k * 14
+                ground('paint_white', rect(cx - bx - 36, yy, cx - bx - 4, yy + 7))
+            ground('paint_white', rect(cx - bx - 44, cy, cx - bx - 40, cy + by - 6))
+        if 'e' in j['arms']:
+            for k in range(int((2 * by - 16) // 14) + 1):
+                yy = cy - by + 8 + k * 14
+                ground('paint_white', rect(cx + bx + 4, yy, cx + bx + 36, yy + 7))
+            ground('paint_white', rect(cx + bx + 40, cy - by + 6, cx + bx + 44, cy))
+        for arm, y0, ys in (('n', cy - by - 36, cy - by - 44), ('s', cy + by + 4, cy + by + 40)):
+            if arm not in j['arms']:
                 continue
-            road_lines(sel, HW, 1, a, b)
-        for xname, cy in ROADS_X.items():
-            h = hwx(xname)
-            # the boulevard is a T for Pewter Street and Gullsway: crosswalk and stop line on the north side only
-            for y0 in ((cy - h - 36,) if xname == BLVD else (cy - h - 36, cy + h + 4)):
-                cx = float(np.interp(y0 + 16, line[:, 1], line[:, 0]))
-                for k in range(9):
-                    xx = cx - HW + 8 + k * 14
-                    ground('paint_white', rect(xx, y0, xx + 7, y0 + 32))
-            cx = float(np.interp(cy, line[:, 1], line[:, 0]))
-            ground('paint_white', rect(cx - HW + 6, cy - h - 44, cx, cy - h - 40))
-            if xname != BLVD:
-                ground('paint_white', rect(cx, cy + h + 40, cx + HW - 6, cy + h + 44))
-    # Ashby Road south of the boulevard: four lanes, a crosswalk and a stop line at the junction
-    sel = ASH_LINE[ASH_LINE[:, 1] >= BY + HW4 + 40]
-    road_lines(sel, HW4, 2, 0, 0)
-    ax = ash_x(BY)
-    y0 = BY + HW4 + 4
-    for k in range(int((2 * HW4 - 16) // 14) + 1):
-        xx = ax - HW4 + 8 + k * 14
-        ground('paint_white', rect(xx, y0, xx + 7, y0 + 32))
-    ground('paint_white', rect(ax, BY + HW4 + 40, ax + HW4 - 6, BY + HW4 + 44))
+            yn = next(r for r in j['y_roads'] if (yspan(r)[0] < cy - 1 if arm == 'n' else yspan(r)[1] > cy + 1))
+            ah = hwy(yn)
+            ax = y_at(yn, y0 + 16)
+            for k in range(int((2 * ah - 16) // 14) + 1):
+                xx = ax - ah + 8 + k * 14
+                ground('paint_white', rect(xx, y0, xx + 7, y0 + 32))
+            sx = y_at(yn, ys)
+            if arm == 'n':
+                ground('paint_white', rect(sx - ah + 6, ys, sx, ys + 4))
+            else:
+                ground('paint_white', rect(sx, ys, sx + ah - 6, ys + 4))
     # manholes, drains and puddles on the roads
     for (x, y) in ((tc(20), tc(20)), (tc(9), tc(37.6)), (tc(30), tc(19.2)), (mill_x(tc(28)), tc(28)), (tc(20.8), tc(6)),
                    (tc(45), tc(36.5)), (tc(20), tc(44))):
         ground('kerb', disc(x, y, 7.2))
         ground('iron', disc(x, y, 6.0))
     for name, cy in ROADS_X.items():
-        for x in np.arange(tc(3), MAPW, tc(7)):
+        x0, x1 = xspan(name)
+        for x in np.arange(max(tc(3), x0 + tc(1)), min(MAPW, x1 - tc(1)), tc(7)):
+            if any(abs(x - j['x']) < j['bx'] + 50 and j['x_road'] == name for j in junctions()):
+                continue
             for side in (-1, 1):
                 y = cy + side * (hwx(name) - 3)
                 ground('grate', rect(x - 6, y - 2.5, x + 6, y + 2.5))
@@ -515,17 +577,16 @@ def _dir_toward(nx, ny):
 
 
 def corners_furniture():
-    """Traffic lights and street signs on the corners of every crossing."""
-    for cy in ROADS_X.values():
-        for name in ROADS_Y:
-            cx = float(np.interp(cy, ROADS_Y[name][:, 1], ROADS_Y[name][:, 0]))
-            for sx in (-1, 1):
-                for sy in (-1, 1):
-                    x = cx + sx * (HW + 10); y = cy + sy * (HW + 10)
-                    prop('traffic_light', x, y)
-                    keep_clear(x, y, 60)
-                    if sx == sy:
-                        prop('street_sign', x + sx * 14, y)
+    """Traffic lights and street signs on the corners of every junction."""
+    for j in junctions():
+        cx, cy, bx, by = j['x'], j['y'], j['bx'], j['by']
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                x = cx + sx * (bx + 10); y = cy + sy * (by + 10)
+                prop('traffic_light', x, y)
+                keep_clear(x, y, 60)
+                if sx == sy:
+                    prop('street_sign', x + sx * 14, y)
 
 
 # ------------------------------------------------------------------ the blocks themselves
@@ -933,6 +994,211 @@ def block_gullsway_edge():
     prop('bus_stop_sign', tc(66.4), tc(10.1))
 
 
+# ------------------------------------------------------------------ Phase 2 map growth (2026-10-11/12)
+# North of Hedgerow Way the downtown blocks run on to the boulevard; their new strip holds the hardware and clothing
+# stores, Torque & Sons Garage and a used-car lot, all facing the boulevard. South of it: the house row on Linden
+# Avenue with the Swiftish Couriers depot, the woods, and Ashby Timber's yard east of Ashby Road.
+BLVD_FRONT = BY - HW4 - SWK          # where buildings on the boulevard's north side put their fronts
+LIN_FRONT = LY - HW4 - SWK           # the house row's sidewalk edge
+
+
+def scatter(kinds, poly, n, min_d, seed, avoid=(), weights=None):
+    """Up to n props of the given kinds inside a polygon, at least min_d apart and clear of `avoid` boxes."""
+    rng = np.random.default_rng(seed)
+    P = np.asarray(poly, float)
+    x0, y0 = P.min(0); x1, y1 = P.max(0)
+    placed = []
+    tries = 0
+    while len(placed) < n and tries < n * 40:
+        tries += 1
+        x, y = rng.uniform(x0, x1), rng.uniform(y0, y1)
+        if not point_in_poly(x, y, P):
+            continue
+        if any((x - a) ** 2 + (y - b) ** 2 < min_d ** 2 for a, b in placed):
+            continue
+        if any(f[0] - 8 < x < f[2] + 8 and f[1] - 8 < y < f[3] + 8 for f in avoid):
+            continue
+        if not clear(x, y, 6):
+            continue
+        k = kinds[int(rng.choice(len(kinds), p=weights))] if weights else kinds[int(rng.integers(len(kinds)))]
+        prop(k, x, y, dir=int(rng.integers(0, 4)) * 2)
+        placed.append((x, y))
+    return placed
+
+
+def block_boulevard_band():
+    """The strip the downtown blocks gained up to the boulevard: shops, the garage, the used-car lot."""
+    fy = BLVD_FRONT
+    top = DT_EDGE + 4
+    # west of Pewter Street: the hardware and clothing stores and their neighbours, a service alley behind
+    xr = tc(20) - HW - SWK
+    row(['shop_hardware', 'shop_clothing', 'shop_cafe', 'walkup_tan', 'shop_bakery'], tc(0.5), fy, 0, gap=6)
+    # behind the shops: a service strip with the bins, then a small car park for the shoppers, hedged off from the
+    # pocket park
+    ground('concrete', rect(0, fy - tc(3.4), xr, fy - tc(1.9)))
+    for x, kind in ((tc(1.2), 'dumpster'), (tc(3.4), 'pallets'), (tc(5.8), 'ac_unit'), (tc(8.2), 'bin_navy'),
+                    (tc(10.6), 'boxes'), (tc(12.8), 'dumpster'), (tc(14.6), 'trash_bags')):
+        prop(kind, x, fy - tc(2.9), dir=0)
+    ground('lot', rect(0, top, xr, fy - tc(3.4)))
+    for x in np.arange(tc(1.0), xr - tc(1.0), tc(1.4)):
+        ground('paint_white', rect(x - 0.9, top + 6, x + 0.9, top + 70))
+    for k, (name, x) in enumerate((('sedan_teal', 2.4), ('sedan_khaki', 5.2), ('van_white', 9.4), ('sedan_lav', 12.2))):
+        car(name, tc(x) - tc(0.7), top + 40, 2, parked=True)
+    segments('hedge', [[tc(0.4), top - 2], [xr - tc(0.4), top - 2]])
+    for x in (tc(2.4), tc(5.0)):
+        prop('sandwich_board', x, fy + 10)
+    keep_clear(tc(1.9), fy + 8, 30); keep_clear(tc(4.8), fy + 8, 30)
+    # Pewter Street to Millwright Road: Torque & Sons, its yard of waiting cars, a cafe on the corner
+    x0 = tc(20) + HW + SWK
+    gx = x0 + tc(0.4) + half('garage_torque')[0]
+    building('garage_torque', gx, front_y('garage_torque', fy), 0)
+    # the bay apron across the sidewalk, so cars can drive in
+    ground('concrete', rect(gx - 50, fy, gx + 10, BY - HW4 - 2))
+    keep_clear(gx - 20, fy + 20, 50)
+    yx0 = gx + half('garage_torque')[0] + 8
+    yx1 = mill_x(fy) - HW - SWK - 6
+    ground('lot', rect(yx0, top, yx1, fy))
+    for x in np.arange(yx0 + 26, yx1 - 20, tc(1.4)):
+        ground('paint_white', rect(x - 0.9, top + 30, x + 0.9, top + 110))
+    for k, (name, dr) in enumerate((('sedan_clay', 2), ('sedan_teal', 2), ('van_sage', 2), ('sedan_khaki', 2))):
+        x = yx0 + 26 + tc(1.4) * k + tc(0.7)
+        if x < yx1 - 30:
+            car(name, x, top + 70, dr, parked=True)
+    for (dx, dy, kind) in ((14, 140, 'tyre_stack'), (30, 146, 'tyre_stack'), (52, 150, 'barrel_brick'),
+                           (70, 148, 'barrel_teal'), (94, 150, 'crate')):
+        if yx0 + dx < yx1 - 10:
+            prop(kind, yx0 + dx, top + dy)
+    segments('fence', [[yx0 + 4, fy - 4], [yx0 + 60, fy - 4]])
+    keep_clear(yx0 + 110, fy + 10, 40)
+    # Millwright Road to Gullsway: the used-car lot with a sales cabin and pennants
+    lx0 = mill_x(fy) + HW + SWK + 6
+    lx1 = gull_x(fy) - HW - SWK - 6
+    ground('lot', rect(lx0, top, lx1, fy))
+    building('dealer_office', lx0 + half('dealer_office')[0] + 10, front_y('dealer_office', fy - 6), 0)
+    cx0 = lx0 + 2 * half('dealer_office')[0] + 40
+    names = ['sedan_lav', 'sedan_khaki', 'van_white', 'sedan_teal', 'sedan_clay', 'taxi', 'sedan_lav', 'van_sage']
+    k = 0
+    for row_y, n in ((top + 40, 4), (top + 140, 4)):
+        x = cx0
+        for _ in range(n):
+            if x > lx1 - 30 or k >= len(names):
+                break
+            car(names[k], x, row_y, 2)
+            ground('paint_white', rect(x - 24, row_y + 44, x + 24, row_y + 46))
+            x += tc(2.2); k += 1
+    for x in np.arange(cx0 - 20, lx1 - 30, 52.0):
+        prop('pennants', x, fy - 8, dir=0)
+    for x in (cx0 + 30, cx0 + tc(4)):
+        prop('sandwich_board', x, fy + 10)
+    keep_clear(cx0 - 10, fy + 10, 40)
+    # east of Gullsway: the embankment runs on
+    gb = BLOCKS['gs']
+    for (x, y, kk) in ((67.6, 50.0, 'pine'), (67.4, 52.6, 'bush'), (68.2, 54.8, 'tree_b'), (67.3, 56.4, 'bush')):
+        prop(kk, tc(x), tc(y))
+
+
+def block_linden():
+    """The house row on Linden Avenue (fronts to the street, back gardens to the boulevard behind picket fences), and
+    the Swiftish Couriers depot at the Ashby Road end."""
+    b = BLOCKS['lw']
+    y0 = BY + HW4 + SWK
+    fy = LIN_FRONT
+    xr = ash_x(fy) - HW4 - SWK
+    ground('grass', rect(0, y0, xr, fy))
+    # the depot first, at the east end, set back behind a loading apron
+    dhx, dhy = half('courier_depot')
+    dx = xr - dhx - 8
+    dfy = fy - tc(1.6)
+    building('courier_depot', dx, dfy - dhy, 0)
+    ground('concrete', rect(dx - dhx - 6, dfy, xr, fy))
+    car('van_white', dx - 30, dfy + 26, 0, parked=True)
+    keep_clear(dx, fy + 10, 60)
+    ground('concrete', rect(dx - dhx - 6, y0 + 4, xr, dfy - 2 * dhy))
+    for x_, kind in ((dx - 40, 'pallets'), (dx, 'boxes'), (dx + 40, 'dumpster')):
+        prop(kind, x_, y0 + 20)
+    # the houses: front lawns, a path and a driveway each, mailboxes at the kerb
+    hx, hy = half('house_sage')
+    lot_w = 2 * hx + 44
+    houses = ['house_sage', 'house_cream', 'house_blue', 'house_clay']
+    x = tc(0.6)
+    k = 0
+    house_front = fy - tc(1.5)
+    while x + lot_w < dx - dhx - 20:
+        name = houses[k % len(houses)]
+        cx = x + hx
+        building(name, cx, house_front - hy, 0)
+        # front path and driveway
+        ground('concrete', rect(cx - 6, house_front, cx + 6, fy))
+        dwx = x + 2 * hx + 6
+        ground('concrete', rect(dwx, house_front - 2 * hy + 10, dwx + 34, fy))
+        keep_clear(dwx + 17, fy + 8, 30)
+        keep_clear(cx, fy + 8, 16)
+        if k % 3 != 1:
+            car(['sedan_teal', 'sedan_clay', 'sedan_khaki', 'sedan_lav'][k % 4], dwx + 17, house_front - 20, 2, parked=True)
+        prop('mailbox', cx + 22, fy - 6, dir=0)
+        # a picket fence along the front, with gaps for the path and the driveway
+        segments('picket', [[x + 2, fy - 3], [cx - 10, fy - 3]])
+        segments('picket', [[cx + 10, fy - 3], [dwx - 2, fy - 3]])
+        # the back garden: a tree, a shrub
+        prop('tree_a' if k % 2 else 'tree_b', cx - 20, y0 + 22)
+        prop('bush', cx + 30, house_front - 2 * hy - 12)
+        x += lot_w
+        k += 1
+    # back fences along the boulevard sidewalk
+    segments('picket', [[tc(0.3), y0 + 4], [dx - dhx - 10, y0 + 4]])
+
+
+def woods(poly, seed, n_trees, avoid=(), lay_ground=True):
+    """A patch of woods: rough grass, firs, birches and pines, with ferns, rocks and stumps."""
+    if lay_ground:
+        ground('grass_b', poly)
+    trees = scatter(['fir', 'birch', 'pine', 'fir', 'tree_b'], poly, n_trees, 46, seed, avoid)
+    scatter(['fern', 'fern', 'rock', 'stump', 'bush'], poly, n_trees, 30, seed + 1, avoid)
+    return trees
+
+
+def block_woods():
+    """South of Linden Avenue: woods with a footpath."""
+    y0 = LY + HW4 + SWK
+    xr = ash_x(MAPH) - HW4 - SWK
+    poly = [[0, y0], [ash_x(y0) - HW4 - SWK, y0], [xr, MAPH], [0, MAPH]]
+    path = [[0, y0 + tc(4)], [tc(10), y0 + tc(3)], [tc(20), y0 + tc(5)], [tc(30), y0 + tc(3.5)], [ash_x(y0 + tc(3)) - HW4 - SWK, y0 + tc(3)]]
+    ground('grass_b', poly)
+    ground('dirt', stroke(resample(path, 4), 22))
+    for (p, d, t) in along(path, 6):
+        keep_clear(p[0], p[1], 14)
+    woods(poly, 31, 70, lay_ground=False)
+    prop('bench', tc(18), y0 + tc(4.4), dir=0)
+
+
+def block_timber():
+    """East of Ashby Road: Ashby Timber's yard (the site trailer to clock in, log piles, the work van) in the woods."""
+    b = BLOCKS['ae']
+    y0 = BY + HW4 + SWK
+    def west(y):
+        return ash_x(y) + HW4 + SWK
+    poly = [[west(y0), y0], [MAPW, y0], [MAPW, MAPH], [west(MAPH), MAPH]] + [[west(y), y] for y in np.linspace(MAPH, y0, 30)]
+    yard = rect(west(tc(70)) + 6, tc(69.5), tc(60), tc(79))
+    ground('grass_b', poly)
+    ground('dirt', yard)
+    # a gravel drive from Ashby Road into the yard
+    ground('gravel', rect(west(tc(74)) - 4, tc(73), west(tc(74)) + 40, tc(75.4)))
+    keep_clear(west(tc(74)), tc(74.2), 40)
+    building('site_trailer', tc(52), front_y('site_trailer', tc(72)), 0)
+    for (x, y, kind, dr) in ((54.6, 76.4, 'log_pile', 0), (57.6, 75.6, 'log_pile', 2), (56.4, 78.0, 'log', 0),
+                             (58.8, 72.6, 'log', 2), (50.2, 77.6, 'stump', 0), (59.2, 70.6, 'log_pile', 0),
+                             (49.6, 70.6, 'cones', 0), (55.2, 71.0, 'crate', 0), (53.0, 78.4, 'barrel_teal', 0)):
+        prop(kind, tc(x), tc(y), dir=dr)
+    car('van_sage', tc(51.2), tc(75.2), 2, parked=True)
+    segments('fence', [[tc(60.3), tc(69.6)], [tc(60.3), tc(79.2)]])
+    segments('fence', [[west(tc(79)) + 8, tc(79.3)], [tc(60.3), tc(79.3)]])
+    yard_box = [float(v) for v in (np.asarray(yard)[:, 0].min() - 10, np.asarray(yard)[:, 1].min() - 10,
+                                   np.asarray(yard)[:, 0].max() + 10, np.asarray(yard)[:, 1].max() + 10)]
+    woods(poly, 41, 120, avoid=(yard_box,), lay_ground=False)
+    for y in (tc(82), tc(88), tc(93)):
+        prop('stump', west(y) + 30, y)
+
+
 FILL = {
     'yard': ['bin_sage', 'boxes', 'ac_unit', 'pallets', 'trash_bags', 'barrel_teal', 'bike_rack', 'crate', 'bin_navy', 'pipes'],
     'paved': ['street_planter', 'bench', 'planter', 'bike_rack', 'bollard', 'trash_can', 'news_box', 'tree'],
@@ -1039,7 +1305,8 @@ def scatter_decals(seed=11):
 def build():
     lay_blocks()
     paving_patches()
-    for f in (block_nw, block_n, block_ne, block_w, block_mid, block_e, block_sw, block_s, block_se, block_gullsway_edge):
+    for f in (block_nw, block_n, block_ne, block_w, block_mid, block_e, block_sw, block_s, block_se, block_gullsway_edge,
+              block_boulevard_band, block_linden, block_woods, block_timber):
         f()
     corners_furniture()
     lay_markings()
@@ -1054,13 +1321,18 @@ STREETS = []
 
 def street_spans():
     for name, cy in ROADS_X.items():
-        STREETS.append({'name': name, 'x0': 0, 'x1': MAPW, 'y0': cy - HW - SWK, 'y1': cy + HW + SWK})
+        x0, x1 = xspan(name)
+        STREETS.append({'name': name, 'x0': max(0.0, x0), 'x1': min(MAPW, x1), 'y0': cy - hwx(name) - SWK,
+                        'y1': cy + hwx(name) + SWK})
     for name, line in ROADS_Y.items():
-        for y0 in np.arange(0, MAPH, T):
+        y0s, y1s = yspan(name)
+        for y0 in np.arange(max(0.0, np.floor(y0s / T) * T), min(MAPH, y1s), T):
             xs = line[(line[:, 1] >= y0) & (line[:, 1] <= y0 + T)][:, 0]
             if len(xs) == 0:
                 continue
-            STREETS.append({'name': name, 'x0': float(xs.min() - HW - SWK), 'x1': float(xs.max() + HW + SWK), 'y0': float(y0), 'y1': float(y0 + T)})
+            h = hwy(name)
+            STREETS.append({'name': name, 'x0': float(xs.min() - h - SWK), 'x1': float(xs.max() + h + SWK),
+                            'y0': float(y0), 'y1': float(y0 + T)})
 
 
 def walkways():
@@ -1098,26 +1370,140 @@ def walkways():
     return out
 
 
-def lanes():
-    """Traffic lanes (milestone 4), one each way per road, in driving order, right-hand traffic."""
+# ------------------------------------------------------------------ traffic (milestone 4, multi-lane since Phase 2)
+def _lane_off(k):
+    """Distance of lane k (0 = next to the centre line) from the road's centre."""
+    return (k + 0.5) * LANE
+
+
+def _x_lane(name, k, east, x0, x1):
+    cy = ROADS_X[name]
+    y = cy + _lane_off(k) if east else cy - _lane_off(k)
+    return [[x0, y], [x1, y]]
+
+
+def _y_lane(name, k, south, y_from, y_to):
+    """A north-south road's lane k between two y values, in driving order. Southbound keeps to the west."""
+    line = ROADS_Y[name]
+    off = offset(line, _lane_off(k) if south else -_lane_off(k))
+    lo, hi = min(y_from, y_to), max(y_from, y_to)
+    sel = off[(off[:, 1] >= lo) & (off[:, 1] <= hi)]
+    pts = sel.tolist()
+    return pts if south else pts[::-1]
+
+
+def _y_lane_x(name, k, south, y):
+    line = ROADS_Y[name]
+    off = offset(line, _lane_off(k) if south else -_lane_off(k))
+    return float(np.interp(y, off[:, 1], off[:, 0]))
+
+
+def _fillet(pts, r=40.0):
+    """Round every sharp corner of a polyline with a quadratic curve of about radius r (the turns at junctions)."""
+    P = [np.asarray(q, float) for q in pts]
+    out = [P[0]]
+    for i in range(1, len(P) - 1):
+        a, c, b = P[i - 1], P[i], P[i + 1]
+        u = c - a; v = b - c
+        lu, lv = np.linalg.norm(u), np.linalg.norm(v)
+        if lu < 1e-6 or lv < 1e-6:
+            continue
+        u /= lu; v /= lv
+        if float(u @ v) > 0.95:
+            out.append(c)
+            continue
+        rr = min(r, lu / 2, lv / 2)
+        t1, t2 = c - u * rr, c + v * rr
+        for t in np.linspace(0, 1, 9):
+            out.append((1 - t) ** 2 * t1 + 2 * (1 - t) * t * c + t ** 2 * t2)
+    out.append(P[-1])
+    return out
+
+
+def _routes():
+    """Every traffic route as (road name, polyline). Only right turns, so no route crosses oncoming traffic:
+    the downtown streets meet the boulevard's westbound outer lane, Millwright Road carries on as Ashby Road, the
+    outer lanes of Ashby Road turn onto the boulevard, and Linden Avenue joins Ashby Road at a T."""
+    W0, W1 = -T, MAPW + T
+    S1 = MAPH + T
+    R = []
+    for name in ('OVERCAST AVENUE', 'DRIZZLE ROW'):
+        R.append((name, _x_lane(name, 0, True, W0, W1)))
+        R.append((name, _x_lane(name, 0, False, W1, W0)))
+    for k in (0, 1):
+        R.append((BLVD, _x_lane(BLVD, k, True, W0, W1)))
+        R.append((BLVD, _x_lane(BLVD, k, False, W1, W0)))
+    # Pewter Street and Gullsway: a T at the boulevard, joined through its westbound outer lane
+    yw = BY - _lane_off(1)
+    for name in ('PEWTER STREET', 'GULLSWAY'):
+        sb = _y_lane(name, 0, True, -T, yw)
+        R.append((name, sb + [[_y_lane_x(name, 0, True, yw), yw], [W0, yw]]))
+        xn = _y_lane_x(name, 0, False, yw)
+        R.append((name, [[W1, yw], [xn, yw]] + _y_lane(name, 0, False, yw, -T)))
+    # Millwright Road and Ashby Road: one road through the boulevard
+    M = 'MILLWRIGHT ROAD'
+    down = _y_lane(M, 0, True, -T, BY) + _y_lane(ASH, 0, True, BY, S1)
+    R.append((ASH, down))
+    yl0 = LY - _lane_off(0)
+    turn = _y_lane(M, 0, True, -T, BY) + _y_lane(ASH, 0, True, BY, yl0)
+    R.append((LIN, turn + [[_y_lane_x(ASH, 0, True, yl0), yl0], [W0, yl0]]))
+    R.append((M, _y_lane(ASH, 0, False, S1, BY) + _y_lane(M, 0, False, BY, -T)))
+    # Ashby Road's outer lanes: to and from the boulevard's outer lanes, and on to Linden Avenue
+    ye = BY + _lane_off(1)
+    R.append((ASH, _y_lane(ASH, 1, False, S1, ye) + [[_y_lane_x(ASH, 1, False, ye), ye], [W1, ye]]))
+    yl1 = LY - _lane_off(1)
+    xs = _y_lane_x(ASH, 1, True, ye)
+    R.append((LIN, [[W0, ye], [xs, ye]] + _y_lane(ASH, 1, True, ye, yl1) +
+              [[_y_lane_x(ASH, 1, True, yl1), yl1], [W0, yl1]]))
+    R.append((ASH, [[W0, ye], [xs, ye]] + _y_lane(ASH, 1, True, ye, S1)))
+    # Linden Avenue eastbound: right onto Ashby Road, south to the edge
+    for k in (0, 1):
+        y = LY + _lane_off(k)
+        xa = _y_lane_x(ASH, k, True, y)
+        R.append((LIN, [[W0, y], [xa, y]] + _y_lane(ASH, k, True, y, S1)))
+    return R
+
+
+def _stops(pts, J):
+    """Where a route must stop for each junction it enters: the first point inside the junction's stop box."""
+    s = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(pts, axis=0), axis=1))])
     out = []
-    for name, cy in ROADS_X.items():
-        out.append({'road': name, 'p': [[-T, cy + T], [MAPW + T, cy + T]]})          # eastbound
-        out.append({'road': name, 'p': [[MAPW + T, cy - T], [-T, cy - T]]})          # westbound
-    for name, line in ROADS_Y.items():
-        sb = offset(line, T)                # south-bound keeps to the west (+ offset is west)
-        nb = offset(line, -T)[::-1]
-        for ln in (sb, nb):
-            r = resample(ln, 16.0)
-            out.append({'road': name, 'p': [[round(float(x), 1), round(float(y), 1)] for x, y in r]})
+    for c, j in enumerate(J):
+        inside = (np.abs(pts[:, 0] - j['x']) <= j['bx'] + 44) & (np.abs(pts[:, 1] - j['y']) <= j['by'] + 44)
+        for i in range(1, len(pts)):
+            if inside[i] and not inside[i - 1]:
+                out.append({'s': round(float(s[i]), 1), 'c': c})
+    return sorted(out, key=lambda q: q['s'])
+
+
+def lanes():
+    """Traffic lanes in driving order, right-hand traffic, two lanes each way on the Phase 2 roads, with the stop
+    lines worked out here (TS reads `stops`)."""
+    J = junctions()
+    out = []
+    for road, pts in _routes():
+        P = resample(np.asarray(_fillet(pts), float), 16.0)
+        out.append({'road': road, 'p': [[round(float(x), 1), round(float(y), 1)] for x, y in P],
+                    'stops': _stops(P, J)})
     return out
 
 
 def crossings():
+    return [{'x': round(j['x'], 1), 'y': round(j['y'], 1)} for j in junctions()]
+
+
+def roads():
+    """Road centre lines for police routing (the lanes turn and are offset; these don't)."""
     out = []
-    for cy in ROADS_X.values():
-        for name, line in ROADS_Y.items():
-            out.append({'x': round(float(np.interp(cy, line[:, 1], line[:, 0])), 1), 'y': cy})
+    for name, cy in ROADS_X.items():
+        x0, x1 = xspan(name)
+        P = resample(np.array([[x0, cy], [x1, cy]]), 16.0)
+        out.append({'road': name, 'p': [[round(float(x), 1), round(float(y), 1)] for x, y in P]})
+    for name, line in ROADS_Y.items():
+        y0, y1 = yspan(name)
+        sel = line[(line[:, 1] >= y0) & (line[:, 1] <= y1)]
+        P = resample(sel, 16.0)
+        out.append({'road': name, 'p': [[round(float(x), 1), round(float(y), 1)] for x, y in P]})
     return out
 
 
@@ -1128,7 +1514,12 @@ def export(path):
                    'decals': [{'k': k, 'x': x, 'y': y} for k, x, y in DECALS]},
         'placements': [{k: v for k, v in p.items() if k != 'fp'} for p in PL],
         'doors': DOORS, 'streets': STREETS, 'zones': ZONES,
-        'walkways': walkways(), 'lanes': lanes(), 'crossings': crossings(),
+        'walkways': walkways(), 'lanes': lanes(), 'crossings': crossings(), 'roads': roads(),
+        # district names by area, first match wins; the rest of the map is the map's own name (docs/01 nicknames)
+        'districts': [
+            {'name': 'FAR ACRES', 'x0': round(float(ash_x(BY)), 1), 'y0': BY, 'x1': MAPW, 'y1': MAPH},
+            {'name': 'HEDGEROW PARK', 'x0': 0, 'y0': BY, 'x1': MAPW, 'y1': MAPH},
+        ],
         'spawn': {'x': tc(9), 'y': ROADS_X[O] - HW - 20},
     }
     json.dump(out, open(path, 'w'), separators=(',', ':'))

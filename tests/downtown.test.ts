@@ -9,7 +9,7 @@ import type { Placement } from '../src/maps/types';
 
 const T = 32;
 const NW = 70;
-const NH = 48;
+const NH = 96;
 const ground = groundSampler(DOWNTOWN);
 const ROAD = new Set(['asphalt', 'asphalt_wet', 'paint_white', 'paint_gold', 'iron']);
 
@@ -39,7 +39,7 @@ const solidsHit = (x: number, y: number, r = 6) =>
   });
 
 describe('Downtown map (vector ground)', () => {
-  it('is 70 x 48 tiles of known ground materials', () => {
+  it('is 70 x 96 tiles of known ground materials (48 until the Phase 2 map growth)', () => {
     expect(DOWNTOWN.width).toBe(NW);
     expect(DOWNTOWN.height).toBe(NH);
     const known = new Set(groundJson.materials.map((m) => m.name));
@@ -217,5 +217,27 @@ describe('Downtown map (vector ground)', () => {
         if (all) bare.push(`${i},${j}`);
       }
     expect(bare).toEqual([]);
+  });
+});
+
+describe('Phase 2 map growth', () => {
+  it('names the districts: Downtown north of Hedgerow Way, Hedgerow Park and Far Acres south of it', async () => {
+    const { districtAt } = await import('../src/maps/groundQuery');
+    expect(districtAt(DOWNTOWN, 10 * 32, 20 * 32)).toBe('THE LEDGER');
+    expect(districtAt(DOWNTOWN, 16 * 32, 74 * 32)).toBe('HEDGEROW PARK');
+    expect(districtAt(DOWNTOWN, 54 * 32, 74 * 32)).toBe('FAR ACRES');
+  });
+
+  it('places the new buildings: the garage, the depot, the dealer cabin, the site trailer and a house row', () => {
+    const names = DOWNTOWN.placements.map((p) => p.sprite);
+    for (const b of [
+      'bld/garage_torque',
+      'bld/courier_depot',
+      'bld/dealer_office',
+      'bld/site_trailer',
+      'bld/shop_clothing',
+    ])
+      expect(names, b).toContain(b);
+    expect(names.filter((n) => n.startsWith('bld/house_')).length).toBeGreaterThanOrEqual(5);
   });
 });

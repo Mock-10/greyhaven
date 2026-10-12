@@ -98,6 +98,8 @@ export interface MapData {
   lanes?: { road: string; p: [number, number][]; stops?: { s: number; c: number }[] }[];
   /** Road centre lines, for police routing (lanes are offset and can turn). Older maps route on their lanes. */
   roads?: { road: string; p: [number, number][] }[];
+  /** District names by area (first match wins); elsewhere the map's own name (Phase 2: Hedgerow Park, Far Acres). */
+  districts?: { name: string; x0: number; y0: number; x1: number; y1: number }[];
   /** Road crossings: where the traffic lights are. */
   crossings?: { x: number; y: number }[];
   /** Where the player starts, in world units. */

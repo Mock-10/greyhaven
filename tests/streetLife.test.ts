@@ -1,3 +1,4 @@
+import { pointAt } from '../src/systems/paths';
 import { describe, expect, it } from 'vitest';
 import { BALANCE } from '../src/config/balance';
 import { Rng } from '../src/core/rng';
@@ -47,8 +48,27 @@ describe('traffic', () => {
   const lanes = buildLanes(DOWNTOWN.lanes ?? [], DOWNTOWN.crossings ?? []);
 
   it('has a lane each way on every road with stop lines before the crossings', () => {
-    expect(lanes.length).toBe(10);
+    // downtown: one each way; Hedgerow Way, Ashby Road and Linden Avenue: two each way (user rule, 2026-10-11)
+    expect(lanes.length).toBe(20);
     for (const l of lanes) expect(l.stops.length).toBeGreaterThanOrEqual(1);
+    const roads = (r: string) => lanes.filter((l) => l.road === r).length;
+    expect(roads('HEDGEROW WAY')).toBe(4);
+    // stops are in driving order and lie on the lane
+    for (const l of lanes)
+      for (let k = 1; k < l.stops.length; k++) expect(l.stops[k]!.s).toBeGreaterThan(l.stops[k - 1]!.s);
+  });
+
+  it('serves the Phase 2 roads: Ashby Road and Linden Avenue have lanes, and every lane runs edge to edge', () => {
+    expect(lanes.some((l) => l.road === 'ASHBY ROAD')).toBe(true);
+    expect(lanes.some((l) => l.road === 'LINDEN AVENUE')).toBe(true);
+    const W = DOWNTOWN.width * 32;
+    const H = DOWNTOWN.height * 32;
+    const outside = (x: number, y: number) => x < 0 || y < 0 || x > W || y > H;
+    for (const l of lanes) {
+      const a = pointAt(l.path, 0);
+      const b = pointAt(l.path, l.path.len);
+      expect(outside(a.x, a.y) && outside(b.x, b.y), l.road).toBe(true);
+    }
   });
 
   it('alternates the lights: one direction red while the other is green', () => {
@@ -103,8 +123,9 @@ describe('traffic', () => {
 describe('police routes', () => {
   it('drives along the roads, turning at crossings, to the road point nearest the goal', async () => {
     const { buildRoads, route, onRoad } = await import('../src/systems/roads');
-    const g = buildRoads(DOWNTOWN.lanes ?? [], DOWNTOWN.crossings ?? []);
-    expect(g.lines.length).toBe(5);
+    const g = buildRoads(DOWNTOWN.roads ?? DOWNTOWN.lanes ?? [], DOWNTOWN.crossings ?? []);
+    expect(g.lines.length).toBe(8); // 4 east-west roads and 4 north-south roads (Ashby Road carries on Millwright)
+
     const from = { x: 19 * 32, y: 44 * 32 }; // the precinct on Pewter Street
     const to = { x: 50 * 32, y: 30 * 32 }; // Marlo's yard
     const r = route(g, from, to);
