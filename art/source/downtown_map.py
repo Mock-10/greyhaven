@@ -705,6 +705,11 @@ def block_ne():
                     (tc(46.6), 'boxes'), (tc(47.4), 'pipes'), (tc(48.8), 'bin_navy'), (tc(49.7), 'ac_unit'), (tc(51.0), 'dumpster'),
                     (tc(52.2), 'trash_bags')):
         prop(kind, x, ay1 - 12, dir=0)
+    # Phase 4 (docs/07 decisions): the arms dealer sells from an open van at the alley's quiet end
+    ac = (ay0 + ay1) / 2
+    car('van_sage', tc(55.0), ac, 0)
+    ZONES.append({'id': 'arms_dealer', 'x0': round(tc(52.9), 1), 'y0': round(ay0, 1), 'x1': round(tc(53.7), 1),
+                  'y1': round(ay1, 1), 'npc': {'x': round(tc(53.3), 1), 'y': round(ac, 1)}})
     building('walkup_stone', tc(41.25), tc(4.0), 0)
     building('walkup_red', tc(41.25), tc(9.2), 0)
     building('midrise_stone', tc(44.6), tc(8.7), 0)

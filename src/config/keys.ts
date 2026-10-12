@@ -12,6 +12,8 @@ export const KEYS = {
   vehicle: 'F',
   handbrake: 'SPACE',
   debugOverlay: 'F3',
+  /** Reload the drawn weapon (docs/11). */
+  reload: 'R',
   /** Put on or take off a mask (docs/11). */
   mask: 'M',
   /** Skip the guided first day (docs/11). */

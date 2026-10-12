@@ -214,11 +214,30 @@ describe('saves (docs/12)', () => {
     const r = validate(old);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.file.version).toBe(6);
+    expect(r.file.version).toBe(SAVE_VERSION);
     expect(r.file.state.crime).toEqual(fresh.crime);
     expect(r.file.state.heat).toEqual({ ids: [] });
     expect(r.file.state.inventory.drill).toBe(0);
     expect(r.file.state.maskOn).toBeNull();
+    expect(Object.keys(r.file.state).sort()).toEqual(Object.keys(fresh).sort());
+  });
+
+  it('migrates a version 6 save to version 7 (an empty loadout)', () => {
+    const fresh = createState(1, 'downtown', { x: 0, y: 0 });
+    const v6 = JSON.parse(JSON.stringify(fresh)) as Record<string, unknown>;
+    delete v6.combat;
+    const old = {
+      game: 'doublelife',
+      version: 6,
+      meta: {},
+      state: v6,
+      checksum: checksum(v6),
+    } as unknown as SaveFile;
+    const r = validate(old);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.file.version).toBe(7);
+    expect(r.file.state.combat).toEqual(fresh.combat);
     expect(Object.keys(r.file.state).sort()).toEqual(Object.keys(fresh).sort());
   });
 

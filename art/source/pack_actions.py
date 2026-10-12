@@ -23,7 +23,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..')
 DRAFTS = os.path.join(OUT, 'drafts', 'actions')
 DIRS = ['SE', 'S', 'SW', 'W', 'NW', 'N', 'NE', 'E']
-STYLES = ('short', 'long', 'bun', 'bald')
+STYLES = ('short', 'long', 'bun', 'bald', 'masked')  # masked: the fence's balaclava (pack_player.py)
 MARKERS = ('mk_skin', 'mk_hair', 'mk_top', 'mk_bot')
 WALK_BBOX = (-6, 8, -10, 10, 0, 40)          # humans.human()'s default box (player.png)
 
@@ -68,8 +68,9 @@ def model(style, action, k):
     from sdf import Model
     p = actions.ACTIONS[action][k]
     m = humans.human(skin_tone=2.6, skin_ramp='mk_skin', upper=('mk_top', 2.3), lower=('mk_bot', 1.8),
-                     shoes=('night', 1.3), hair=('mk_hair', 2.2), hair_style=style, walk=p.get('walk', 0.0),
-                     pose=p, held=actions.held_for(p))
+                     shoes=('night', 1.3), hair=('mk_hair', 2.2), hair_style='bald' if style == 'masked' else style,
+                     mask=style == 'masked', hood=('night', 1.6) if style == 'masked' else None,
+                     walk=p.get('walk', 0.0), pose=p, held=actions.held_for(p))
     return m
 
 

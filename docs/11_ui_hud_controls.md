@@ -88,6 +88,9 @@ The generator is `art/source/hud.py` (with `pixfont.py`), and the shapes, colour
 | Camera recenter | C |
 | Sight lines on/off (until the settings menu exists) | L |
 | Skip the guided first day | F2 |
+| Wear a mask | M |
+| Draw a weapon / holster | 1–4 (the same key again holsters) |
+| Reload | R |
 | Zoom | Ctrl + mouse wheel (integer steps: 1×, 2×, 3×, 4×) |
 | Cheat console (playtesting, also on Pages) | Ctrl + Shift + F1 |
 

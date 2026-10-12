@@ -5,7 +5,7 @@ import type { GameState } from './store';
 import { ONBOARD_STEPS } from '../data/onboarding';
 
 /** Bump whenever the save shape changes, and add a migration below plus its test (CLAUDE.md rule 5). */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export const SLOTS = ['slot1', 'slot2', 'slot3'] as const;
 export const AUTO_SLOTS = ['auto1', 'auto2'] as const;
@@ -139,6 +139,19 @@ export const MIGRATIONS: Record<number, (state: Obj) => Obj> = {
     goods: [],
     masks: [],
     maskOn: null,
+  }),
+  /** 6 → 7 (Phase 4, combat): empty loadout and no ammo, nothing drawn. */
+  6: (s) => ({
+    ...s,
+    combat: {
+      slots: [null, null, null, null],
+      ammo: {},
+      drawn: -1,
+      raised: false,
+      cooldown: 0,
+      reloading: 0,
+      calm: 10,
+    },
   }),
 };
 

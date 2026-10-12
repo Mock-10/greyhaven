@@ -173,8 +173,45 @@ def t_screwdriver(J):
     return [(grip, 'red', 2.8, 0.3), (shaft, 'white', 3.4, 1.0)]
 
 
+# ---- weapons (Phase 4, docs/07): no gold; dark metal and wood, chunky enough to read at 40 px
+def t_pistol(J):
+    hand, ax = J['handR'], J['body'](J['pose']['axis'])
+    R = basis(ax, J['body']((0.0, 0.0, 1.0)))
+    up = R[1]
+    def slide(P): return obox(P, hand + ax * 1.6 + up * 1.0, R, (2.2, 0.55, 0.65), 0.25)
+    def grip(P): return obox(P, hand + up * -0.2, R, (0.6, 0.5, 1.1), 0.25)
+    return [(slide, 'night', 1.6, 0.6), (grip, 'night', 1.1, 0.2)]
+
+
+def t_long(J):
+    """Rifles, the shotgun, the SMG and the LMG: one long gun along the aim axis, the stock at the right hand.
+    pose['gun'] = (barrel length, body half-height, ramp of the furniture)."""
+    hand, ax = J['handR'], J['body'](J['pose']['axis'])
+    length, bh, ramp = J['pose'].get('gun', (9.0, 0.8, 'wood'))
+    R = basis(ax, J['body']((0.0, 0.0, 1.0)))
+    up = R[1]
+    def stock(P): return obox(P, hand - ax * 1.6 + up * 0.2, R, (1.6, 0.5, bh), 0.3)
+    def body(P): return obox(P, hand + ax * 2.2 + up * 0.6, R, (2.6, 0.55, bh), 0.25)
+    def barrel(P): return capsule(P, hand + ax * 4.4 + up * 0.9, hand + ax * length + up * 0.9, 0.42)
+    return [(stock, ramp, 2.4, 0.0), (body, 'night', 1.5, 0.5), (barrel, 'night', 1.3, 0.7)]
+
+
+def t_bat(J):
+    hand, ax = J['handR'], J['body'](J['pose']['axis'])
+    def bat(P): return capsule(P, hand - ax * 1.4, hand + ax * 11.5, 0.5, 1.05)
+    return [(bat, 'wood', 3.4, 0.2)]
+
+
+def t_knife(J):
+    hand, ax = J['handR'], J['body'](J['pose']['axis'])
+    def handle(P): return capsule(P, hand - ax * 1.0, hand + ax * 1.0, 0.55)
+    def blade(P): return capsule(P, hand + ax * 1.2, hand + ax * 4.2, 0.42, 0.18)
+    return [(handle, 'night', 1.3, 0.0), (blade, 'white', 3.8, 1.2)]
+
+
 TOOLS = {'wrench': t_wrench, 'axe': t_axe, 'picks': t_picks, 'phone': t_phone, 'box': t_box,
-         'nozzle': t_nozzle, 'stamp': t_stamp, 'screwdriver': t_screwdriver}
+         'nozzle': t_nozzle, 'stamp': t_stamp, 'screwdriver': t_screwdriver,
+         'pistol': t_pistol, 'long': t_long, 'bat': t_bat, 'knife': t_knife}
 
 
 def held_for(p):
@@ -263,6 +300,17 @@ ACTIONS = {
              pose(L=(7.6, 2.2, 23.4), R=(7.6, -2.2, 22.0), lean=1.8, head=(0.3, 0, -0.3))],
     # idle breathing: normal, then an in-breath
     'breathe': [pose(), pose(breath=1.0)],
+    # weapons (Phase 4, docs/07): aims are held while the weapon is up, swings and stabs play once
+    'aim_pistol': [pose(L=(10.2, 0.4, 29.2), R=(10.6, -0.4, 29.4), tool='pistol', axis=(1.0, 0.0, 0.0), lean=0.4)],
+    'aim_rifle': [pose(R=(5.4, -2.2, 28.8), L=(10.4, -0.4, 28.6), tool='long', axis=unit((1.0, 0.18, 0.0)),
+                       gun=(10.5, 0.75, 'wood'), lean=0.6)],
+    'aim_heavy': [pose(R=(5.0, -2.6, 23.4), L=(10.0, -0.8, 23.8), tool='long', axis=unit((1.0, 0.2, 0.05)),
+                       gun=(11.5, 1.35, 'night'), lean=-0.6)],
+    'swing': [pose(R=(1.4, -3.6, 35.5), L=(2.0, -2.4, 34.8), tool='bat', axis=unit((-0.5, -0.3, 1.0)), lean=-0.6),
+              pose(R=(7.4, -1.8, 29.4), L=(6.8, -0.6, 28.8), tool='bat', axis=unit((0.6, 0.7, 0.35)), lean=1.2),
+              pose(R=(8.0, 1.6, 25.0), L=(7.2, 3.0, 25.4), tool='bat', axis=unit((0.25, 1.0, -0.25)), lean=1.6)],
+    'stab': [pose(R=(4.4, -3.2, 26.0), tool='knife', axis=(1.0, 0.0, 0.1), lean=-0.2),
+             pose(R=(11.4, -1.4, 27.2), tool='knife', axis=(1.0, 0.0, 0.0), lean=1.6)],
 }
 
 # playback (frames / fps / loop); carry plays its 5 frames like walking: 0,3,1,3,0,4,2,4
@@ -270,5 +318,6 @@ PLAYBACK = {
     'use': (6, False), 'lockpick': (4, True), 'hotwire': (6, True), 'wrench': (6, True), 'chop': (6, True),
     'carry': (8, True), 'phone': (2, True), 'pump': (1, True), 'search': (4, True), 'stamp': (4, True),
     'type': (8, True), 'breathe': (1.5, True),
+    'aim_pistol': (1, True), 'aim_rifle': (1, True), 'aim_heavy': (1, True), 'swing': (12, False), 'stab': (12, False),
 }
 CARRY_CYCLE = [0, 3, 1, 3, 0, 4, 2, 4]

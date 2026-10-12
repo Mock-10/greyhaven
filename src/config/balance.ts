@@ -4,6 +4,7 @@
 import { BALANCE_ODD } from './balanceOdd';
 import { BALANCE_CRIME } from './balanceCrime';
 import { BALANCE_POLICE } from './balancePolice';
+import { BALANCE_COMBAT } from './balanceCombat';
 
 export const BALANCE = {
   sim: {
@@ -608,6 +609,38 @@ export const BALANCE = {
   crimeRules: BALANCE_CRIME,
   /** Phase 3 police rules (1–5★ response, heat, bribes, jail): numbers live in balancePolice.ts. */
   policeRules: BALANCE_POLICE,
+  /** Phase 4 weapons and combat rules (docs/07): numbers live in balanceCombat.ts. */
+  combat: BALANCE_COMBAT,
+  /** Phase 4 combat in the street (world/combatWorld.ts; assumed): hit radius, health of people and officers, how
+   *  long bodies and blood stay, gunfire range, the police rate of fire. Real seconds, world units. */
+  combatWorld: {
+    hitRadius: 7,
+    pedHealth: 40,
+    copHealth: 80,
+    /** Bodies and blood stay this long, then fade over fadeSeconds (user 2026-10-11: they fall, then fade out). */
+    bodySeconds: 30,
+    fadeSeconds: 4,
+    poolGrowSeconds: 0.7,
+    /** Gunshots are heard this far (tiles): witnesses call it in. */
+    gunfireHearTiles: 16,
+    /** Seconds between an officer's shots (min, max). */
+    copShootEvery: [1.6, 2.8] as readonly [number, number],
+    /** Police rounds do this share of their weapon's damage to the player (assumed, so a firefight lasts long
+     *  enough to run or fight back; armor still helps). */
+    copDamageShare: 0.45,
+    /** The barrel sits this far in front of the shooter and this high (world units). */
+    muzzleReach: 12,
+    handHeight: 22,
+    flashSeconds: 0.06,
+    tracerSeconds: 0.07,
+    /** Walking with the weapon raised is slower (assumed). */
+    aimWalk: 0.6,
+    /** The arms dealer's van is open these hours (assumed: evenings and nights). */
+    dealerHours: { from: 18 * 60, to: 4 * 60 },
+  },
+  /** docs/05 "Death": wake at 06:00 and pay 10% of carried clean cash, at least $100 and at most $1,500 (as far as
+   *  the cash goes). */
+  death: { billShare: 0.1, minBill: 100, maxBill: 1500 },
 
   /** The guided first day (docs/11 "Onboarding"). */
   onboarding: {

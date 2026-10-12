@@ -296,6 +296,16 @@ export class Police {
     });
   }
 
+  /** An officer went down (combat): off the street; the combat layer draws the body. */
+  removeOfficer(sprite: Phaser.GameObjects.Sprite): void {
+    for (const u of this.units) {
+      const o = u.crew.find((q) => q.sprite === sprite);
+      if (!o) continue;
+      o.sprite.destroy();
+      u.crew = u.crew.filter((q) => q !== o);
+    }
+  }
+
   private removeUnit(u: Unit): void {
     u.sprite.destroy();
     u.shadow.destroy();
