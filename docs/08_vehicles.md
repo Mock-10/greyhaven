@@ -56,3 +56,9 @@
 
 ## Phase 2 build (milestone 5, 2026-10-11)
 - **Repair kit** (hardware store, $150): E USE REPAIR KIT on any unlocked car below 50% health brings it to 50%. A wrecked car (0%) can't be saved by a kit.
+
+## Phase 2 build (milestone 6a, 2026-10-12)
+- **Dealer cars are scenery** for now: the used-car lot on Hedgerow Way shows two rows of cars that can't be entered, bought or stolen. Buying (beater and sedan) comes with the dealer's sales cabin in milestone 6b.
+- **House driveway cars** on Linden Avenue are ordinary parked cars: they can be lockpicked, hotwired, looted and sold to Marlo like any other.
+- New roads have two lanes each way. Traffic picks a lane, stops at the stop lines and only turns right for now.
+
