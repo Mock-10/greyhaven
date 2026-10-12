@@ -7,7 +7,7 @@ S = 1.0   # overall scale: ~36px tall person (≈7.3 heads)
 def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night', 1.2),
           hair=('wood', 1.2), hair_style='short', sleeves='long', tie=False, shirt=None, hat=None,
           mask=False, hood=None, vest=None, case=False, bag=False, badge=False, jacket=False,
-          belt=True, walk=0.0, lower_skin=False):
+          belt=True, walk=0.0, lower_skin=False, skin_ramp='skin'):
     """Facing +x. Origin at the feet. `walk` in [-1,1] swings legs/arms."""
     w = walk
     # joint positions (units before scale)
@@ -121,7 +121,7 @@ def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night
         P = p / S
         x, y, z = P[:, 0], P[:, 1], P[:, 2]
         base = np.full(len(P), skin_tone)
-        ramp = np.full(len(P), RID['skin'])
+        ramp = np.full(len(P), RID[skin_ramp])
         face = x > 1.35
         for sgn in (1, -1):
             eye = face & (np.abs(y - sgn * 1.05) < 0.62) & (np.abs(z - 35.45) < 0.5) & (z > 34.9)

@@ -4,7 +4,7 @@
 import type { GameState } from './store';
 
 /** Bump whenever the save shape changes, and add a migration below plus its test (CLAUDE.md rule 5). */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export const SLOTS = ['slot1', 'slot2', 'slot3'] as const;
 export const AUTO_SLOTS = ['auto1', 'auto2'] as const;
@@ -101,6 +101,17 @@ export const MIGRATIONS: Record<number, (state: Obj) => Obj> = {
         watches: 0,
       },
       messages: [],
+    };
+  },
+  /** 2 → 3 (Phase 2 M6b, the character creator and the clothing store): a look (the old office-worker sprite
+   *  becomes the default look in the teal jacket) and a wardrobe with the three starting outfits. */
+  2: (s) => {
+    const player = s.player as Obj;
+    return {
+      ...s,
+      player: { ...player, costume: 'player/short' },
+      look: { name: 'ALEX', style: 'short', skin: 'fair', hair: 'brown', outfit: 'teal_jacket' },
+      wardrobe: ['teal_jacket', 'sage_casual', 'plum_knit'],
     };
   },
 };

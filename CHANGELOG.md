@@ -14,7 +14,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
-## Handover (updated 2026-10-12, session 5) — read this first in a new session
+## Handover (updated 2026-10-12, session 6) — read this first in a new session
 This is the only handover section; it replaces the old "Resume here" block and the session 4 handover.
 
 ### Where we are
@@ -22,14 +22,14 @@ This is the only handover section; it replaces the old "Resume here" block and t
 - **Phase 2 (economy and careers) is in progress.** It is planned as milestones, one PR each:
   - **M5, money and phone:** done, merged in PR #10.
   - **UI redesign** (your request, 2026-10-12: larger text, more pictures): done, merged in PR #11.
-  - **M6a, the new district south of Downtown:** built on the branch **`claude/p2-map-shops`**, open as **PR #12** (https://github.com/Mock-10/greyhaven/pull/12), not merged yet.
+  - **M6a, the new district south of Downtown:** done, merged in PR #12.
     - The map grew from 70 × 48 to 70 × 96 tiles.
     - New streets: Hedgerow Way, Ashby Road and Linden Avenue, all two lanes each way.
     - New places: the hardware and clothing store buildings, Torque & Sons, the used-car lot, the Linden Avenue house row with the Swiftish Couriers depot, the woods, and the Ashby Timber yard.
     - District areas: Hedgerow Park and Far Acres.
     - Multi-lane traffic.
     - See "Milestone 6a" below for the full list.
-  - **M6b:** shop doors and interiors (hardware, clothing, car dealer), stock, dealer purchases, and the character creator.
+  - **M6b, shops and the character creator:** built on **`claude/p2-map-shops-do5oew`** (see "Milestone 6b" below): the creator with palette-swapped player sprites, the hardware store, the clothing store (outfits, fitting booths, the wardrobe), and the used-car lot's cabin (buy a beater or a sedan). Its PR merges once CI is green.
   - **M7:** the three new jobs (mechanic, lumberjack, delivery) with their interiors and minigames, the office stamp-and-sign and meeting tasks, uniforms and lockers, and rank perks.
   - **M8:** weekend odd jobs (car wash, bar shift), the guided first day, the econ sim re-run, and the phase close.
 - **Autopilot is on** (CLAUDE.md):
@@ -42,7 +42,7 @@ This is the only handover section; it replaces the old "Resume here" block and t
 1. **Set up the container:**
    ```
    export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1
-   git fetch origin && git checkout claude/p2-map-shops && git pull origin claude/p2-map-shops
+   git fetch origin && git checkout main && git pull origin main
    npm install
    pip install numpy pillow   # only if missing
    ```
@@ -52,18 +52,9 @@ This is the only handover section; it replaces the old "Resume here" block and t
    - docs 00 and 15;
    - docs 01 (the new district and the street-width rule), 02, 03, 08, 11 (the UI redesign spec), 13 and 18;
    - `art/STYLE_GUIDE.md`.
-3. **Finish M6a on `claude/p2-map-shops`:**
-   - Already done there:
-     - `npx tsc --noEmit`, `npm run lint` and `npm test` (192 tests) pass;
-     - `check_city.py` reports 0 issues;
-     - the full map drafts are re-rendered at 70 × 96 (`art/drafts/downtown/`);
-     - docs 01, 02 and 08 are updated;
-     - in-game screenshots are in `docs/screenshots/phase2_m6a/`.
-   - Still to do:
-     - Run `npm run build && npm run test:e2e`. **It has not been run on the 70 × 96 map yet.** Fix any test that assumed the old 48-tile height, the old spawn or the old lane count.
-     - Check traffic density in a screenshot or two; the larger map may need more cars (see the known issues).
-     - PR #12 is already open for this branch: pushing to the branch updates it. Add the screenshots to its description, fix CI until it is green, then merge it.
-4. **Then M6b, M7 and M8**, in that order (above).
+3. **If M6b's PR is still open**, check out `claude/p2-map-shops-do5oew`, get its CI green and merge it.
+4. **Then M7 and M8**, in that order (above).
+   - The user allowed splitting work across parallel threads when they can't collide (2026-10-12). Two M7 pieces were offered to the coordinator as new-file-only threads: the job interiors art (`claude/p2-job-interiors`: `art/source/rooms_jobs.py`, `decor_jobs.py`, `art/interiors/{garage,depot,site_trailer}`) and the job minigames (`claude/p2-job-minigames`: `src/minigames/<name>.ts`, `src/ui/panelsJobs.ts`, `src/config/balanceJobs.ts`, tests). Check `list_project_prs` / the threads for their state; the main M7 thread owns the wiring (scenes, map doors, save, balance.ts, uniforms) and this file.
    - Work one milestone at a time: plan, build, test (`npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run test:e2e`), screenshots (`npm run shots`), update this file, open the PR, merge it when green, send the user a short note with screenshots, then start the next milestone.
    - New UI must follow the redesign: the 5 × 7 font, pictures from `art/source/ui_icons.py`, and the sizes in docs/11.
    - New interiors follow docs/18: build from the recorded answers, render a draft with `art/source/interiors.py`, and let the user review afterwards (they are not heists).
@@ -72,12 +63,7 @@ This is the only handover section; it replaces the old "Resume here" block and t
 
 ### What's left in Phase 2
 (Details are in the checklist below.)
-- **M6a merge:** e2e on the new map, then a green CI on PR #12 and the merge.
-- **Shops:**
-  - the hardware and clothing stores need doors, interiors and stock;
-  - the car dealer needs its sales cabin to work and its purchase flow (beater and sedan);
-  - the lot's cars are scenery today.
-- **Character creator.**
+- **M6b merge** if its PR is still open.
 - **Office:** the stamp-and-sign and meeting tasks (rank 3+).
 - **Jobs:** mechanic, lumberjack and delivery. The buildings stand, but there are no interiors or minigames yet.
 - **Rank perks; uniforms and lockers.**
@@ -97,7 +83,8 @@ This is the only handover section; it replaces the old "Resume here" block and t
   - The camera has no world bounds: panning can show the background past the map edge.
   - At 720p the open phone covers the cash panel (the world is paused while it's open).
   - The title, the phone and the minigame panels assume the HUD's UI scale (2× at 720p, 3× at 1080p).
-- **Doors:** a door added to the map without an interior falls back to Marlo's chop-shop message. Don't add doors to the new shops until their interiors exist.
+- **Doors:** a door added to the map without an interior falls back to Marlo's chop-shop message. Don't add doors to the garage, the depot or the site trailer until their interiors exist (M7).
+- **Shops:** a car bought at the lot waits in the pickup bay; while a car stands in the bay the desk asks you to move it first.
 - **Tests and tooling:**
   - Headless Chromium runs at about 12 fps, so e2e runs and screenshots are slow (real GPUs are fine).
   - The trunk e2e test was flaky before its fix in PR #10 (a race on the E key); watch it in CI.
@@ -129,8 +116,14 @@ They are recorded in docs 01, 02, 08 and 11.
 - **Traffic:** routes only turn right for now, and Millwright Road's traffic carries on as Ashby Road.
 - **Cars:**
   - **The cars in house driveways can be stolen** like any parked car, as can those in the garage yard and the shoppers' car park.
-  - **The dealer's cars are scenery** until M6b.
-- **Shops:** the new shops, the garage, the depot and the site trailer are **facades until their interiors exist** (no doors yet).
+  - **The dealer's display cars stay scenery**; you buy from the desk and your car appears in the pickup bay (the first bay of the front row, with a gap in the pennants to drive out).
+- **Shops (M6b):**
+  - Plain trade names (HARDWARE, CLOTHING, USED CARS) on the doors and panels, since business names need your approval (docs/01). Tell me names if you want them.
+  - Opening hours: hardware 08:00–21:00, clothing 09:00–21:00 (docs/01: shops close at 21:00), the car desk 09:00–18:00.
+  - Outfit prices $60–$300 in clean carried cash (docs are silent). The wardrobe and the fitting booths change outfits for free.
+  - The car desk takes clean money: the bank card first, then carried clean cash. Bought cars are owned, unlocked, keyed, full, never hot. The beater's stats follow docs/08 (top speed 70 vs the sedan's 85, health 70, tank 30).
+  - The creator's six skin tones and five hair colours are palette ramps, some shifted one tone (docs/11).
+- **The garage, the depot and the site trailer** are still facades until M7.
 - **UI redesign:**
   - It keeps the palette, the plate style, the gold rules and the screen positions of the hud.py mockups. Only the sizes, the font (5 × 7) and the pictures (rendered with the game's 3D renderer) changed.
   - Contact portraits are rendered from the person models, so faces are small and simple at 32 px.
@@ -139,7 +132,8 @@ They are recorded in docs 01, 02, 08 and 11.
 
 ### Questions I owe you
 - **Is "Linden Avenue" OK** for the street of houses?
-- **Hardware store, clothing store and car dealer interiors:** I'll build them from the recorded answers (docs/18, docs/02) and you review afterwards. They aren't heists, so autopilot covers them. Say if you want a say first.
+- **Hardware store, clothing store and car dealer interiors:** built from the recorded answers (M6b); please review the drafts in `art/drafts/interiors/interior_{hardware,clothing,dealer}.png`.
+- **Shop names:** the three new shops use plain trade names until you name them.
 - **The extras you said you'd name later** ("I'll tell you later"): still waiting on you.
 - **Heist interiors** (jewellery store, bank) need your approval before they're built (Phases 3 and 7).
 
@@ -147,8 +141,8 @@ They are recorded in docs 01, 02, 08 and 11.
 - None. All new art (the suburb buildings, woods props, UI pictures and font) is made with `art/source/` and committed as PNG + JSON.
 
 ### Git state
-- **`main`:** 1fb5da7 (PRs #9, #10 and #11 merged), plus this handover (a CHANGELOG-only commit). Pages deploys from main: https://mock-10.github.io/greyhaven/.
-- **`claude/p2-map-shops`:** M6a. The WIP commit 7d92bf5, plus the handover commits with the docs, the drafts and the screenshots. Open as **PR #12**.
+- **`main`:** PRs #9–#12 merged (M6a is live). Pages deploys from main: https://mock-10.github.io/greyhaven/.
+- **`claude/p2-map-shops-do5oew`:** M6b (shops and the creator). After its merge the same branch name is reused for the next milestone, restarted from main.
 - Other `claude/*` branches are merged and can be ignored.
 
 ### Answered decisions, in short (full text in the docs)
@@ -199,9 +193,11 @@ They are recorded in docs 01, 02, 08 and 11.
   - UI shots: `node tools/ui_shots.ts [names]` (port 4174).
 - **Processes:** **never** use `pkill -f "vite preview"` or `pgrep -f`; they kill the calling shell. Find the PID with `ps -eo pid,args | grep "[n]ode.*vite preview"`.
 - **Waiting:** foreground `sleep` is blocked in the container. Wait on a background job with an until-loop instead.
-- **Debug hook** (`window.__DL__`, read-only): `dirty`, `stars`, `driving`, `cars` (with `looted`), `minigameState`, `bank`, `rentOwed`, `evicted`, `health`, `inventory` and `listPage`.
+- **Debug hook** (`window.__DL__`, read-only): `dirty`, `stars`, `driving`, `cars` (with `looted`, `model`, `owned`), `minigameState`, `bank`, `rentOwed`, `evicted`, `health`, `inventory`, `listPage`, `look` and `creator` (the creator's look and row while it's open). List panels set `minigame` to their name (`clothing`, `wardrobe`, `dealer`, `atm` ...).
   - Cheats are never read from the URL. The cheat console (Ctrl + Shift + F1) is how tests and screenshots set things up: `day N`, `stars N`, `bank N`, `item lockpicks 10` and so on.
-- **Interior art pipeline:** edit `art/source/rooms.py` → `python3 art/source/check_layout.py` (0 issues) → `python3 art/source/export_interiors.py` → commit `art/interiors/*`.
+- **Interior art pipeline:** edit `art/source/rooms.py` → `python3 art/source/check_layout.py <room ...>` (0 issues) → `python3 art/source/export_interiors.py <room ...>` → commit `art/interiors/*`, add the atlas to `src/assets/manifest.ts` (`in_<id>`), an `InteriorDef` in `src/data/interiors.ts` and the door in `downtown_map.py`. Shop furniture is in `art/source/decor_shops.py`.
+- **Player sprites:** `python3 art/source/pack_player.py 8` renders `art/player.png/.json` (4 hair styles, marker ramps `mk_*` in `sdf.py`); the game repaints them in the look (`src/assets/playerLook.ts`, `src/systems/lookSwap.ts`). New outfits are two ramps in `src/data/looks.ts` plus an `outfit/<id>` icon in `ui_icons.py`.
+- **Vehicles atlas:** `atlas.py` repacks every atlas; for vehicles only, repack the `veh/` rows the same way (cell 139 × 110, existing frames unchanged).
 - **City map pipeline**, run in `art/source/`:
   1. Edit `downtown_map.py`, then run `python3 downtown_map.py --no-render` (writes `src/maps/downtown.json`).
   2. `python3 check_city.py` must report 0 issues.
@@ -225,18 +221,18 @@ They are recorded in docs 01, 02, 08 and 11.
   - The simulation runs on `game.loop.rawDelta`, because Phaser's smoothed delta crawls in headless Chromium.
   - `MinigameScene` and `ListScene` ignore repeated key events; `ListScene` also ignores keys for 300 ms after opening.
   - Skill-check e2e tests poll `minigameState` and press inside the good zone. Keep that pattern, because fixed timings are frame-rate dependent in CI.
-- **Saves:** `SAVE_VERSION` is 2 (with the v1 → v2 migration). Bump it and add a migration and its test whenever the save shape changes.
+- **Saves:** `SAVE_VERSION` is 3 (v1 → v2 → v3; v3 adds the look and the wardrobe). Bump it and add a migration and its test whenever the save shape changes.
 
 ## Phase 2 — Economy and careers (in progress)
-Status key: [x] done and playable · [~] partly done (what's left is said) · [ ] not started. Milestones: M5 money and phone (done, PR #10), the UI redesign (done, PR #11), M6a map growth (built on `claude/p2-map-shops`, PR #12, not merged), M6b shops and the creator, M7 the three new jobs, M8 odd jobs, the first day and the close.
+Status key: [x] done and playable · [~] partly done (what's left is said) · [ ] not started. Milestones: M5 money and phone (done, PR #10), the UI redesign (done, PR #11), M6a map growth (done, PR #12), M6b shops and the creator (built on `claude/p2-map-shops-do5oew`), M7 the three new jobs, M8 odd jobs, the first day and the close.
 
 **Standing rule from now on (user, 2026-10-11): every new street is at least two lanes in each direction (4 lanes in all).** The existing Downtown streets stay as they are: they have one lane each way, which suits a compact downtown. Everything built from now on follows the rule, starting with the Phase 2 map growth (the garage block road, the house row with the depot, the road through the woods) and later the Phase 6 city. See docs/01 ("Street width").
 
-- [~] **Street width rule:** new streets are at least two lanes each way. (M6a, on `claude/p2-map-shops`: the map script has a lane count per road, writes one lane line per lane with stop lines, and draws the dividers; traffic picks a lane. Left: e2e on the new map, then a green CI on PR #12 and the merge.)
-- [~] Test map grows: Torque & Sons garage block, a street of houses with the Swiftish Couriers depot, a patch of woods with Ashby Timber and a road (all reachable on foot or by car). All new roads are two lanes each way. (M6a, on `claude/p2-map-shops`: built and screenshot-checked at 70 × 96 tiles, with Hedgerow Way, Ashby Road, Linden Avenue and the Hedgerow Park and Far Acres districts. Left: e2e on the new map, then a green CI on PR #12 and the merge.)
+- [x] **Street width rule:** new streets are at least two lanes each way. (M6a, PR #12: a lane count per road, one lane line per lane with stop lines, dividers; traffic picks a lane.)
+- [x] Test map grows: Torque & Sons garage block, a street of houses with the Swiftish Couriers depot, a patch of woods with Ashby Timber and a road (all reachable on foot or by car). All new roads are two lanes each way. (M6a, PR #12: 70 × 96 tiles, with Hedgerow Way, Ashby Road, Linden Avenue and the Hedgerow Park and Far Acres districts.)
 - [x] Bank account: carried vs banked clean cash, ATMs, pay into the bank. (M5)
 - [x] Rent auto-paid on Monday 06:00, late fees, eviction after two missed weeks, shelter (sleep and save). (M5)
-- [ ] Character creator (palette-swap sprites, as specced) before the first day. (Not started; M6b.)
+- [x] Character creator (palette-swap sprites, as specced) before the first day. (M6b: name, hair style, skin, hair colour, starting outfit, a spinning preview.)
 - [ ] Office: stamp-and-sign and meeting tasks (rank 3+). (Not started; M7.)
 - [ ] Car mechanic: garage interior (bay, lift, spray booth, office), diagnose, bolt torque, tyre change, respray. (The Torque & Sons building stands on Hedgerow Way, without a door or interior; M7.)
 - [ ] Lumberjack: chop, fell direction, load logs, haul with the log truck; site trailer to clock in. (The Ashby Timber yard and site trailer stand east of Ashby Road, without an interior; M7.)
@@ -244,7 +240,7 @@ Status key: [x] done and playable · [~] partly done (what's left is said) · [ 
 - [~] Rank ladders and perks for the 4 jobs (stub the perks that need later systems). (All four jobs and their rank titles are in `data/jobs.ts`; the three new ones are marked "not hiring yet" until M7. Perks not started.)
 - [ ] Work uniforms and lockers (change by hand). (Not started; M7.)
 - [ ] Weekend odd jobs: car wash and a bar shift at The Low Tide. (Not started; M8.)
-- [~] Shops: full corner store, clothing store, hardware store, car dealer (beater and sedan). (Done in M5: the full corner store with the first-aid kit. M6a: the hardware and clothing store buildings and the used-car lot stand on Hedgerow Way as facades; the lot's cars are scenery. Left for M6b: doors, interiors, stock and dealer purchases.)
+- [x] Shops: full corner store, clothing store, hardware store, car dealer (beater and sedan). (M5: the corner store. M6b: the hardware store (lockpicks, toolbox, repair kit), the clothing store (6 outfits, fitting booths, the wardrobe at home), and the used-car desk (beaters and sedans in 6 colours).)
 - [x] Arrest effects on careers (freeze, missed shifts, extra work, HR bribes on the phone), clean-record bonus. (M5)
 - [x] Phone: job board, bank, contacts (first pass); the bag (I). (M5)
 - [x] Trunk looting (brought forward). (M5)
@@ -252,7 +248,28 @@ Status key: [x] done and playable · [~] partly done (what's left is said) · [ 
 - [ ] Econ sim re-run, tests, screenshots, notes, PR. (Not started; M8, the phase close.)
 - [x] UI redesign: larger text (5 × 7 font), more pictures (rendered icon atlas), a bigger HUD, the handset phone, picture grids. (Your request, 2026-10-12; merged in PR #11.)
 
-### Milestone 6a: the new district south of Downtown (2026-10-12; on `claude/p2-map-shops`, PR #12, not merged)
+### Milestone 6b: shops and the character creator (2026-10-12; on `claude/p2-map-shops-do5oew`)
+**Built:**
+- **Character creator** (docs/11), between the title and the first day: name (16 characters), hair style (short, long, bun, bald), 6 skin tones, 5 hair colours, the 3 starting outfits, and a live 8-direction preview that spins. Keys (W/S rows, A/D change, typing on the name row, Enter starts) and the mouse both work. `src/ui/creator.ts`, `src/scenes/CreatorScene.ts`.
+- **Palette-swapped player:** `art/source/pack_player.py` renders the player once per hair style with marker colours; the game repaints the `player` texture in your look (`src/assets/playerLook.ts`, `src/systems/lookSwap.ts`), so a change of clothes is instant everywhere.
+- **Three new interiors** (drafts in `art/drafts/interiors/`, new furniture in `art/source/decor_shops.py`: clothing racks, mannequins, display tables, fitting booths, a shoe shelf, a tool pegboard, paint shelving, a lumber rack, a step ladder, bins of fixings, a key cutter, a model car):
+  - **Hardware store:** paint, tool walls, timber, aisles, the till by the door (SHOP: lockpicks, the toolbox, repair kits) and a locked stockroom.
+  - **Clothing store:** racks, tables, mannequins, a shoe shelf, two fitting booths (CHANGE OUTFIT) and the till (BUY CLOTHES: 6 outfits, $60–$300, worn straight away).
+  - **Used-car cabin:** the salesman's desk (BUY A CAR) with visitor chairs, brochures, coffee and water, a model car.
+- **Doors** on Hedgerow Way for all three; the apartment wardrobe now changes outfits.
+- **Buying a car:** beaters ($1,500, new hatchback art in two colours) and sedans ($5,000) in 6 colours. Clean money, the bank first. Your car waits in the lot's pickup bay, unlocked, keyed and full, and drives out through a gap in the pennants.
+- **New pictures:** an `outfit/*` dress form per outfit and a `car/*` picture per car for the lists.
+- **Saves:** `SAVE_VERSION` 3 adds the look and the wardrobe (migration and test).
+- **Tests:** `tests/shops.test.ts` (looks, the palette swap, outfits, the dealer), new interior and door checks; e2e: the creator in the first test, the clothing store and booth, and buying and driving off a beater.
+- Screenshots: `docs/screenshots/phase2_m6b/`.
+
+**How to try:** start a new game and make your character. Walk to Hedgerow Way (south of Downtown): the hardware and clothing stores are west of Pewter Street, the used-car lot between Millwright Road and Gullsway. Buy an outfit, change at a booth or at home, then buy a beater and drive it away.
+
+**Assumptions:** see "Decisions and assumptions" (Shops) in the handover.
+
+**Art debt:** none; all new art comes from `art/source/`.
+
+### Milestone 6a: the new district south of Downtown (2026-10-12; merged in PR #12)
 **Built:**
 - **The map grew from 70 × 48 to 70 × 96 tiles** (`art/source/downtown_map.py` → `src/maps/downtown.json`; the city atlas is repacked at 231 frames).
 - **Two-lanes-each-way streets** (your rule): **Hedgerow Way** along Downtown's south edge, **Ashby Road** south from Hedgerow Way (it continues Millwright Road and bends to the map edge), and **Linden Avenue** west from Ashby Road. Each has 8 tiles of asphalt, dashed lane dividers, a double centre line, stop lines and crossings.

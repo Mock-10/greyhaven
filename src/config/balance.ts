@@ -226,6 +226,23 @@ export const BALANCE = {
         fuelPerSecond: 60 / (15 * 60),
         value: 9000,
       },
+      /** docs/08 beater: top speed 70 (sedan 85), low acceleration and grip, health 70, tank 30, $1,500. A
+       *  shorter hatchback body (art/source/cars.py beater). Sold at the used-car lot (milestone 6b). */
+      beater: {
+        topSpeed: 198,
+        reverseSpeed: 60,
+        accel: 110,
+        brake: 280,
+        drag: 70,
+        turnRate: 2.1,
+        halfLength: 34,
+        halfWidth: 14,
+        shadowHeight: 20,
+        health: 70,
+        tank: 30,
+        fuelPerSecond: 30 / (15 * 60),
+        value: 1500,
+      },
     },
     /** Damage per unit of impact speed; below these healths the car smokes / loses 30% top speed (docs/08). */
     damagePerSpeed: 0.12,
@@ -402,6 +419,23 @@ export const BALANCE = {
     /** The car body length used for gaps. */
     length: 80,
   },
+
+  /** The character creator (docs/11): the preview turns one direction every `spinSeconds`, drawn at this scale. */
+  creator: { spinSeconds: 0.6, previewScale: 2 },
+
+  /** Clothing store outfit prices in clean carried cash (docs/02 Phase 2 shops; prices assumed, the docs are silent). */
+  clothing: {
+    grey_hoodie: 60,
+    work_khaki: 80,
+    white_shirt: 90,
+    red_jacket: 140,
+    clay_coat: 180,
+    navy_suit: 300,
+  } as Record<string, number>,
+
+  /** The used-car lot (docs/08): prices are the car types' values; a bought car waits in the pickup bay with a full
+   *  tank. The dealer takes the bank card first, then carried clean cash (assumed: docs/02 only says clean money). */
+  dealer: { fullTank: 1, bayClearance: 48 },
 
   /** Sleeping at home skips to this minute of the next day (docs/01: 06:00). */
   sleep: { wakeMinute: 6 * 60 },

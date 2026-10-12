@@ -12,6 +12,7 @@ from PIL import Image, ImageDraw
 from sdf import Model, rbox, solid, RID, RAMP_RGB, hash3, render, highlight, to_image, scaled
 import cache, ground2d as G
 import decor as D
+import decor_shops as DS
 import interiors as I
 import props2
 from scene import prompt, _hull
@@ -954,6 +955,136 @@ def bar():
     S.append(it(ch('char/road_worker', 4, 0.0), 0, 150, 176, ('blob', 6)))
     S.append(it(ch('char/civilian_b', 6, 0.0), 0, 150, 112, ('blob', 6)))
     return compose(W_t, D_t, floor, walls, S, partitions=parts_, stub_gaps=[('A', 240, 270)])
+
+
+# ======================================================================= Phase 2: Hedgerow Way shops (milestone 6b)
+def hardware():
+    """The hardware store: a long shop floor (paint, tools, timber, bins of fixings), the counter by the door with the
+    key cutter, and a locked stockroom in the back corner."""
+    W_t, D_t = 8, 6
+    W, D_ = W_t * T, D_t * T
+    walls = back_walls(W, D_, paper=('khaki', 3.0),
+                       windows=[('B', 120, 170)],
+                       decals=[('poster', 'A', 214, 46, 18, 10, 'red'), ('clock', 'A', 244, 50, 3.4),
+                               ('warning', 'A', 98, 50), ('fusebox', 'A', 20, 36), ('calendar', 'A', 50, 40),
+                               ('exit', 'B', 186, 54), ('poster', 'B', 96, 42, 12, 14, 'navy')])
+    floor = lambda i, j: ('concrete_a' if (i < 3 and j < 2) else 'linoleum_a')
+    parts_ = [('x', 64, 0, 96, [(56, 78)]), ('y', 96, 0, 64, [])]
+    S = []
+    # --- the stockroom (locked): shelving, boxes, timber offcuts
+    S.append(it(D.storage_shelf(3), '+y', 30, 8, ('box', 15, 6, 30)))
+    S.append(it(D.storage_shelf(6), '+y', 64, 8, ('box', 15, 6, 30)))
+    S.append(it(D.cardboard_boxes(3, 6), '+x', 12, 46, ('box', 7, 6, 14)))
+    S.append(it(D.cardboard_boxes(2, 2), '+y', 82, 44, ('box', 7, 6, 10)))
+    S.append(it(D.broom(), '+x', 0, 30))
+    S.append(it(D.door_leaf(True, ('wood', 2.0)), '+y', 67, 64, None, hl='idle', prompt=('E', 'STAFF ONLY'), z_bias=3))
+    # --- along wall A: paint, the tool wall, the ladder
+    S.append(it(DS.paint_shelf(3), '+y', 124, 8, ('box', 15, 6, 30)))
+    S.append(it(DS.paint_shelf(8), '+y', 158, 8, ('box', 15, 6, 30)))
+    S.append(it(DS.tool_pegboard(2), '+y', 206, 0))
+    S.append(it(DS.step_ladder(), '+y', 186, 18, ('blob', 4)))
+    S.append(it(DS.bulk_bins(5), '+y', 214, 14, ('box', 13, 6, 16)))
+    S.append(it(D.plant_tall(8), '+y', 244, 14, ('blob', 6)))
+    # --- along wall B: the tool wall, timber
+    S.append(it(DS.tool_pegboard(7), '+x', 0, 104))
+    S.append(it(DS.lumber_rack(), '+x', 10, 158, ('box', 6, 17, 30)))
+    # --- the aisles
+    S.append(it(I.shelf_unit(48, 3), '+y', 86, 102, ('box', 24, 5, 24)))
+    S.append(it(I.shelf_unit(48, 7), '+y', 86, 144, ('box', 24, 5, 24)))
+    S.append(it(DS.bulk_bins(9), '-y', 152, 104, ('box', 13, 6, 16)))
+    S.append(it(I.shelf_unit(40, 11), '+y', 150, 158, ('box', 20, 5, 24)))
+    S.append(it(D.cardboard_boxes(3, 9), '+y', 46, 180, ('box', 7, 6, 14)))
+    S.append(it(D.cardboard_boxes(2, 7), '+y', 104, 182, ('box', 7, 6, 10)))
+    S.append(it(D.cardboard_boxes(2, 5), '+y', 176, 62, ('box', 7, 6, 10)))
+    # --- the counter by the door: the till (SHOP) and the key cutter; the clerk behind it
+    S.append(it(I.counter_run(64), '-x', 212, 112, ('box', 6, 32, 14)))
+    S.append(it(scaled(I._register_only(), 1.35), '-x', 210, 96, None, hl='hover', prompt=('E', 'SHOP'), wz=20.5, z_bias=30))
+    S.append(it(DS.key_cutter(), '-x', 210, 124, None, wz=20.5, z_bias=31))
+    S.append(it(D.trash_bin(), '+y', 248, 62, ('blob', 3)))
+    S.append(it(D.entrance_mat(), '+y', 196, 184, None, z_bias=-300))
+    S.append(it(D.plant_snake(), '+y', 246, 182, ('blob', 4)))
+    S.append(it(I.wall_camera(), '+y', 236, 8))
+    S.append(it(ch('char/road_worker', 4, 0.0), 0, 238, 108, ('blob', 6), z_bias=40))
+    S.append(it(ch('char/civilian_a', 6, 0.6), 0, 120, 176, ('blob', 6)))
+    return compose(W_t, D_t, floor, walls, S, partitions=parts_, stub_gaps=[('A', 180, 214)])
+
+
+def clothing():
+    """The clothing store: racks and tables of clothes, mannequins in the window, fitting booths along the side wall
+    (CHANGE OUTFIT), shoes on the back wall and the till by the door."""
+    W_t, D_t = 8, 6
+    W, D_ = W_t * T, D_t * T
+    walls = back_walls(W, D_, paper=('lav', 3.2),
+                       windows=[('A', 150, 200)],
+                       decals=[('mirror', 'B', 150, 34, 8, 18), ('painting', 'A', 60, 44, 22, 12, 'abstract'),
+                               ('clock', 'A', 232, 50, 3.4), ('poster', 'A', 112, 46, 12, 16, 'plum'),
+                               ('calendar', 'B', 186, 40), ('exit', 'A', 20, 54)])
+    floor = lambda i, j: 'woodfloor_x'
+    S = []
+    # fitting booths on wall B, curtains toward the shop
+    S.append(it(DS.fitting_booth('plum'), '+x', 13, 30, ('box', 12, 13, 30), hl='idle', prompt=('E', 'CHANGE OUTFIT')))
+    S.append(it(DS.fitting_booth('teal'), '+x', 13, 60))
+    S.append(it(D.armchair(('plum', 2.4)), '+x', 12, 96, ('box', 8, 8, 12)))
+    S.append(it(D.plant_tall(2), '+y', 12, 120, ('blob', 6)))
+    # shoes and a rail along wall A
+    S.append(it(DS.shoe_shelf(6), '+y', 60, 0, ('box', 15, 5, 18)))
+    S.append(it(DS.clothing_rack(3, 40), '+y', 112, 12, ('box', 21, 6, 30)))
+    S.append(it(DS.mannequin(('red', 2.6), ('night', 2.2)), '+y', 160, 14, ('blob', 6)))
+    S.append(it(DS.mannequin(('navy', 2.2), ('navy', 2.0)), '+y', 182, 14, ('blob', 6)))
+    S.append(it(D.plant_snake(), '+y', 206, 12, ('blob', 4)))
+    # the floor: racks and tables
+    S.append(it(DS.clothing_rack(5, 30), '+y', 72, 80, ('box', 16, 6, 30)))
+    S.append(it(DS.clothing_rack(8, 30), '+y', 72, 116, ('box', 16, 6, 30)))
+    S.append(it(DS.display_table(4), '+y', 130, 80, ('box', 13, 8, 16)))
+    S.append(it(DS.display_table(9), '+y', 130, 122, ('box', 13, 8, 16)))
+    S.append(it(DS.clothing_rack(2, 30), '+x', 178, 100, ('box', 6, 16, 30)))
+    S.append(it(D.rug(40, 24, ('plum', 2.2), 'stone'), '+y', 100, 162, None, z_bias=-300))
+    S.append(it(DS.mannequin(('teal', 2.4), ('blueg', 1.8)), '-y', 54, 172, ('blob', 6)))
+    S.append(it(DS.mannequin(('clay', 2.4), ('wood', 1.8)), '-y', 76, 178, ('blob', 6)))
+    # the till by the door, the clerk behind it
+    S.append(it(I.counter_run(56), '-x', 214, 92, ('box', 6, 28, 14)))
+    S.append(it(scaled(I._register_only(), 1.35), '-x', 212, 80, None, hl='hover', prompt=('E', 'BUY CLOTHES'), wz=20.5, z_bias=30))
+    S.append(it(D.vase_flowers('plum'), '-x', 212, 106, None, wz=20.5, z_bias=31))
+    S.append(it(D.trash_bin(), '+y', 248, 130, ('blob', 3)))
+    S.append(it(DS.display_table(12), '+y', 142, 166, ('box', 13, 8, 16)))
+    S.append(it(D.coat_rack(), '+y', 12, 150, ('blob', 3)))
+    S.append(it(D.entrance_mat(), '+y', 192, 184, None, z_bias=-300))
+    S.append(it(D.plant_tall(6), '+y', 244, 182, ('blob', 6)))
+    S.append(it(ch('char/civilian_b', 4, 0.0), 0, 238, 92, ('blob', 6), z_bias=40))
+    S.append(it(ch('char/office_worker', 2, 0.6), 0, 100, 148, ('blob', 6)))
+    return compose(W_t, D_t, floor, walls, S, stub_gaps=[('A', 176, 210)])
+
+
+def dealer():
+    """The used-car lot's sales cabin: glass all round, the salesman's desk (BUY A CAR) with two visitor chairs,
+    brochures, coffee and water, a model car on a plinth."""
+    W_t, D_t = 5, 4
+    W, D_ = W_t * T, D_t * T
+    walls = back_walls(W, D_, paper=('white', 3.0),
+                       windows=[('A', 12, 70), ('A', 94, 150), ('B', 14, 100)],
+                       decals=[('calendar', 'A', 82, 44), ('poster', 'B', 112, 44, 14, 10, 'red'), ('clock', 'A', 154, 50, 3.0)])
+    floor = lambda i, j: 'carpet_a'
+    S = []
+    S.append(it(D.rug(44, 30, ('navy', 2.2), 'stone'), '+y', 72, 64, None, z_bias=-300))
+    S.append(it(D.exec_desk(), '+y', 72, 50, ('box', 16, 8, 14), hl='idle', prompt=('E', 'BUY A CAR')))
+    S.append(it(D.office_chair(), '+y', 72, 33, ('blob', 5)))
+    S.append(it(D.desk_clutter(3), '+y', 76, 47, None, wz=17.3, z_bias=3))
+    S.append(it(D.wooden_chair(), '-y', 62, 72, ('blob', 4)))
+    S.append(it(D.wooden_chair(), '-y', 82, 72, ('blob', 4)))
+    S.append(it(props2.filing_cabinet(), '+y', 112, 10, ('box', 6, 6, 24)))
+    S.append(it(D.plant_tall(4), '+y', 12, 12, ('blob', 6)))
+    S.append(it(D.waiting_chairs(2), '+x', 10, 36, ('box', 6, 12, 12)))
+    S.append(it(D.trash_bin(), '+y', 100, 22, ('blob', 3)))
+    S.append(it(D.floor_lamp(), '+y', 128, 100, ('blob', 3)))
+    S.append(it(D.news_rack(), '+x', 8, 64, ('box', 5, 7, 18)))
+    S.append(it(I.water_cooler(), '+y', 148, 12, ('blob', 5)))
+    S.append(it(D.side_table(False), '-x', 148, 44, ('blob', 4)))
+    S.append(it(D.coffee_machine(), '-x', 148, 43, None, wz=12.1, z_bias=2))
+    S.append(it(DS.car_model_stand(), '+y', 22, 104, ('box', 6, 8, 16)))
+    S.append(it(D.plant_snake(), '+y', 148, 108, ('blob', 4)))
+    S.append(it(D.entrance_mat(), '+y', 104, 120, None, z_bias=-300))
+    S.append(it(ch('char/office_worker', 2, 0.0), 0, 72, 31, ('blob', 6), z_bias=10))
+    return compose(W_t, D_t, floor, walls, S, stub_gaps=[('A', 90, 118)])
 
 if __name__ == '__main__':
     os.makedirs('out/interiors_v2', exist_ok=True)

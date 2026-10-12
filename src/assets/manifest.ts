@@ -18,6 +18,12 @@ import inOfficePng from '../../art/interiors/office_floor.png';
 import inOfficeJson from '../../art/interiors/office_floor.json';
 import inBarPng from '../../art/interiors/bar.png';
 import inBarJson from '../../art/interiors/bar.json';
+import inHardwarePng from '../../art/interiors/hardware.png';
+import inHardwareJson from '../../art/interiors/hardware.json';
+import inClothingPng from '../../art/interiors/clothing.png';
+import inClothingJson from '../../art/interiors/clothing.json';
+import inDealerPng from '../../art/interiors/dealer.png';
+import inDealerJson from '../../art/interiors/dealer.json';
 import charactersPng from '../../art/characters.png';
 import charactersJson from '../../art/characters.json';
 import stepsPng from '../../art/characters_steps.png';
@@ -28,6 +34,8 @@ import propsPng from '../../art/props.png';
 import propsJson from '../../art/props.json';
 import tilesVarPng from '../../art/tiles_var.png';
 import tilesVarJson from '../../art/tiles_var.json';
+import playerPng from '../../art/player.png';
+import playerJson from '../../art/player.json';
 import vehiclesPng from '../../art/vehicles.png';
 import vehiclesJson from '../../art/vehicles.json';
 import type { AtlasJson } from './atlasFormat';
@@ -39,6 +47,8 @@ export const ATLASES = {
   props: { url: propsPng, json: propsJson as unknown as AtlasJson },
   characters: { url: charactersPng, json: charactersJson as unknown as AtlasJson },
   steps: { url: stepsPng, json: stepsJson as unknown as AtlasJson },
+  // the palette-swap player (art/source/pack_player.py): repainted at runtime in the player's look (playerLook.ts)
+  player: { url: playerPng, json: playerJson as unknown as AtlasJson },
   vehicles: { url: vehiclesPng, json: vehiclesJson as unknown as AtlasJson },
   interactables: { url: interactablesPng, json: interactablesJson as unknown as AtlasJson },
   city: { url: cityPng, json: cityJson as unknown as AtlasJson },
@@ -48,6 +58,9 @@ export const ATLASES = {
   in_tower_lobby: { url: inLobbyPng, json: inLobbyJson as unknown as AtlasJson },
   in_office_floor: { url: inOfficePng, json: inOfficeJson as unknown as AtlasJson },
   in_bar: { url: inBarPng, json: inBarJson as unknown as AtlasJson },
+  in_hardware: { url: inHardwarePng, json: inHardwareJson as unknown as AtlasJson },
+  in_clothing: { url: inClothingPng, json: inClothingJson as unknown as AtlasJson },
+  in_dealer: { url: inDealerPng, json: inDealerJson as unknown as AtlasJson },
 } as const;
 
 /** Ground material swatches for vector-ground maps (art/ground.png, read as pixels, not drawn as frames). */

@@ -1,0 +1,715 @@
+{
+ "id": "clothing",
+ "image": "clothing.png",
+ "W": 256,
+ "D": 192,
+ "wallH": 62,
+ "wallT": 5,
+ "partH": 11,
+ "floorKinds": [
+  [
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x"
+  ],
+  [
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x"
+  ],
+  [
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x"
+  ],
+  [
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x"
+  ],
+  [
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x"
+  ],
+  [
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x"
+  ],
+  [
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x"
+  ],
+  [
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x",
+   "woodfloor_x"
+  ]
+ ],
+ "partitions": [],
+ "stubGaps": [
+  [
+   "A",
+   176,
+   210
+  ]
+ ],
+ "segments": [],
+ "items": [
+  {
+   "frame": "item_0_fitting_booth",
+   "kind": "fitting_booth",
+   "x": 13,
+   "y": 30,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 12,
+    "hy": 13,
+    "h": 30
+   },
+   "prompt": "CHANGE OUTFIT"
+  },
+  {
+   "frame": "item_1_fitting_booth",
+   "kind": "fitting_booth",
+   "x": 13,
+   "y": 60,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966
+  },
+  {
+   "frame": "item_2_armchair",
+   "kind": "armchair",
+   "x": 12,
+   "y": 96,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 8,
+    "hy": 8,
+    "h": 12
+   }
+  },
+  {
+   "frame": "item_3_plant_tall",
+   "kind": "plant_tall",
+   "x": 12,
+   "y": 120,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_4_shoe_shelf",
+   "kind": "shoe_shelf",
+   "x": 60,
+   "y": 0,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 15,
+    "hy": 5,
+    "h": 18
+   }
+  },
+  {
+   "frame": "item_5_clothing_rack",
+   "kind": "clothing_rack",
+   "x": 112,
+   "y": 12,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 21,
+    "hy": 6,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_6_mannequin",
+   "kind": "mannequin",
+   "x": 160,
+   "y": 14,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_7_mannequin",
+   "kind": "mannequin",
+   "x": 182,
+   "y": 14,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_8_plant_snake",
+   "kind": "plant_snake",
+   "x": 206,
+   "y": 12,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_9_clothing_rack",
+   "kind": "clothing_rack",
+   "x": 72,
+   "y": 80,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 16,
+    "hy": 6,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_10_clothing_rack",
+   "kind": "clothing_rack",
+   "x": 72,
+   "y": 116,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 16,
+    "hy": 6,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_11_display_table",
+   "kind": "display_table",
+   "x": 130,
+   "y": 80,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 13,
+    "hy": 8,
+    "h": 16
+   }
+  },
+  {
+   "frame": "item_12_display_table",
+   "kind": "display_table",
+   "x": 130,
+   "y": 122,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 13,
+    "hy": 8,
+    "h": 16
+   }
+  },
+  {
+   "frame": "item_13_clothing_rack",
+   "kind": "clothing_rack",
+   "x": 178,
+   "y": 100,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 16,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_14_rug",
+   "kind": "rug",
+   "x": 100,
+   "y": 162,
+   "wz": 0.0,
+   "zBias": -300,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_15_mannequin",
+   "kind": "mannequin",
+   "x": 54,
+   "y": 172,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_16_mannequin",
+   "kind": "mannequin",
+   "x": 76,
+   "y": 178,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_17_counter_run",
+   "kind": "counter_run",
+   "x": 214,
+   "y": 92,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 28,
+    "h": 14
+   }
+  },
+  {
+   "frame": "item_18_item",
+   "kind": "item",
+   "x": 212,
+   "y": 80,
+   "wz": 20.5,
+   "zBias": 30,
+   "ang": 1.5707963267948966,
+   "prompt": "BUY CLOTHES"
+  },
+  {
+   "frame": "item_19_vase_flowers",
+   "kind": "vase_flowers",
+   "x": 212,
+   "y": 106,
+   "wz": 20.5,
+   "zBias": 31,
+   "ang": 1.5707963267948966
+  },
+  {
+   "frame": "item_20_trash_bin",
+   "kind": "trash_bin",
+   "x": 248,
+   "y": 130,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_21_display_table",
+   "kind": "display_table",
+   "x": 142,
+   "y": 166,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 13,
+    "hy": 8,
+    "h": 16
+   }
+  },
+  {
+   "frame": "item_22_coat_rack",
+   "kind": "coat_rack",
+   "x": 12,
+   "y": 150,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_23_entrance_mat",
+   "kind": "entrance_mat",
+   "x": 192,
+   "y": 184,
+   "wz": 0.0,
+   "zBias": -300,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_24_plant_tall",
+   "kind": "plant_tall",
+   "x": 244,
+   "y": 182,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  }
+ ],
+ "npcs": [
+  {
+   "costume": "civilian_b",
+   "dir": 4,
+   "walk": 0.0,
+   "x": 238,
+   "y": 92,
+   "zBias": 40
+  },
+  {
+   "costume": "office_worker",
+   "dir": 2,
+   "walk": 0.6,
+   "x": 100,
+   "y": 148,
+   "zBias": 0
+  }
+ ],
+ "frames": {
+  "floor": {
+   "x": 0,
+   "y": 301,
+   "w": 456,
+   "h": 240,
+   "anchor": [
+    196.0,
+    4.0
+   ]
+  },
+  "walls": {
+   "x": 0,
+   "y": 0,
+   "w": 468,
+   "h": 300,
+   "anchor": [
+    202.0,
+    72.0
+   ]
+  },
+  "stubs": {
+   "x": 469,
+   "y": 0,
+   "w": 468,
+   "h": 245,
+   "anchor": [
+    202.0,
+    12.0
+   ]
+  },
+  "item_0_fitting_booth": {
+   "x": 457,
+   "y": 301,
+   "w": 57,
+   "h": 80,
+   "anchor": [
+    28.0,
+    64.0
+   ]
+  },
+  "item_1_fitting_booth": {
+   "x": 515,
+   "y": 301,
+   "w": 57,
+   "h": 80,
+   "anchor": [
+    28.0,
+    64.0
+   ]
+  },
+  "item_2_armchair": {
+   "x": 132,
+   "y": 542,
+   "w": 48,
+   "h": 49,
+   "anchor": [
+    24.0,
+    36.0
+   ]
+  },
+  "item_3_plant_tall": {
+   "x": 634,
+   "y": 301,
+   "w": 46,
+   "h": 68,
+   "anchor": [
+    23.0,
+    55.0
+   ]
+  },
+  "item_4_shoe_shelf": {
+   "x": 328,
+   "y": 542,
+   "w": 46,
+   "h": 44,
+   "anchor": [
+    28.0,
+    28.0
+   ]
+  },
+  "item_5_clothing_rack": {
+   "x": 573,
+   "y": 301,
+   "w": 60,
+   "h": 70,
+   "anchor": [
+    30.0,
+    54.0
+   ]
+  },
+  "item_6_mannequin": {
+   "x": 0,
+   "y": 542,
+   "w": 32,
+   "h": 58,
+   "anchor": [
+    16.0,
+    48.0
+   ]
+  },
+  "item_7_mannequin": {
+   "x": 33,
+   "y": 542,
+   "w": 32,
+   "h": 58,
+   "anchor": [
+    16.0,
+    48.0
+   ]
+  },
+  "item_8_plant_snake": {
+   "x": 375,
+   "y": 542,
+   "w": 30,
+   "h": 44,
+   "anchor": [
+    15.0,
+    35.0
+   ]
+  },
+  "item_9_clothing_rack": {
+   "x": 728,
+   "y": 301,
+   "w": 50,
+   "h": 65,
+   "anchor": [
+    25.0,
+    51.0
+   ]
+  },
+  "item_10_clothing_rack": {
+   "x": 779,
+   "y": 301,
+   "w": 50,
+   "h": 65,
+   "anchor": [
+    25.0,
+    51.0
+   ]
+  },
+  "item_11_display_table": {
+   "x": 181,
+   "y": 542,
+   "w": 48,
+   "h": 46,
+   "anchor": [
+    24.0,
+    32.0
+   ]
+  },
+  "item_12_display_table": {
+   "x": 230,
+   "y": 542,
+   "w": 48,
+   "h": 46,
+   "anchor": [
+    24.0,
+    32.0
+   ]
+  },
+  "item_13_clothing_rack": {
+   "x": 830,
+   "y": 301,
+   "w": 50,
+   "h": 65,
+   "anchor": [
+    25.0,
+    51.0
+   ]
+  },
+  "item_14_rug": {
+   "x": 454,
+   "y": 542,
+   "w": 74,
+   "h": 42,
+   "anchor": [
+    37.0,
+    22.0
+   ]
+  },
+  "item_15_mannequin": {
+   "x": 66,
+   "y": 542,
+   "w": 32,
+   "h": 58,
+   "anchor": [
+    16.0,
+    48.0
+   ]
+  },
+  "item_16_mannequin": {
+   "x": 99,
+   "y": 542,
+   "w": 32,
+   "h": 58,
+   "anchor": [
+    16.0,
+    48.0
+   ]
+  },
+  "item_17_counter_run": {
+   "x": 881,
+   "y": 301,
+   "w": 80,
+   "h": 64,
+   "anchor": [
+    40.0,
+    42.0
+   ]
+  },
+  "item_18_item": {
+   "x": 406,
+   "y": 542,
+   "w": 47,
+   "h": 43,
+   "anchor": [
+    25.0,
+    30.0
+   ]
+  },
+  "item_19_vase_flowers": {
+   "x": 529,
+   "y": 542,
+   "w": 22,
+   "h": 33,
+   "anchor": [
+    11.0,
+    26.0
+   ]
+  },
+  "item_20_trash_bin": {
+   "x": 595,
+   "y": 542,
+   "w": 22,
+   "h": 23,
+   "anchor": [
+    11.0,
+    16.0
+   ]
+  },
+  "item_21_display_table": {
+   "x": 279,
+   "y": 542,
+   "w": 48,
+   "h": 46,
+   "anchor": [
+    24.0,
+    32.0
+   ]
+  },
+  "item_22_coat_rack": {
+   "x": 962,
+   "y": 301,
+   "w": 30,
+   "h": 61,
+   "anchor": [
+    15.0,
+    52.0
+   ]
+  },
+  "item_23_entrance_mat": {
+   "x": 552,
+   "y": 542,
+   "w": 42,
+   "h": 25,
+   "anchor": [
+    21.0,
+    13.0
+   ]
+  },
+  "item_24_plant_tall": {
+   "x": 681,
+   "y": 301,
+   "w": 46,
+   "h": 68,
+   "anchor": [
+    23.0,
+    55.0
+   ]
+  }
+ }
+}

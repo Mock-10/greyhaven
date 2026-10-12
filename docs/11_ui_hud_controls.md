@@ -112,6 +112,7 @@ A simple creator, shown before the guided first day:
 - **Starting outfit:** 3 casual outfits in palette colors.
 - **Name:** text field, 16 characters.
 - A live 8-direction preview spins slowly.
+- **Built in milestone 6b (2026-10-12):** a menu-plate panel with a 112 × 170 preview box and five rows plus START THE DAY. Keys: W/S (or arrows, Tab) pick a row, A/D change it, typing edits the name, Enter starts; the mouse clicks swatches, arrows and rows. Skin tones: porcelain, fair, tan, olive, brown, deep; the deeper ones use the clay and wood ramps. The empty name becomes ALEX. Outfits bought later at the clothing store use the same swap.
 - Implementation: **palette swapping**. Player sprites are rendered once per hair style (geometry) with marker ramps for skin, hair, top and bottom. At load, the game recolours those ramps into the chosen colours on a canvas and caches the result as a texture. Generate the marker-ramp sprites with `art/source/` (13).
 
 ## Settings

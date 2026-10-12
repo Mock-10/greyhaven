@@ -219,6 +219,28 @@ const SHOTS: Shot[] = [
     wait: 600,
   },
   { name: 'in_bar', query: '?scene=world&zoom=3&area=bar&time=20:00', width: 1920, height: 1080, wait: 600 },
+  // the Hedgerow Way shops (milestone 6b)
+  {
+    name: 'in_hardware',
+    query: '?scene=world&zoom=2&area=hardware&time=11:00',
+    width: 1280,
+    height: 720,
+    wait: 600,
+  },
+  {
+    name: 'in_clothing',
+    query: '?scene=world&zoom=2&area=clothing&time=11:00',
+    width: 1280,
+    height: 720,
+    wait: 600,
+  },
+  {
+    name: 'in_dealer',
+    query: '?scene=world&zoom=3&area=dealer&time=11:00',
+    width: 1280,
+    height: 720,
+    wait: 600,
+  },
   {
     name: 'in_bar_sight_off',
     query: '?scene=world&zoom=3&area=bar&time=20:00&sight=0',
