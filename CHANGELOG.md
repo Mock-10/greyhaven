@@ -14,6 +14,28 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
+## START HERE (cold start for a new session)
+**Branch:** `claude/p2-map-shops-do5oew` (M8 work in progress, ends in WIP commit `1d83db7` + this handover).
+
+**First command:**
+```
+export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1
+git fetch origin && git checkout claude/p2-map-shops-do5oew && git pull origin claude/p2-map-shops-do5oew && npm install && npx tsc --noEmit
+```
+
+**Read only these, nothing else:** `CLAUDE.md`, this section and "Stopped midway" below, then per step only: `src/scenes/MinigameScene.ts` (step 2), `src/systems/oddJobs.ts` + `src/data/oddJobs.ts` (step 3), `src/systems/onboarding.ts` + `src/data/onboarding.ts` (step 4), docs/02 "Weekend odd jobs" and the pacing table (step 5). Use `grep -n` to find spots in `WorldScene.ts`; don't read it whole. Don't re-read the docs folder, the art guide or old milestone sections.
+
+**Next steps, in order:**
+1. **PR #23** (animation pass, `claude/polish-anim-6zvc8q`): check its CI; if green, merge it; if red, fix on its branch. Then `git merge origin/main` here.
+2. **Fix the WIP hookup** in `MinigameScene.ts` until `npx tsc --noEmit`, `npm run lint` and `npm test` pass; add `aimSponge` in `onMove` while the pointer is held on the car wash.
+3. **Gigs in WorldScene:** street prompt at map zone `gig_carWash`; interior action `{kind:'gig', gig:'barShift'}` on the bar's `BAR SHIFT` taps (`src/data/interiors.ts`); `startGig` → one minigame per task → `recordGigTask` → `finishGig(rank)` pays bank + tips as clean cash; `quitGig` pays nothing; job board lists `openGigs`.
+4. **First-day guide in WorldScene:** `onboardEvent` on leave apartment / job board / clock in / clock out / shop buy / trunk loot / stars 0 / sleep; `tipDue` → phone message `DEZ_TIP`; `onboardHint` on the objective strip with `F2: SKIP THE GUIDE`; new games start at step 0.
+5. **Close Phase 2:** `python3 tools/econ_sim.py` + docs/02 pacing table; short M8 notes in docs/02, 03, 11; one e2e test for a gig; a few screenshots; tick Phase 2; open the PR, merge when green; short note to the user.
+6. **Then Phase 3** (docs/15): start by wiring #17 police and #18 crime logic (see "Side-thread pieces" below).
+
+**Paste-ready resume prompt:**
+> Resume Double Life. Read CLAUDE.md, then only the "START HERE" section at the top of CHANGELOG.md on branch claude/p2-map-shops-do5oew, and follow its numbered steps in order. Read only the files each step names. Keep token use low: no side threads, no re-reading big docs, e2e and screenshots only at the end of the milestone. Commit and push WIP before stopping.
+
 ## Handover (updated 2026-10-12, session 6, stopped mid-M8 at the user's request) — read this first in a new session
 This is the only handover section. The user stopped all work on 2026-10-12 (05:48 UTC) and asked for this handover; nothing is running.
 
