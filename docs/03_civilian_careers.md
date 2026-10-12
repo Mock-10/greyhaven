@@ -88,3 +88,20 @@ You are **never fired** from any job, however many arrests you have (decided). A
 - **Arrest effects** apply to every job: a 3-day promotion freeze from the arrest (XP earned meanwhile is lost), extra work until the end of the second day after release (one more task per shift and a 10% higher XP bar), no clean-record bonus that week, and a shift in progress is lost. The arrest screen says so.
 - **Pay goes to the bank** ("+$180 TO THE BANK"), and clocking out autosaves.
 - **Job board** on the phone: switch jobs any time off shift; rank is kept per job. The garage, the lumber camp and the depot show NOT HIRING YET until their milestone (M7).
+
+## Phase 2 build (milestone 7, 2026-10-12)
+- **All four jobs are hiring.** Switch on the phone's job board (off shift). Each job has its own site with a time clock, a boss who speaks the toasts, and a uniform from the site's locker:
+
+  | Job | Site, clock in with | Tasks (shift) | Uniform |
+  |---|---|---|---|
+  | Office | Pellridge Tower floor 4, Ms. Hollis | filing, data entry, stamp and sign (the copier), meeting (the whiteboard, rank 3+); 3 a shift | none |
+  | Mechanic | Torque & Sons on Hedgerow Way, the shop foreman | diagnose, torque bolts, change tyre, respray; 3 a shift | blue-grey coveralls |
+  | Lumberjack | Ashby Timber's site office east of Ashby Road, the site boss | chop (the block by the stump), fell trees (the yard's north edge), load logs (the log pile); 3 a shift, outdoors | red flannel |
+  | Delivery | Swiftish Couriers on Linden Avenue, dispatch | load van and plan route at the depot, then deliver parcels and get a signature at two marked stops on Linden Avenue; 4 a shift, each once, in that order | navy and khaki |
+- **Clocking in** only works at your current job's time clock ("YOU DON'T WORK HERE" elsewhere), and jobs with a uniform need it on first. Clock out where you clocked in. The pay, XP, late and arrest rules above are the same for every job.
+- **Tasks** can repeat within a shift (a mechanic can do two resprays), except the delivery steps. The office meeting needs rank 3; below that its prompt reads MEETING (RANK 3+).
+- **Uniforms** come from the site's locker and come off at any locker or wardrobe (docs/03 decisions). After clocking out in uniform the objective reminds you to change. The name tag (100% identification in crimes, docs/04) arrives with identification in Phase 3.
+- **The radar** marks the job in gold: the site's door when it's time to clock in, the yard spots on a lumber shift, and the two delivery stops.
+- **Perks** (phone, JOB BOARD, PERKS): the office key card (rank 2) and the **expense account** (office rank 4: 10% off in every legal shop, clothes and cars) work now. The others show as LATER until their systems exist: armored truck tip-offs (Phase 3/7), repairs and garage add-ons (Phases 4–5), respraying stolen cars (Phase 4), the log truck licence and compartments and remote drops (Phase 5), the courier uniform's witness delay, route knowledge and house occupancy (Phase 3/5).
+- **Haul** (driving the log truck to the mill) waits for the mill in Phase 6; a lumber shift is chop, fell and load.
+- **Boss names** are roles (shop foreman, site boss, dispatch) until the user names them.

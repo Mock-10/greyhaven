@@ -3,9 +3,11 @@
 // rebuilt after every action, so prices and balances stay current.
 
 import type { GameState } from '../core/store';
+import { JOBS, type JobId } from '../data/jobs';
 import { outfitOf } from '../data/looks';
 import { DEALER_STOCK, MODEL_COLOUR, TYPE_LABEL, typeOfModel } from '../data/vehicles';
 import { CLOTHING_STOCK, buyOutfit, outfitPrice } from '../systems/clothing';
+import { legalDiscount } from '../systems/career';
 import { canAfford, carPrice } from '../systems/dealer';
 import type { IconName } from '../ui/icons';
 import type { ListPage, ListRow } from '../ui/listPanel';
@@ -26,7 +28,7 @@ export function clothingPage(ctx: ShopCtx): ListPage {
   const rows: ListRow[] = CLOTHING_STOCK.map((id) => {
     const o = outfitOf(id);
     const owned = st.wardrobe.includes(id);
-    const price = outfitPrice(id);
+    const price = outfitPrice(id, legalDiscount(st.career));
     return {
       label: o.name,
       icon: `outfit/${id}` as IconName,
@@ -38,7 +40,7 @@ export function clothingPage(ctx: ShopCtx): ListPage {
           ctx.wear(id);
           return { say: `YOU PUT ON THE ${o.name}` };
         }
-        const r = buyOutfit(st.money, st.wardrobe, id);
+        const r = buyOutfit(st.money, st.wardrobe, id, legalDiscount(st.career));
         if (r.ok) ctx.wear(id);
         return { say: r.text };
       },
@@ -67,11 +69,41 @@ export function wardrobePage(ctx: ShopCtx): ListPage {
   return { title: 'WARDROBE', right: `${rows.length} OUTFITS`, rows };
 }
 
+/** A work locker: the job's uniform on top, then your own clothes to change back into (docs/03: a uniform comes
+ *  off only at a locker or a wardrobe). */
+export function lockerPage(ctx: ShopCtx, job: JobId): ListPage {
+  const st = ctx.state;
+  const def = JOBS[job];
+  const rows: ListRow[] = [];
+  if (def.uniform) {
+    const id = def.uniform;
+    const o = outfitOf(id);
+    const on = st.look.outfit === id;
+    const mine = st.career.current === job;
+    rows.push({
+      label: 'UNIFORM',
+      icon: `outfit/${id}` as IconName,
+      sub: on ? 'WEARING IT' : mine ? 'PUT IT ON FOR WORK' : `FOR ${def.short} STAFF`,
+      enabled: !on && mine,
+      act: () => {
+        ctx.wear(id);
+        return { say: `YOU PUT ON THE ${o.name}` };
+      },
+    });
+  }
+  const own = wardrobePage(ctx).rows;
+  return {
+    title: 'LOCKER',
+    lines: ['NAME TAG ON THE UNIFORM.', 'CHANGE BEFORE ANYTHING SHADY.'],
+    rows: [...rows, ...own],
+  };
+}
+
 /** The used-car lot: beaters and sedans by colour; the bank card pays first, then clean cash. */
 export function dealerPage(ctx: ShopCtx): ListPage {
   const st = ctx.state;
   const rows: ListRow[] = DEALER_STOCK.map((model) => {
-    const price = carPrice(model);
+    const price = carPrice(model, legalDiscount(st.career));
     return {
       label: `${TYPE_LABEL[typeOfModel(model)]}, ${MODEL_COLOUR[model] ?? ''}`,
       icon: `car/${model}` as IconName,

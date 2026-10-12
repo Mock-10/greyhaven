@@ -509,6 +509,8 @@ export interface ShopView {
   title: string;
   stock: readonly ItemId[];
   clean: number;
+  /** Share off every price (the office expense account). */
+  discount?: number;
   selected: number;
   message: string | null;
 }
@@ -522,7 +524,7 @@ export function drawShop(s: Surface, x: number, y: number, v: ShopView): void {
   frame(s, x, y, 'shop', 'SHOP', v.title);
   v.stock.forEach((id, k) => {
     const c = shopCard(x, y, k);
-    const price = BALANCE.shop[id].price;
+    const price = Math.round(BALANCE.shop[id].price * (1 - (v.discount ?? 0)));
     const can = v.clean >= price;
     plate(s, c.x, c.y, c.w, c.h, k === v.selected ? C.EDGE : C.LAVLT2, 0.9);
     // the picture in its own frame

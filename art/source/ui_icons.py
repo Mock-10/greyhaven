@@ -455,6 +455,9 @@ OUTFIT_COLOURS = {
     'work_khaki': (('khaki', 2.4), ('wood', 2.4)), 'white_shirt': (('white', 3.2), ('lav', 2.4)),
     'red_jacket': (('red', 2.4), ('night', 3.0)), 'clay_coat': (('clay', 2.4), ('wood', 1.6)),
     'navy_suit': (('navy', 1.8), ('navy', 1.6)),
+    # work uniforms (milestone 7), shown in the job lockers
+    'coveralls': (('blueg', 1.5), ('blueg', 0.8)), 'flannel': (('red', 1.5), ('khaki', 1.5)),
+    'courier': (('navy', 3.2), ('khaki', 2.4)),
 }
 for k, (top, bot) in OUTFIT_COLOURS.items():
     ICONS[f'outfit/{k}'] = ((lambda t=top, b=bot: decor_shops.mannequin(t, b)), -0.4, 32)

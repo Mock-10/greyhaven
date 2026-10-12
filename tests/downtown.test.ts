@@ -118,7 +118,10 @@ describe('Downtown map (vector ground)', () => {
       'chop_shop',
       'clothing',
       'dealer',
+      'depot',
+      'garage',
       'hardware',
+      'site_trailer',
       'store',
       'tower_lobby',
     ]);

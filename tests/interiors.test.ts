@@ -3,8 +3,11 @@ import apartment from '../art/interiors/apartment.json';
 import bar from '../art/interiors/bar.json';
 import clothing from '../art/interiors/clothing.json';
 import dealer from '../art/interiors/dealer.json';
+import depot from '../art/interiors/depot.json';
+import garage from '../art/interiors/garage.json';
 import hardware from '../art/interiors/hardware.json';
 import office from '../art/interiors/office_floor.json';
+import trailer from '../art/interiors/site_trailer.json';
 import store from '../art/interiors/store.json';
 import lobby from '../art/interiors/tower_lobby.json';
 import { INTERIORS, interiorForDoor } from '../src/data/interiors';
@@ -28,6 +31,9 @@ const J = {
   hardware,
   clothing,
   dealer,
+  garage,
+  depot,
+  site_trailer: trailer,
 } as unknown as Record<string, InteriorJson>;
 const rules = (j: InteriorJson) => ({ radius: 6, mapW: j.W, mapH: j.D, smallScale: 0.6, smallSlack: 2 });
 

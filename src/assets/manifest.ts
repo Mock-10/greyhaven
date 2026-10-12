@@ -24,6 +24,12 @@ import inClothingPng from '../../art/interiors/clothing.png';
 import inClothingJson from '../../art/interiors/clothing.json';
 import inDealerPng from '../../art/interiors/dealer.png';
 import inDealerJson from '../../art/interiors/dealer.json';
+import inGaragePng from '../../art/interiors/garage.png';
+import inGarageJson from '../../art/interiors/garage.json';
+import inDepotPng from '../../art/interiors/depot.png';
+import inDepotJson from '../../art/interiors/depot.json';
+import inSiteTrailerPng from '../../art/interiors/site_trailer.png';
+import inSiteTrailerJson from '../../art/interiors/site_trailer.json';
 import charactersPng from '../../art/characters.png';
 import charactersJson from '../../art/characters.json';
 import stepsPng from '../../art/characters_steps.png';
@@ -61,6 +67,9 @@ export const ATLASES = {
   in_hardware: { url: inHardwarePng, json: inHardwareJson as unknown as AtlasJson },
   in_clothing: { url: inClothingPng, json: inClothingJson as unknown as AtlasJson },
   in_dealer: { url: inDealerPng, json: inDealerJson as unknown as AtlasJson },
+  in_garage: { url: inGaragePng, json: inGarageJson as unknown as AtlasJson },
+  in_depot: { url: inDepotPng, json: inDepotJson as unknown as AtlasJson },
+  in_site_trailer: { url: inSiteTrailerPng, json: inSiteTrailerJson as unknown as AtlasJson },
 } as const;
 
 /** Ground material swatches for vector-ground maps (art/ground.png, read as pixels, not drawn as frames). */

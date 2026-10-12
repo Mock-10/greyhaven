@@ -72,3 +72,19 @@ Assists do not change payouts. Auto-complete caps the grade at OK.
 - **Search** (trunk looting): a 4 × 3 grid with the trunk's valuables (cash, wallets, phones, a watch, sometimes a lockpick set) among junk, 6 seconds. Click the glinting items, or move with the arrows and grab with Space. The watch is the gold item. Grade: every valuable with 35% of the time left is excellent, every valuable is good, two thirds OK, any poor, none fail. Only what you grab is kept. It is a crime minigame, so the world keeps running.
 - **Lockpick tools:** a basic set (hardware store, $40, 10 uses) widens the zones by 15%. Each attempt uses 1, a failure 2. With no picks the prompt reads LOCKPICK (NO TOOLS) and the dial is the bare tier-0 one. Pro picks come later.
 - **Hotwire:** a toolbox in the bag adds 3 seconds to the timer.
+
+## Phase 2 build (milestone 7, 2026-10-12): job tasks
+Every job task is a panel in the redesign style (248 × 176, the 5 × 7 font, the task drawn as a picture). The world pauses while one is open. Numbers are in `src/config/balanceJobs.ts`.
+- **Diagnose** (mechanic): a symptom, four parts; pick the faulty one (keys 1–4 or a click) before the timer.
+- **Bolt torque** (mechanic): the core skill check, one check per nut in a star pattern (at least 4 nuts, the tier rises with rank). 4 over-torques strip the stud (fail).
+- **Tyre change** (mechanic): 6 fixed steps of 2–3 arrow keys against 18 s.
+- **Respray** (mechanic): a 16 × 6 door panel; aim with the mouse or arrows and hold to spray. Cells need 0.7–1.8 coats; past 2.4 the paint runs, and each run cancels an even cell. Enter calls it done.
+- **Chop** (lumberjack): a swing meter; the notch needs depth 6 (great 2, good 1) in 9 swings, the cursor 7% faster each swing.
+- **Fell** (lumberjack): 3 trees, 6 s each; the aim sweeps ±60° and the lean and wind (shown as arrows) push the fall. Within 5° is clean, 11° close, 20° just in.
+- **Load** (logs and van crates): an 8 × 4 bed filled to about 80%, Tetris-style drops; crates can be turned, logs can't. Pieces that stick out over the roof are left behind.
+- **Route** (delivery): 3 drops, 5 s each; pick the shortest of three street routes (always 2+ blocks shorter).
+- **Doorstep** (delivery): 8 numbered houses, 3 parcels, 16 s; walk to the number on the label and hand it over. A wrong door is an error.
+- **Signature** (delivery): trace the faint signature with the mouse; coverage × accuracy, 8 s.
+- **Stamp and sign** (office): 5 papers, a stamp box and a signature line each, both on Space; early presses smudge.
+- **Meeting** (office, rank 3+): 3 of 9 questions, 9 s each; the boss's mood starts at 40 and silence costs 12. The dialogue is Claude's, in the dry office tone, for the user to review.
+- The accessibility assists above are not hooked up to the job tasks yet (Phase 8).

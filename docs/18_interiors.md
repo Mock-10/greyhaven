@@ -131,3 +131,10 @@ Record the answers in this file under each interior's row (or in a new section) 
 - **Jewellery store:** 10 cases, rooftop escape. **Bank:** 2 guards, vault in a basement.
 - **Hideouts:** one big space with stations, plus buyable locked rooms (09). **Fronts:** all full interiors.
 - **Autopilot:** non-heist interiors are built from these answers and reviewed afterwards; heist interiors still need the draft approved first.
+
+## Phase 2 build (milestone 7, 2026-10-12): the job sites
+Built from the recorded answers (03 decisions), for the user to review afterwards. Drafts: `art/drafts/interiors/interior_{garage,depot,site_trailer}.png`; models in `art/source/rooms_jobs.py` and `decor_jobs.py`.
+- **Torque & Sons garage** (11 × 8 tiles): the office in the back corner (CLOCK IN), a staff corner with lockers (LOCKER), the bay with a lift and a car (TORQUE BOLTS, DIAGNOSE), the tyre corner (CHANGE TYRE) and the spray booth (RESPRAY). 08:00–18:00, the foreman and a mechanic.
+- **Swiftish Couriers depot** (10 × 8): the front counter, a staff room (LOCKER, CLOCK IN, the route map: PLAN ROUTE) and the loading bay with its roller door (LOAD VAN). 08:00–18:00, dispatch, a loader, a courier and a customer.
+- **Ashby Timber site office** (9 × 4 portacabin): the crew room with lockers (LOCKER) and the boss's desk (CLOCK IN). The work itself is outdoors in the yard.
+- **Office floor additions:** the copier is the STAMP AND SIGN station and the whiteboard holds the MEETING (rank 3+).

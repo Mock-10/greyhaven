@@ -274,7 +274,8 @@
    "y": 140,
    "wz": 0.0,
    "zBias": 0,
-   "ang": -1.5707963267948966
+   "ang": -1.5707963267948966,
+   "prompt": "MEETING"
   },
   {
    "frame": "item_6_bookshelf",
@@ -541,7 +542,8 @@
     "hx": 8,
     "hy": 7,
     "h": 16
-   }
+   },
+   "prompt": "STAMP AND SIGN"
   },
   {
    "frame": "item_28_vending_machine",

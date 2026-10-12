@@ -11,15 +11,15 @@ export const CLOTHING_STOCK: readonly string[] = OUTFITS.filter((o) => o.from ==
   (o) => o.id,
 );
 
-export function outfitPrice(id: string): number {
-  return BALANCE.clothing[id] ?? 0;
+export function outfitPrice(id: string, discount = 0): number {
+  return Math.round((BALANCE.clothing[id] ?? 0) * (1 - discount));
 }
 
 /** Buy an outfit: pay in clean cash and hang it in the wardrobe (you can change into it right away). */
-export function buyOutfit(money: { clean: number }, wardrobe: string[], id: string): BuyResult {
+export function buyOutfit(money: { clean: number }, wardrobe: string[], id: string, discount = 0): BuyResult {
   const name = outfitOf(id).name;
   if (wardrobe.includes(id)) return { ok: false, text: `YOU ALREADY OWN THE ${name}` };
-  const price = outfitPrice(id);
+  const price = outfitPrice(id, discount);
   if (money.clean < price) return { ok: false, text: 'NOT ENOUGH CLEAN CASH' };
   money.clean -= price;
   wardrobe.push(id);
