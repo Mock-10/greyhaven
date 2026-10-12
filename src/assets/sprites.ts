@@ -1,6 +1,7 @@
 // Names for art-pack frames. Placement data refers to sprites as `kind/name` (the same keys as
 // art/source/cache.py: bld/, prop/, int/, char/, veh/) and these helpers find the atlas frame.
 
+import vehicles2Json from '../../art/vehicles2.json';
 import { DIRS, type Dir } from '../config/constants';
 import type { AtlasKey } from './manifest';
 import { ATLASES } from './manifest';
@@ -77,8 +78,11 @@ export function characterFrame(costume: string, pose: Pose, dir: number): FrameR
   return { atlas, frame: `${costume}/${pose}/${dirName(dir)}` };
 }
 
+/** Models drawn from the Phase 4 vehicle sheet (art/vehicles2.png). */
+const VEHICLES2 = new Set(Object.keys(vehicles2Json.frames).map((k) => k.split('/')[0] as string));
+
 export function vehicleFrame(name: string, dir: number): FrameRef {
-  return { atlas: 'vehicles', frame: `${name}/${dirName(dir)}` };
+  return { atlas: VEHICLES2.has(name) ? 'vehicles2' : 'vehicles', frame: `${name}/${dirName(dir)}` };
 }
 
 export function interactableFrame(name: string, state: InteractState): FrameRef {

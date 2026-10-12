@@ -25,6 +25,7 @@ import rooms
 import decor_jobs as J
 import rooms_jobs
 import rooms_houses
+import rooms_crime
 
 TOL = 1.5
 SEATS = {'office_chair', 'wooden_chair', 'bar_stool', 'booth', 'armchair', 'sofa'}
@@ -65,7 +66,7 @@ def capture(room):
     real = rooms.compose
     rooms.compose = fake_compose
     try:
-        (getattr(rooms, room, None) or getattr(rooms_jobs, room, None) or getattr(rooms_houses, room))()
+        (getattr(rooms, room, None) or getattr(rooms_jobs, room, None) or getattr(rooms_houses, room, None) or getattr(rooms_crime, room))()
     except Captured:
         pass
     finally:

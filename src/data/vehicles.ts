@@ -14,6 +14,8 @@ export const MODEL_TYPE: Record<string, VehicleType> = {
   van_white: 'van',
   van_sage: 'van',
   police_car: 'police',
+  swat_van: 'swat',
+  armored_suv_police: 'armored',
   beater_khaki: 'beater',
   beater_brick: 'beater',
 };
@@ -23,6 +25,8 @@ export const TYPE_LABEL: Record<VehicleType, string> = {
   taxi: 'TAXI',
   van: 'VAN',
   police: 'POLICE',
+  swat: 'SWAT VAN',
+  armored: 'ARMORED',
   beater: 'BEATER',
 };
 

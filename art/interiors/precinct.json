@@ -1,0 +1,600 @@
+{
+ "id": "precinct",
+ "image": "precinct.png",
+ "W": 256,
+ "D": 192,
+ "wallH": 62,
+ "wallT": 5,
+ "partH": 11,
+ "floorKinds": [
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "marble_a",
+   "marble_a",
+   "marble_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "marble_a",
+   "marble_a",
+   "marble_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "marble_a",
+   "marble_a",
+   "marble_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "marble_a",
+   "marble_a",
+   "marble_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "marble_a",
+   "marble_a",
+   "marble_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "marble_a",
+   "marble_a",
+   "marble_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "marble_a",
+   "marble_a",
+   "marble_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "marble_a",
+   "marble_a",
+   "marble_a"
+  ]
+ ],
+ "partitions": [],
+ "stubGaps": [
+  [
+   "A",
+   186,
+   208
+  ]
+ ],
+ "segments": [],
+ "items": [
+  {
+   "frame": "item_0_security_gate",
+   "kind": "security_gate",
+   "x": 40,
+   "y": 2,
+   "wz": 0.0,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_1_filing_cabinet",
+   "kind": "filing_cabinet",
+   "x": 176,
+   "y": 10,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 6,
+    "h": 24
+   }
+  },
+  {
+   "frame": "item_2_filing_cabinet",
+   "kind": "filing_cabinet",
+   "x": 192,
+   "y": 10,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 6,
+    "h": 24
+   }
+  },
+  {
+   "frame": "item_3_server_rack",
+   "kind": "server_rack",
+   "x": 230,
+   "y": 9,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 6,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_4_corkboard",
+   "kind": "corkboard",
+   "x": 96,
+   "y": 0,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_5_reception_desk",
+   "kind": "reception_desk",
+   "x": 140,
+   "y": 66,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 28,
+    "hy": 8,
+    "h": 22
+   },
+   "prompt": "FRONT DESK"
+  },
+  {
+   "frame": "item_6_office_chair",
+   "kind": "office_chair",
+   "x": 140,
+   "y": 50,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 5
+   }
+  },
+  {
+   "frame": "item_8_desk_clutter",
+   "kind": "desk_clutter",
+   "x": 126,
+   "y": 66,
+   "wz": 22.0,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_9_waiting_chairs",
+   "kind": "waiting_chairs",
+   "x": 12,
+   "y": 150,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 16,
+    "h": 12
+   }
+  },
+  {
+   "frame": "item_10_water_cooler",
+   "kind": "water_cooler",
+   "x": 10,
+   "y": 108,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "blob",
+    "r": 5
+   }
+  },
+  {
+   "frame": "item_11_plant_tall",
+   "kind": "plant_tall",
+   "x": 244,
+   "y": 100,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_12_plant_tall",
+   "kind": "plant_tall",
+   "x": 12,
+   "y": 182,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_13_fire_extinguisher",
+   "kind": "fire_extinguisher",
+   "x": 0,
+   "y": 90,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966
+  },
+  {
+   "frame": "item_14_trash_bin",
+   "kind": "trash_bin",
+   "x": 60,
+   "y": 182,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_15_vending_machine",
+   "kind": "vending_machine",
+   "x": 12,
+   "y": 52,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 8,
+    "hy": 7,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_16_rug",
+   "kind": "rug",
+   "x": 96,
+   "y": 146,
+   "wz": 0.0,
+   "zBias": -300,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_17_waiting_chairs",
+   "kind": "waiting_chairs",
+   "x": 104,
+   "y": 176,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "box",
+    "hx": 12,
+    "hy": 6,
+    "h": 12
+   }
+  },
+  {
+   "frame": "item_18_side_table",
+   "kind": "side_table",
+   "x": 12,
+   "y": 120,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_19_news_rack",
+   "kind": "news_rack",
+   "x": 244,
+   "y": 150,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 10,
+    "h": 18
+   }
+  },
+  {
+   "frame": "item_20_wall_camera",
+   "kind": "wall_camera",
+   "x": 236,
+   "y": 8,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_21_entrance_mat",
+   "kind": "entrance_mat",
+   "x": 197,
+   "y": 184,
+   "wz": 0.0,
+   "zBias": -300,
+   "ang": 0.0
+  }
+ ],
+ "npcs": [
+  {
+   "costume": "police_officer",
+   "dir": 2,
+   "walk": 0.0,
+   "x": 140,
+   "y": 50,
+   "zBias": 0
+  }
+ ],
+ "frames": {
+  "floor": {
+   "x": 0,
+   "y": 301,
+   "w": 456,
+   "h": 240,
+   "anchor": [
+    196.0,
+    4.0
+   ]
+  },
+  "walls": {
+   "x": 0,
+   "y": 0,
+   "w": 468,
+   "h": 300,
+   "anchor": [
+    202.0,
+    72.0
+   ]
+  },
+  "stubs": {
+   "x": 469,
+   "y": 0,
+   "w": 468,
+   "h": 245,
+   "anchor": [
+    202.0,
+    12.0
+   ]
+  },
+  "item_0_security_gate": {
+   "x": 539,
+   "y": 301,
+   "w": 47,
+   "h": 73,
+   "anchor": [
+    24.0,
+    59.0
+   ]
+  },
+  "item_1_filing_cabinet": {
+   "x": 876,
+   "y": 301,
+   "w": 38,
+   "h": 58,
+   "anchor": [
+    19.0,
+    47.0
+   ]
+  },
+  "item_2_filing_cabinet": {
+   "x": 915,
+   "y": 301,
+   "w": 38,
+   "h": 58,
+   "anchor": [
+    19.0,
+    47.0
+   ]
+  },
+  "item_3_server_rack": {
+   "x": 726,
+   "y": 301,
+   "w": 38,
+   "h": 67,
+   "anchor": [
+    19.0,
+    56.0
+   ]
+  },
+  "item_4_corkboard": {
+   "x": 169,
+   "y": 542,
+   "w": 31,
+   "h": 35,
+   "anchor": [
+    16.0,
+    51.0
+   ]
+  },
+  "item_5_reception_desk": {
+   "x": 457,
+   "y": 301,
+   "w": 81,
+   "h": 75,
+   "anchor": [
+    41.0,
+    52.0
+   ]
+  },
+  "item_6_office_chair": {
+   "x": 107,
+   "y": 542,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_8_desk_clutter": {
+   "x": 263,
+   "y": 542,
+   "w": 30,
+   "h": 23,
+   "anchor": [
+    15.0,
+    14.0
+   ]
+  },
+  "item_9_waiting_chairs": {
+   "x": 954,
+   "y": 301,
+   "w": 52,
+   "h": 51,
+   "anchor": [
+    26.0,
+    36.0
+   ]
+  },
+  "item_10_water_cooler": {
+   "x": 0,
+   "y": 542,
+   "w": 30,
+   "h": 48,
+   "anchor": [
+    15.0,
+    39.0
+   ]
+  },
+  "item_11_plant_tall": {
+   "x": 632,
+   "y": 301,
+   "w": 46,
+   "h": 68,
+   "anchor": [
+    23.0,
+    55.0
+   ]
+  },
+  "item_12_plant_tall": {
+   "x": 679,
+   "y": 301,
+   "w": 46,
+   "h": 68,
+   "anchor": [
+    23.0,
+    55.0
+   ]
+  },
+  "item_13_fire_extinguisher": {
+   "x": 244,
+   "y": 542,
+   "w": 18,
+   "h": 24,
+   "anchor": [
+    7.0,
+    17.0
+   ]
+  },
+  "item_14_trash_bin": {
+   "x": 294,
+   "y": 542,
+   "w": 22,
+   "h": 23,
+   "anchor": [
+    11.0,
+    16.0
+   ]
+  },
+  "item_15_vending_machine": {
+   "x": 587,
+   "y": 301,
+   "w": 44,
+   "h": 70,
+   "anchor": [
+    22.0,
+    58.0
+   ]
+  },
+  "item_16_rug": {
+   "x": 765,
+   "y": 301,
+   "w": 110,
+   "h": 60,
+   "anchor": [
+    55.0,
+    30.0
+   ]
+  },
+  "item_17_waiting_chairs": {
+   "x": 31,
+   "y": 542,
+   "w": 42,
+   "h": 46,
+   "anchor": [
+    21.0,
+    34.0
+   ]
+  },
+  "item_18_side_table": {
+   "x": 138,
+   "y": 542,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_19_news_rack": {
+   "x": 74,
+   "y": 542,
+   "w": 32,
+   "h": 44,
+   "anchor": [
+    16.0,
+    34.0
+   ]
+  },
+  "item_20_wall_camera": {
+   "x": 317,
+   "y": 542,
+   "w": 24,
+   "h": 23,
+   "anchor": [
+    14.0,
+    58.0
+   ]
+  },
+  "item_21_entrance_mat": {
+   "x": 201,
+   "y": 542,
+   "w": 42,
+   "h": 25,
+   "anchor": [
+    21.0,
+    13.0
+   ]
+  }
+ }
+}

@@ -13,6 +13,8 @@ import lobby from '../art/interiors/tower_lobby.json';
 import bungalow from '../art/interiors/house_bungalow.json';
 import family from '../art/interiors/house_family.json';
 import townhouse from '../art/interiors/house_townhouse.json';
+import pawn from '../art/interiors/pawn.json';
+import precinct from '../art/interiors/precinct.json';
 import { LAYOUTS } from '../src/data/burglary';
 import { INTERIORS, interiorForDoor } from '../src/data/interiors';
 import { collides } from '../src/systems/movement';
@@ -41,6 +43,8 @@ const J = {
   house_bungalow: bungalow,
   house_family: family,
   house_townhouse: townhouse,
+  pawn,
+  precinct,
 } as unknown as Record<string, InteriorJson>;
 const rules = (j: InteriorJson) => ({ radius: 6, mapW: j.W, mapH: j.D, smallScale: 0.6, smallSlack: 2 });
 

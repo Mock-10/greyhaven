@@ -121,6 +121,8 @@ describe('Downtown map (vector ground)', () => {
       'depot',
       'garage',
       'hardware',
+      'pawn',
+      'precinct',
       'site_trailer',
       'store',
       'tower_lobby',

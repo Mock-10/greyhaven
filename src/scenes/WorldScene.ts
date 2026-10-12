@@ -65,7 +65,7 @@ import {
   type House,
 } from '../systems/burglary';
 import { GOODS_NAMES, LAYOUTS } from '../data/burglary';
-import { changedOutfit, emptyChase, type ChaseState } from '../systems/response';
+import { changedOutfit, emptyChase, tickChaos, type ChaseState } from '../systems/response';
 import { fencePage } from '../world/fence';
 import {
   bribeJudge,
@@ -497,17 +497,6 @@ export class WorldScene extends Phaser.Scene {
           });
         }
       }
-      // the fence deals at the pawn shop's door on Overcast Avenue (Phase 3; the interior comes later)
-      const pawn = this.map.placements.find((q) => q.sprite === 'bld/shop_pawn');
-      if (pawn && pawn.shadow.kind === 'box')
-        this.usables.push({
-          id: 'fence',
-          x: pawn.x,
-          y: pawn.y + pawn.shadow.hy + BALANCE.crime.fenceDoorOffset,
-          label: 'THE FENCE (PAWN)',
-          placed: null,
-          door: null,
-        });
       // the delivery drops move to the day's two Linden Avenue doors (refreshStreetLabels)
       for (const task of ['doorstep', 'signature'] as const)
         this.usables.push({
@@ -628,8 +617,7 @@ export class WorldScene extends Phaser.Scene {
           const S = stats(c.v);
           out.push({ x: c.v.x, y: c.v.y, hx: S.halfLength, hy: S.halfWidth, ang: c.v.heading });
         }
-        const cr = this.police?.cruiserBox();
-        if (cr) out.push(cr);
+        for (const b of this.police?.boxes() ?? []) out.push(b.obb);
         return out;
       },
       carShadow,
@@ -715,6 +703,7 @@ export class WorldScene extends Phaser.Scene {
       y: street.y,
       driving: !!car && Math.abs(car.v.speed) > W.stoppedCarSpeed,
       speed: car ? Math.abs(car.v.speed) : 0,
+      heading: car?.v.heading,
     };
     const busting = this.police.update(dt, wanted, view);
     const seen = !this.inside && this.police.active && this.police.sees(street);
@@ -729,6 +718,8 @@ export class WorldScene extends Phaser.Scene {
       this.toast('POLICE', 'YOU LOST THEM.');
       this.reported.clear();
     }
+    // sustained 4★ in police sight goes to 5★ (docs/05)
+    if (tickChaos(this.chase, wanted, dt)) this.toast('POLICE', 'ALL UNITS. ARMORED RESPONSE IS ROLLING.');
     if (this.lastStars > 0 && wanted.stars === 0) this.chaseOver();
     this.lastStars = wanted.stars;
     // people get out of the way of a fast car
@@ -868,9 +859,14 @@ export class WorldScene extends Phaser.Scene {
     st.minutes = o.releaseAt;
     // the record follows the person into every job (docs/03): freeze, extra work, no clean-record bonus
     arrestEffects(st.career, arrestedAt, st.minutes);
-    const door = this.map.zones?.find((z) => z.id === 'precinct')?.npc ?? this.map.spawn;
-    st.player.x = door.x + 14;
-    st.player.y = door.y;
+    // released at Precinct 1's front desk; the street door is outside
+    const door = this.map.doors?.find((d) => d.target === 'precinct');
+    const zone = this.map.zones?.find((z) => z.id === 'precinct')?.npc ?? this.map.spawn;
+    st.streetReturn = door ? { x: door.x, y: door.y + 12 } : { x: zone.x + 14, y: zone.y };
+    st.player.x = st.streetReturn.x;
+    st.player.y = st.streetReturn.y;
+    const lobby = INTERIORS.precinct;
+    this.enterInterior(lobby, { x: lobby.entrance!.x - 40, y: lobby.entrance!.y - 60 });
     this.camCtl.snap();
     const lines = [
       s.repeat ? 'REPEAT OFFENSE' : 'FIRST OFFENSE: A FINE ONLY',
@@ -1851,7 +1847,6 @@ export class WorldScene extends Phaser.Scene {
     else if (u.id.startsWith('pump')) this.usePump(u);
     else if (u.id.startsWith('atm')) this.openList('atm');
     else if (u.id.startsWith('rob:atm')) this.robAtmStart(u.id.slice(4), u);
-    else if (u.id === 'fence') this.openFence();
     else if (u.id.startsWith('house:')) this.breakIn(u.id.slice(6), u);
     else if (u.id === 'owner') this.scareOff();
     else if (u.id.startsWith('job:')) this.jobTask(u.id.slice(4) as TaskId);
@@ -2185,6 +2180,12 @@ export class WorldScene extends Phaser.Scene {
         break;
       case 'housePanel':
         this.housePanel();
+        break;
+      case 'fence':
+        this.openPanel('fence', () => fencePage(this.state));
+        break;
+      case 'frontDesk':
+        this.frontDesk();
         break;
     }
   }
@@ -2586,13 +2587,16 @@ export class WorldScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------- the fence and masks (docs/04, docs/05)
 
-  private openFence(): void {
-    const H = BALANCE_CRIME.fence.hours;
-    if (!isOpen(H, this.minuteOfDay())) {
-      this.toast('THE FENCE', `SHUT. ${formatClock(H.from)} TO ${formatClock(H.to)}.`);
-      return;
-    }
-    this.openPanel('fence', () => fencePage(this.state));
+  /** Precinct 1's desk sergeant reads out your record (docs/05). */
+  private frontDesk(): void {
+    const st = this.state;
+    const window = BALANCE.wanted.recordDays * 1440;
+    const recent = st.record.arrests.filter((m) => st.minutes - m < window).length;
+    const known = knownFace(st.heat, st.minutes);
+    this.toast(
+      'DESK SERGEANT',
+      `${recent ? `${recent} ARREST${recent > 1 ? 'S' : ''} IN TWO WEEKS. ` : 'A CLEAN SHEET. '}${known ? 'AND WE KNOW YOUR FACE.' : 'MOVE ALONG.'}`,
+    );
   }
 
   /** M: put the mask on or take it off. Doing it unseen during a chase shortens the escape (docs/05). */
@@ -3161,8 +3165,7 @@ export class WorldScene extends Phaser.Scene {
   /** Traffic and the police cruiser as turned boxes. */
   private movingSolids(): Solid[] {
     const boxes = [...(this.life?.carBoxes().map((c) => c.obb) ?? [])];
-    const cr = this.police?.cruiserBox();
-    if (cr) boxes.push(cr);
+    for (const b of this.police?.boxes() ?? []) boxes.push(b.obb);
     return boxes.map((o) => ({
       kind: 'obox' as const,
       x: o.x,
@@ -3686,10 +3689,7 @@ export class WorldScene extends Phaser.Scene {
     for (const pv of this.life?.peds ?? [])
       add(pv.sprite, { x: pv.ped.x, y: pv.ped.y, hx: r, hy: r, ang: 0 }, this.spriteRect(pv.sprite));
     for (const c of this.life?.carBoxes() ?? []) add(c.sprite, c.obb, this.spriteRect(c.sprite));
-    if (this.police?.cruiser) {
-      const box = this.police.cruiserBox() as Obb;
-      add(this.police.cruiser.sprite, box, this.spriteRect(this.police.cruiser.sprite));
-    }
+    for (const b of this.police?.boxes() ?? []) add(b.sprite, b.obb, this.spriteRect(b.sprite));
     for (const o of this.police?.officers ?? [])
       if (!o.inCar) add(o.sprite, { x: o.x, y: o.y, hx: r, hy: r, ang: 0 }, this.spriteRect(o.sprite));
     if (this.marloWalker && this.marloPos) {

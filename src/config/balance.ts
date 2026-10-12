@@ -233,6 +233,38 @@ export const BALANCE = {
         fuelPerSecond: 60 / (15 * 60),
         value: 9000,
       },
+      /** Phase 3 police SWAT van (4★+, art/vehicles2): heavy and slower than a cruiser (assumed). */
+      swat: {
+        topSpeed: 240,
+        reverseSpeed: 70,
+        accel: 130,
+        brake: 300,
+        drag: 70,
+        turnRate: 2.1,
+        halfLength: 46,
+        halfWidth: 18,
+        shadowHeight: 34,
+        health: 220,
+        tank: 60,
+        fuelPerSecond: 0,
+        value: 0,
+      },
+      /** Phase 3 armored police SUV (5★, art/vehicles2; assumed). */
+      armored: {
+        topSpeed: 250,
+        reverseSpeed: 70,
+        accel: 150,
+        brake: 320,
+        drag: 70,
+        turnRate: 2.2,
+        halfLength: 42,
+        halfWidth: 17,
+        shadowHeight: 28,
+        health: 300,
+        tank: 60,
+        fuelPerSecond: 0,
+        value: 0,
+      },
       /** docs/08 beater: top speed 70 (sedan 85), low acceleration and grip, health 70, tank 30, $1,500. A
        *  shorter hatchback body (art/source/cars.py beater). Sold at the used-car lot (milestone 6b). */
       beater: {
@@ -378,6 +410,15 @@ export const BALANCE = {
     lookAhead: 70,
     /** Despawn when the stars are gone and they are this far off screen (art px). */
     despawnMarginPx: 120,
+    /** Phase 3: units leave Precinct 1 one after another, this many seconds apart (assumed). */
+    spawnGapSeconds: 3,
+    /** Each extra unit aims a little off the target so they don't pile up on one spot (world units). */
+    spreadUnits: 40,
+    /** The police helicopter (4★+): flies at this height (art px), this fast (world units/s), circles the target
+     *  at this radius and sees this far, over buildings (assumed). */
+    heli: { altitudePx: 96, speed: 150, orbit: 70, sightTiles: 16, rotorFps: 20 },
+    /** Roadblocks (3★+): parked across the road this far ahead of a driving player; cleared when this far away. */
+    roadblock: { aheadTiles: 9, despawnTiles: 30 },
   },
 
   /** The pedestrian crowd (docs/01, milestone 4), in world units and real seconds. */

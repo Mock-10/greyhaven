@@ -21,7 +21,9 @@ export type InteriorId =
   | 'site_trailer'
   | 'house_bungalow'
   | 'house_family'
-  | 'house_townhouse';
+  | 'house_townhouse'
+  | 'pawn'
+  | 'precinct';
 
 export type CrimeStep = 'register' | 'safe' | 'cctv' | 'wipe';
 
@@ -47,6 +49,10 @@ export type Action =
   | { kind: 'burgle'; room: number }
   /** The house alarm's keypad by the front door. */
   | { kind: 'housePanel' }
+  /** The fence's counter at the pawn shop (world/fence.ts). */
+  | { kind: 'fence' }
+  /** Precinct 1's front desk: your record. */
+  | { kind: 'frontDesk' }
   /** A step of a store robbery (systems/robbery.ts): the register, the safe, the CCTV desk, the DVR. */
   | { kind: 'crime'; step: CrimeStep }
   | { kind: 'later'; who: string; text: string };
@@ -295,6 +301,28 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
       { role: 'site boss', hours: h(8, 18) },
       { role: 'crew', hours: h(8, 17) },
     ],
+  },
+  // the pawn shop on Overcast Avenue: the fence's counter (docs/04, Phase 3)
+  pawn: {
+    id: 'pawn',
+    name: 'PAWN SHOP',
+    street: 'pawn',
+    hours: h(10, 22),
+    entrance: { x: 161, y: 146 },
+    actions: { 'THE FENCE': { label: 'THE FENCE', action: { kind: 'fence' } } },
+    doors: [],
+    npcs: [{ role: 'the fence', hours: h(10, 22) }],
+  },
+  // Greyhaven PD Precinct 1: the walkable front desk (docs/18 decisions, Phase 3); released prisoners walk out here
+  precinct: {
+    id: 'precinct',
+    name: 'PRECINCT 1',
+    street: 'precinct',
+    hours: null,
+    entrance: { x: 197, y: 180 },
+    actions: { 'FRONT DESK': { label: 'FRONT DESK', action: { kind: 'frontDesk' } } },
+    doors: [],
+    npcs: [{ role: 'desk sergeant', hours: null }],
   },
   // the Phase 3 burglary houses on Linden Avenue (docs/04, docs/18 decisions): entered by picking the front door
   house_bungalow: house('house_bungalow', { x: 211, y: 178 }, ['LIVING ROOM', 'KITCHEN', 'BEDROOM']),
