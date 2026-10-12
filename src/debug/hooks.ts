@@ -51,6 +51,8 @@ export interface DebugHook {
     speed: number;
     health: number;
     looted: boolean;
+    model: string;
+    owned: boolean;
   }[];
   /** Depth of a placed object by sprite key (first match). */
   depthOf: (sprite: string) => number | null;

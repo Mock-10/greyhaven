@@ -78,6 +78,9 @@ The drafts show every room for presentation. **In the game, rooms the character 
 | Bar and back room | Downtown | Launderer (Dez), crew hiring | Dez (launder), job board for crew, back-room door | Phase 1 | — |
 | Small and family house | Suburbs | Bought homes | Bed, wardrobe, stash, add-on rooms | Phase 5 | — |
 | Burglary houses (2–3 layouts) | Suburbs | House burglary | Drawers, safes, TVs and jewellery boxes to loot | Phase 3 | — |
+| Hardware store | Hedgerow Way | Shop (lockpicks, toolbox, repair kit) | Till (SHOP), locked stockroom | Phase 2 | ✅ |
+| Clothing store | Hedgerow Way | Outfits | Till (BUY CLOTHES), fitting booths (CHANGE OUTFIT) | Phase 2 | ✅ |
+| Used-car cabin | Hedgerow Way lot | Buy a car | Salesman's desk (BUY A CAR) | Phase 2 | ✅ |
 | Mechanic garage | Industrial | Mechanic job, upgrades, respray | Lift, toolbench, spray booth | Phase 2 | — |
 | Scrap yard office | Industrial | Scrap job sign-in, chop shop contact | Clock-in, Marlo's door | Phase 6 | — |
 | Hideout rooms | Inside owned property | Add-ons | Stash room, workbench, press, chop bay, lab, crew room | Phase 5 | — |

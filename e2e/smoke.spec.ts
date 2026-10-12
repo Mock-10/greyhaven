@@ -449,3 +449,69 @@ test('unpaid rent ends in eviction: the apartment refuses you, the shelter lets 
   expect(Math.floor((await page.evaluate(() => window.__DL__.minutes)) % 1440)).toBe(6 * 60);
   expect(problems).toEqual([]);
 });
+
+test('the clothing store: buy an outfit, it goes on, and the booth changes back (milestone 6b)', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const problems = await boot(page, '?scene=world&zoom=3&area=clothing&time=11:00');
+  await cheat(page, 'cash 500');
+  await cheat(page, 'tp 196 80');
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('clothing:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'clothing');
+  await page.waitForTimeout(400);
+  // GREY HOODIE ($60) is the first row
+  await page.keyboard.press('1');
+  await page.waitForFunction(
+    () => window.__DL__.look?.outfit === 'grey_hoodie' && window.__DL__.clean === 440,
+  );
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  // the fitting booth: the wardrobe lists the starting three plus the hoodie; the first is the teal jacket
+  await cheat(page, 'tp 34 30');
+  await page.waitForTimeout(300);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'wardrobe');
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => window.__DL__.listPage?.rows.length)).toBe(4);
+  await page.keyboard.press('1');
+  await page.waitForFunction(() => window.__DL__.look?.outfit === 'teal_jacket');
+  await page.keyboard.press('Escape');
+  expect(problems).toEqual([]);
+});
+
+test('the used-car lot: buy a beater, it waits keyed in the pickup bay and drives off clean (docs/08)', async ({
+  page,
+}) => {
+  test.setTimeout(150_000);
+  const problems = await boot(page, '?scene=world&zoom=2&area=dealer&time=11:00');
+  await cheat(page, 'bank 6000');
+  await cheat(page, 'tp 72 64');
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('dealer:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'dealer');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('1');
+  await page.waitForFunction(() => window.__DL__.bank === 4500);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  const car = await page.evaluate(() => window.__DL__.cars.find((c) => c.owned));
+  expect(car).toMatchObject({ model: 'beater_khaki', locked: false, running: true, fuel: 30 });
+  // out of the cabin, round to the bay, in and away through the gap in the pennants
+  await cheat(page, 'tp 104 112');
+  await page.waitForFunction(() => window.__DL__.target === 'dealer:exit');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.area === 'street', null, { timeout: 15_000 });
+  await cheat(page, `tp ${car!.x + 30} ${car!.y}`);
+  await page.waitForFunction((id) => window.__DL__.target === `car:${id}`, car!.id);
+  await page.keyboard.press('KeyF');
+  await page.waitForFunction((id) => window.__DL__.driving === id, car!.id);
+  await page.keyboard.down('KeyW');
+  await page.waitForFunction((y) => (window.__DL__.cars.find((c) => c.owned)?.y ?? 0) > y + 120, car!.y, {
+    timeout: 60_000,
+  });
+  await page.keyboard.up('KeyW');
+  expect(await page.evaluate(() => window.__DL__.stars)).toBe(0);
+  expect(problems).toEqual([]);
+});
