@@ -22,11 +22,13 @@ import decor_shops as DS
 import interiors as I
 import props2
 import rooms
+import decor_jobs as J
+import rooms_jobs
 
 TOL = 1.5
 SEATS = {'office_chair', 'wooden_chair', 'bar_stool', 'booth', 'armchair', 'sofa'}
 TARGETS = {'exec_desk', 'ledger_desk', 'cubicle', 'pub_table', 'bar_counter', 'coffee_table', 'table_chairs', 'tv_stand',
-           'reception_desk', 'side_table', 'counting_table', 'pool_table'}
+           'reception_desk', 'side_table', 'counting_table', 'pool_table', 'plan_table', 'sort_table', 'workbench'}
 # seats that face something other than a table on purpose (lounge seating, waiting areas)
 FREE_SEATS = {'armchair'}
 
@@ -45,7 +47,7 @@ def _tag(module):
             setattr(module, name, wrap)
 
 
-for mod in (D, I, props2, DS):
+for mod in (D, I, props2, DS, J):
     _tag(mod)
 
 
@@ -62,7 +64,7 @@ def capture(room):
     real = rooms.compose
     rooms.compose = fake_compose
     try:
-        getattr(rooms, room)()
+        (getattr(rooms, room, None) or getattr(rooms_jobs, room))()
     except Captured:
         pass
     finally:
