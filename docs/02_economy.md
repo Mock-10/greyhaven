@@ -62,12 +62,12 @@ Fronts launder automatically each night from the hideout stash, up to their capa
 ## Pacing targets (verified with an expected-value sim)
 | Milestone | Pure civilian | Mixed (work by day, crime by night) | Pure criminal |
 |---|---|---|---|
-| First $1,500 (a beater car) | day 8 | day 4 | day 6 |
+| First $1,500 (a beater car) | day 7 | day 4 | day 6 |
 | Career rank 2 / 3 / 4 | days 4 / 12 / 26 | days 4 / 12 / 26 | n/a |
 | Hustler / Known / Connected / Boss | n/a | days 5 / 15 / 27 / 39 | days 4 / 10 / 18 / 26 |
-| $12,000 (starter house) | day 35 | day 21 | day 18 |
-| First front business | n/a | day ~33 | day ~27 |
-| Wealth at day 42 (clean, after costs) | ~$15k | ~$26k | ~$72k |
+| $12,000 (starter house) | day 30 | day 20 | day 18 |
+| First front business | n/a | day ~32 | day ~27 |
+| Wealth at day 42 (clean, after costs) | ~$19k | ~$29k | ~$72k |
 
 **Balance rules to keep while tuning:**
 1. Low-tier crime pays **about 2.3×** a rank-1 shift per real hour, before arrests. Keep the ratio between **1.5× and 2.5×** at every stage.
@@ -99,4 +99,8 @@ The sim script is in `tools/econ_sim.py`. Re-run it after any change to pay, pay
 - **Hardware store** (open 08:00–21:00): lockpicks $40, toolbox $120, repair kit $150, clean carried cash.
 - **Clothing store** (open 09:00–21:00): outfits in clean carried cash, bought once and kept in the wardrobe: grey hoodie $60, work khakis $80, white shirt $90, red jacket $140, clay coat $180, navy suit $300 (prices assumed; `BALANCE.clothing`). Changing at a fitting booth or the apartment wardrobe is free.
 - **Used-car lot** (desk open 09:00–18:00): beater $1,500 and sedan $5,000 (the table above), clean money only. The bank card pays first, then carried clean cash (assumed). Dirty cash is refused.
+
+## Phase 2 build (milestone 8, 2026-10-12)
+- **Weekend odd jobs** (Saturday and Sunday, open to everyone, no XP): the **car wash** at Squeaky's (09:00–16:00, 3 cars) and the **bar shift** at The Low Tide's taps (16:00–22:00, 3 rushes). Each can be worked once a day. A finished gig pays **60% of the shift pay at your current job's rank** to the bank, plus **tips** in carried clean cash by the typical grade (poor 0%, OK 5%, good 10%, excellent 20% of the gig pay). Tips don't count toward the clean-record bonus. Walking off part way (Esc in a task) pays nothing. Numbers: `BALANCE.oddJobs` (`config/balanceOdd.ts`).
+- **Pacing sim:** civilians are assumed to work both gigs each weekend day and mixed players the car wash only, with tips at "good". The table above was re-run with this.
 

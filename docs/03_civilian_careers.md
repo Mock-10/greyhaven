@@ -105,3 +105,6 @@ You are **never fired** from any job, however many arrests you have (decided). A
 - **Perks** (phone, JOB BOARD, PERKS): the office key card (rank 2) and the **expense account** (office rank 4: 10% off in every legal shop, clothes and cars) work now. The others show as LATER until their systems exist: armored truck tip-offs (Phase 3/7), repairs and garage add-ons (Phases 4–5), respraying stolen cars (Phase 4), the log truck licence and compartments and remote drops (Phase 5), the courier uniform's witness delay, route knowledge and house occupancy (Phase 3/5).
 - **Haul** (driving the log truck to the mill) waits for the mill in Phase 6; a lumber shift is chop, fell and load.
 - **Boss names** are roles (shop foreman, site boss, dispatch) until the user names them.
+
+## Phase 2 build (milestone 8, 2026-10-12)
+- **Weekend odd jobs** are built: the car wash at Squeaky's (east of Torque & Sons, E at the wash apron) and the bar shift at The Low Tide (E at the beer taps). Both are listed on the phone's JOB BOARD with their hours and whether they are open now. A gig is three minigame tasks (scrub a car's side; pour drinks for a counter rush). It pays 60% of the current job's shift pay plus tips (docs/02) and gives no promotion XP. You can't start a gig while on shift, and Esc in a task walks off the gig unpaid.

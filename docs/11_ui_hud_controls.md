@@ -87,6 +87,7 @@ The generator is `art/source/hud.py` (with `pixfont.py`), and the shapes, colour
 | Camera pan | hold middle mouse and drag, or push the mouse to the screen edge |
 | Camera recenter | C |
 | Sight lines on/off (until the settings menu exists) | L |
+| Skip the guided first day | F2 |
 | Zoom | Ctrl + mouse wheel (integer steps: 1×, 2×, 3×, 4×) |
 | Cheat console (playtesting, also on Pages) | Ctrl + Shift + F1 |
 
@@ -142,3 +143,7 @@ A short guided first day of about 15 real minutes, with skippable hints:
 - **Key hints** on foot: P PHONE · I BAG · SHIFT SPRINT (E USE · TAB NEXT near something usable).
 - **Phone messages queue:** when several arrive together (Monday's rent and bonus), each shows for at least 2.2 s before the next.
 - **Prompts:** LOOT TRUNK at a car's rear bumper, USE REPAIR KIT on a car under 50%, SLEEP (SHELTER) at St. Brine's. The world prompt hides while a panel is open.
+
+## Phase 2 build (milestone 8, 2026-10-12)
+- **The guided first day** is built (`data/onboarding.ts`, `systems/onboarding.ts`). New games start at step 1 on the street; walking two tiles or leaving an interior ends it. While it runs, the objective strip shows the step's hint instead of the normal objective (LOSE THE COPS still wins), and the on-foot hint strip shows **F2 SKIP GUIDE**. Steps end on: leaving any interior, opening the JOB BOARD, clocking in, clocking out, buying something in a store or the clothing store with clean cash, looting a trunk, having no stars, and sleeping. A later event also finishes the earlier steps. The trunk step waits for Dez's tip, which arrives as a phone message at 17:00. Old saves count the guide as done.
+- **Controls:** F2 skips the guide (in the controls table above).

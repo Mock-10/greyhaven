@@ -4,7 +4,7 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 
 - [x] Phase 0 — Foundations
 - [x] Phase 1 — Vertical slice
-- [ ] Phase 2 — Economy and careers
+- [x] Phase 2 — Economy and careers
 - [ ] Phase 3 — Crime breadth and police
 - [ ] Phase 4 — Combat and vehicles
 - [ ] Phase 5 — Property, hideouts, operations, crews
@@ -15,26 +15,24 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
 <!-- Per phase: Built / How to try / Assumptions / Art debt / Known issues -->
 
 ## START HERE (cold start for a new session)
-**Branch:** `claude/p2-map-shops-do5oew` (M8 work in progress, ends in WIP commit `1d83db7` + this handover).
+**Phase 2 is closed** (M8 in PR "Phase 2 M8: weekend odd jobs, the guided first day, phase close" from `claude/p2-map-shops-do5oew`). **Next: Phase 3, crime breadth and police.**
 
 **First command:**
 ```
 export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1
-git fetch origin && git checkout claude/p2-map-shops-do5oew && git pull origin claude/p2-map-shops-do5oew && npm install && npx tsc --noEmit
+git fetch origin && git checkout main && git pull origin main && npm install && npx tsc --noEmit
 ```
 
-**Read only these, nothing else:** `CLAUDE.md`, this section and "Stopped midway" below, then per step only: `src/scenes/MinigameScene.ts` (step 2), `src/systems/oddJobs.ts` + `src/data/oddJobs.ts` (step 3), `src/systems/onboarding.ts` + `src/data/onboarding.ts` (step 4), docs/02 "Weekend odd jobs" and the pacing table (step 5). Use `grep -n` to find spots in `WorldScene.ts`; don't read it whole. Don't re-read the docs folder, the art guide or old milestone sections.
+**Read only these, nothing else:** `CLAUDE.md`, this section, "Side-thread pieces" and "Leftovers from PR #23" below, `docs/15_roadmap.md` "Phase 3", then per step only the doc it names (docs/04, docs/05). Use `grep -n` to find spots in `WorldScene.ts`; don't read it whole. Don't re-read old milestone sections or the art guide unless a step draws new art.
 
 **Next steps, in order:**
-1. **PR #23** (animation pass, `claude/polish-anim-6zvc8q`): check its CI; if green, merge it; if red, fix on its branch. Then `git merge origin/main` here.
-2. **Fix the WIP hookup** in `MinigameScene.ts` until `npx tsc --noEmit`, `npm run lint` and `npm test` pass; add `aimSponge` in `onMove` while the pointer is held on the car wash.
-3. **Gigs in WorldScene:** street prompt at map zone `gig_carWash`; interior action `{kind:'gig', gig:'barShift'}` on the bar's `BAR SHIFT` taps (`src/data/interiors.ts`); `startGig` → one minigame per task → `recordGigTask` → `finishGig(rank)` pays bank + tips as clean cash; `quitGig` pays nothing; job board lists `openGigs`.
-4. **First-day guide in WorldScene:** `onboardEvent` on leave apartment / job board / clock in / clock out / shop buy / trunk loot / stars 0 / sleep; `tipDue` → phone message `DEZ_TIP`; `onboardHint` on the objective strip with `F2: SKIP THE GUIDE`; new games start at step 0.
-5. **Close Phase 2:** `python3 tools/econ_sim.py` + docs/02 pacing table; short M8 notes in docs/02, 03, 11; one e2e test for a gig; a few screenshots; tick Phase 2; open the PR, merge when green; short note to the user.
-6. **Then Phase 3** (docs/15): start by wiring #17 police and #18 crime logic (see "Side-thread pieces" below).
+1. If the M8 PR isn't merged yet: check its CI; merge when green; fix on its branch if red.
+2. Start a Phase 3 branch from main. Plan Phase 3 as a checklist in a new "## Phase 3" section here (from docs/15).
+3. Wire **#17 police logic** (response table, identification, jail; docs/05) and **#18 crime logic** (robbery, burglary, ATM crime, reputation; docs/04) — needs a crime state and a save bump (v6) with a migration test.
+4. Build the rest of the Phase 3 checklist one milestone at a time; e2e and screenshots only at each milestone end; PR, merge when green, short note to the user.
 
 **Paste-ready resume prompt:**
-> Resume Double Life. Read CLAUDE.md, then only the "START HERE" section at the top of CHANGELOG.md on branch claude/p2-map-shops-do5oew, and follow its numbered steps in order. Read only the files each step names. Keep token use low: no side threads, no re-reading big docs, e2e and screenshots only at the end of the milestone. Commit and push WIP before stopping.
+> Resume Double Life. Read CLAUDE.md, then only the "START HERE" section at the top of CHANGELOG.md on main, and follow its numbered steps in order. Read only the files each step names. Keep token use low: no side threads, no re-reading big docs, e2e and screenshots only at the end of the milestone. Commit and push WIP before stopping.
 
 ## Handover (updated 2026-10-12, session 6, stopped mid-M8 at the user's request) — read this first in a new session
 This is the only handover section. The user stopped all work on 2026-10-12 (05:48 UTC) and asked for this handover; nothing is running.
@@ -89,9 +87,7 @@ The usage limit was hit. **No more side threads:** the main thread finishes ever
 - **Guided first day:** a later event finishes earlier steps (a player who clocks in first skips the job board step); Dez's tip arrives by phone at 17:00 once the shopping step is done; F2 skips the guide; old saves count it as done.
 
 ### What's left in Phase 2
-- Odd jobs: finish the hookup (steps 1–3 above).
-- Guided first day in the game (step 4).
-- Econ sim re-run and the phase close (step 5).
+- Nothing: M8 closed the phase (session 7, 2026-10-12). PR #23 (animation pass) was merged first.
 
 ### Bugs and known issues
 - **Traffic:**
@@ -177,8 +173,8 @@ They are recorded in docs 01, 02, 08 and 11.
 
 ### Git state
 - **`main`:** PRs #9–#22 merged (M7 is live). Pages deploys from main: https://mock-10.github.io/greyhaven/.
-- **`claude/p2-map-shops-do5oew`:** M8 work in progress (restarted from main after #22 merged), ending in the WIP commit described above; no PR yet.
-- **`claude/polish-anim-6zvc8q`:** PR #23, open, CI pending at the stop.
+- **`claude/p2-map-shops-do5oew`:** M8 finished; its PR closes Phase 2.
+- **`claude/polish-anim-6zvc8q`:** PR #23, merged (2026-10-12, session 7).
 - Other `claude/*` branches are merged and can be ignored.
 
 ### Answered decisions, in short (full text in the docs)
@@ -260,7 +256,7 @@ They are recorded in docs 01, 02, 08 and 11.
 - **Saves:** `SAVE_VERSION` is 4 (v1 → v2 → v3 → v4; v3 adds the look and the wardrobe, v4 the shift's done tasks). Bump it and add a migration and its test whenever the save shape changes.
 - **Jobs (M7):** `src/data/jobs.ts` holds `JOBS` (site, boss, tasks, uniform, perks) and `TASKS` (each task's minigame); `taskBlock()` in `systems/career.ts` says why a task can't start. Interior prompts map to `{kind: 'job', task}`, `clock` and `locker` actions; outdoor spots are map zones `job_<task>` and `drop_<n>`. The cheat `job mechanic` switches job off shift; the debug hook has `job`, `shiftDone` and `objective`.
 
-## Phase 2 — Economy and careers (in progress)
+## Phase 2 — Economy and careers (done 2026-10-12)
 Status key: [x] done and playable · [~] partly done (what's left is said) · [ ] not started. Milestones: M5 money and phone (done, PR #10), the UI redesign (done, PR #11), M6a map growth (done, PR #12), M6b shops and the creator (built on `claude/p2-map-shops-do5oew`), M7 the three new jobs, M8 odd jobs, the first day and the close.
 
 **Standing rule from now on (user, 2026-10-11): every new street is at least two lanes in each direction (4 lanes in all).** The existing Downtown streets stay as they are: they have one lane each way, which suits a compact downtown. Everything built from now on follows the rule, starting with the Phase 2 map growth (the garage block road, the house row with the depot, the road through the woods) and later the Phase 6 city. See docs/01 ("Street width").
@@ -276,14 +272,30 @@ Status key: [x] done and playable · [~] partly done (what's left is said) · [ 
 - [x] Delivery: depot interior, load van, route, doorstep, signature; marked doors on the house row. (M7: two radar-marked stops a day on Linden Avenue.)
 - [x] Rank ladders and perks for the 4 jobs (stub the perks that need later systems). (M7: the phone's PERKS page; the key card and the expense account work, the rest are LATER.)
 - [x] Work uniforms and lockers (change by hand). (M7.)
-- [~] Weekend odd jobs: car wash and a bar shift at The Low Tide. (M8, stopped midway: logic, panels, map, save done; scene hookup left. See the handover.)
+- [x] Weekend odd jobs: car wash and a bar shift at The Low Tide. (M8: Squeaky's Car Wash, the bar's taps, the job board.)
 - [x] Shops: full corner store, clothing store, hardware store, car dealer (beater and sedan). (M5: the corner store. M6b: the hardware store (lockpicks, toolbox, repair kit), the clothing store (6 outfits, fitting booths, the wardrobe at home), and the used-car desk (beaters and sedans in 6 colours).)
 - [x] Arrest effects on careers (freeze, missed shifts, extra work, HR bribes on the phone), clean-record bonus. (M5)
 - [x] Phone: job board, bank, contacts (first pass); the bag (I). (M5)
 - [x] Trunk looting (brought forward). (M5)
-- [~] Guided first day (no bus or taxi step; trunk looting in step 5). (M8: logic and save done; in-game hints left.)
-- [ ] Econ sim re-run, tests, screenshots, notes, PR. (Not started; M8, the phase close.)
+- [x] Guided first day (no bus or taxi step; trunk looting in step 5). (M8: hints on the objective strip, Dez's tip by phone, F2 skips.)
+- [x] Econ sim re-run, tests, screenshots, notes, PR. (M8.)
 - [x] UI redesign: larger text (5 × 7 font), more pictures (rendered icon atlas), a bigger HUD, the handset phone, picture grids. (Your request, 2026-10-12; merged in PR #11.)
+
+### Milestone 8: weekend odd jobs, the guided first day, the phase close (2026-10-12)
+**Built**
+- **Squeaky's Car Wash** (new `car_wash` building east of Torque & Sons, with a wash apron and a waiting dirty car). E at the apron on Saturday or Sunday, 09:00–16:00, starts the gig: 3 cars, each a scrub minigame (mouse or arrows aim, Space scrubs, R dunks the sponge, Enter calls the car done).
+- **Bar shift** at The Low Tide's beer taps (`BAR SHIFT`), weekends 16:00–22:00: 3 counter rushes, pour lager/stout/cider (1–3, hold Space).
+- A finished gig pays 60% of your job's shift pay at your rank to the bank, plus tips in carried cash by grade. Esc in a task walks off unpaid; each gig once a day; not while on a shift. The objective strip tracks what's left. The phone's JOB BOARD lists both gigs (OPEN / SHUT / DONE / ON IT).
+- **The guided first day:** 8 steps with hints on the objective strip (LOSE THE COPS still wins); a short walk on the street, any interior exit, the job board, clock in/out, a store or clothing buy, a trunk loot, no stars and sleep move it on. Dez's tip arrives as a phone message at 17:00. F2 skips it (shown on the hint strip while it runs).
+- Save v5 (odd jobs + guide state; old saves count the guide as done). Econ sim re-run and docs/02 pacing table updated; notes in docs/02, 03, 11. E2E: a full car wash gig paying to the bank.
+
+**How to try:** start a new game and follow the hints, or press F2. For a gig: cheat console (Ctrl+Shift+F1) `day 6`, `time 10:00`, walk to Squeaky's Car Wash (south-east of Torque & Sons) and press E at the apron; or `time 17:00` and the taps at The Low Tide.
+
+**Assumptions:** Esc in a gig task means walking off the gig (no pay). A gig can't start during a work shift. The guide's first step also ends after a two-tile walk, because new games start on the street. Gig icons on the job board reuse the sedan and cash icons. Pacing sim: civilians work both gigs each weekend day, mixed players the car wash only, tips at "good".
+
+**Screenshots:** `docs/screenshots/m8/` (car wash panel, bar shift panel, job board, street with the guide hint).
+
+**Known issues:** the gigs sit below the fold on the job board (scroll down). The car wash TIME bar is drawn in the gold of the key plates (from #21's panel); check against the gold rule in the polish pass.
 
 ### Milestone 7: the three new jobs (2026-10-12; on `claude/p2-map-shops-do5oew`)
 **Built:**

@@ -2171,6 +2171,9 @@ export class WorldScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------- the guided first day (docs/11)
 
+  /** Where the player stood when the guide's first step began on the street. */
+  private guideFrom: { x: number; y: number } | null = null;
+
   private guide(ev: OnboardEvent): void {
     onboardEvent(this.state.onboarding, ev);
   }
@@ -2179,7 +2182,15 @@ export class WorldScene extends Phaser.Scene {
   private guideTick(): void {
     const o = this.state.onboarding;
     if (!onboardingActive(o)) return;
-    if (currentStepId(o) === 'cops' && this.state.wanted.stars === 0) this.guide('clear');
+    const step = currentStepId(o);
+    // new games start on the street: a short walk there ends the first step too
+    if (step === 'move' && !this.inside) {
+      const p = this.state.player;
+      this.guideFrom ??= { x: p.x, y: p.y };
+      if (Math.hypot(p.x - this.guideFrom.x, p.y - this.guideFrom.y) >= BALANCE.onboarding.walkToStart)
+        this.guide('leftHome');
+    }
+    if (step === 'cops' && this.state.wanted.stars === 0) this.guide('clear');
     if (tipDue(o, this.state.minutes)) this.toast('DEZ', DEZ_TIP);
   }
 

@@ -564,5 +564,7 @@ export const BALANCE = {
   onboarding: {
     /** Minute of the day Dez's tip arrives (the evening step), once the shopping step is done. */
     tipAt: 17 * 60,
+    /** World units walked on the street that finish the first step when the game starts outdoors (2 tiles). */
+    walkToStart: 64,
   },
 } as const;

@@ -566,3 +566,28 @@ test('the garage: the locker hands out coveralls, a mechanic shift runs its task
   );
   expect(problems).toEqual([]);
 });
+
+test("weekend gig: three cars at Squeaky's car wash pay to the bank (milestone 8)", async ({ page }) => {
+  test.setTimeout(150_000);
+  const problems = await boot(page, '?scene=world&zoom=3&time=10:00');
+  // day 6 is a Saturday; the wash apron's spot is in front of the pay office
+  await cheat(page, 'day 6');
+  await cheat(page, 'tp 994 1735');
+  await page.waitForFunction(() => window.__DL__.target === 'gig:carWash');
+  const bank0 = await page.evaluate(() => window.__DL__.bank);
+  for (let car = 0; car < 3; car++) {
+    await page.waitForTimeout(400);
+    await page.keyboard.press('KeyE');
+    await page.waitForFunction(() => window.__DL__.minigame === 'carWash');
+    await page.waitForTimeout(500);
+    // scrub a moment, then call the car done (Enter)
+    await page.keyboard.down('Space');
+    await page.waitForTimeout(600);
+    await page.keyboard.up('Space');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => window.__DL__.minigame === null, null, { timeout: 10_000 });
+  }
+  // 60% of a rank-1 office shift ($180), plus any tips in cash
+  await page.waitForFunction((b) => window.__DL__.bank >= b + 108, bank0);
+  expect(problems).toEqual([]);
+});
