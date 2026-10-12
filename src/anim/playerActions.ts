@@ -60,7 +60,25 @@ export function contextAction(open: string | null): ActionName | null {
     case 'moneyCount':
       return 'type';
     case 'phone':
+    case 'route':
       return 'phone';
+    // the M7 job tasks (ui/panelsJobs.ts)
+    case 'boltTorque':
+    case 'tyreChange':
+    case 'chop':
+    case 'diagnose':
+      return 'wrench';
+    case 'respray':
+      return 'pump';
+    case 'fell':
+      return 'chop';
+    case 'load':
+    case 'doorstep':
+      return 'carry';
+    case 'stampSign':
+      return 'stamp';
+    case 'signature':
+      return 'type';
     default:
       return null;
   }

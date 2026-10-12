@@ -573,7 +573,7 @@ export class MinigameScene extends Phaser.Scene {
   private celebrate(grade: Grade | null): void {
     if (this.graded) return;
     this.graded = true;
-    const P = PANEL_SIZE[this.kind];
+    const P = SIZES[this.kind];
     const { x, y } = this.pos;
     if (grade === 'excellent' || grade === 'good')
       this.bursts.emit('confetti', x + P.w / 2, y + P.h / 2, grade === 'excellent' ? 40 : 22, 110);
@@ -634,7 +634,7 @@ export class MinigameScene extends Phaser.Scene {
         selected: this.selected,
         message: this.message && this.message.t < 3 ? this.message.text : null,
       });
-    transition(s, { x, y, ...PANEL_SIZE[this.kind] }, this.presence.t);
+    transition(s, { x, y, ...SIZES[this.kind] }, this.presence.t);
     this.bursts.draw(s);
     const ctx = this.tex.getContext();
     const img = ctx.createImageData(s.width, s.height);
