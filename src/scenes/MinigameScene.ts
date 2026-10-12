@@ -20,6 +20,36 @@ import {
   type MinigameLogic,
 } from '../minigames/logic';
 import type { Grade } from '../systems/career';
+import { BoltTorqueGame } from '../minigames/boltTorque';
+import { ChopGame } from '../minigames/chop';
+import { DiagnoseGame } from '../minigames/diagnose';
+import { jobTier } from '../minigames/jobGrade';
+import { LoadGame, type LoadMode } from '../minigames/load';
+import { MeetingGame } from '../minigames/meeting';
+import { ResprayGame } from '../minigames/respray';
+import { RouteGame } from '../minigames/route';
+import { StampSignGame } from '../minigames/stampSign';
+import { TyreChangeGame, type ArrowDir } from '../minigames/tyreChange';
+import {
+  JOB_PANEL_SIZE,
+  chopMeter,
+  diagnoseOption,
+  drawBoltTorque,
+  drawChop,
+  drawDiagnose,
+  drawLoad,
+  drawMeeting,
+  drawRespray,
+  drawRoute,
+  drawStampSign,
+  drawTyreChange,
+  loadBed,
+  LOAD_CELL,
+  meetingReply,
+  resprayArea,
+  routeOption,
+  type JobPanelKind,
+} from '../ui/panelsJobs';
 import type { LootItem } from '../systems/loot';
 import { buy, type Wallet } from '../systems/shop';
 import { blend, clear, createSurface, type Surface } from '../ui/hudDraw';
@@ -57,7 +87,23 @@ export type MinigameRequest =
   | { kind: 'search'; seed: number; label: string; items: LootItem[] }
   | { kind: 'moneyCount'; label: string }
   | { kind: 'duffel'; seed: number; label: string }
-  | { kind: 'shop'; title: string; shop: ShopId; wallet: Wallet };
+  | { kind: 'shop'; title: string; shop: ShopId; wallet: Wallet }
+  /** The M7 job tasks (ui/panelsJobs.ts): `rank` sets the bolt-torque tier, `mode` what the load task stacks. */
+  | { kind: JobPanelKind; seed: number; task: string; rank: number; mode?: LoadMode };
+
+/** Every panel's size: the Phase 1 panels and the job tasks. */
+const SIZES: Record<AnyPanel, { w: number; h: number }> = { ...PANEL_SIZE, ...JOB_PANEL_SIZE };
+type AnyPanel = PanelKind | JobPanelKind;
+const ARROWS: Record<string, ArrowDir> = {
+  ARROWUP: 'up',
+  W: 'up',
+  ARROWDOWN: 'down',
+  S: 'down',
+  ARROWLEFT: 'left',
+  A: 'left',
+  ARROWRIGHT: 'right',
+  D: 'right',
+};
 
 export interface MinigameResult {
   kind: MinigameRequest['kind'];
@@ -69,7 +115,7 @@ export interface MinigameResult {
 
 const TEX = 'minigame-canvas';
 /** Where each kind of panel was last dragged to, relative to its default spot (kept for the session). */
-const offsets = new Map<PanelKind, { x: number; y: number }>();
+const offsets = new Map<AnyPanel, { x: number; y: number }>();
 const handled = new WeakSet<KeyboardEvent>();
 
 type Rect = { x: number; y: number; w: number; h: number };
@@ -128,6 +174,33 @@ export class MinigameScene extends Phaser.Scene {
       case 'search':
         this.logic = new SearchGame(new Rng(req.seed), req.items);
         break;
+      case 'diagnose':
+        this.logic = new DiagnoseGame(new Rng(req.seed));
+        break;
+      case 'boltTorque':
+        this.logic = new BoltTorqueGame(new Rng(req.seed), jobTier(req.rank));
+        break;
+      case 'tyreChange':
+        this.logic = new TyreChangeGame(new Rng(req.seed));
+        break;
+      case 'respray':
+        this.logic = new ResprayGame();
+        break;
+      case 'chop':
+        this.logic = new ChopGame(new Rng(req.seed));
+        break;
+      case 'load':
+        this.logic = new LoadGame(new Rng(req.seed), req.mode ?? 'crates');
+        break;
+      case 'route':
+        this.logic = new RouteGame(new Rng(req.seed));
+        break;
+      case 'stampSign':
+        this.logic = new StampSignGame();
+        break;
+      case 'meeting':
+        this.logic = new MeetingGame(new Rng(req.seed));
+        break;
       default:
         this.logic = null;
     }
@@ -135,9 +208,13 @@ export class MinigameScene extends Phaser.Scene {
     hook().minigameState = this.logic;
   }
 
-  private get kind(): PanelKind {
+  private get kind(): AnyPanel {
     return this.req.kind;
   }
+
+  /** Keys held down (the respray nozzle moves while an arrow is held and sprays while Space is). */
+  private held = new Set<string>();
+  private pointerHeld = false;
 
   create(): void {
     this.image = this.add.image(0, 0, '__WHITE').setOrigin(0, 0);
@@ -145,12 +222,16 @@ export class MinigameScene extends Phaser.Scene {
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
     const kb = this.input.keyboard;
     kb?.on('keydown', this.onKey, this);
+    kb?.on('keyup', this.onKeyUp, this);
+    this.held.clear();
+    this.pointerHeld = false;
     this.input.on('pointerdown', this.onDown, this);
     this.input.on('pointermove', this.onMove, this);
     this.input.on('pointerup', this.onUp, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this);
       kb?.off('keydown', this.onKey, this);
+      kb?.off('keyup', this.onKeyUp, this);
       this.input.off('pointerdown', this.onDown, this);
       this.input.off('pointermove', this.onMove, this);
       this.input.off('pointerup', this.onUp, this);
@@ -167,7 +248,7 @@ export class MinigameScene extends Phaser.Scene {
     this.tex = this.textures.createCanvas(TEX, w, h);
     this.image.setTexture(TEX).setScale(this.z);
     // beside the player (who stands in the middle of the screen), never over them (docs/11)
-    const P = PANEL_SIZE[this.kind];
+    const P = SIZES[this.kind];
     this.baseX = Math.max(4, Math.floor(w / 2) - P.w - 24);
     this.baseY = Math.floor((h - P.h) / 2);
     this.redraw();
@@ -175,7 +256,7 @@ export class MinigameScene extends Phaser.Scene {
 
   /** Top-left of the panel, after any dragging, kept on screen. */
   private get pos(): { x: number; y: number } {
-    const P = PANEL_SIZE[this.kind];
+    const P = SIZES[this.kind];
     const o = offsets.get(this.kind) ?? { x: 0, y: 0 };
     const s = this.surface;
     return {
@@ -198,6 +279,8 @@ export class MinigameScene extends Phaser.Scene {
     if (this.resultT >= 0) return;
     const g = this.logic;
     const k = e.key.toUpperCase();
+    this.held.add(k);
+    if (this.jobKey(g, e, k)) return;
     if (g instanceof FilingGame && ['1', '2', '3'].includes(k)) g.file(Number(k) - 1);
     else if (g instanceof DataEntryGame && /^[A-Z]$/.test(k)) g.key(k);
     else if (g instanceof SkillCheckGame && e.key === ' ') g.hit();
@@ -225,6 +308,71 @@ export class MinigameScene extends Phaser.Scene {
     }
   }
 
+  private onKeyUp(e: KeyboardEvent): void {
+    this.held.delete(e.key.toUpperCase());
+  }
+
+  /** Keys for the job tasks (PR #15's wiring table). True when the key was theirs. */
+  private jobKey(g: MinigameLogic | null, e: KeyboardEvent, k: string): boolean {
+    const n = /^[1-9]$/.test(k) ? Number(k) - 1 : -1;
+    if (g instanceof DiagnoseGame) {
+      if (n >= 0) g.pick(n);
+    } else if (g instanceof BoltTorqueGame) {
+      if (e.key === ' ') g.hit();
+    } else if (g instanceof TyreChangeGame) {
+      const d = ARROWS[k];
+      if (d) g.press(d);
+    } else if (g instanceof ResprayGame) {
+      if (e.key === 'Enter') g.finish();
+    } else if (g instanceof ChopGame) {
+      if (e.key === ' ') g.swing();
+    } else if (g instanceof LoadGame) {
+      if (k === 'ARROWLEFT' || k === 'A') g.move(-1);
+      else if (k === 'ARROWRIGHT' || k === 'D') g.move(1);
+      else if (k === 'W' || k === 'ARROWUP') g.turn();
+      else if (e.key === ' ' || k === 'S' || k === 'ARROWDOWN') g.drop();
+    } else if (g instanceof RouteGame) {
+      if (n >= 0) g.pick(n);
+    } else if (g instanceof StampSignGame) {
+      if (e.key === ' ') g.press();
+    } else if (g instanceof MeetingGame) {
+      if (n >= 0) g.choose(n);
+    } else return false;
+    if (e.key === ' ' || k.startsWith('ARROW')) e.preventDefault?.();
+    return true;
+  }
+
+  /** Clicks on the job panels' answers, the load bed and the respray door. */
+  private jobClick(g: MinigameLogic | null, q: { x: number; y: number }, x: number, y: number): boolean {
+    if (g instanceof DiagnoseGame) {
+      for (const k of [0, 1, 2, 3]) if (this.inRect(q, diagnoseOption(x, y, k))) g.pick(k);
+    } else if (g instanceof RouteGame) {
+      for (const k of [0, 1, 2]) if (this.inRect(q, routeOption(x, y, k))) g.pick(k);
+    } else if (g instanceof MeetingGame) {
+      for (const k of [0, 1, 2]) if (this.inRect(q, meetingReply(x, y, k))) g.choose(k);
+    } else if (g instanceof LoadGame) {
+      const bed = loadBed(x, y, g);
+      if (this.inRect(q, { x: bed.x, y: bed.y - 3 * LOAD_CELL, w: bed.w, h: bed.h + 3 * LOAD_CELL })) {
+        g.moveTo(Math.floor((q.x - bed.x) / LOAD_CELL));
+        g.drop();
+      }
+    } else if (g instanceof ResprayGame) {
+      this.pointerHeld = true;
+      this.aimRespray(g, q);
+    } else if (g instanceof BoltTorqueGame) g.hit();
+    else if (g instanceof ChopGame) {
+      if (this.inRect(q, chopMeter(x, y))) g.swing();
+    } else if (g instanceof StampSignGame) g.press();
+    else return false;
+    return true;
+  }
+
+  private aimRespray(g: ResprayGame, q: { x: number; y: number }): void {
+    const { x, y } = this.pos;
+    const a = resprayArea(x, y, g);
+    g.aim((q.x - a.x) / a.w, (q.y - a.y) / a.h);
+  }
+
   private buy(k: number): void {
     const req = this.req;
     if (req.kind !== 'shop') return;
@@ -245,7 +393,7 @@ export class MinigameScene extends Phaser.Scene {
   private onDown(p: Phaser.Input.Pointer): void {
     const q = this.ui(p);
     const { x, y } = this.pos;
-    const P = PANEL_SIZE[this.kind];
+    const P = SIZES[this.kind];
     // the top strip drags the panel
     if (this.inRect(q, { x, y, w: P.w, h: DRAG_STRIP })) {
       this.panelDrag = { sx: q.x, sy: q.y, ox: x - this.baseX, oy: y - this.baseY };
@@ -253,6 +401,7 @@ export class MinigameScene extends Phaser.Scene {
     }
     if (this.resultT >= 0) return;
     const g = this.logic;
+    if (this.jobClick(g, q, x, y)) return;
     if (g instanceof FilingGame && !g.done) {
       const L = filingLayout(x, y, g, null);
       if (this.inRect(q, L.paper))
@@ -296,6 +445,11 @@ export class MinigameScene extends Phaser.Scene {
       });
       return;
     }
+    if (this.logic instanceof ResprayGame && this.pointerHeld) this.aimRespray(this.logic, q);
+    else if (this.logic instanceof LoadGame) {
+      const bed = loadBed(this.pos.x, this.pos.y, this.logic);
+      if (q.x >= bed.x && q.x < bed.x + bed.w) this.logic.moveTo(Math.floor((q.x - bed.x) / LOAD_CELL));
+    }
     if (this.stackDrag) {
       this.stackDrag.x = q.x;
       this.stackDrag.y = q.y;
@@ -311,6 +465,7 @@ export class MinigameScene extends Phaser.Scene {
   }
 
   private onUp(p: Phaser.Input.Pointer): void {
+    this.pointerHeld = false;
     if (this.panelDrag) {
       // keep the clamped spot, so a panel pushed against an edge comes straight back when dragged again
       const { x, y } = this.pos;
@@ -342,6 +497,13 @@ export class MinigameScene extends Phaser.Scene {
     this.clock += dt;
     if (this.message) this.message.t += dt;
     const g = this.logic;
+    if (g instanceof ResprayGame && !g.done) {
+      const h = this.held;
+      const dx = (h.has('ARROWRIGHT') || h.has('D') ? 1 : 0) - (h.has('ARROWLEFT') || h.has('A') ? 1 : 0);
+      const dy = (h.has('ARROWDOWN') || h.has('S') ? 1 : 0) - (h.has('ARROWUP') || h.has('W') ? 1 : 0);
+      if (dx || dy) g.move(dx, dy, dt);
+      g.spray(this.pointerHeld || h.has(' '));
+    }
     if (g) {
       // a held paper doesn't fall
       if (g instanceof FilingGame && this.paperDrag) {
@@ -387,6 +549,15 @@ export class MinigameScene extends Phaser.Scene {
       if (d && !g.done) drawHeldStack(s, d.x, d.y, g.stacks[d.slot]!.dyed);
     } else if (req.kind === 'search' && g instanceof SearchGame)
       drawSearch(s, x, y, g, req.label, this.clock);
+    else if (g instanceof DiagnoseGame && 'task' in req) drawDiagnose(s, x, y, g, req.task);
+    else if (g instanceof BoltTorqueGame && 'task' in req) drawBoltTorque(s, x, y, g, req.task);
+    else if (g instanceof TyreChangeGame && 'task' in req) drawTyreChange(s, x, y, g, req.task);
+    else if (g instanceof ResprayGame && 'task' in req) drawRespray(s, x, y, g, req.task);
+    else if (g instanceof ChopGame && 'task' in req) drawChop(s, x, y, g, req.task);
+    else if (g instanceof LoadGame && 'task' in req) drawLoad(s, x, y, g, req.task);
+    else if (g instanceof RouteGame && 'task' in req) drawRoute(s, x, y, g, req.task);
+    else if (g instanceof StampSignGame && 'task' in req) drawStampSign(s, x, y, g, req.task);
+    else if (g instanceof MeetingGame && 'task' in req) drawMeeting(s, x, y, g, req.task);
     else if (req.kind === 'shop')
       drawShop(s, x, y, {
         title: req.title,
