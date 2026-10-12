@@ -106,7 +106,8 @@ describe('panel layouts never overlap', () => {
   it('lockpick, hotwire and money count', () => {
     const l = new SkillCheckGame(new Rng(3), 4);
     l.noise = 1;
-    check('lockpick', (s) => drawLockpick(s, X, Y, l, 4, 'NO TOOL'));
+    check('lockpick', (s) => drawLockpick(s, X, Y, l, 4, 'CAR DOOR', 'basic', 10));
+    check('lockpick', (s) => drawLockpick(s, X, Y, l, 0, 'TRUNK'));
     const h = new HotwireGame(new Rng(4));
     h.pickLeft(0);
     h.sparks = 2;
@@ -157,9 +158,9 @@ describe('panel layouts never overlap', () => {
   it('the car readout and the driving hints', () => {
     check('hud', (s) => {
       topLeft(s, 6, 6, { ammo: '-/-', label: 'UNARMED', hp: 1, armor: 0 });
-      vehiclePanel(s, 6, 46, { fuel: 0.1, health: 0.2, speed: 1 });
-      objective(s, 320, 340, "SELL THE CAR AT MARLO'S TOW & SALVAGE");
-      hintKeys(s, 634 - hintKeysWidth(DRIVE_HINTS) + 8, 340, DRIVE_HINTS);
+      vehiclePanel(s, 6, 60, { fuel: 0.1, health: 0.2, speed: 1 });
+      objective(s, 320, 336, "SELL THE CAR AT MARLO'S TOW & SALVAGE");
+      hintKeys(s, 634 - hintKeysWidth(DRIVE_HINTS) + 10, 316, DRIVE_HINTS);
     });
   });
 
@@ -168,9 +169,16 @@ describe('panel layouts never overlap', () => {
       topLeft(s, 6, 6, { ammo: '-/-', label: 'UNARMED', hp: 0.5, armor: 0.2 });
       stars(s, 320, 6, 5);
       topRight(s, 634, 6, { day: 'WED', clock: '23:59', clean: '99,999', dirty: '99,999', night: true });
-      objective(s, 320, 340, 'DO 3 MORE TASKS: FILING CABINETS OR YOUR DESK');
-      toast(s, 634, 308, 'MS. HOLLIS', 'PROMOTED TO ANALYST! +$250 BONUS. HERE IS YOUR KEY CARD.');
-      hintKeys(s, 500, 340, [
+      objective(s, 320, 336, 'DO 3 MORE TASKS: FILING CABINETS OR YOUR DESK');
+      toast(
+        s,
+        634,
+        280,
+        'MS. HOLLIS',
+        'PROMOTED TO ANALYST! +$250 BONUS. HERE IS YOUR KEY CARD.',
+        'face/hollis',
+      );
+      hintKeys(s, 520, 316, [
         ['E', 'USE'],
         ['TAB', 'NEXT'],
       ]);

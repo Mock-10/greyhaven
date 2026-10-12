@@ -10,11 +10,11 @@ export interface MenuRow {
   enabled: boolean;
 }
 
-export const MENU_PANEL = { w: 260, h: 176 };
-export const MENU_ROW_H = 16;
+export const MENU_PANEL = { w: 360, h: 236 };
+export const MENU_ROW_H = 19;
 
 export function menuRow(x: number, y: number, k: number): { x: number; y: number; w: number; h: number } {
-  return { x: x + 8, y: y + 26 + k * MENU_ROW_H, w: MENU_PANEL.w - 16, h: MENU_ROW_H - 2 };
+  return { x: x + 8, y: y + 32 + k * MENU_ROW_H, w: MENU_PANEL.w - 16, h: MENU_ROW_H - 2 };
 }
 
 export function drawMenu(
@@ -31,17 +31,17 @@ export function drawMenu(
   const { w, h } = MENU_PANEL;
   plate(s, x, y, w, h, C.EDGE, 0.96);
   text(s, x + 8, y + 7, title, C.GOLD, C.INK, 2);
-  text(s, x + w - 8 - textWidthPx(right), y + 9, right, C.MUTED);
+  text(s, x + w - 8 - textWidthPx(right), y + 11, right, C.MUTED);
   rows.forEach((r, k) => {
     const b = menuRow(x, y, k);
     if (k === selected) plate(s, b.x, b.y, b.w, b.h, r.enabled ? C.EDGE : C.LAVLT2, 0.9);
     else for (let gx = b.x + 2; gx < b.x + b.w - 2; gx += 2) px(s, gx, b.y + b.h - 1, C.PLATE_HI);
-    text(s, b.x + 5, b.y + 5, r.label, r.enabled ? C.CREAM : C.MUTED);
-    if (r.detail) text(s, b.x + b.w - 5 - textWidthPx(r.detail), b.y + 5, r.detail, C.MUTED);
+    text(s, b.x + 6, b.y + 5, r.label, r.enabled ? C.CREAM : C.MUTED);
+    if (r.detail) text(s, b.x + b.w - 6 - textWidthPx(r.detail), b.y + 5, r.detail, C.MUTED);
   });
-  if (message) text(s, x + 8, y + h - 33, message, C.SAGE4);
-  if (footer) text(s, x + 8, y + h - 24, footer, C.MUTED);
-  hintKeys(s, x + 8, y + h - 13, [
+  if (message) text(s, x + 8, y + h - 42, message, C.SAGE4);
+  if (footer) text(s, x + 8, y + h - 30, footer, C.MUTED);
+  hintKeys(s, x + 8, y + h - 16, [
     ['ENTER', 'CHOOSE'],
     ['ESC', 'BACK'],
   ]);

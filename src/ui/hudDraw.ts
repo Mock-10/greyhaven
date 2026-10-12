@@ -2,7 +2,8 @@
 // the spec"). They draw into an RGBA pixel buffer at 1 UI pixel per pixel; the HUD scene shows that
 // buffer scaled by a whole number. Pure code (no Phaser), so it can be unit tested.
 
-import { textBits } from './pixelFont';
+import { fontHeight, textBits, type FontId } from './pixelFont';
+import { icon, type IconName } from './icons';
 
 export type RGB = readonly [number, number, number];
 
@@ -49,9 +50,22 @@ export interface DrawnRect {
   w: number;
   h: number;
   what: string;
+  /** Drawn on purpose over a picture (a count badge on an icon): may overlap icons, never text. */
+  over?: boolean;
 }
 
 let audit: DrawnRect[] | null = null;
+
+/** Record a drawn rect in the running audit (icons drawn by ui/icons.ts). */
+export function recordRect(r: DrawnRect): void {
+  audit?.push(r);
+}
+
+/** Mark the last recorded rect as a deliberate overlay on a picture (a badge). */
+export function markLastOver(): void {
+  const last = audit?.at(-1);
+  if (last) last.over = true;
+}
 
 /** Start recording every text and icon drawn; `endAudit` returns them. */
 export function beginAudit(): void {
@@ -71,6 +85,8 @@ export function overlaps(rects: readonly DrawnRect[]): [DrawnRect, DrawnRect][] 
     for (let j = i + 1; j < rects.length; j++) {
       const a = rects[i] as DrawnRect;
       const b = rects[j] as DrawnRect;
+      const badgeOnIcon = (a.over && b.what.startsWith('icon')) || (b.over && a.what.startsWith('icon'));
+      if (badgeOnIcon) continue;
       if (a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h) out.push([a, b]);
     }
   return out;
@@ -176,7 +192,8 @@ export function sprite(
   });
 }
 
-/** Pixel-font text (hud.py draw_text), with an optional 1 px drop shadow; returns the width. */
+/** Pixel-font text (hud.py draw_text), with an optional 1 px drop shadow; returns the width. The body font is the
+ *  5 × 7 one (UI redesign 2026-10-12); `small` is the old 3 × 5 font for tiny captions. */
 export function text(
   s: Surface,
   x: number,
@@ -185,8 +202,9 @@ export function text(
   col: RGB,
   shadow?: RGB,
   scale = 1,
+  font: FontId = 'body',
 ): number {
-  const bits = textBits(str);
+  const bits = textBits(str, font);
   const w = (bits[0] as boolean[]).length;
   const put = (dx: number, dy: number, c: RGB) => {
     bits.forEach((row, j) =>
@@ -199,12 +217,55 @@ export function text(
   };
   if (shadow) put(0, 1, shadow);
   put(0, 0, col);
-  audit?.push({ x, y, w: w * scale, h: 5 * scale + (shadow ? 1 : 0), what: `text "${str}"` });
+  audit?.push({ x, y, w: w * scale, h: fontHeight(font) * scale + (shadow ? 1 : 0), what: `text "${str}"` });
   return w * scale;
 }
 
-export function textWidthPx(str: string, scale = 1): number {
-  return (textBits(str)[0] as boolean[]).length * scale;
+/** Small-font text (3 × 5), for captions. */
+export function small(s: Surface, x: number, y: number, str: string, col: RGB, shadow?: RGB): number {
+  return text(s, x, y, str, col, shadow, 1, 'small');
+}
+
+export function textWidthPx(str: string, scale = 1, font: FontId = 'body'): number {
+  return (textBits(str, font)[0] as boolean[]).length * scale;
+}
+
+/** Height of a line of text in a font, at a scale. */
+export const LINE = fontHeight('body');
+
+/** Split text into lines no wider than `maxW` pixels, at spaces. */
+export function wrapPx(str: string, maxW: number, font: FontId = 'body'): string[] {
+  const out: string[] = [];
+  let line = '';
+  for (const word of str.split(' ')) {
+    const next = line ? `${line} ${word}` : word;
+    if (line && textWidthPx(next, 1, font) > maxW) {
+      out.push(line);
+      line = word;
+    } else line = next;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+/** A sprite drawn at a whole-number scale. */
+export function spriteScaled(
+  s: Surface,
+  x: number,
+  y: number,
+  rows: readonly string[],
+  pal: Record<string, RGB | null>,
+  scale: number,
+): void {
+  audit?.push({ x, y, w: (rows[0] ?? '').length * scale, h: rows.length * scale, what: 'icon' });
+  rows.forEach((row, j) => {
+    [...row].forEach((ch, i) => {
+      const c = pal[ch];
+      if (ch === '.' || !c) return;
+      for (let sy = 0; sy < scale; sy++)
+        for (let sx = 0; sx < scale; sx++) px(s, x + i * scale + sx, y + j * scale + sy, c);
+    });
+  });
 }
 
 // ------------------------------------------------------------------ icons (hud.py)
@@ -229,347 +290,131 @@ export const STAR_PAL: Record<string, RGB> = {
   e: [92, 79, 98],
   w: C.GOLD_HI,
 };
-export const ICON_CLEAN = [
-  '#########',
-  '#ccccccc#',
-  '#c.ccc.c#',
-  '#cc$$$cc#',
-  '#c.ccc.c#',
-  '#ccccccc#',
-  '#########',
-];
-export const ICON_DIRTY = [
-  '#########',
-  '#rrrrrrr#',
-  '#r.rrr.r#',
-  '#rr$$$rr#',
-  '#r.rrr.r#',
-  '#rrrrrrr#',
-  '#########',
-];
-export const ICON_PAL: Record<string, RGB | null> = {
-  '#': C.INK,
-  c: C.KHAKI4,
-  r: C.RED3,
-  $: C.SAGE1,
-  '.': null,
-};
 // shop item icons, 14 x 13 (hud.py ITEM_*). No gold: gold is reserved for valuables and interactables.
-export const ITEM_SODA = [
-  '....######....',
-  '...#ssssss#...',
-  '...#wwwwwW#...',
-  '...#rrrrrR#...',
-  '...#rrrrrR#...',
-  '...#wwwwwW#...',
-  '...#wrrwwW#...',
-  '...#wwwwwW#...',
-  '...#rrrrrR#...',
-  '...#rrrrrR#...',
-  '...#rrrrrR#...',
-  '...#ssssss#...',
-  '....######....',
-];
-export const ITEM_CHIPS = [
-  '..##########..',
-  '..#kKkKkKkK#..',
-  '..#kkkkkkkk#..',
-  '.#kkkkkkkkkk#.',
-  '.#krrrrrrrrk#.',
-  '.#krwwwwwwrk#.',
-  '.#krwyywwwrk#.',
-  '.#krwwyyywrk#.',
-  '.#krrrrrrrrk#.',
-  '.#kkkkkkkkkk#.',
-  '.#kkkkkkkkKK#.',
-  '.#kkkkkkkKKK#.',
-  '..##########..',
-];
-export const ITEM_SANDWICH = [
-  '..............',
-  '..##..........',
-  '..#b##........',
-  '..#bbb##......',
-  '..#bbbbb##....',
-  '..#bbbbbbb##..',
-  '..#gGgGgGgGg#.',
-  '..#tTtTtTtTtt#',
-  '..#bbbbbbbbbb#',
-  '..#BBBBBBBBBB#',
-  '..############',
-  '..............',
-  '..............',
-];
-export const ITEM_FUEL = [
-  '...######.....',
-  '...#....#.....',
-  '...######.....',
-  '..#rrrrrrr#...',
-  '..#rRRRRRr##..',
-  '..#rRrrrRr#s#.',
-  '..#rrRrRrr#s#.',
-  '..#rrrRrrr##..',
-  '..#rrRrRrr#...',
-  '..#rRrrrRr#...',
-  '..#rRRRRRr#...',
-  '..#rrrrrrr#...',
-  '..#########...',
-];
-export const ITEM_FIRST_AID = [
-  '....####......',
-  '...#....#.....',
-  '.############.',
-  '.#wwwwwwwwwwW#',
-  '.#wwwwrrwwwwW#',
-  '.#wwwwrrwwwwW#',
-  '.#wwrrrrrrwwW#',
-  '.#wwrrrrrrwwW#',
-  '.#wwwwrrwwwwW#',
-  '.#wwwwrrwwwwW#',
-  '.#WWWWWWWWWWW#',
-  '.############.',
-  '..............',
-];
-export const ITEM_LOCKPICKS = [
-  '..............',
-  '..........##..',
-  '.........#ss#.',
-  '........#ss#..',
-  '.......#ss#...',
-  '......#ss#....',
-  '.....#ss#.##..',
-  '....#ss##ss#..',
-  '...#ss#ss#....',
-  '..#kk#ss#.....',
-  '.#kK#ss#......',
-  '.#K##s#.......',
-  '..#..#........',
-];
-export const ITEM_TOOLBOX = [
-  '..............',
-  '.....####.....',
-  '....#....#....',
-  '.############.',
-  '.#rrrrrrrrrr#.',
-  '.#rRRRRRRRRr#.',
-  '.############.',
-  '.#rrrr##rrrr#.',
-  '.#rrrr#s#rrr#.',
-  '.#rrrrrrrrrr#.',
-  '.#RRRRRRRRRR#.',
-  '.############.',
-  '..............',
-];
-export const ITEM_REPAIR = [
-  '..............',
-  '..##......##..',
-  '..#s#....#s#..',
-  '...#s#..#s#...',
-  '....#s##s#....',
-  '.....#ss#.....',
-  '.....#ss#.....',
-  '....#s##s#....',
-  '...#k#..#k#...',
-  '..#kK#..#kK#..',
-  '..#K#....#K#..',
-  '..##......##..',
-  '..............',
-];
-export const ITEM_PHONE = [
-  '....######....',
-  '...#ssssss#...',
-  '...#gGgGgG#...',
-  '...#GgGgGg#...',
-  '...#gGgGgG#...',
-  '...#GgGgGg#...',
-  '...#gGgGgG#...',
-  '...#GgGgGg#...',
-  '...#gGgGgG#...',
-  '...#ssssss#...',
-  '...#ss##ss#...',
-  '...#ssssss#...',
-  '....######....',
-];
-export const ITEM_WALLET = [
-  '..............',
-  '..............',
-  '.############.',
-  '.#BBBBBBBBBB#.',
-  '.#yyyyyyyyyy#.',
-  '.#yyyyyy####..',
-  '.#yyyyy#kkk#..',
-  '.#yyyyy#kkk#..',
-  '.#yyyyyy####..',
-  '.#yyyyyyyyyy#.',
-  '.#BBBBBBBBBB#.',
-  '.############.',
-  '..............',
-];
-export const ITEM_CASH = [
-  '..............',
-  '..............',
-  '..............',
-  '.############.',
-  '.#gggggggggg#.',
-  '.#gGGggggGGg#.',
-  '.#ggggwwgggg#.',
-  '.#ggggwwgggg#.',
-  '.#gGGggggGGg#.',
-  '.#gggggggggg#.',
-  '.############.',
-  '..............',
-  '..............',
-];
-export const ITEM_WATCH = [
-  '.....####.....',
-  '.....#kk#.....',
-  '....######....',
-  '...#oooooo#...',
-  '..#oowwwwoo#..',
-  '..#owwwKwwo#..',
-  '..#owwKKwwo#..',
-  '..#owwwwwwo#..',
-  '..#oowwwwoo#..',
-  '...#oooooo#...',
-  '....######....',
-  '.....#kk#.....',
-  '.....####.....',
-];
-export const ITEM_JUNK = [
-  '..............',
-  '..............',
-  '...########...',
-  '..#bbbbbbbb#..',
-  '..#bBBbbbbb#..',
-  '..##########..',
-  '..#bbbbbbbb#..',
-  '..#bbbBBbbb#..',
-  '..#bbbbbbbb#..',
-  '..#BBBBBBBB#..',
-  '..##########..',
-  '..............',
-  '..............',
-];
-export const ITEM_PAL: Record<string, RGB | null> = {
-  '#': C.INK,
-  s: [168, 160, 170],
-  w: [238, 233, 232],
-  W: [188, 180, 188],
-  r: [185, 94, 94],
-  R: [152, 69, 79],
-  k: [185, 180, 140],
-  K: [131, 132, 89],
-  y: [187, 147, 129],
-  b: [201, 191, 176],
-  B: [187, 147, 129],
-  g: [147, 163, 135],
-  G: [98, 116, 98],
-  t: [185, 94, 94],
-  T: [152, 69, 79],
-  // gold is reserved for valuables (CLAUDE.md rule 2): the watch in a trunk
-  o: [214, 170, 82],
-  '.': null,
-};
-export const MOON = ['..###..', '.##....', '##.....', '##.....', '##.....', '.##....', '..###..'];
-export const SUN = ['#..#..#', '.#####.', '.#ooo#.', '##ooo##', '.#ooo#.', '.#####.', '#..#..#'];
-export const PHONE = ['#####', '#ccc#', '#ccc#', '#ccc#', '#ccc#', '#####', '##.##'];
-export const HEART = ['.#.#.', '#####', '#####', '.###.', '..#..'];
-export const SHIELD = ['#####', '#####', '#####', '.###.', '..#..'];
 export const HOME = ['...#...', '..#c#..', '.#ccc#.', '#ccccc#', '.#c#c#.', '.#c#c#.', '.#####.'];
 export const SHOP = ['#####', '#ggg#', '#g#g#', '#ggg#', '#####'];
 export const ARROW = ['...#...', '..#w#..', '.#www#.', '#wwwww#', '...w...', '...w...', '.......'];
 
 // ------------------------------------------------------------------ HUD panels (hud.py)
+export const VITALS = { w: 140, h: 50 };
+
+/** Weapon and vitals (top-left): the weapon label and ammo, health and armor as icons with bars. */
 export function topLeft(
   s: Surface,
   x: number,
   y: number,
   o: { ammo: string; label: string; hp: number; armor: number },
 ): void {
-  plate(s, x, y, 112, 36);
-  const [clip, reserve] = o.ammo.split('/') as [string, string];
-  const cw = text(s, x + 34, y + 7, clip, C.CREAM, C.INK, 2);
-  text(s, x + 26 + 12 + cw + 1, y + 12, `/${reserve}`, C.MUTED);
-  text(s, x + 108 - textWidthPx(o.label), y + 7, o.label, C.MUTED);
-  sprite(s, x + 5, y + 21, HEART, { '#': C.HP });
-  bar(s, x + 13, y + 21, 94, 5, o.hp, C.HP, C.HP_LO);
-  sprite(s, x + 5, y + 28, SHIELD, { '#': C.ARM });
-  bar(s, x + 13, y + 28, 94, 4, o.armor, C.ARM, C.ARM_LO, 2);
+  plate(s, x, y, VITALS.w, VITALS.h);
+  text(s, x + 6, y + 5, o.label, C.MUTED);
+  const ammo = o.ammo === '-/-' ? '' : o.ammo;
+  if (ammo) text(s, x + VITALS.w - 6 - textWidthPx(ammo), y + 5, ammo, C.CREAM, C.INK);
+  icon(s, x + 4, y + 15, 'hud/health');
+  bar(s, x + 23, y + 20, VITALS.w - 52, 7, o.hp, C.HP, C.HP_LO);
+  const hp = String(Math.round(o.hp * 100));
+  text(s, x + VITALS.w - 6 - textWidthPx(hp), y + 20, hp, C.CREAM, C.INK);
+  icon(s, x + 4, y + 32, 'hud/armor');
+  bar(s, x + 23, y + 37, VITALS.w - 52, 6, o.armor, C.ARM, C.ARM_LO, 2);
+  const ar = String(Math.round(o.armor * 100));
+  text(s, x + VITALS.w - 6 - textWidthPx(ar), y + 36, ar, C.MUTED, C.INK);
 }
 
+/** The five wanted stars at 2× (empty, wanted, or the flash frame while searching). */
 export function stars(s: Surface, cx: number, y: number, n: number, flash = false): void {
-  const w = 5 * 11 + 6;
-  plate(s, cx - Math.floor(w / 2) - 2, y, w + 4, 15);
+  const pitch = 22;
+  const w = 5 * pitch + 6;
+  const x0 = cx - Math.floor(w / 2);
+  plate(s, x0, y, w, 26);
   for (let k = 0; k < 5; k++) {
     let spr = k < n ? STAR_FILL : STAR_EMPTY;
     if (flash && k < n) spr = STAR_FLASH;
-    sprite(s, cx - Math.floor(w / 2) + 4 + k * 11, y + 3, spr, STAR_PAL);
+    spriteScaled(s, x0 + 5 + k * pitch, y + 4, spr, STAR_PAL, 2);
   }
 }
 
+export const CLOCK_PANEL = { w: 132, h: 58 };
+
+/** Day, clock and cash (top-right): a sun or moon, then clean and dirty cash with their bill icons. */
 export function topRight(
   s: Surface,
   xr: number,
   y: number,
   o: { day: string; clock: string; clean: string; dirty: string; night: boolean },
 ): void {
-  const w = 92;
+  const { w, h } = CLOCK_PANEL;
   const x = xr - w;
-  plate(s, x, y, w, 36);
-  sprite(s, x + 5, y + 4, o.night ? MOON : SUN, { '#': C.STONE5, o: C.GOLD });
-  text(s, x + 15, y + 5, o.day, C.MUTED);
-  text(s, x + 15 + textWidthPx(o.day) + 4, y + 5, o.clock, C.CREAM);
-  sprite(s, x + 5, y + 14, ICON_CLEAN, ICON_PAL);
-  text(s, x + 17, y + 15, `$${o.clean}`, C.CREAM, C.INK);
-  sprite(s, x + 5, y + 24, ICON_DIRTY, ICON_PAL);
-  text(s, x + 17, y + 25, `$${o.dirty}`, C.DIRTY, C.INK);
-  text(s, x + w - 4 - textWidthPx('DIRTY'), y + 25, 'DIRTY', C.DIRTY_LABEL);
-  text(s, x + w - 4 - textWidthPx('CLEAN'), y + 15, 'CLEAN', C.CLEAN_LABEL);
+  plate(s, x, y, w, h);
+  icon(s, x + 4, y + 3, o.night ? 'hud/moon' : 'hud/sun');
+  text(s, x + 24, y + 7, o.day, C.MUTED);
+  text(s, x + 24 + textWidthPx(o.day) + 5, y + 7, o.clock, C.CREAM);
+  icon(s, x + 4, y + 21, 'hud/clean');
+  text(s, x + 24, y + 25, `$${o.clean}`, C.CREAM, C.INK);
+  small(s, x + w - 5 - textWidthPx('CLEAN', 1, 'small'), y + 26, 'CLEAN', C.CLEAN_LABEL);
+  icon(s, x + 4, y + 38, 'hud/dirty');
+  text(s, x + 24, y + 42, `$${o.dirty}`, C.DIRTY, C.INK);
+  small(s, x + w - 5 - textWidthPx('DIRTY', 1, 'small'), y + 43, 'DIRTY', C.DIRTY_LABEL);
 }
 
 export function objective(s: Surface, cx: number, y: number, str: string): void {
-  const w = textWidthPx(str) + 18;
+  const w = textWidthPx(str) + 24;
   const x = cx - Math.floor(w / 2);
-  plate(s, x, y, w, 13);
-  sprite(s, x + 4, y + 4, ['#..', '##.', '###', '##.', '#..'], { '#': C.GOLD });
-  text(s, x + 12, y + 4, str, C.CREAM);
+  plate(s, x, y, w, 17);
+  spriteScaled(s, x + 6, y + 5, ['#..', '##.', '###', '##.', '#..'], { '#': C.GOLD }, 1);
+  text(s, x + 15, y + 5, str, C.CREAM);
 }
 
-/** Phone message (hud.py hud_toast); `slide` (0–1) moves it off the right edge as it leaves. */
-export function toast(s: Surface, xr: number, y: number, who: string, str: string, slide = 0): void {
-  const w = Math.max(textWidthPx(who), textWidthPx(str)) + 22;
+export const TOAST_MAX_W = 250;
+
+/** The picture a message shows: a portrait for people, an object for services, a phone otherwise. */
+export function senderIcon(who: string, icons: Readonly<Record<string, IconName>>): IconName {
+  return icons[who] ?? 'app/messages';
+}
+
+/** Phone message (hud.py hud_toast, redesigned): the sender's picture, the sender in gold, up to two lines of text.
+ *  `slide` (0–1) moves it off the right edge as it leaves. Returns its height. */
+export function toast(
+  s: Surface,
+  xr: number,
+  y: number,
+  who: string,
+  str: string,
+  pic: IconName,
+  slide = 0,
+): number {
+  const lines = wrapPx(str, TOAST_MAX_W - 52).slice(0, 2);
+  const w = Math.max(textWidthPx(who), ...lines.map((l) => textWidthPx(l))) + 52;
+  const h = 40;
   const x = xr - w + Math.round(slide * (w + 8));
-  plate(s, x, y, w, 20, C.LAVLT2);
-  sprite(s, x + 5, y + 5, PHONE, { '#': C.INK, c: C.GLASS4 });
-  text(s, x + 14, y + 4, who, C.GOLD);
-  text(s, x + 14, y + 11, str, C.CREAM);
+  plate(s, x, y, w, h, C.LAVLT2);
+  blend(s, y + 3, y + h - 3, x + 3, x + 37, C.INK, 0.7);
+  icon(s, x + 4, y + 4, pic);
+  text(s, x + 43, y + 5, who, C.GOLD);
+  lines.forEach((l, k) => text(s, x + 43, y + 16 + k * 10, l, C.CREAM));
+  return h;
 }
 
-/** Gold keycaps with muted labels (hud.py hud_hint_keys). Returns the strip width. */
+/** Gold keycaps with muted labels (hud.py hud_hint_keys, body font). Returns the strip width. */
 export function hintKeys(s: Surface, x: number, y: number, items: readonly [string, string][]): number {
   let cx = x;
   for (const [key, label] of items) {
-    const kw = textWidthPx(key) + 4;
-    blend(s, y, y + 9, cx, cx + kw, C.GOLD);
-    blend(s, y + 8, y + 9, cx, cx + kw, C.GOLD_LO);
-    text(s, cx + 2, y + 2, key, C.PLATE);
-    text(s, cx + kw + 3, y + 2, label, C.MUTED, C.INK);
-    cx += kw + 6 + textWidthPx(label) + 8;
+    const kw = textWidthPx(key) + 6;
+    blend(s, y, y + 11, cx, cx + kw, C.GOLD);
+    blend(s, y + 10, y + 11, cx, cx + kw, C.GOLD_LO);
+    text(s, cx + 3, y + 2, key, C.PLATE);
+    text(s, cx + kw + 4, y + 2, label, C.MUTED, C.INK);
+    cx += kw + 4 + textWidthPx(label) + 10;
   }
   return cx - x;
 }
 
 export function hintKeysWidth(items: readonly [string, string][]): number {
-  return items.reduce((w, [k, l]) => w + textWidthPx(k) + 4 + 6 + textWidthPx(l) + 8, 0);
+  return items.reduce((w, [k, l]) => w + textWidthPx(k) + 6 + 4 + textWidthPx(l) + 10, 0);
 }
 
 // ------------------------------------------------------------------ car readout (milestone 3)
-export const PUMP = ['###.', '#.#.', '####', '###.', '###.'];
-export const WRENCH = ['#.#..', '###..', '.##..', '..##.', '...##'];
-export const GAUGE = ['.###.', '#...#', '#.#.#', '#..##', '.###.'];
-export const CAR_PANEL = { w: 112, h: 33 };
+export const CAR_PANEL = { w: 140, h: 50 };
 
-/** Fuel, condition and speed under the vitals panel while driving. Low fuel and heavy damage turn red. */
+/** Type, speed, fuel and condition under the vitals panel while driving. Low fuel and heavy damage turn red. */
 export function vehiclePanel(
   s: Surface,
   x: number,
@@ -577,16 +422,15 @@ export function vehiclePanel(
   o: { type?: string; fuel: number; health: number; speed: number },
 ): void {
   plate(s, x, y, CAR_PANEL.w, CAR_PANEL.h);
-  text(s, x + 5, y + 4, o.type ?? 'SEDAN', C.CREAM);
+  text(s, x + 6, y + 5, o.type ?? 'SEDAN', C.CREAM);
   const pct = `${Math.round(o.speed * 100)}%`;
-  sprite(s, x + CAR_PANEL.w - 12 - textWidthPx(pct), y + 4, GAUGE, { '#': C.MUTED });
-  text(s, x + CAR_PANEL.w - 5 - textWidthPx(pct), y + 4, pct, C.MUTED);
+  text(s, x + CAR_PANEL.w - 6 - textWidthPx(pct), y + 5, pct, C.MUTED);
   const fuelLow = o.fuel < 0.15;
-  sprite(s, x + 5, y + 13, PUMP, { '#': fuelLow ? C.RED3 : C.GLASS4 });
-  bar(s, x + 13, y + 13, 94, 5, o.fuel, fuelLow ? C.RED3 : C.GLASS4, C.ARM_LO, 4);
+  icon(s, x + 4, y + 15, 'hud/fuel');
+  bar(s, x + 23, y + 20, CAR_PANEL.w - 29, 7, o.fuel, fuelLow ? C.RED3 : C.GLASS4, C.ARM_LO, 4);
   const hurt = o.health < 0.25;
-  sprite(s, x + 5, y + 22, WRENCH, { '#': hurt ? C.RED3 : C.SAGE4 });
-  bar(s, x + 13, y + 22, 94, 5, o.health, hurt ? C.RED3 : C.SAGE4, C.SAGE1);
+  icon(s, x + 4, y + 32, 'hud/condition');
+  bar(s, x + 23, y + 37, CAR_PANEL.w - 29, 6, o.health, hurt ? C.RED3 : C.SAGE4, C.SAGE1);
 }
 
 // ------------------------------------------------------------------ radar (hud.py draw_radar)

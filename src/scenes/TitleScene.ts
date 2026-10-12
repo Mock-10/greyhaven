@@ -35,10 +35,10 @@ export class TitleScene extends Phaser.Scene {
       const w = textWidth(text, scale);
       return pixelText(this, Math.round((width - w) / 2), Math.round(y), text, color, scale);
     };
-    const titleScale = 8 * z;
+    const titleScale = 6 * z;
     const cy = height / 2;
     const plateW = textWidth('DOUBLE LIFE', titleScale) + 24 * z;
-    const plateH = 5 * titleScale + 52 * z;
+    const plateH = 7 * titleScale + 52 * z;
     const plate = this.add
       .rectangle(
         Math.round((width - plateW) / 2),
@@ -51,9 +51,9 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0, 0)
       .setStrokeStyle(z, PAL.lav4);
     const title = center('DOUBLE LIFE', titleScale, cy - plateH / 2 - 8 * z + 10 * z, PAL.cream);
-    const sub = center('GREYHAVEN', 2 * z, cy - plateH / 2 + 5 * titleScale + 8 * z, PAL.lavlt5);
+    const sub = center('GREYHAVEN', 2 * z, cy - plateH / 2 + 7 * titleScale + 8 * z, PAL.lavlt5);
     const click = center('CLICK TO START', 2 * z, cy + plateH / 2 + 6 * z, PAL.white4);
-    const note = center('PHASE 1 - MILESTONE 1', z, height - 12 * z, PAL.lav5);
+    const note = center('PHASE 2 - ECONOMY AND CAREERS', z, height - 14 * z, PAL.lav5);
     this.tweens.add({ targets: click, alpha: 0.25, duration: 600, yoyo: true, repeat: -1, ease: 'Stepped' });
     this.items.push(dim, plate, title, sub, click, note);
   }

@@ -367,13 +367,13 @@ test('trunk looting: pick the trunk lock, grab the glinting items, dirty cash in
       timeout: 10_000,
     });
     if ((await page.evaluate(() => window.__DL__.minigame)) === 'lockpick') await playLockpick(page);
-    const next = await page.waitForFunction(
-      () => window.__DL__.minigame === 'search' || window.__DL__.minigame === null,
-      null,
-      { timeout: 20_000 },
-    );
-    await next.dispose();
-    if ((await page.evaluate(() => window.__DL__.minigame)) === 'search') break;
+    // after a picked lock the search panel opens a moment later; a slipped pick leaves no panel
+    const opened = await page
+      .waitForFunction(() => window.__DL__.minigame === 'search', null, { timeout: 8_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (opened) break;
+    await page.waitForFunction(() => window.__DL__.minigame === null, null, { timeout: 20_000 });
     await page.waitForTimeout(800);
   }
   await page.waitForFunction(
@@ -395,8 +395,10 @@ test('trunk looting: pick the trunk lock, grab the glinting items, dirty cash in
   });
   for (const cell of cells) {
     for (let k = 0; k < 12; k++) {
-      const g = await page.evaluate(() => window.__DL__.minigameState as { cursor: number; cols: number });
-      if (g.cursor === cell) break;
+      const g = await page.evaluate(
+        () => window.__DL__.minigameState as { cursor: number; cols: number; done: boolean } | null,
+      );
+      if (!g || g.done || g.cursor === cell) break;
       const sameRow = Math.floor(g.cursor / g.cols) === Math.floor(cell / g.cols);
       await page.keyboard.press(sameRow ? 'ArrowRight' : 'ArrowDown');
     }

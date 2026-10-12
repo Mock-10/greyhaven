@@ -4,6 +4,8 @@ import Phaser from 'phaser';
 import { BG_DAY, PAL } from '../config/constants';
 import { queueAtlases, registerAtlases } from '../assets/atlasLoader';
 import { registerPixelFont } from '../ui/bitmapFont';
+import { setIconSheet } from '../ui/icons';
+import uiIconsPng from '../../art/ui_icons.png';
 import type { Params } from '../debug/params';
 
 export class BootScene extends Phaser.Scene {
@@ -27,11 +29,22 @@ export class BootScene extends Phaser.Scene {
       bar.destroy();
     });
     queueAtlases(this.load);
+    this.load.image('ui_icons', uiIconsPng);
   }
 
   create(): void {
     registerAtlases(this.textures);
     registerPixelFont(this);
+    // the UI draws into pixel buffers: hand it the icon sheet's pixels once
+    const img = this.textures.get('ui_icons').getSourceImage() as HTMLImageElement;
+    const c = document.createElement('canvas');
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(img, 0, 0);
+      setIconSheet(img.width, ctx.getImageData(0, 0, img.width, img.height).data);
+    }
     const params = this.registry.get('params') as Params;
     this.scene.start('world', params);
     if (params.scene === 'title') this.scene.launch('title');

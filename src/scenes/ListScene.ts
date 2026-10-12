@@ -15,6 +15,8 @@ export interface ListRequest {
   root: () => ListPage;
   /** Called after every action, so the world's read-only hook shows the new balances while it is paused. */
   onChange?: () => void;
+  /** The time for the phone's status bar. */
+  clock?: () => string;
 }
 
 const TEX = 'list-canvas';
@@ -108,6 +110,7 @@ export class ListScene extends Phaser.Scene {
     const n = this.page.rows.length;
     if (e.key === 'Escape' || (e.key.toUpperCase() === 'P' && this.req.name === 'phone')) this.back();
     else if (e.key.toUpperCase() === 'I' && this.req.name === 'bag') this.close();
+    else if (this.page.layout === 'grid' && this.gridKey(e.key.toUpperCase(), n)) return;
     else if (e.key === 'ArrowDown' || e.key.toUpperCase() === 'S')
       this.select((this.selected + 1) % Math.max(1, n));
     else if (e.key === 'ArrowUp' || e.key.toUpperCase() === 'W')
@@ -116,11 +119,32 @@ export class ListScene extends Phaser.Scene {
     else if (/^[1-9]$/.test(e.key) && Number(e.key) <= n) this.choose(Number(e.key) - 1);
   }
 
+  /** Arrows (and WASD) on a grid of tiles move by column and by row. */
+  private gridKey(k: string, n: number): boolean {
+    const cols = listLayout(this.req.style, 0, 0, this.page, this.scroll).cols;
+    const step: Record<string, number> = {
+      ARROWRIGHT: 1,
+      D: 1,
+      ARROWLEFT: -1,
+      A: -1,
+      ARROWDOWN: cols,
+      S: cols,
+      ARROWUP: -cols,
+      W: -cols,
+    };
+    const d = step[k];
+    if (d === undefined) return false;
+    const next = this.selected + d;
+    if (next >= 0 && next < n) this.select(next);
+    return true;
+  }
+
   private select(k: number): void {
     this.selected = k;
-    const vis = listLayout(this.req.style, 0, 0, this.page, this.scroll).visible;
-    if (k < this.scroll) this.scroll = k;
-    if (k >= this.scroll + vis) this.scroll = k - vis + 1;
+    const L = listLayout(this.req.style, 0, 0, this.page, this.scroll);
+    if (k < this.scroll) this.scroll = this.page.layout === 'grid' ? k - (k % L.cols) : k;
+    if (k >= this.scroll + L.visible)
+      this.scroll = this.page.layout === 'grid' ? k - (k % L.cols) - L.visible + L.cols : k - L.visible + 1;
   }
 
   private choose(k: number): void {
@@ -170,7 +194,8 @@ export class ListScene extends Phaser.Scene {
     const { x, y } = this.pos;
     const L = listLayout(this.req.style, x, y, this.page, this.scroll);
     const k = L.rows.findIndex((r) => q.x >= r.x && q.x < r.x + r.w && q.y >= r.y && q.y < r.y + r.h);
-    return k < 0 ? -1 : this.scroll + k;
+    const start = this.page.layout === 'grid' ? Math.floor(this.scroll / L.cols) * L.cols : this.scroll;
+    return k < 0 ? -1 : start + k;
   }
 
   private onDown(p: Phaser.Input.Pointer): void {
@@ -184,9 +209,9 @@ export class ListScene extends Phaser.Scene {
   }
 
   private onWheel(_p: unknown, _o: unknown, _dx: number, dy: number): void {
-    const vis = listLayout(this.req.style, 0, 0, this.page, this.scroll).visible;
-    const max = Math.max(0, this.page.rows.length - vis);
-    this.scroll = Math.max(0, Math.min(max, this.scroll + Math.sign(dy)));
+    const L = listLayout(this.req.style, 0, 0, this.page, this.scroll);
+    const max = Math.max(0, this.page.rows.length - L.visible);
+    this.scroll = Math.max(0, Math.min(max, this.scroll + Math.sign(dy) * L.cols));
   }
 
   // ---------------------------------------------------------------- loop
@@ -216,6 +241,7 @@ export class ListScene extends Phaser.Scene {
       this.scroll,
       this.message?.text ?? null,
       this.stack.length > 1,
+      this.req.clock?.() ?? '',
     );
     const ctx = this.tex.getContext();
     const img = ctx.createImageData(s.width, s.height);
