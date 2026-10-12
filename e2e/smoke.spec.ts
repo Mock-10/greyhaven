@@ -554,7 +554,10 @@ test('the garage: the locker hands out coveralls, a mechanic shift runs its task
       g.grade = 'good';
     });
     await page.waitForFunction(() => window.__DL__.minigame === null, null, { timeout: 15_000 });
+    await page.waitForFunction((k) => window.__DL__.shiftDone.includes(k), kind);
   }
+  // the hook catches up with the shift on the next frame
+  await page.waitForFunction(() => window.__DL__.shiftDone.length === 3);
   expect(await page.evaluate(() => window.__DL__.shiftDone)).toEqual(['diagnose', 'boltTorque', 'respray']);
   await use(22, 14, 'garage:0');
   await page.waitForFunction(() => window.__DL__.bank > 0);
