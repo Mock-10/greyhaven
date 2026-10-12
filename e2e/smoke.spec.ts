@@ -937,3 +937,25 @@ test('the counterfeit press: build it, restock it, two days later count the fake
   await page.waitForFunction(() => window.__DL__.dirty > 2600);
   expect(problems).toEqual([]);
 });
+
+test('a Saltgate Union hit: rivals gather at your front door and shoot (Phase 5, docs/04)', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const problems = await boot(page, '?scene=world&zoom=3&time=21:00&x=574&y=2372');
+  await cheat(page, 'bank 40000');
+  await page.waitForFunction(() => window.__DL__.target === 'sale:linden10');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'sale');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('1');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  await cheat(page, 'hit');
+  await page.waitForFunction(() => (window.__DL__.rivals ?? 0) > 0);
+  await cheat(page, 'tp 640 2420');
+  const hp = await page.evaluate(() => window.__DL__.health);
+  await page.waitForFunction((h) => window.__DL__.health < h, hp, { timeout: 30_000 });
+  expect(problems).toEqual([]);
+});

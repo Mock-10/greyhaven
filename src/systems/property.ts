@@ -9,6 +9,7 @@ import { drawnWeapon, giveWeapon, selectSlot, type CombatState, type OwnedWeapon
 import { payClean } from './carService';
 import type { OpId, OpState } from './operations';
 import { createCrew, type CrewState } from './crew';
+import type { Hit } from './rivals';
 import { record, type Finance, type Money } from './finance';
 
 const P = () => BALANCE.property;
@@ -35,6 +36,8 @@ export interface PropertyState {
   apartment: Stash;
   /** Who's hired and who's at the bar (systems/crew.ts). */
   crew: CrewState;
+  /** Saltgate Union hits on your hideouts, under way (systems/rivals.ts). */
+  hits: Hit[];
 }
 
 export function emptyStash(): Stash {
@@ -42,7 +45,7 @@ export function emptyStash(): Stash {
 }
 
 export function createProperty(): PropertyState {
-  return { homes: [], taxOwed: 0, apartment: emptyStash(), crew: createCrew() };
+  return { homes: [], taxOwed: 0, apartment: emptyStash(), crew: createCrew(), hits: [] };
 }
 
 export function homeOf(p: PropertyState, id: HomeId): OwnedHome | null {

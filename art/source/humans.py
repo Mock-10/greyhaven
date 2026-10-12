@@ -7,7 +7,7 @@ S = 1.0   # overall scale: ~36px tall person (≈7.3 heads)
 def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night', 1.2),
           hair=('wood', 1.2), hair_style='short', sleeves='long', tie=False, shirt=None, hat=None,
           mask=False, hood=None, vest=None, case=False, bag=False, badge=False, jacket=False,
-          belt=True, walk=0.0, lower_skin=False, skin_ramp='skin', pose=None, held=None):
+          belt=True, walk=0.0, lower_skin=False, skin_ramp='skin', pose=None, held=None, armband=None):
     """Facing +x. Origin at the feet. `walk` in [-1,1] swings legs/arms.
 
     pose (optional, actions.py): a dict overriding joints after they are computed. Leg keys (hipL/R, kneeL/R,
@@ -213,6 +213,10 @@ def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night
         if belt:
             bl = (z > 19.5) & (z < 20.5)
             base = np.where(bl, base - 0.9, base)
+        if armband:
+            # a band round both upper arms (the Saltgate Union's red armbands, docs/04)
+            ab = (np.abs(y) > 4.3) & (z > 25.0) & (z < 26.6)
+            ramp = np.where(ab, RID[armband[0]], ramp); base = np.where(ab, armband[1], base)
         if badge:
             bg = (x > 1.8) & (y < -1.2) & (y > -2.6) & (z > 26.0) & (z < 27.4)
             ramp = np.where(bg, RID['gold'], ramp); base = np.where(bg, 3.8, base)
@@ -333,7 +337,13 @@ def cop(walk=0.0):
                  hat='cap', badge=True, jacket=True, walk=walk)
 
 
+def rival(walk=0.0):
+    """The Saltgate Union (docs/04 rivals): a grey peacoat with a red armband, dark trousers, cropped dark hair."""
+    return human(skin_tone=2.3, upper=('stone', 1.5), lower=('night', 1.6), shoes=('night', 1.0), hair=('night', 0.9),
+                 hair_style='short', jacket=True, armband=('red', 2.6), walk=walk)
+
+
 COSTUMES = {
     'office_worker': office_worker, 'masked_thief': masked_thief, 'road_worker': road_worker,
-    'civilian_a': civilian_a, 'civilian_b': civilian_b, 'police_officer': cop,
+    'civilian_a': civilian_a, 'civilian_b': civilian_b, 'police_officer': cop, 'rival': rival,
 }

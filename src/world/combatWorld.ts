@@ -13,11 +13,13 @@ import {
   blast,
   fire,
   hurt,
+  npcShot,
   policeMayShoot,
   policeShot,
   policeWeapon,
   reportCombat,
   rollDrop,
+  statsOf,
   swingHit,
   traceShot,
   type Box,
@@ -28,7 +30,7 @@ import {
   type Vitals,
 } from '../systems/combat';
 import { canSee, type WantedState } from '../systems/wanted';
-import { WEAPONS } from '../data/weapons';
+import { WEAPONS, type WeaponId } from '../data/weapons';
 
 export interface CombatPed {
   id: number;
@@ -41,6 +43,14 @@ export interface CombatCop {
   x: number;
   y: number;
   sprite: Phaser.GameObjects.Sprite;
+}
+
+/** A Saltgate Union rival (systems/rivals.ts) standing at a hideout's door with a gun. */
+export interface CombatRival {
+  x: number;
+  y: number;
+  sprite: Phaser.GameObjects.Sprite;
+  weapon: WeaponId;
 }
 
 export interface CombatHost {
@@ -58,6 +68,9 @@ export interface CombatHost {
   /** Police officers on foot, and taking one away when they go down. */
   cops(): CombatCop[];
   removeCop(sprite: Phaser.GameObjects.Sprite): void;
+  /** Rivals at a hideout hit (docs/04), and one going down. */
+  rivals(): CombatRival[];
+  rivalDown(sprite: Phaser.GameObjects.Sprite): void;
   /** Buildings and cars as ground boxes: they stop bullets and sight. */
   blockers(): Box[];
   buildings: readonly Box[];
@@ -123,6 +136,7 @@ export class CombatWorld {
     return [
       ...this.host.peds().map((p) => ({ id: `ped:${p.id}`, x: p.x, y: p.y, r })),
       ...this.host.cops().map((c, k) => ({ id: `cop:${k}`, x: c.x, y: c.y, r })),
+      ...this.host.rivals().map((c, k) => ({ id: `rival:${k}`, x: c.x, y: c.y, r })),
     ];
   }
 
@@ -173,7 +187,9 @@ export class CombatWorld {
 
   private damage(id: string, amount: number, angle: number): void {
     const [kind, key] = id.split(':') as [string, string];
-    const left = (this.hp.get(id) ?? (kind === 'cop' ? W().copHealth : W().pedHealth)) - amount;
+    const full =
+      kind === 'cop' ? W().copHealth : kind === 'rival' ? BALANCE.property.rivals.health : W().pedHealth;
+    const left = (this.hp.get(id) ?? full) - amount;
     this.hp.set(id, left);
     const w = this.host.wanted();
     if (kind === 'ped') {
@@ -184,6 +200,17 @@ export class CombatWorld {
         this.down(ped.sprite, ped.x, ped.y, angle);
         this.host.removePed(ped.id);
         this.hp.delete(id);
+      }
+    } else if (kind === 'rival') {
+      const rv = this.host.rivals()[Number(key)];
+      if (!rv) return;
+      this.bloodDrop(rv.x + Math.cos(angle) * 6, rv.y + Math.sin(angle) * 6);
+      if (left <= 0) {
+        this.down(rv.sprite, rv.x, rv.y, angle);
+        // rivals carry pistols and SMGs and drop them as loot (docs/04)
+        this.leaveDrop(rv.x, rv.y, rollDrop(rv.weapon, this.host.rng));
+        this.hp.delete(id);
+        this.host.rivalDown(rv.sprite);
       }
     } else {
       const cop = this.host.cops()[Number(key)];
@@ -297,6 +324,7 @@ export class CombatWorld {
     const w = this.host.wanted();
     if (w.stars === 0) this.shotFirst = false;
     if (!inside && policeMayShoot(w.stars, this.shotFirst)) this.copsShoot(dt, w);
+    if (!inside) this.rivalsShoot(dt);
     const B = W();
     for (const b of this.bodies) {
       b.t += dt;
@@ -329,6 +357,40 @@ export class CombatWorld {
       f.obj.destroy();
       return false;
     });
+  }
+
+  /** Rivals at a hit shoot at the player in sight and in range (docs/04), every so often. */
+  private rivalsShoot(dt: number): void {
+    const p = this.host.player();
+    const blockers = this.host.blockers();
+    const R = BALANCE.property.rivals;
+    for (const c of this.host.rivals()) {
+      const range = Math.min(statsOf(c.weapon).range, R.fireTiles) * TILE;
+      let t = (this.copCooldown.get(c.sprite) ?? this.host.rng.range(R.firstShot[0], R.firstShot[1])) - dt;
+      if (t <= 0) {
+        const d = Math.hypot(p.x - c.x, p.y - c.y);
+        if (d <= range && canSee(c, p, range / TILE, this.host.buildings)) {
+          const angle = Math.atan2(p.y - c.y, p.x - c.x);
+          const shot = npcShot(c.weapon, this.host.rng, angle);
+          const me: Target = { id: 'player', x: p.x, y: p.y, r: W().hitRadius };
+          const from = this.muzzle(c, angle);
+          this.flash(c, angle);
+          for (const a of shot.angles) {
+            const tr = traceShot(c, a, shot.range, [me], blockers);
+            this.tracer(from, tr.at);
+            if (tr.hit) {
+              this.bloodDrop(p.x, p.y);
+              if (hurt(this.host.vitals(), this.host.combat(), shot.damage * R.damageShare).down) {
+                this.host.playerDown();
+                return;
+              }
+            }
+          }
+        }
+        t = this.host.rng.range(R.shootEvery[0], R.shootEvery[1]);
+      }
+      this.copCooldown.set(c.sprite, t);
+    }
   }
 
   /** Officers on foot with the player in sight and in range fire every so often (docs/07). */

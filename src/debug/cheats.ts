@@ -16,11 +16,12 @@ export type Cheat =
   | { kind: 'heal' }
   | { kind: 'roadblock' }
   | { kind: 'rep'; rep: number }
+  | { kind: 'hit' }
   | { kind: 'gun'; weapon: string }
   | { kind: 'help' };
 
 export const CHEAT_HELP =
-  'CASH N · DIRTY N · BANK N · ITEM NAME N · TIME HH:MM · DAY N · RANK 1-5 · JOB NAME · STARS 0-5 · TP X Y · CAR MODEL [X Y DIR] · HEAL · GUN NAME · ROADBLOCK · REP N';
+  'CASH N · DIRTY N · BANK N · ITEM NAME N · TIME HH:MM · DAY N · RANK 1-5 · JOB NAME · STARS 0-5 · TP X Y · CAR MODEL [X Y DIR] · HEAL · GUN NAME · ROADBLOCK · REP N · HIT';
 
 const num = (s: string | undefined): number | null => {
   if (s === undefined || s.trim() === '') return null;
@@ -80,6 +81,8 @@ export function parseCheat(line: string): Cheat | { error: string } {
       return { kind: 'heal' };
     case 'roadblock':
       return { kind: 'roadblock' };
+    case 'hit':
+      return { kind: 'hit' };
     case 'rep':
       return typeof a[0] === 'number' && a[0] >= 0
         ? { kind: 'rep', rep: Math.floor(a[0]) }

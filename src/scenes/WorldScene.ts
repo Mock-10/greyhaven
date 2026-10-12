@@ -189,6 +189,8 @@ import { HOMES, HOME_IDS, PROPERTY_TYPES, type HomeId } from '../data/property';
 import { homeOf, stashAt } from '../systems/property';
 import { collect, nightlyRaids, runOps, startChop, stalled, type OpId } from '../systems/operations';
 import { candidatesFor } from '../systems/crew';
+import { nightlyHits, resolveHits, rivalDown } from '../systems/rivals';
+import { RivalCrew } from '../world/rivals';
 import {
   crewPage,
   garagePage,
@@ -777,6 +779,12 @@ export class WorldScene extends Phaser.Scene {
       removePed: (id) => this.life?.removePed(id),
       cops: () => (this.inside ? [] : (this.police?.officers ?? []).filter((o) => !o.inCar)),
       removeCop: (sp) => this.police?.removeOfficer(sp),
+      rivals: () => (this.inside ? [] : (this.rivals?.members ?? [])),
+      rivalDown: (sp) => {
+        const home = this.rivals?.down(sp);
+        if (home && rivalDown(this.state.property, home))
+          this.toast(HOMES[home].address, 'THE SALTGATE UNION IS BEATEN. THE BATCH IS SAFE.');
+      },
       blockers: () => this.shotBlockers(),
       buildings: this.buildingBoxes,
       crime: (stars, at, hear) => this.crime(stars, at, hear),
@@ -790,7 +798,16 @@ export class WorldScene extends Phaser.Scene {
       },
       playAction: (a) => this.actions.play(a, BALANCE.combatWorld.flashSeconds * 6),
     });
+    // the Saltgate Union's hits on your hideouts (docs/04): they wait on the front path
+    this.rivals = new RivalCrew(this, {
+      layer: this.objectLayer,
+      rng: this.rng,
+      place,
+      doorOf: (home) => this.map.zones?.find((z) => z.id === HOMES[home].door)?.npc ?? null,
+    });
   }
+
+  private rivals: RivalCrew | null = null;
 
   /** Police spike strips (docs/05 3★): driving over one bursts the tyres, unless they're level 2 (docs/08). */
   private spikesTick(): void {
@@ -1345,6 +1362,9 @@ export class WorldScene extends Phaser.Scene {
     msgs.push(
       ...runOps(st.property, st.minutes),
       ...nightlyRaids(st.property, st.calendarAt, st.minutes, risky, this.rng),
+      // the Saltgate Union (docs/04): new hits at night, and the hour running out on old ones
+      ...nightlyHits(st.property, st.calendarAt, st.minutes, tierFor(st.crime.rep), this.rng),
+      ...resolveHits(st.property, st.minutes),
     );
     st.calendarAt = st.minutes;
     for (const m of msgs) this.toast(m.who, m.text);
@@ -1657,6 +1677,18 @@ export class WorldScene extends Phaser.Scene {
       case 'rep':
         st.crime.rep = c.rep;
         break;
+      case 'hit': {
+        // a Saltgate Union hit on your first home, now (Phase 5 testing)
+        const home = st.property.homes[0];
+        if (home && !st.property.hits.length)
+          st.property.hits.push({
+            home: home.id,
+            op: home.addons.includes('chopBay') && !home.addons.includes('press') ? 'chopBay' : 'press',
+            until: st.minutes + BALANCE.property.rivals.defendMinutes,
+            left: BALANCE.property.rivals.count[1],
+          });
+        break;
+      }
       case 'roadblock': {
         // 3★ and a roadblock with its spike strip ahead of the driven car (Phase 4 testing)
         const car = this.drivenCar();
@@ -2031,6 +2063,8 @@ export class WorldScene extends Phaser.Scene {
     if (!this.isReference) {
       this.combatTick(dt);
       this.combatWorld?.update(dt, !!this.inside);
+      this.rivals?.sync(this.state.property.hits);
+      this.rivals?.update(this.state.player, !this.inside);
     }
     const k = this.keys;
     const car = this.drivenCar();
@@ -4858,6 +4892,8 @@ export class WorldScene extends Phaser.Scene {
     h.goods = this.state.goods.length;
     h.weapon = hudWeapon(this.state.combat);
     h.peds = (this.life?.peds ?? []).map((pv) => ({ x: pv.ped.x, y: pv.ped.y }));
+    h.rivals = this.rivals?.members.length ?? 0;
+    h.crew = this.state.property.crew.members.length;
     h.homes = this.state.property.homes.map((x) => ({
       id: x.id,
       addons: [...x.addons],

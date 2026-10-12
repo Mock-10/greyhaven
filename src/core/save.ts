@@ -178,10 +178,14 @@ export const MIGRATIONS: Record<number, (state: Obj) => Obj> = {
       property: { ...p, homes: ((p.homes as Obj[]) ?? []).map((h) => ({ ...h, ops: h.ops ?? {} })) },
     };
   },
-  /** 10 → 11 (Phase 5 M17, crews): nobody hired yet, nobody at the bar. */
+  /** 10 → 11 (Phase 5 M17, crews and rivals): nobody hired yet, nobody at the bar, no hits under way. */
   10: (s) => ({
     ...s,
-    property: { ...(s.property as Obj), crew: { members: [], candidates: [], candidatesDay: -1, nextId: 1 } },
+    property: {
+      ...(s.property as Obj),
+      crew: { members: [], candidates: [], candidatesDay: -1, nextId: 1 },
+      hits: [],
+    },
   }),
 };
 

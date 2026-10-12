@@ -310,10 +310,11 @@ describe('saves (docs/12)', () => {
     });
   });
 
-  it('migrates a version 10 save to version 11 (no crew)', () => {
+  it('migrates a version 10 save to version 11 (no crew, no rival hits)', () => {
     const fresh = createState(1, 'downtown', { x: 0, y: 0 });
     const v10 = JSON.parse(JSON.stringify(fresh)) as Record<string, Record<string, unknown>>;
     delete v10.property!.crew;
+    delete v10.property!.hits;
     const old = {
       game: 'doublelife',
       version: 10,
