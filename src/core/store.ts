@@ -17,9 +17,11 @@ import { emptyHeat, type HeatState } from '../systems/identify';
 import type { Goods } from '../systems/burglary';
 import { createCombat, type CombatState } from '../systems/combat';
 import { createProperty, type PropertyState } from '../systems/property';
+import type { HomeId } from '../data/property';
 
 /** Where the player is: out on the street map, or inside an interior. */
-export type Area = { kind: 'street' } | { kind: 'interior'; id: InteriorId };
+/** Where the player is; inside a home or hideout you own, which home (docs/09). */
+export type Area = { kind: 'street' } | { kind: 'interior'; id: InteriorId; home?: HomeId };
 
 export interface PlayerState {
   x: number;

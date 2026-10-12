@@ -504,6 +504,23 @@ FACES = {
     'clerk': lambda: humans.human(skin_tone=2.9, upper=('sage', 2.4), hair=('khaki', 2.2), hair_style='long', vest=('red', 2.4)),
 }
 
+def house():
+    """Property (Phase 5): a small suburban house with a pitched roof, a door and a window."""
+    def parts(P):
+        body = rbox(P, (0, 0, 4.5), (7.0, 5.0, 4.5), 0.2)
+        roof = np.maximum(rbox(P, (0, 0, 10.6), (7.8, 5.8, 2.6), 0.1), P[:, 2] - 13.0 + np.abs(P[:, 1]) * 0.55)
+        chimney = rbox(P, (4.2, -2.0, 12.6), (0.9, 0.9, 2.2), 0.1)
+        return [body, np.minimum(roof, chimney)]
+    def wall(p, n):
+        x, y, z = p[:, 0], p[:, 1], p[:, 2]
+        front = n[:, 1] > 0.5
+        door = front & (np.abs(x + 2.6) < 1.3) & (z < 5.4)
+        win = front & (np.abs(x - 2.8) < 1.7) & (np.abs(z - 4.8) < 1.3)
+        r = np.where(door, 'wood', np.where(win, 'glass', 'khaki'))
+        return r, np.where(door, 2.2, np.where(win, 4.0, 3.8)), np.where(win, 0.8, 0.0)
+    return Model(parts, [mat(wall), solid('brick', 2.6)], (-8.5, 8.5, -6.5, 6.5, 0, 15))
+
+
 # name -> (model factory, view angle, cell size)
 ICONS = {
     'item/soda': (soda, 0.6, 32), 'item/chips': (chips, -0.6, 32), 'item/sandwich': (sandwich, 0.8, 32),
@@ -533,6 +550,16 @@ ICONS.update({
     'weapon/lmg': (lambda: gun(8.0, body=4.2, stock=3.6, drum=True), -0.785, 32),
     'weapon/grenade_launcher': (lambda: gun(4.5, body=3.4, stock=3.4, tube=True, ramp='sage'), -0.785, 32),
     'item/armor': (vest, -0.6, 32), 'item/ammo': (ammo_box, 0.5, 32),
+})
+
+# Phase 5 property (docs/09): the home app and the hideout add-ons, drawn from the stations' own world models
+import props2 as _p2, decor as _dc, decor_jobs as _dj, interiors as _in
+ICONS.update({
+    'app/home': (house, -0.785, 40),
+    'addon/stashRoom': (_p2.safe, 0.6, 32), 'addon/garageBay': (lambda: cars.VEHICLES['sedan_teal'](), -0.6, 32),
+    'addon/workbench': (lambda: _dj.workbench(44), 0.5, 32), 'addon/press': (_dc.money_counter, 0.6, 32),
+    'addon/chopBay': (_dj.engine_stand, 0.6, 32), 'addon/lab': (_dc.chest_freezer, 0.6, 32),
+    'addon/crewRoom': (_in.table_chairs, 0.6, 32),
 })
 
 # outfits (milestone 6b): a dress form wearing the outfit's top and bottom (src/data/looks.ts: the same ramps,

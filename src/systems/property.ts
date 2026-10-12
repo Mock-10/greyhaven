@@ -27,10 +27,16 @@ export interface PropertyState {
   homes: OwnedHome[];
   /** Tax that the bank couldn't cover on a Monday; taken with the next week's (no foreclosure, assumed). */
   taxOwed: number;
+  /** The rented apartment's stash (docs/09: every home has one). */
+  apartment: Stash;
+}
+
+export function emptyStash(): Stash {
+  return { dirty: 0, goods: [], weapons: [] };
 }
 
 export function createProperty(): PropertyState {
-  return { homes: [], taxOwed: 0 };
+  return { homes: [], taxOwed: 0, apartment: emptyStash() };
 }
 
 export function homeOf(p: PropertyState, id: HomeId): OwnedHome | null {
@@ -45,7 +51,7 @@ export function typeOf(id: HomeId) {
 export function buyHome(p: PropertyState, m: Money, f: Finance, at: number, id: HomeId): boolean {
   if (homeOf(p, id)) return false;
   if (!payClean(m, f, at, `HOME, ${HOMES[id].address}`, typeOf(id).price)) return false;
-  p.homes.push({ id, addons: [], stash: { dirty: 0, goods: [], weapons: [] } });
+  p.homes.push({ id, addons: [], stash: emptyStash() });
   return true;
 }
 
@@ -89,66 +95,81 @@ export function parkingOf(h: OwnedHome): number {
 
 // ---- the stash ----
 
+/** A stash and how many items it holds: a home's (docs/09), or the rented apartment's. */
+export interface StashBox {
+  stash: Stash;
+  cap: number;
+}
+
+export type StashPlace = HomeId | 'apartment';
+
 export function stashSlots(h: OwnedHome): number {
   return P().stashSlots + (h.addons.includes('stashRoom') ? P().stashRoomSlots : 0);
 }
 
-export function stashUsed(h: OwnedHome): number {
-  return h.stash.goods.length + h.stash.weapons.length;
+/** The stash at a place, or null for a home you don't own. */
+export function stashAt(p: PropertyState, where: StashPlace): StashBox | null {
+  if (where === 'apartment') return { stash: p.apartment, cap: P().stashSlots };
+  const h = homeOf(p, where);
+  return h ? { stash: h.stash, cap: stashSlots(h) } : null;
 }
 
-export function stashFree(h: OwnedHome): number {
-  return Math.max(0, stashSlots(h) - stashUsed(h));
+export function stashUsed(s: Stash): number {
+  return s.goods.length + s.weapons.length;
 }
 
-/** Dirty cash in or out (no slots). Returns the amount moved. */
-export function moveDirty(h: OwnedHome, m: Money, amount: number): number {
+export function stashFree(b: StashBox): number {
+  return Math.max(0, b.cap - stashUsed(b.stash));
+}
+
+/** Dirty cash in (positive) or out (negative); it takes no slots. Returns the amount moved. */
+export function moveDirty(s: Stash, m: Money, amount: number): number {
   const n = Math.trunc(amount);
   if (n > 0) {
     const k = Math.min(n, m.dirty);
     m.dirty -= k;
-    h.stash.dirty += k;
+    s.dirty += k;
     return k;
   }
-  const k = Math.min(-n, h.stash.dirty);
-  h.stash.dirty -= k;
+  const k = Math.min(-n, s.dirty);
+  s.dirty -= k;
   m.dirty += k;
   return k;
 }
 
-export function stashGoods(h: OwnedHome, carried: Goods[], i: number): boolean {
+export function stashGoods(b: StashBox, carried: Goods[], i: number): boolean {
   const g = carried[i];
-  if (!g || stashFree(h) <= 0) return false;
-  h.stash.goods.push(g);
+  if (!g || stashFree(b) <= 0) return false;
+  b.stash.goods.push(g);
   carried.splice(i, 1);
   return true;
 }
 
-export function unstashGoods(h: OwnedHome, carried: Goods[], i: number): boolean {
-  const g = h.stash.goods[i];
+export function unstashGoods(s: Stash, carried: Goods[], i: number): boolean {
+  const g = s.goods[i];
   if (!g) return false;
   carried.push(g);
-  h.stash.goods.splice(i, 1);
+  s.goods.splice(i, 1);
   return true;
 }
 
-export function stashWeapon(h: OwnedHome, c: CombatState, slot: number): boolean {
+export function stashWeapon(b: StashBox, c: CombatState, slot: number): boolean {
   const w = c.slots[slot];
-  if (!w || stashFree(h) <= 0) return false;
-  h.stash.weapons.push(w);
+  if (!w || stashFree(b) <= 0) return false;
+  b.stash.weapons.push(w);
   c.slots[slot] = null;
   if (!drawnWeapon(c)) selectSlot(c, -1);
   return true;
 }
 
 /** A stored weapon back into a free slot of its kind (never a second of the same). */
-export function unstashWeapon(h: OwnedHome, c: CombatState, i: number): boolean {
-  const w = h.stash.weapons[i];
+export function unstashWeapon(s: Stash, c: CombatState, i: number): boolean {
+  const w = s.weapons[i];
   if (!w) return false;
   const r = giveWeapon(c, w.id, w.registered, 0, false);
   if (!r.ok) return false;
   c.slots[r.slot] = { ...w };
-  h.stash.weapons.splice(i, 1);
+  s.weapons.splice(i, 1);
   return true;
 }
 

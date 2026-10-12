@@ -65,7 +65,14 @@ import {
   type House,
 } from '../systems/burglary';
 import { GOODS_NAMES, LAYOUTS } from '../data/burglary';
-import { changedOutfit, dropStars, emptyChase, tickChaos, type ChaseState } from '../systems/response';
+import {
+  changedOutfit,
+  dropStars,
+  emptyChase,
+  enteredOwnedProperty,
+  tickChaos,
+  type ChaseState,
+} from '../systems/response';
 import { fencePage } from '../world/fence';
 import { CombatWorld } from '../world/combatWorld';
 import { armsPage } from '../world/arms';
@@ -177,7 +184,18 @@ import {
   skipOnboarding,
   tipDue,
 } from '../systems/onboarding';
-import { TYPE_LABEL } from '../data/vehicles';
+import { MODEL_COLOUR, TYPE_LABEL } from '../data/vehicles';
+import { HOMES, HOME_IDS, PROPERTY_TYPES, type HomeId } from '../data/property';
+import { homeOf, stashAt } from '../systems/property';
+import {
+  garagePage,
+  plansPage,
+  salePage,
+  stashPage,
+  workbenchPage,
+  type GarageCtx,
+  type WorkbenchCtx,
+} from '../world/propertyPages';
 import { ATLASES } from '../assets/manifest';
 import {
   createDoors,
@@ -185,6 +203,7 @@ import {
   interiorSolids,
   npcOnDuty,
   useSpots,
+  withAddons,
   type DoorRuntime,
   type InteriorJson,
   type UseSpot,
@@ -279,6 +298,9 @@ interface Usable {
 }
 
 /** A drivable car on the street: its state lives in GameState.vehicles, this is how it is drawn. */
+/** The rooms of a home you own (docs/09): its add-ons decide what stands in them. */
+const OWNED_ROOMS: readonly InteriorId[] = ['home_small', 'home_family', 'hideout'];
+
 interface CarView {
   v: Vehicle;
   placed: Placed;
@@ -496,7 +518,7 @@ export class WorldScene extends Phaser.Scene {
             door: null,
           });
         // the Linden Avenue front doors (the delivery drops) can be broken into (Phase 3, docs/04)
-        else if (z.id.startsWith('drop_') && z.npc)
+        else if (z.id.startsWith('drop_') && z.npc) {
           this.usables.push({
             id: `house:${z.id}`,
             x: z.npc.x,
@@ -504,6 +526,30 @@ export class WorldScene extends Phaser.Scene {
             label: 'BREAK IN',
             placed: null,
             door: null,
+          });
+          // two of them are for sale (Phase 5, docs/09): your own front door once bought
+          const home = HOME_IDS.find((k) => HOMES[k].door === z.id);
+          if (home)
+            this.usables.push({
+              id: `home:${home}`,
+              x: z.npc.x,
+              y: z.npc.y,
+              label: 'ENTER HOME',
+              placed: null,
+              door: null,
+              hidden: true,
+            });
+        }
+        // the homes for sale (Phase 5, docs/09): the driveway is the home's garage
+        else if (z.id.startsWith('park_') && z.npc)
+          this.usables.push({
+            id: `garage:${z.id.slice(5)}`,
+            x: z.npc.x,
+            y: z.npc.y,
+            label: 'GARAGE',
+            placed: null,
+            door: null,
+            hidden: true,
           });
         // Torque & Sons' service bay (Phase 4, docs/08): shows with a car stopped on the apron
         else if (z.id === 'garage_service' && z.npc)
@@ -610,6 +656,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.loaded) {
       const area = this.state.area;
       if (area.kind === 'interior' && INTERIORS[area.id]) {
+        this.homeHere = area.home ?? null;
         const at = { x: this.state.player.x, y: this.state.player.y };
         this.enterInterior(INTERIORS[area.id], at);
       }
@@ -1306,6 +1353,8 @@ export class WorldScene extends Phaser.Scene {
     if (this.state.wanted.stars > 0) return { ok: false, why: 'NOT WHILE WANTED' };
     if (this.atShelter()) return { ok: true, why: '' };
     const evicted = this.state.finance.rent.evicted;
+    if (this.homeHere && this.inside && OWNED_ROOMS.includes(this.inside.def.id))
+      return { ok: true, why: '' };
     if (this.inside?.def.id !== 'apartment' || evicted)
       return {
         ok: false,
@@ -1590,6 +1639,9 @@ export class WorldScene extends Phaser.Scene {
       }
       case 'heal':
         st.player.health = BALANCE.player.maxHealth;
+        break;
+      case 'rep':
+        st.crime.rep = c.rep;
         break;
       case 'roadblock': {
         // 3★ and a roadblock with its spike strip ahead of the driven car (Phase 4 testing)
@@ -2222,6 +2274,9 @@ export class WorldScene extends Phaser.Scene {
     else if (u.id.startsWith('drop:')) this.takeDrop(u.id);
     else if (u.id === 'zone:arms_dealer') this.openArms();
     else if (u.id === 'zone:garage_service') this.openService();
+    else if (u.id.startsWith('sale:')) this.openSale(u.id.slice(5) as HomeId);
+    else if (u.id.startsWith('home:')) this.enterHome(u.id.slice(5) as HomeId);
+    else if (u.id.startsWith('garage:')) this.openGarage(u.id.slice(7) as HomeId);
     else if (u.id === 'owner') this.scareOff();
     else if (u.id.startsWith('job:')) this.jobTask(u.id.slice(4) as TaskId);
     else if (u.id.startsWith('gig:')) this.gigAction(u.id.slice(4) as GigId);
@@ -2303,6 +2358,11 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private enterInterior(def: InteriorDef, at: { x: number; y: number }): void {
+    // a home you own and its hideout (docs/09): the stations its add-ons built, the stash room's door
+    const owned =
+      OWNED_ROOMS.includes(def.id) && this.homeHere ? homeOf(this.state.property, this.homeHere) : null;
+    if (def.id === 'hideout' && owned?.addons.includes('stashRoom'))
+      def = { ...def, doors: def.doors.map(() => ({ kind: 'open' as const })) };
     if (this.inside) this.leaveInteriorView();
     else {
       this.streetSaved = {
@@ -2316,7 +2376,10 @@ export class WorldScene extends Phaser.Scene {
       this.objectLayer.setVisible(false);
       for (const l of this.lamps) l.halo.setVisible(false);
     }
-    const json = ATLASES[`in_${def.id}` as keyof typeof ATLASES].json as unknown as InteriorJson;
+    const json = withAddons(
+      ATLASES[`in_${def.id}` as keyof typeof ATLASES].json as unknown as InteriorJson,
+      owned?.addons ?? [],
+    );
     this.inGround.setVisible(true);
     this.inObjects.setVisible(true);
     const view = new InteriorView(this, json, def, this.inGround, this.inObjects);
@@ -2324,7 +2387,9 @@ export class WorldScene extends Phaser.Scene {
     const doors = createDoors(json, def);
     const npcs = this.npcsOnDuty(def, json);
     this.inside = { def, json, view, doors, npcs };
-    this.state.area = { kind: 'interior', id: def.id };
+    this.state.area = owned
+      ? { kind: 'interior', id: def.id, home: owned.id }
+      : { kind: 'interior', id: def.id };
     if (this.player) {
       this.objectLayer.remove(this.player);
       this.inObjects.add(this.player);
@@ -2438,6 +2503,7 @@ export class WorldScene extends Phaser.Scene {
     p.y = at.y;
     p.dir = 2;
     this.state.area = { kind: 'street' };
+    this.homeHere = null;
     this.camCtl.setBounds(this.ground.bounds);
     this.syncPlayer();
     this.camCtl.snap();
@@ -2505,6 +2571,25 @@ export class WorldScene extends Phaser.Scene {
     switch (a.kind) {
       case 'later':
         this.toast(a.who, a.text);
+        break;
+      case 'stash':
+        this.openStash();
+        break;
+      case 'basement': {
+        const to = INTERIORS.hideout;
+        this.fade(() => this.enterInterior(to, to.elevator ?? { x: 40, y: 40 }));
+        break;
+      }
+      case 'upstairs': {
+        const to = this.homeInterior();
+        if (to) this.fade(() => this.enterInterior(to, to.elevator ?? to.entrance ?? { x: 40, y: 40 }));
+        break;
+      }
+      case 'plans':
+        this.openPlans();
+        break;
+      case 'workbench':
+        this.openWorkbench();
         break;
       case 'elevator': {
         const to = INTERIORS[a.to];
@@ -2580,7 +2665,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Sleep to 06:00 at home or at St. Brine's shelter (after an eviction), then autosave (docs/12). */
   private sleep(where: 'home' | 'shelter' = 'home'): void {
-    if (where === 'home' && this.state.finance.rent.evicted) {
+    if (where === 'home' && this.state.finance.rent.evicted && !this.homeHere) {
       this.toast('LANDLORD', "EVICTED. TRY ST. BRINE'S SHELTER ON PEWTER STREET.");
       return;
     }
@@ -3011,6 +3096,121 @@ export class WorldScene extends Phaser.Scene {
       },
     };
     this.openPanel('service', () => servicePage(ctx));
+  }
+
+  // ---------------------------------------------------------------- property (docs/09, Phase 5)
+
+  /** The home you're in (or under), while inside it or its hideout. */
+  private homeHere: HomeId | null = null;
+  /** An add-on was built in the hideout: walk back in so its station appears. */
+  private rebuildRoom = false;
+
+  private homeInterior(): InteriorDef | null {
+    const id = this.homeHere;
+    const room = id ? PROPERTY_TYPES[HOMES[id].type].interior : null;
+    return room ? INTERIORS[room] : null;
+  }
+
+  /** The FOR SALE signs, your front doors and garages, and the burglary doors of houses you own. */
+  private refreshHomes(): void {
+    for (const id of HOME_IDS) {
+      const owned = !!homeOf(this.state.property, id);
+      const sign = this.usables.find((u) => u.id === `sale:${id}`);
+      if (sign) {
+        sign.hidden = owned;
+        sign.placed?.sprite.setVisible(!owned);
+      }
+      const door = this.usables.find((u) => u.id === `home:${id}`);
+      if (door) door.hidden = !owned;
+      const garage = this.usables.find((u) => u.id === `garage:${id}`);
+      if (garage) garage.hidden = !owned;
+      const burgle = this.usables.find((u) => u.id === `house:${HOMES[id].door}`);
+      if (burgle && owned) burgle.hidden = true;
+    }
+  }
+
+  private openSale(id: HomeId): void {
+    this.openPanel('sale', () => salePage(this.state, id, () => this.refreshHomes()));
+  }
+
+  /** Your front door: in, and a 1–2★ wanted level clears if no officer sees you go in (docs/05). */
+  private enterHome(id: HomeId): void {
+    if (this.busy || !homeOf(this.state.property, id)) return;
+    const room = PROPERTY_TYPES[HOMES[id].type].interior;
+    const z = this.map.zones?.find((q) => q.id === HOMES[id].door)?.npc;
+    if (!room || !z) return;
+    const st = this.state;
+    const seen = !!this.police?.active && this.police.sees(st.player);
+    if (enteredOwnedProperty(st.wanted, seen)) this.toast('HOME', 'INSIDE AND OUT OF SIGHT. THEY LOST YOU.');
+    st.streetReturn = { x: z.x, y: z.y + 12 };
+    this.homeHere = id;
+    const def = INTERIORS[room];
+    this.fade(() => this.enterInterior(def, def.entrance ?? { x: 40, y: 40 }));
+  }
+
+  private openStash(): void {
+    const place = this.inside?.def.id === 'apartment' ? 'apartment' : this.homeHere;
+    const box = place ? stashAt(this.state.property, place) : null;
+    if (!box) return;
+    this.openPanel('stash', () => stashPage(this.state, box, place === 'apartment' ? 'STASH' : 'HOME STASH'));
+  }
+
+  private openPlans(): void {
+    const id = this.homeHere;
+    if (!id) return;
+    this.openPanel('plans', () => plansPage(this.state, id, () => (this.rebuildRoom = true)));
+  }
+
+  private openWorkbench(): void {
+    const id = this.homeHere;
+    if (!id) return;
+    const st = this.state;
+    const car = this.cars.find((c) => {
+      const z = this.map.zones?.find((q) => q.id === `park_${id}`);
+      return !!z && parkedIn(c.v, z);
+    });
+    const ctx: WorkbenchCtx = {
+      state: st,
+      respray: car
+        ? () => {
+            const m = respray(car.v, this.rng);
+            if (st.wanted.stars > 0 && !st.wanted.seen) dropStars(st.wanted, 1);
+            return MODEL_COLOUR[m] ?? 'NEW';
+          }
+        : null,
+    };
+    this.openPanel('workbench', () => workbenchPage(ctx));
+  }
+
+  /** The driveway is the garage (docs/09): store the car standing there, or bring a stored one out. */
+  private openGarage(id: HomeId): void {
+    const h = homeOf(this.state.property, id);
+    const z = this.map.zones?.find((q) => q.id === `park_${id}`);
+    const slot = z?.slots?.[0];
+    if (!h || !z || !slot) return;
+    const ctx: GarageCtx = {
+      state: this.state,
+      home: h,
+      onDriveway: () => this.cars.find((c) => parkedIn(c.v, z) && !c.v.wrecked)?.v ?? null,
+      store: () => {
+        const c = this.cars.find((q) => parkedIn(q.v, z) && !q.v.wrecked);
+        if (!c || this.state.driving === c.v.id) return false;
+        c.v.storedAt = id;
+        this.removeCar(c, true);
+        return true;
+      },
+      takeOut: (v) => {
+        if (this.cars.some((q) => parkedIn(q.v, z))) return false;
+        v.storedAt = undefined;
+        v.x = slot.x;
+        v.y = slot.y;
+        v.heading = (slot.dir * Math.PI) / 4;
+        v.speed = 0;
+        this.addCarView(v);
+        return true;
+      },
+    };
+    this.openPanel('garage', () => garagePage(ctx));
   }
 
   /** Precinct 1's desk sergeant reads out your record (docs/05). */
@@ -3476,8 +3676,11 @@ export class WorldScene extends Phaser.Scene {
   /** Parked map cars become vehicles the first time the street loads. */
   private createCars(): void {
     if (this.loaded) {
-      const home = this.map.zones?.find((z) => z.id === 'home_parking');
-      parkAtHome(this.state.vehicles, this.state.lastCar, home?.slots ?? []);
+      // the last car waits at home: your own driveway once you have one (docs/09), else the apartment's spot
+      const own = this.state.property.homes[0];
+      const home = this.map.zones?.find((z) => z.id === (own ? `park_${own.id}` : 'home_parking'));
+      const last = this.state.vehicles.find((v) => v.id === this.state.lastCar);
+      if (!last?.storedAt) parkAtHome(this.state.vehicles, this.state.lastCar, home?.slots ?? []);
     }
     if (this.state.vehicles.length === 0)
       this.map.placements.forEach((p, i) => {
@@ -3485,7 +3688,8 @@ export class WorldScene extends Phaser.Scene {
         const model = p.sprite.split('/')[1] as string;
         this.state.vehicles.push(parkedCar(`car${i}`, model, p.x, p.y, p.dir));
       });
-    for (const v of this.state.vehicles) this.addCarView(v);
+    // cars stored in a home's garage (docs/09) wait off the street
+    for (const v of this.state.vehicles) if (!v.storedAt) this.addCarView(v);
   }
 
   private addCarView(v: Vehicle): void {
@@ -3536,12 +3740,12 @@ export class WorldScene extends Phaser.Scene {
     return 'SOLD. IT IS IN THE PICKUP BAY, KEYS IN.';
   }
 
-  private removeCar(c: CarView): void {
+  private removeCar(c: CarView, keep = false): void {
     c.placed.sprite.destroy();
     c.shadow.destroy();
     this.cars = this.cars.filter((x) => x !== c);
     this.usables = this.usables.filter((u) => u !== c.usable && u !== c.trunk);
-    this.state.vehicles = this.state.vehicles.filter((v) => v !== c.v);
+    if (!keep) this.state.vehicles = this.state.vehicles.filter((v) => v !== c.v);
   }
 
   /** A moving box shadow for each of the 8 car directions, made once. */
@@ -3770,6 +3974,7 @@ export class WorldScene extends Phaser.Scene {
     if (spot) spot.hidden = this.marloWalker !== null || !this.carForMarlo();
     const bay = this.usables.find((u) => u.id === 'zone:garage_service');
     if (bay) bay.hidden = !this.carForService();
+    this.refreshHomes();
     const c = this.state.career;
     for (const u of this.usables) {
       if (!u.id.startsWith('job:')) continue;
@@ -4515,6 +4720,15 @@ export class WorldScene extends Phaser.Scene {
     this.updateInteraction(dt);
     this.updateOcclusion(dt);
     this.applyDayNight();
+    // an add-on just built at the plans table: walk the room back in so its station stands there
+    if (this.rebuildRoom && this.inside && !this.scene.isPaused()) {
+      this.rebuildRoom = false;
+      const p = this.state.player;
+      this.enterInterior(this.inside.def.id === 'hideout' ? INTERIORS.hideout : this.inside.def, {
+        x: p.x,
+        y: p.y,
+      });
+    }
     if (this.inside) {
       const r = this.inside;
       const seen = new Set(this.state.sight[r.def.id] ?? []);

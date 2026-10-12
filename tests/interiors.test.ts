@@ -15,6 +15,9 @@ import family from '../art/interiors/house_family.json';
 import townhouse from '../art/interiors/house_townhouse.json';
 import pawn from '../art/interiors/pawn.json';
 import precinct from '../art/interiors/precinct.json';
+import homeSmall from '../art/interiors/home_small.json';
+import homeFamily from '../art/interiors/home_family.json';
+import hideout from '../art/interiors/hideout.json';
 import { LAYOUTS } from '../src/data/burglary';
 import { INTERIORS, interiorForDoor } from '../src/data/interiors';
 import { collides } from '../src/systems/movement';
@@ -25,6 +28,7 @@ import {
   interiorSolids,
   npcOnDuty,
   useSpots,
+  withAddons,
   type InteriorJson,
 } from '../src/world/interiorModel';
 
@@ -45,6 +49,9 @@ const J = {
   house_townhouse: townhouse,
   pawn,
   precinct,
+  home_small: homeSmall,
+  home_family: homeFamily,
+  hideout,
 } as unknown as Record<string, InteriorJson>;
 const rules = (j: InteriorJson) => ({ radius: 6, mapW: j.W, mapH: j.D, smallScale: 0.6, smallSlack: 2 });
 
@@ -65,6 +72,22 @@ describe('interiors in the game', () => {
         expect(collides(def.elevator.x, def.elevator.y, solids, rules(j)), `${def.id} lift`).toBe(false);
     }
     expect(interiorForDoor('chop_shop')).toBeNull();
+  });
+
+  it('homes you own: sleep, wardrobe, stash and the basement; the hideout filters its stations (Phase 5)', () => {
+    for (const id of ['home_small', 'home_family'] as const) {
+      const kinds = useSpots(J[id]!, INTERIORS[id], []).map((u) =>
+        u.kind === 'action' ? u.action.kind : u.kind,
+      );
+      expect(kinds.sort(), id).toEqual(['basement', 'exit', 'sleep', 'stash', 'wardrobe']);
+    }
+    const bare = withAddons(J.hideout!, []);
+    const full = withAddons(J.hideout!, ['stashRoom', 'workbench']);
+    const acts = (j: InteriorJson) =>
+      useSpots(j, INTERIORS.hideout, []).flatMap((u) => (u.kind === 'action' ? [u.action.kind] : []));
+    expect(acts(bare).sort()).toEqual(['plans', 'upstairs']);
+    expect(acts(full).sort()).toEqual(['plans', 'stash', 'upstairs', 'workbench']);
+    expect(withAddons(J.apartment!, [])).toBe(J.apartment);
   });
 
   it('burglary houses: a search per room in data/burglary.ts order, the keypad, one owner (Phase 3)', () => {

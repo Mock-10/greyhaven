@@ -165,8 +165,11 @@ export const MIGRATIONS: Record<number, (state: Obj) => Obj> = {
       };
     }),
   }),
-  /** 8 → 9 (Phase 5, property): no homes owned, no tax owed. */
-  8: (s) => ({ ...s, property: { homes: [], taxOwed: 0 } }),
+  /** 8 → 9 (Phase 5, property): no homes owned, no tax owed, an empty apartment stash. */
+  8: (s) => ({
+    ...s,
+    property: { homes: [], taxOwed: 0, apartment: { dirty: 0, goods: [], weapons: [] } },
+  }),
 };
 
 /** Bring a save up to SAVE_VERSION, one migration at a time. Throws for saves from a newer game. */

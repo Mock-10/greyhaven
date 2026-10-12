@@ -18,6 +18,8 @@ export interface InteriorItem {
   shadow?: { kind: 'box'; hx: number; hy: number; h: number } | { kind: 'blob'; r: number };
   prompt?: string;
   valuable?: boolean;
+  /** Shown only with this hideout add-on, or only without it ('!stashRoom'), docs/09 (art/source/rooms_property.py). */
+  needs?: string;
   door?: { axis: 'x' | 'y'; pos: number; g0: number; g1: number };
 }
 
@@ -62,6 +64,17 @@ export function doorAccess(
         ? { usable: true, label: '' }
         : { usable: false, label: rule.closedLabel };
   }
+}
+
+/** The room with only the items its add-ons allow (docs/09 hideout stations): `needs` 'x' shows with add-on x,
+ *  '!x' only without it. Rooms without such items come back as they are. */
+export function withAddons(json: InteriorJson, have: readonly string[]): InteriorJson {
+  if (!json.items.some((it) => it.needs)) return json;
+  const items = json.items.filter((it) => {
+    if (!it.needs) return true;
+    return it.needs.startsWith('!') ? !have.includes(it.needs.slice(1)) : have.includes(it.needs);
+  });
+  return { ...json, items };
 }
 
 /** Doors start closed; plain 'open' doors (no lock at all) start open, like an office door left ajar. */

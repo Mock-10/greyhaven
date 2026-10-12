@@ -14,6 +14,7 @@ import {
   parkingOf,
   stashFree,
   stashGoods,
+  stashAt,
   stashSlots,
   stashWeapon,
   unstashGoods,
@@ -64,22 +65,26 @@ describe('property (docs/09)', () => {
     const st = rich();
     buyHome(st.property, st.money, st.finance, 0, 'linden4');
     const h = homeOf(st.property, 'linden4')!;
+    const b = stashAt(st.property, 'linden4')!;
+    expect(stashAt(st.property, 'linden10')).toBeNull();
     st.money.dirty = 500;
-    expect(moveDirty(h, st.money, 800)).toBe(500);
+    expect(moveDirty(h.stash, st.money, 800)).toBe(500);
     expect(h.stash.dirty).toBe(500);
-    expect(moveDirty(h, st.money, -200)).toBe(200);
+    expect(moveDirty(h.stash, st.money, -200)).toBe(200);
     expect(st.money.dirty).toBe(200);
     const goods = [{ kind: 'laptop' as const, value: 300 }];
-    expect(stashGoods(h, goods, 0)).toBe(true);
+    expect(stashGoods(b, goods, 0)).toBe(true);
     expect(goods).toHaveLength(0);
     const c = createCombat();
     giveWeapon(c, 'pistol', false, 12, false);
     const slot = c.slots.findIndex((w) => w?.id === 'pistol');
-    expect(stashWeapon(h, c, slot)).toBe(true);
-    expect(stashFree(h)).toBe(P.stashSlots - 2);
-    expect(unstashWeapon(h, c, 0)).toBe(true);
-    expect(unstashGoods(h, goods, 0)).toBe(true);
-    expect(stashFree(h)).toBe(P.stashSlots);
+    expect(stashWeapon(b, c, slot)).toBe(true);
+    expect(stashFree(b)).toBe(P.stashSlots - 2);
+    expect(unstashWeapon(h.stash, c, 0)).toBe(true);
+    expect(unstashGoods(h.stash, goods, 0)).toBe(true);
+    expect(stashFree(b)).toBe(P.stashSlots);
+    // the rented apartment has a stash too
+    expect(stashAt(st.property, 'apartment')!.cap).toBe(P.stashSlots);
   });
 
   it('tax goes with Monday rent; what the bank can not cover is owed', () => {
