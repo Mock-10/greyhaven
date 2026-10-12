@@ -24,7 +24,8 @@ async function boot(page: Page, query: string): Promise<string[]> {
 /** Type a line into the cheat console (Ctrl + Shift + F1) and close it. */
 async function cheat(page: Page, line: string): Promise<void> {
   await page.keyboard.press('Control+Shift+F1');
-  await page.keyboard.type(line);
+  // one input event, not a key per letter: typing took seconds on CI while the world ran on
+  await page.keyboard.insertText(line);
   await page.keyboard.press('Enter');
   await page.keyboard.press('Escape');
   await page.waitForTimeout(200);
@@ -799,17 +800,25 @@ test('pulling a driver out of a stopped traffic car: yours to drive, the driver 
 }) => {
   test.setTimeout(120_000);
   const problems = await boot(page, '?scene=world&zoom=3&time=12:00');
-  const pos = await page.waitForFunction(
-    () => {
-      const t = (window.__DL__.traffic ?? []).find((c) => c.speed < 2);
-      return t ? { x: t.x + Math.sin(t.heading) * 26, y: t.y - Math.cos(t.heading) * 26 } : null;
-    },
-    null,
-    { timeout: 60_000, polling: 100 },
-  );
-  const p = (await pos.jsonValue())!;
-  await cheat(page, `tp ${Math.round(p.x)} ${Math.round(p.y)}`);
-  await page.waitForFunction(() => window.__DL__.target?.startsWith('jack:'));
+  // a car waiting at a red light can move off while the teleport is typed: try again with another one
+  let ready = false;
+  for (let tries = 0; tries < 8 && !ready; tries++) {
+    const pos = await page.waitForFunction(
+      () => {
+        const t = (window.__DL__.traffic ?? []).find((c) => c.speed < 2);
+        return t ? { x: t.x + Math.sin(t.heading) * 26, y: t.y - Math.cos(t.heading) * 26 } : null;
+      },
+      null,
+      { timeout: 60_000, polling: 100 },
+    );
+    const p = (await pos.jsonValue())!;
+    await cheat(page, `tp ${Math.round(p.x)} ${Math.round(p.y)}`);
+    ready = await page
+      .waitForFunction(() => window.__DL__.target?.startsWith('jack:'), null, { timeout: 3000 })
+      .then(() => true)
+      .catch(() => false);
+  }
+  expect(ready).toBe(true);
   await page.keyboard.press('KeyE');
   await page.waitForFunction(() => window.__DL__.driving?.startsWith('jacked'));
   await page.waitForFunction(() => window.__DL__.stars > 0, null, { timeout: 40_000 });
