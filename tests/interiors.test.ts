@@ -103,7 +103,13 @@ describe('interiors in the game', () => {
     const j = J.store!;
     const spots = useSpots(j, INTERIORS.store, createDoors(j, INTERIORS.store));
     const labels = spots.flatMap((s) => (s.kind === 'action' ? [s.label] : []));
-    expect(labels.sort()).toEqual(['CRACK SAFE', 'DISABLE CAMERAS', 'ROB THE REGISTER', 'SHOP', 'WIPE FOOTAGE']);
+    expect(labels.sort()).toEqual([
+      'CRACK SAFE',
+      'DISABLE CAMERAS',
+      'ROB THE REGISTER',
+      'SHOP',
+      'WIPE FOOTAGE',
+    ]);
     // the robbery shares the till's spot
     const at = (l: string) => spots.find((s) => s.kind === 'action' && s.label === l);
     expect(at('ROB THE REGISTER')?.x).toBe(at('SHOP')?.x);
