@@ -20,6 +20,10 @@ export interface DebugHook {
   clean: number;
   rank: number;
   tasksLeft: number;
+  /** Phase 2 M7: the current job, the tasks done this shift and the objective line. */
+  job: string;
+  shiftDone: string[];
+  objective: string;
   minigame: string | null;
   /** The open minigame's logic object (needle, wires, bills), read by tests to play it like a person would. */
   minigameState: unknown;
@@ -86,6 +90,9 @@ export function installHook(): DebugHook {
     clean: 0,
     rank: 1,
     tasksLeft: -1,
+    job: 'office',
+    shiftDone: [],
+    objective: '',
     minigame: null,
     minigameState: null,
     dirty: 0,

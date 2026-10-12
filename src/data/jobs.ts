@@ -94,6 +94,8 @@ export interface JobDef {
   hiring: boolean;
   /** Who you clock in with (the toasts speak as them). Role names: new characters need the user's approval. */
   boss: string;
+  /** The boss in a sentence ("CLOCK IN WITH THE FOREMAN"). */
+  bossRef: string;
   /** The interior with the time clock. */
   site: string;
   /** Where to go, for the objective line. */
@@ -116,6 +118,7 @@ export const JOBS: Record<JobId, JobDef> = {
     tasksPerShift: 3,
     hiring: true,
     boss: 'MS. HOLLIS',
+    bossRef: 'MS. HOLLIS',
     site: 'office_floor',
     goTo: 'PELLRIDGE TOWER, FLOOR 4',
     taskHint: 'CABINETS, DESK OR COPIER',
@@ -136,6 +139,7 @@ export const JOBS: Record<JobId, JobDef> = {
     tasksPerShift: 3,
     hiring: true,
     boss: 'SHOP FOREMAN',
+    bossRef: 'THE FOREMAN',
     site: 'garage',
     goTo: 'TORQUE & SONS, HEDGEROW WAY',
     taskHint: 'THE BAY, THE BENCH OR THE BOOTH',
@@ -156,6 +160,7 @@ export const JOBS: Record<JobId, JobDef> = {
     tasksPerShift: 3,
     hiring: true,
     boss: 'SITE BOSS',
+    bossRef: 'THE SITE BOSS',
     site: 'site_trailer',
     goTo: 'ASHBY TIMBER, ASHBY ROAD',
     taskHint: 'THE YARD: TREES, BLOCK OR TRUCK',
@@ -176,6 +181,7 @@ export const JOBS: Record<JobId, JobDef> = {
     tasksPerShift: 4,
     hiring: true,
     boss: 'DISPATCH',
+    bossRef: 'DISPATCH',
     site: 'depot',
     goTo: 'SWIFTISH COURIERS, LINDEN AVENUE',
     taskHint: 'LOAD THE VAN, PLAN THE ROUTE, DELIVER',

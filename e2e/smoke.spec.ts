@@ -515,3 +515,51 @@ test('the used-car lot: buy a beater, it waits keyed in the pickup bay and drive
   expect(await page.evaluate(() => window.__DL__.stars)).toBe(0);
   expect(problems).toEqual([]);
 });
+
+test('the garage: the locker hands out coveralls, a mechanic shift runs its tasks and pays (milestone 7)', async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const problems = await boot(page, '?scene=world&zoom=2&area=garage&time=08:05');
+  await cheat(page, 'job mechanic');
+  const use = async (x: number, y: number, target: string) => {
+    await cheat(page, `tp ${x} ${y}`);
+    await page.waitForFunction((t) => window.__DL__.target === t, target);
+    await page.keyboard.press('KeyE');
+  };
+  // no clocking in out of uniform
+  await use(22, 14, 'garage:0');
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => window.__DL__.tasksLeft)).toBe(-1);
+  await use(14, 132, 'garage:11');
+  await page.waitForFunction(() => window.__DL__.minigame === 'locker');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__DL__.look?.outfit === 'coveralls');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  await use(22, 14, 'garage:0');
+  await page.waitForFunction(() => window.__DL__.tasksLeft === 3);
+  // three tasks: each opens its own panel; the test hands in a grade the way the panel would
+  for (const [x, y, id, kind] of [
+    [226, 100, 'garage:33', 'diagnose'],
+    [176, 112, 'garage:31', 'boltTorque'],
+    [270, 70, 'garage:44', 'respray'],
+  ] as const) {
+    await use(x, y, id);
+    await page.waitForFunction((k) => window.__DL__.minigame === k, kind);
+    await page.evaluate(() => {
+      const g = window.__DL__.minigameState as { done: boolean; grade: string };
+      g.done = true;
+      g.grade = 'good';
+    });
+    await page.waitForFunction(() => window.__DL__.minigame === null, null, { timeout: 15_000 });
+  }
+  expect(await page.evaluate(() => window.__DL__.shiftDone)).toEqual(['diagnose', 'boltTorque', 'respray']);
+  await use(22, 14, 'garage:0');
+  await page.waitForFunction(() => window.__DL__.bank > 0);
+  expect(await page.evaluate(() => window.__DL__.objective)).toBe(
+    'CHANGE OUT OF YOUR UNIFORM: A LOCKER OR YOUR WARDROBE',
+  );
+  expect(problems).toEqual([]);
+});

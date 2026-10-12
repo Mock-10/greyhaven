@@ -133,8 +133,8 @@ export const OUTFITS: readonly Outfit[] = [
   {
     id: 'courier',
     name: 'SWIFTISH COURIERS UNIFORM',
-    top: shifted('clay', 1),
-    bottom: shifted('navy', 0),
+    top: shifted('navy', 1),
+    bottom: shifted('khaki', 0),
     from: 'uniform',
   },
 ];

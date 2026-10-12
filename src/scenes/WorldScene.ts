@@ -11,7 +11,7 @@ import { createState, loadSettings, saveSettings, type GameState, type Settings 
 import { framePixels, frameInfo, opaqueAt } from '../assets/atlasLoader';
 import type { AtlasKey } from '../assets/manifest';
 import { paintPlayer } from '../assets/playerLook';
-import { playerCostume, type Look } from '../data/looks';
+import { outfitOf, playerCostume, type Look } from '../data/looks';
 import { highlight, HIGHLIGHT_PAD } from '../assets/highlight';
 import { outlinePixels } from '../assets/outline';
 import { addPixelsTexture } from '../assets/runtimeTextures';
@@ -976,6 +976,16 @@ export class WorldScene extends Phaser.Scene {
           job.rank = c.rank;
           job.xp = 0;
         }
+        break;
+      }
+      case 'job': {
+        const id = (Object.keys(JOBS) as JobId[]).find((j) => j === c.job);
+        if (!id || st.career.shift) {
+          this.toast('CHEAT', id ? 'FINISH THE SHIFT FIRST.' : 'JOB OFFICE|MECHANIC|LUMBERJACK|DELIVERY');
+          return;
+        }
+        st.career.current = id;
+        this.updateInteriorObjective();
         break;
       }
       case 'tp': {
@@ -2042,7 +2052,7 @@ export class WorldScene extends Phaser.Scene {
       this.pendingTask = null;
       const c = this.state.career;
       if (r.grade && c.shift) {
-        const boss = JOBS[c.shift.job].boss;
+        const boss = JOBS[c.shift.job].bossRef;
         recordTask(c, task, r.grade as Grade);
         const left = tasksLeft(c);
         this.toast(
@@ -2063,7 +2073,7 @@ export class WorldScene extends Phaser.Scene {
       const J = JOBS[c.shift.job];
       const left = tasksLeft(c);
       if (left === 0)
-        this.objective(here === c.shift.job ? `CLOCK OUT WITH ${J.boss}` : `CLOCK OUT: ${J.goTo}`);
+        this.objective(here === c.shift.job ? `CLOCK OUT WITH ${J.bossRef}` : `CLOCK OUT: ${J.goTo}`);
       else this.objective(this.shiftObjective(left));
       return;
     }
@@ -2072,8 +2082,12 @@ export class WorldScene extends Phaser.Scene {
     const workday = BALANCE.careers.workdays.includes((calendar(this.state.minutes).day - 1) % 7);
     if (workday && c.lastShiftDay !== calendar(this.state.minutes).day && m < BALANCE.careers.clockInUntil)
       this.objective(
-        here === c.current ? `CLOCK IN WITH ${J.boss} (08:00-10:00)` : `GO TO WORK: ${J.goTo} (08:00-10:00)`,
+        here === c.current
+          ? `CLOCK IN WITH ${J.bossRef} (08:00-10:00)`
+          : `GO TO WORK: ${J.goTo} (08:00-10:00)`,
       );
+    else if (outfitOf(this.state.look.outfit).from === 'uniform')
+      this.objective('CHANGE OUT OF YOUR UNIFORM: A LOCKER OR YOUR WARDROBE');
     else
       this.objective(
         m >= 20 * 60 || m < 6 * 60
@@ -2091,11 +2105,9 @@ export class WorldScene extends Phaser.Scene {
     if (s.job === 'delivery') {
       const prep = (['loadVan', 'route'] as const).filter((t) => !s.done.includes(t));
       if (prep.length) return `AT THE DEPOT: ${prep.map((t) => TASKS[t].name).join(' AND ')}`;
-      const drops = (['doorstep', 'signature'] as const)
-        .filter((t) => !s.done.includes(t))
-        .map((t) => this.dropFor(t)?.n)
-        .filter((n) => n !== undefined);
-      if (drops.length) return `DELIVER TO ${drops.join(' AND ')} LINDEN AVENUE`;
+      // the stops are marked on the radar; the doorstep task finds the right doors from the van
+      const stops = (['doorstep', 'signature'] as const).filter((t) => !s.done.includes(t)).length;
+      if (stops) return `DELIVER ON LINDEN AVENUE: ${stops} MARKED STOP${stops > 1 ? 'S' : ''}`;
     }
     if (s.job === 'lumberjack') return `DO ${more} IN THE YARD: FELL, CHOP OR LOAD LOGS`;
     return `DO ${more}: ${J.taskHint}`;
@@ -3072,8 +3084,11 @@ export class WorldScene extends Phaser.Scene {
     h.area = this.inside ? this.inside.def.id : 'street';
     h.clean = this.state.money.clean;
     h.stars = this.state.wanted.stars;
-    h.rank = this.state.career.jobs.office.rank;
+    h.rank = this.state.career.jobs[this.state.career.current].rank;
     h.tasksLeft = this.state.career.shift ? tasksLeft(this.state.career) : -1;
+    h.job = this.state.career.current;
+    h.shiftDone = [...(this.state.career.shift?.done ?? [])];
+    h.objective = this.objectiveText;
     this.syncMoneyHook();
     h.driving = this.state.driving;
     h.cars = this.state.vehicles.map((v) => ({
