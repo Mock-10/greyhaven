@@ -22,7 +22,7 @@ This is the only handover section; it replaces the old "Resume here" block and t
 - **Phase 2 (economy and careers) is in progress.** It is planned as milestones, one PR each:
   - **M5, money and phone:** done, merged in PR #10.
   - **UI redesign** (your request, 2026-10-12: larger text, more pictures): done, merged in PR #11.
-  - **M6a, the new district south of Downtown:** built on the branch **`claude/p2-map-shops`**, not merged, no PR yet.
+  - **M6a, the new district south of Downtown:** built on the branch **`claude/p2-map-shops`**, open as **PR #12** (https://github.com/Mock-10/greyhaven/pull/12), not merged yet.
     - The map grew from 70 × 48 to 70 × 96 tiles.
     - New streets: Hedgerow Way, Ashby Road and Linden Avenue, all two lanes each way.
     - New places: the hardware and clothing store buildings, Torque & Sons, the used-car lot, the Linden Avenue house row with the Swiftish Couriers depot, the woods, and the Ashby Timber yard.
@@ -62,7 +62,7 @@ This is the only handover section; it replaces the old "Resume here" block and t
    - Still to do:
      - Run `npm run build && npm run test:e2e`. **It has not been run on the 70 × 96 map yet.** Fix any test that assumed the old 48-tile height, the old spawn or the old lane count.
      - Check traffic density in a screenshot or two; the larger map may need more cars (see the known issues).
-     - Open the PR with the screenshots and merge it when CI is green.
+     - PR #12 is already open for this branch: pushing to the branch updates it. Add the screenshots to its description, fix CI until it is green, then merge it.
 4. **Then M6b, M7 and M8**, in that order (above).
    - Work one milestone at a time: plan, build, test (`npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run test:e2e`), screenshots (`npm run shots`), update this file, open the PR, merge it when green, send the user a short note with screenshots, then start the next milestone.
    - New UI must follow the redesign: the 5 × 7 font, pictures from `art/source/ui_icons.py`, and the sizes in docs/11.
@@ -72,7 +72,7 @@ This is the only handover section; it replaces the old "Resume here" block and t
 
 ### What's left in Phase 2
 (Details are in the checklist below.)
-- **M6a merge:** e2e on the new map, then the PR and the merge.
+- **M6a merge:** e2e on the new map, then a green CI on PR #12 and the merge.
 - **Shops:**
   - the hardware and clothing stores need doors, interiors and stock;
   - the car dealer needs its sales cabin to work and its purchase flow (beater and sedan);
@@ -108,7 +108,7 @@ This is the only handover section; it replaces the old "Resume here" block and t
   - The map drafts were stale (70 × 48) until this session; they are now re-rendered on the branch, but main still has the old ones until M6a merges.
 
 ### Your requests and where they stand
-- **Wider streets, two lanes each way on every new street:** done on `claude/p2-map-shops` (Hedgerow Way, Ashby Road, Linden Avenue); not merged yet. The rule is permanent and is written in docs/01 ("Street width") and CLAUDE.md rule 7. The existing Downtown streets stay one lane each way, as you said.
+- **Wider streets, two lanes each way on every new street:** done on `claude/p2-map-shops` (Hedgerow Way, Ashby Road, Linden Avenue), in PR #12; not merged yet. The rule is permanent and is written in docs/01 ("Street width") and CLAUDE.md rule 7. The existing Downtown streets stay one lane each way, as you said.
 - **Full CHANGELOG handovers:** done (this section).
 - **Resume instructions for a new session:** done ("The exact next step" above).
 - **UI redesign (better graphics, larger text, more pictures):** done, merged in PR #11. The spec is permanent in docs/11 ("UI redesign"), docs/13 and CLAUDE.md step 7.
@@ -149,7 +149,7 @@ They are recorded in docs 01, 02, 08 and 11.
 
 ### Git state
 - **`main`:** 1fb5da7 (PRs #9, #10 and #11 merged), plus this handover (a CHANGELOG-only commit). Pages deploys from main: https://mock-10.github.io/greyhaven/.
-- **`claude/p2-map-shops`:** M6a. Head 8033220 (the WIP commit 7d92bf5 plus the handover commit with the docs, the drafts and the screenshots). No PR yet.
+- **`claude/p2-map-shops`:** M6a. The WIP commit 7d92bf5, plus the handover commits with the docs, the drafts and the screenshots. Open as **PR #12**.
 - Other `claude/*` branches are merged and can be ignored.
 
 ### Answered decisions, in short (full text in the docs)
@@ -229,12 +229,12 @@ They are recorded in docs 01, 02, 08 and 11.
 - **Saves:** `SAVE_VERSION` is 2 (with the v1 → v2 migration). Bump it and add a migration and its test whenever the save shape changes.
 
 ## Phase 2 — Economy and careers (in progress)
-Status key: [x] done and playable · [~] partly done (what's left is said) · [ ] not started. Milestones: M5 money and phone (done, PR #10), the UI redesign (done, PR #11), M6a map growth (built on `claude/p2-map-shops`, not merged), M6b shops and the creator, M7 the three new jobs, M8 odd jobs, the first day and the close.
+Status key: [x] done and playable · [~] partly done (what's left is said) · [ ] not started. Milestones: M5 money and phone (done, PR #10), the UI redesign (done, PR #11), M6a map growth (built on `claude/p2-map-shops`, PR #12, not merged), M6b shops and the creator, M7 the three new jobs, M8 odd jobs, the first day and the close.
 
 **Standing rule from now on (user, 2026-10-11): every new street is at least two lanes in each direction (4 lanes in all).** The existing Downtown streets stay as they are: they have one lane each way, which suits a compact downtown. Everything built from now on follows the rule, starting with the Phase 2 map growth (the garage block road, the house row with the depot, the road through the woods) and later the Phase 6 city. See docs/01 ("Street width").
 
-- [~] **Street width rule:** new streets are at least two lanes each way. (M6a, on `claude/p2-map-shops`: the map script has a lane count per road, writes one lane line per lane with stop lines, and draws the dividers; traffic picks a lane. Left: e2e on the new map, then the PR and the merge.)
-- [~] Test map grows: Torque & Sons garage block, a street of houses with the Swiftish Couriers depot, a patch of woods with Ashby Timber and a road (all reachable on foot or by car). All new roads are two lanes each way. (M6a, on `claude/p2-map-shops`: built and screenshot-checked at 70 × 96 tiles, with Hedgerow Way, Ashby Road, Linden Avenue and the Hedgerow Park and Far Acres districts. Left: e2e on the new map, then the PR and the merge.)
+- [~] **Street width rule:** new streets are at least two lanes each way. (M6a, on `claude/p2-map-shops`: the map script has a lane count per road, writes one lane line per lane with stop lines, and draws the dividers; traffic picks a lane. Left: e2e on the new map, then a green CI on PR #12 and the merge.)
+- [~] Test map grows: Torque & Sons garage block, a street of houses with the Swiftish Couriers depot, a patch of woods with Ashby Timber and a road (all reachable on foot or by car). All new roads are two lanes each way. (M6a, on `claude/p2-map-shops`: built and screenshot-checked at 70 × 96 tiles, with Hedgerow Way, Ashby Road, Linden Avenue and the Hedgerow Park and Far Acres districts. Left: e2e on the new map, then a green CI on PR #12 and the merge.)
 - [x] Bank account: carried vs banked clean cash, ATMs, pay into the bank. (M5)
 - [x] Rent auto-paid on Monday 06:00, late fees, eviction after two missed weeks, shelter (sleep and save). (M5)
 - [ ] Character creator (palette-swap sprites, as specced) before the first day. (Not started; M6b.)
@@ -253,7 +253,7 @@ Status key: [x] done and playable · [~] partly done (what's left is said) · [ 
 - [ ] Econ sim re-run, tests, screenshots, notes, PR. (Not started; M8, the phase close.)
 - [x] UI redesign: larger text (5 × 7 font), more pictures (rendered icon atlas), a bigger HUD, the handset phone, picture grids. (Your request, 2026-10-12; merged in PR #11.)
 
-### Milestone 6a: the new district south of Downtown (2026-10-12; on `claude/p2-map-shops`, not merged)
+### Milestone 6a: the new district south of Downtown (2026-10-12; on `claude/p2-map-shops`, PR #12, not merged)
 **Built:**
 - **The map grew from 70 × 48 to 70 × 96 tiles** (`art/source/downtown_map.py` → `src/maps/downtown.json`; the city atlas is repacked at 231 frames).
 - **Two-lanes-each-way streets** (your rule): **Hedgerow Way** along Downtown's south edge, **Ashby Road** south from Hedgerow Way (it continues Millwright Road and bends to the map edge), and **Linden Avenue** west from Ashby Road. Each has 8 tiles of asphalt, dashed lane dividers, a double centre line, stop lines and crossings.
