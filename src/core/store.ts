@@ -12,6 +12,9 @@ import { DEFAULT_LOOK, STARTING_OUTFITS, playerCostume, type Look } from '../dat
 import type { LaunderLog } from '../systems/laundering';
 import type { Vehicle } from '../systems/vehicle';
 import { emptyWanted, type WantedState } from '../systems/wanted';
+import { createCrime, type CrimeState } from '../systems/reputation';
+import { emptyHeat, type HeatState } from '../systems/identify';
+import type { Goods } from '../systems/burglary';
 
 /** Where the player is: out on the street map, or inside an interior. */
 export type Area = { kind: 'street' } | { kind: 'interior'; id: InteriorId };
@@ -41,10 +44,32 @@ export interface Inventory {
   /** Stolen goods from trunks (phones, watches), for the fence (Phase 3). */
   phones: number;
   watches: number;
+  /** Uses left on the ATM drill (Phase 3; 0 = none). */
+  drill: number;
+}
+
+/** When each store, house and ATM was last hit (in-game minutes), for restocking (Phase 3). */
+export interface CrimeLog {
+  stores: Record<string, number>;
+  houses: Record<string, number>;
+  atms: Record<string, number>;
+}
+
+export function emptyCrimeLog(): CrimeLog {
+  return { stores: {}, houses: {}, atms: {} };
 }
 
 export function emptyInventory(): Inventory {
-  return { fuelCans: 0, firstAid: 0, repairKits: 0, lockpicks: 0, toolbox: 0, phones: 0, watches: 0 };
+  return {
+    fuelCans: 0,
+    firstAid: 0,
+    repairKits: 0,
+    lockpicks: 0,
+    toolbox: 0,
+    phones: 0,
+    watches: 0,
+    drill: 0,
+  };
 }
 
 export interface GameState {
@@ -88,6 +113,16 @@ export interface GameState {
   laundered: LaunderLog;
   /** Offense record (docs/05): the in-game minute of every arrest; the last 14 days decide first vs repeat. */
   record: { arrests: number[] };
+  /** Criminal reputation, its waiting payouts and the crime contacts (systems/reputation.ts). */
+  crime: CrimeState;
+  /** The face on file: identifications by source (systems/identify.ts, docs/12 "heat states"). */
+  heat: HeatState;
+  crimeLog: CrimeLog;
+  /** Burglary goods carried for the fence. */
+  goods: Goods[];
+  /** Masks owned (data ids) and the one worn, or null (docs/05). */
+  masks: string[];
+  maskOn: string | null;
   /** Real seconds played, for the save summary and local play stats (docs/12). */
   playtime: number;
 }
@@ -151,6 +186,12 @@ export function createState(
     lastCar: null,
     laundered: { day: 0, amount: 0 },
     record: { arrests: [] },
+    crime: createCrime(),
+    heat: emptyHeat(),
+    crimeLog: emptyCrimeLog(),
+    goods: [],
+    masks: [],
+    maskOn: null,
     playtime: 0,
   };
 }

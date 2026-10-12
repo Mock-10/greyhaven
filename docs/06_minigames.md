@@ -88,3 +88,12 @@ Every job task is a panel in the redesign style (248 × 176, the 5 × 7 font, th
 - **Stamp and sign** (office): 5 papers, a stamp box and a signature line each, both on Space; early presses smudge.
 - **Meeting** (office, rank 3+): 3 of 9 questions, 9 s each; the boss's mood starts at 40 and silence costs 12. The dialogue is Claude's, in the dry office tone, for the user to review.
 - The accessibility assists above are not hooked up to the job tasks yet (Phase 8).
+
+## Phase 3 build (milestone 10, 2026-10-12): crime minigames
+`src/minigames/crime.ts`, panels in `src/ui/panelsCrime.ts`, numbers in `BALANCE.crimeRules.minigames`. None of them pause the world.
+- **Intimidate:** hold Space; keep the nerve meter in the green band for 3.5 s within 10 s. The top of the meter is the alarm (a fail).
+- **Safe crack:** A/D turn the dial; Space sets the number when it clicks. 3 + tier numbers, 3 misses fail, 40 s.
+- **ATM hack:** watch the pads, repeat with WASD; rounds of 3, 4 and 5 arrows. A wrong arrow fails.
+- **Drill:** hold Space; ease off before the heat reaches the red. Each jam sets it back; 3 jams fail.
+- **Wipe footage:** hold Space with the marker (A/D) inside the moving green window until 10 s are erased.
+- **Alarm bypass:** cut the wires (1–4) in the diagram's order before time runs out (also the CCTV desk). Assumed: the store panel skips the 4-digit code part so it fits the 10 s.

@@ -149,6 +149,17 @@ export function useSpots(json: InteriorJson, def: InteriorDef, doors: readonly D
       label: a.label,
       action: a.action,
     });
+    (def.extra?.[it.prompt] ?? []).forEach((e, k) =>
+      out.push({
+        id: `${json.id}:${i}:${k}`,
+        kind: 'action',
+        x: it.x,
+        y: it.y,
+        item: i,
+        label: e.label,
+        action: e.action,
+      }),
+    );
   });
   doors.forEach((d, k) => {
     const it = json.items[d.item] as InteriorItem;

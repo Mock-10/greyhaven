@@ -18,7 +18,14 @@ export type InteriorId =
   | 'dealer'
   | 'garage'
   | 'depot'
-  | 'site_trailer';
+  | 'site_trailer'
+  | 'house_bungalow'
+  | 'house_family'
+  | 'house_townhouse'
+  | 'pawn'
+  | 'precinct';
+
+export type CrimeStep = 'register' | 'safe' | 'cctv' | 'wipe';
 
 export type Action =
   | { kind: 'sleep' }
@@ -38,6 +45,16 @@ export type Action =
   | { kind: 'dealer' }
   /** A weekend odd job's task spot (data/oddJobs.ts): the bar's taps. */
   | { kind: 'gig'; gig: GigId }
+  /** Search a burglary house's room (index into data/burglary.ts LAYOUTS[layout].rooms). */
+  | { kind: 'burgle'; room: number }
+  /** The house alarm's keypad by the front door. */
+  | { kind: 'housePanel' }
+  /** The fence's counter at the pawn shop (world/fence.ts). */
+  | { kind: 'fence' }
+  /** Precinct 1's front desk: your record. */
+  | { kind: 'frontDesk' }
+  /** A step of a store robbery (systems/robbery.ts): the register, the safe, the CCTV desk, the DVR. */
+  | { kind: 'crime'; step: CrimeStep }
   | { kind: 'later'; who: string; text: string };
 
 /** How a door leaf behaves: always openable, locked, or open only under a condition. */
@@ -72,6 +89,8 @@ export interface InteriorDef {
   elevator?: { x: number; y: number };
   /** The draft's prompt labels: what they do now (null hides the prompt; the object is just furniture). */
   actions: Record<string, { label: string; action: Action } | null>;
+  /** More prompts at the same spot as a draft prompt (TAB picks between them): the store's register robbery. */
+  extra?: Record<string, { label: string; action: Action }[]>;
   /** Door leaves in the order they appear in the export. */
   doors: DoorRule[];
   /** NPC spots in the order they appear in the export. */
@@ -106,13 +125,14 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     hours: h(7, 21),
     entrance: { x: 170, y: 210 },
     actions: {
-      // Phase 1 sells a few basics (decided 2026-10-11); robbery comes in Phase 3
+      // the till sells the basics; TAB at it picks the robbery (Phase 3, docs/04 "Store robbery layout")
       'ROB REGISTER': { label: 'SHOP', action: { kind: 'shop' } },
       'LOCKPICK DOOR': null,
-      'CRACK SAFE': null,
-      'DISABLE CAMERAS': null,
-      'WIPE FOOTAGE': null,
+      'CRACK SAFE': { label: 'CRACK SAFE', action: { kind: 'crime', step: 'safe' } },
+      'DISABLE CAMERAS': { label: 'DISABLE CAMERAS', action: { kind: 'crime', step: 'cctv' } },
+      'WIPE FOOTAGE': { label: 'WIPE FOOTAGE', action: { kind: 'crime', step: 'wipe' } },
     },
+    extra: { 'ROB REGISTER': [{ label: 'ROB THE REGISTER', action: { kind: 'crime', step: 'register' } }] },
     doors: [{ kind: 'locked', label: 'STAFF ONLY' }],
     npcs: [
       { role: 'clerk', hours: h(7, 21) },
@@ -282,9 +302,60 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
       { role: 'crew', hours: h(8, 17) },
     ],
   },
+  // the pawn shop on Overcast Avenue: the fence's counter (docs/04, Phase 3)
+  pawn: {
+    id: 'pawn',
+    name: 'PAWN SHOP',
+    street: 'pawn',
+    hours: h(10, 22),
+    entrance: { x: 161, y: 146 },
+    actions: { 'THE FENCE': { label: 'THE FENCE', action: { kind: 'fence' } } },
+    doors: [],
+    npcs: [{ role: 'the fence', hours: h(10, 22) }],
+  },
+  // Greyhaven PD Precinct 1: the walkable front desk (docs/18 decisions, Phase 3); released prisoners walk out here
+  precinct: {
+    id: 'precinct',
+    name: 'PRECINCT 1',
+    street: 'precinct',
+    hours: null,
+    entrance: { x: 197, y: 180 },
+    actions: { 'FRONT DESK': { label: 'FRONT DESK', action: { kind: 'frontDesk' } } },
+    doors: [],
+    npcs: [{ role: 'desk sergeant', hours: null }],
+  },
+  // the Phase 3 burglary houses on Linden Avenue (docs/04, docs/18 decisions): entered by picking the front door
+  house_bungalow: house('house_bungalow', { x: 211, y: 178 }, ['LIVING ROOM', 'KITCHEN', 'BEDROOM']),
+  house_family: house('house_family', { x: 261, y: 210 }, [
+    'LIVING ROOM',
+    'KITCHEN',
+    'MAIN BEDROOM',
+    'KIDS ROOM',
+  ]),
+  house_townhouse: house('house_townhouse', { x: 71, y: 210 }, ['LIVING ROOM', 'STUDY', 'BEDROOM']),
 };
 
 /** The interior a street door leads to, if any. */
+/** A burglary house: a SEARCH prompt per room (in data/burglary.ts order), the keypad, the owner's spot. */
+function house(id: InteriorId, entrance: { x: number; y: number }, rooms: readonly string[]): InteriorDef {
+  const actions: InteriorDef['actions'] = {
+    'ALARM PANEL': { label: 'ALARM PANEL', action: { kind: 'housePanel' } },
+  };
+  rooms.forEach(
+    (r, k) => (actions[`SEARCH ${r}`] = { label: `SEARCH ${r}`, action: { kind: 'burgle', room: k } }),
+  );
+  return {
+    id,
+    name: 'A HOUSE ON LINDEN AVENUE',
+    street: null,
+    hours: null,
+    entrance,
+    actions,
+    doors: [],
+    npcs: [{ role: 'owner', hours: null }],
+  };
+}
+
 export function interiorForDoor(target: DoorTarget): InteriorDef | null {
   return Object.values(INTERIORS).find((d) => d.street === target) ?? null;
 }

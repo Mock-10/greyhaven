@@ -13,6 +13,10 @@ import { coverShift, coverable, frozen, rankTitle, xpNeeded } from '../systems/c
 import { calendar, formatClock } from '../systems/clock';
 import { canStartGig } from '../systems/oddJobs';
 import { onboardEvent } from '../systems/onboarding';
+import { bribeOnScene, onScenePrice } from '../systems/jail';
+import { tierFor, tierProgress } from '../systems/reputation';
+import type { ChaseState } from '../systems/response';
+import { CONTACTS, TIER_NAMES, type ContactId } from '../data/reputation';
 import { debit, deposit, moveBackIn, moveInCost, payOwed, withdraw } from '../systems/finance';
 import { useFirstAid, type Wallet } from '../systems/shop';
 import { SENDER_ICON } from '../data/senders';
@@ -24,6 +28,8 @@ export interface PhoneCtx {
   state: GameState;
   /** Wallet view (health lives on the player). */
   wallet: Wallet;
+  /** This chase's once-only moves (the on-scene bribe), when the world has one. */
+  chase?: ChaseState;
 }
 
 /** Senders whose messages are kept in the phone (people and services, not prompts like CAR or LOCKPICK). */
@@ -338,8 +344,56 @@ export function contactsPage(ctx: PhoneCtx): ListPage {
       }),
     },
   ];
-  return { title: 'CONTACTS', rows };
+  // the crime side (Phase 3): a cop on the take while wanted, then the contacts your reputation opened
+  if (st.wanted.stars > 0) {
+    const price = onScenePrice(st.wanted.stars);
+    rows.unshift({
+      label: 'A COP ON THE TAKE',
+      icon: 'face/cop',
+      sub:
+        price === null ? 'NOT AT THIS LEVEL' : ctx.chase?.bribe ? 'TRIED ALREADY' : 'MAKES THE CALL GO AWAY',
+      detail: price === null ? undefined : money(price),
+      enabled: price !== null && !ctx.chase?.bribe,
+      act: () => (ctx.chase ? { say: bribeOnScene(ctx.chase, st.wanted, st.money).text } : undefined),
+    });
+  }
+  for (const id of st.crime.contacts) {
+    if (id === 'dez' || id === 'marlo') continue;
+    const def = CONTACTS.find((q) => q.id === id);
+    if (!def) continue;
+    rows.push({
+      label: def.name,
+      icon: CONTACT_ICON[id],
+      sub: def.role,
+      act: () => ({ open: () => card(def.name, CONTACT_ICON[id], CONTACT_TEXT[id]) }),
+    });
+  }
+  const rp = tierProgress(st.crime.rep);
+  const lines = [
+    `STREET REP: ${TIER_NAMES[tierFor(st.crime.rep)]}`,
+    rp.next === null ? 'TOP OF THE TOWN' : `${st.crime.rep} / ${rp.next}`,
+  ];
+  return { title: 'CONTACTS', lines, rows };
 }
+
+const CONTACT_ICON: Record<ContactId, IconName> = {
+  dez: 'face/dez',
+  marlo: 'face/marlo',
+  fence: 'face/fence',
+  dealer: 'face/dealer',
+  supplier: 'face/supplier',
+  gangContact: 'face/gang',
+};
+
+/** What each crime contact says when you open their card (their services arrive over Phase 3 and later). */
+const CONTACT_TEXT: Record<ContactId, string> = {
+  dez: '',
+  marlo: '',
+  fence: 'THE PAWN SHOP. I BUY WHAT YOU FIND AND SELL MASKS AND TOOLS. NO RECEIPTS.',
+  dealer: 'WEAPONS COME LATER. KEEP YOUR HEAD DOWN UNTIL THEN.',
+  supplier: 'PRODUCT, WHEN YOU HAVE SOMEWHERE TO MOVE IT.',
+  gangContact: 'WE HEAR THINGS. BRIBES AND INTEL, FOR A PRICE.',
+};
 
 // ---------------------------------------------------------------- ATM
 

@@ -651,7 +651,7 @@ def block_n():
     b = BLOCKS['n']
     ground('concrete', b.interior())
     fy = ROADS_X[O] - HW - SWK
-    row(['open_most_hours', 'shop_cafe', 'shop_pawn'], tc(24.0), fy, doors={0: (16.25, 'store', 'OPEN MOST HOURS')})
+    row(['open_most_hours', 'shop_cafe', 'shop_pawn'], tc(24.0), fy, doors={0: (16.25, 'store', 'OPEN MOST HOURS'), 2: (0.0, 'pawn', 'PAWN SHOP')})
     keep_clear(DOORS[-1]['x'], DOORS[-1]['y'], 30)
     # cafe terrace on brick paving
     ground('brickpave', rect(tc(28.1), fy, tc(30.15), fy + 38))
@@ -902,6 +902,9 @@ def block_sw():
                   'npc': {'x': tc(16.5), 'y': round(pre['y'] + 6, 1)},
                   'slots': [{'x': tc(19.0), 'y': round(pre['y'], 1), 'dir': 2}]})
     keep_clear(tc(16.8), pre['y'] + 6, 40)
+    # Phase 3: the front desk is walkable (docs/18 decisions)
+    DOORS.append({'x': round(pre['x'] + pre['shadow']['hx'] + 10, 2), 'y': round(pre['y'] + 6, 2), 'target': 'precinct',
+                  'label': 'ENTER PRECINCT 1'})
     building('shop_tailor', tc(11.4), tc(46.7), 4)
 
 

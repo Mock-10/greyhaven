@@ -1,0 +1,572 @@
+{
+ "id": "pawn",
+ "image": "pawn.png",
+ "W": 224,
+ "D": 160,
+ "wallH": 62,
+ "wallT": 5,
+ "partH": 11,
+ "floorKinds": [
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ]
+ ],
+ "partitions": [],
+ "stubGaps": [
+  [
+   "A",
+   150,
+   172
+  ]
+ ],
+ "segments": [],
+ "items": [
+  {
+   "frame": "item_0_storage_shelf",
+   "kind": "storage_shelf",
+   "x": 22,
+   "y": 8,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 15,
+    "hy": 6,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_1_storage_shelf",
+   "kind": "storage_shelf",
+   "x": 62,
+   "y": 8,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 15,
+    "hy": 6,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_2_tool_pegboard",
+   "kind": "tool_pegboard",
+   "x": 104,
+   "y": 0,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_3_door_leaf",
+   "kind": "door_leaf",
+   "x": 0,
+   "y": 40,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966
+  },
+  {
+   "frame": "item_4_filing_cabinet",
+   "kind": "filing_cabinet",
+   "x": 8,
+   "y": 62,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 6,
+    "h": 24
+   }
+  },
+  {
+   "frame": "item_5_cardboard_boxes",
+   "kind": "cardboard_boxes",
+   "x": 132,
+   "y": 18,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 6,
+    "h": 10
+   }
+  },
+  {
+   "frame": "item_6_counter_run",
+   "kind": "counter_run",
+   "x": 96,
+   "y": 74,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 48,
+    "hy": 7,
+    "h": 14
+   },
+   "prompt": "THE FENCE"
+  },
+  {
+   "frame": "item_7_money_counter",
+   "kind": "money_counter",
+   "x": 74,
+   "y": 72,
+   "wz": 20.4,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_9_counter_run",
+   "kind": "counter_run",
+   "x": 206,
+   "y": 66,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 20,
+    "h": 14
+   }
+  },
+  {
+   "frame": "item_10_tv_stand",
+   "kind": "tv_stand",
+   "x": 9,
+   "y": 118,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 5,
+    "hy": 15,
+    "h": 12
+   }
+  },
+  {
+   "frame": "item_11_bookshelf",
+   "kind": "bookshelf",
+   "x": 8,
+   "y": 146,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 14,
+    "h": 32
+   }
+  },
+  {
+   "frame": "item_12_display_table",
+   "kind": "display_table",
+   "x": 96,
+   "y": 124,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 13,
+    "hy": 7,
+    "h": 13
+   }
+  },
+  {
+   "frame": "item_13_floor_lamp",
+   "kind": "floor_lamp",
+   "x": 60,
+   "y": 122,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_14_armchair",
+   "kind": "armchair",
+   "x": 136,
+   "y": 140,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 8,
+    "hy": 8,
+    "h": 12
+   }
+  },
+  {
+   "frame": "item_15_side_table",
+   "kind": "side_table",
+   "x": 162,
+   "y": 116,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_16_cardboard_boxes",
+   "kind": "cardboard_boxes",
+   "x": 40,
+   "y": 146,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 6,
+    "h": 10
+   }
+  },
+  {
+   "frame": "item_17_rug",
+   "kind": "rug",
+   "x": 120,
+   "y": 140,
+   "wz": 0.0,
+   "zBias": -300,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_18_wall_camera",
+   "kind": "wall_camera",
+   "x": 196,
+   "y": 8,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_19_plant_snake",
+   "kind": "plant_snake",
+   "x": 214,
+   "y": 100,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_20_entrance_mat",
+   "kind": "entrance_mat",
+   "x": 161,
+   "y": 152,
+   "wz": 0.0,
+   "zBias": -300,
+   "ang": 0.0
+  }
+ ],
+ "npcs": [
+  {
+   "costume": "civilian_b",
+   "dir": 2,
+   "walk": 0.0,
+   "x": 96,
+   "y": 58,
+   "zBias": 0
+  }
+ ],
+ "frames": {
+  "floor": {
+   "x": 0,
+   "y": 269,
+   "w": 392,
+   "h": 208,
+   "anchor": [
+    164.0,
+    4.0
+   ]
+  },
+  "walls": {
+   "x": 0,
+   "y": 0,
+   "w": 404,
+   "h": 268,
+   "anchor": [
+    170.0,
+    72.0
+   ]
+  },
+  "stubs": {
+   "x": 405,
+   "y": 0,
+   "w": 404,
+   "h": 213,
+   "anchor": [
+    170.0,
+    12.0
+   ]
+  },
+  "item_0_storage_shelf": {
+   "x": 514,
+   "y": 269,
+   "w": 52,
+   "h": 72,
+   "anchor": [
+    26.0,
+    58.0
+   ]
+  },
+  "item_1_storage_shelf": {
+   "x": 567,
+   "y": 269,
+   "w": 52,
+   "h": 72,
+   "anchor": [
+    26.0,
+    58.0
+   ]
+  },
+  "item_2_tool_pegboard": {
+   "x": 885,
+   "y": 269,
+   "w": 42,
+   "h": 50,
+   "anchor": [
+    22.0,
+    54.0
+   ]
+  },
+  "item_3_door_leaf": {
+   "x": 663,
+   "y": 269,
+   "w": 35,
+   "h": 68,
+   "anchor": [
+    17.0,
+    57.0
+   ]
+  },
+  "item_4_filing_cabinet": {
+   "x": 699,
+   "y": 269,
+   "w": 38,
+   "h": 58,
+   "anchor": [
+    19.0,
+    47.0
+   ]
+  },
+  "item_5_cardboard_boxes": {
+   "x": 51,
+   "y": 478,
+   "w": 40,
+   "h": 45,
+   "anchor": [
+    20.0,
+    34.0
+   ]
+  },
+  "item_6_counter_run": {
+   "x": 393,
+   "y": 269,
+   "w": 120,
+   "h": 84,
+   "anchor": [
+    60.0,
+    52.0
+   ]
+  },
+  "item_7_money_counter": {
+   "x": 254,
+   "y": 478,
+   "w": 29,
+   "h": 27,
+   "anchor": [
+    15.0,
+    18.0
+   ]
+  },
+  "item_9_counter_run": {
+   "x": 820,
+   "y": 269,
+   "w": 64,
+   "h": 56,
+   "anchor": [
+    32.0,
+    38.0
+   ]
+  },
+  "item_10_tv_stand": {
+   "x": 738,
+   "y": 269,
+   "w": 54,
+   "h": 58,
+   "anchor": [
+    27.0,
+    43.0
+   ]
+  },
+  "item_11_bookshelf": {
+   "x": 620,
+   "y": 269,
+   "w": 42,
+   "h": 69,
+   "anchor": [
+    21.0,
+    57.0
+   ]
+  },
+  "item_12_display_table": {
+   "x": 0,
+   "y": 478,
+   "w": 50,
+   "h": 47,
+   "anchor": [
+    25.0,
+    33.0
+   ]
+  },
+  "item_13_floor_lamp": {
+   "x": 793,
+   "y": 269,
+   "w": 26,
+   "h": 58,
+   "anchor": [
+    13.0,
+    50.0
+   ]
+  },
+  "item_14_armchair": {
+   "x": 928,
+   "y": 269,
+   "w": 48,
+   "h": 49,
+   "anchor": [
+    24.0,
+    36.0
+   ]
+  },
+  "item_15_side_table": {
+   "x": 164,
+   "y": 478,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_16_cardboard_boxes": {
+   "x": 92,
+   "y": 478,
+   "w": 40,
+   "h": 45,
+   "anchor": [
+    20.0,
+    34.0
+   ]
+  },
+  "item_17_rug": {
+   "x": 195,
+   "y": 478,
+   "w": 58,
+   "h": 34,
+   "anchor": [
+    29.0,
+    18.0
+   ]
+  },
+  "item_18_wall_camera": {
+   "x": 327,
+   "y": 478,
+   "w": 24,
+   "h": 23,
+   "anchor": [
+    14.0,
+    58.0
+   ]
+  },
+  "item_19_plant_snake": {
+   "x": 133,
+   "y": 478,
+   "w": 30,
+   "h": 44,
+   "anchor": [
+    15.0,
+    35.0
+   ]
+  },
+  "item_20_entrance_mat": {
+   "x": 284,
+   "y": 478,
+   "w": 42,
+   "h": 25,
+   "anchor": [
+    21.0,
+    13.0
+   ]
+  }
+ }
+}

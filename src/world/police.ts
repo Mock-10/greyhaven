@@ -1,8 +1,11 @@
-// The police in the street (docs/05, milestone 4: one cruiser and two officers at 1–2★). The cruiser drives the
-// roads to the reported spot or after the player's car; the officers get out, search the circle, chase the player on
-// foot and try to bust them. Their sight decides whether the stars flash (systems/wanted.ts).
+// The police in the street (docs/05). Milestone 4 sent one cruiser and two officers; Phase 3 runs the full 1–5★
+// response from systems/response.ts: cruisers, SWAT vans and armored SUVs leave Precinct 1 one after another with
+// their crews, a helicopter circles over the player from 4★, and roadblocks go up across the road ahead from 3★.
+// Each unit drives the roads to the reported spot or after the player's car; the crews get out, search the circle,
+// chase the player on foot and try to bust them. Their sight decides whether the stars flash (systems/wanted.ts).
 
 import type Phaser from 'phaser';
+import vehicles2Json from '../../art/vehicles2.json';
 import { BALANCE } from '../config/balance';
 import { DIRS, TILE } from '../config/constants';
 import type { Rng } from '../core/rng';
@@ -10,7 +13,9 @@ import { characterFrame, vehicleFrame } from '../assets/sprites';
 import { facingFromWorld, worldToScreen } from '../iso/projection';
 import type { Obb } from '../iso/staticDepth';
 import { moveWithCollision, type CollisionRules, type Solid } from '../systems/movement';
-import { route, type RoadGraph } from '../systems/roads';
+import { pointAt } from '../systems/paths';
+import { escalate, planResponse, roadblockChancePerMinute, type ResponsePlan } from '../systems/response';
+import { onRoad, route, type RoadGraph } from '../systems/roads';
 import { canSee, searchRadius, type WantedState } from '../systems/wanted';
 import { dirOf, drive, exitSpots, parkedCar, stats, type Vehicle } from '../systems/vehicle';
 
@@ -24,16 +29,16 @@ export interface PoliceHost {
   groundLayer: Phaser.GameObjects.Layer;
   rng: Rng;
   roads: RoadGraph;
-  /** Static solids plus other cars (the cruiser collides with them). */
+  /** Static solids plus other cars (the units collide with them). */
   solids(): Solid[];
   rules: CollisionRules;
   /** Building footprints: they block sight. */
   buildings: readonly Box[];
-  /** Where the cruiser starts: Precinct 1. */
+  /** Where the units start: Precinct 1. */
   base: { x: number; y: number; dir: number };
 }
 
-interface Officer {
+export interface Officer {
   x: number;
   y: number;
   fx: number;
@@ -44,6 +49,34 @@ interface Officer {
   sprite: Phaser.GameObjects.Sprite;
 }
 
+export interface Unit {
+  model: string;
+  v: Vehicle;
+  sprite: Phaser.GameObjects.Sprite;
+  shadow: Phaser.GameObjects.Image;
+  crew: Officer[];
+  path: { x: number; y: number }[];
+  planned: { x: number; y: number } | null;
+  planT: number;
+  stuckT: number;
+  reverseT: number;
+  /** A roadblock: parked across the road, never drives. */
+  parked: boolean;
+  /** Where this unit aims, off the shared target so they spread out. */
+  offset: { x: number; y: number };
+}
+
+interface Heli {
+  x: number;
+  y: number;
+  ang: number;
+  dir: number;
+  body: Phaser.GameObjects.Sprite;
+  rotor: Phaser.GameObjects.Sprite;
+  shadow: Phaser.GameObjects.Sprite;
+  t: number;
+}
+
 export interface PlayerView {
   x: number;
   y: number;
@@ -51,20 +84,20 @@ export interface PlayerView {
   driving: boolean;
   /** The car's speed, or 0 on foot. */
   speed: number;
+  /** The car's heading (for roadblocks ahead). */
+  heading?: number;
 }
 
+const MODEL = { cruiser: 'police_car', swat: 'swat_van', armored: 'armored_suv_police' } as const;
+type Kind = keyof typeof MODEL;
+
 export class Police {
-  cruiser: {
-    v: Vehicle;
-    sprite: Phaser.GameObjects.Sprite;
-    shadow: Phaser.GameObjects.Image;
-    path: { x: number; y: number }[];
-    planned: { x: number; y: number } | null;
-    planT: number;
-    stuckT: number;
-    reverseT: number;
-  } | null = null;
-  officers: Officer[] = [];
+  units: Unit[] = [];
+  helis: Heli[] = [];
+  /** Units still to leave the precinct, in order. */
+  private queue: Kind[] = [];
+  private spawnT = 0;
+  private plan: ResponsePlan | null = null;
   private fade = 0;
 
   constructor(
@@ -73,54 +106,119 @@ export class Police {
   ) {}
 
   get active(): boolean {
-    return this.cruiser !== null;
+    return this.units.length > 0 || this.helis.length > 0;
+  }
+
+  /** Every officer on the street (for sorting and the radar). */
+  get officers(): Officer[] {
+    return this.units.flatMap((u) => u.crew);
   }
 
   /** Where the police are, for the radar. */
   blips(): { x: number; y: number }[] {
     const out = this.officers.filter((o) => !o.inCar).map((o) => ({ x: o.x, y: o.y }));
-    if (this.cruiser) out.push({ x: this.cruiser.v.x, y: this.cruiser.v.y });
+    for (const u of this.units) out.push({ x: u.v.x, y: u.v.y });
+    for (const h of this.helis) out.push({ x: h.x, y: h.y });
     return out;
   }
 
-  private spawn(): void {
-    const b = this.host.base;
-    const v = parkedCar('police', 'police_car', b.x, b.y, b.dir);
+  /** The stars changed: queue the units the response is short of (the response stacks, docs/05). */
+  private respond(stars: number): void {
+    const rng = this.host.rng;
+    const next = this.plan ? escalate(this.plan, stars, rng) : planResponse(stars, rng);
+    const have = (k: Kind) =>
+      this.units.filter((u) => !u.parked && u.model === MODEL[k]).length +
+      this.queue.filter((q) => q === k).length;
+    const want: Record<Kind, number> = { cruiser: next.cruisers, swat: next.swatVans, armored: next.armored };
+    for (const k of ['cruiser', 'swat', 'armored'] as const)
+      for (let n = have(k); n < want[k]; n++) this.queue.push(k);
+    while (this.helis.length < next.helicopters) this.spawnHeli();
+    this.plan = next;
+  }
+
+  private makeUnit(kind: Kind, x: number, y: number, dir: number, parked: boolean): Unit {
+    const model = MODEL[kind];
+    const v = parkedCar(`police${this.units.length}`, model, x, y, dir);
     v.locked = false;
-    v.running = true;
-    const ref = vehicleFrame('police_car', b.dir);
+    v.running = !parked;
+    const ref = vehicleFrame(model, dir);
     const sprite = this.scene.add.sprite(0, 0, ref.atlas, ref.frame);
     this.host.layer.add(sprite);
-    const shadow = this.scene.add.image(0, 0, this.host.carShadow('police_car', b.dir)).setDepth(1e6 - 2);
+    const shadow = this.scene.add.image(0, 0, this.host.carShadow(model, dir)).setDepth(1e6 - 2);
     this.host.groundLayer.add(shadow);
-    this.cruiser = { v, sprite, shadow, path: [], planned: null, planT: 0, stuckT: 0, reverseT: 0 };
     this.host.ensureWalkAnims('police_officer');
-    for (let k = 0; k < BALANCE.police.officers; k++) {
+    const n =
+      kind === 'cruiser' ? BALANCE.policeRules.officersPerCruiser : BALANCE.policeRules.officersPerVan;
+    const crew: Officer[] = [];
+    for (let k = 0; k < n; k++) {
       const s = this.scene.add.sprite(0, 0, 'characters', characterFrame('police_officer', 'idle', 0).frame);
       s.setVisible(false);
       this.host.layer.add(s);
-      this.officers.push({ x: b.x, y: b.y, fx: 1, fy: 0, inCar: true, goal: null, goalT: 0, sprite: s });
+      crew.push({ x, y, fx: 1, fy: 0, inCar: true, goal: null, goalT: 0, sprite: s });
     }
-    this.fade = 0;
+    const spread = BALANCE.police.spreadUnits;
+    const a = this.host.rng.next() * Math.PI * 2;
+    const k = this.units.length;
+    const unit: Unit = {
+      model,
+      v,
+      sprite,
+      shadow,
+      crew,
+      path: [],
+      planned: null,
+      planT: 0,
+      stuckT: 0,
+      reverseT: 0,
+      parked,
+      offset: k === 0 ? { x: 0, y: 0 } : { x: Math.cos(a) * spread, y: Math.sin(a) * spread },
+    };
+    this.units.push(unit);
+    return unit;
+  }
+
+  private spawnHeli(): void {
+    const b = this.host.base;
+    const body = this.scene.add.sprite(0, 0, 'vehicles2', 'helicopter/S');
+    const rotor = this.scene.add.sprite(0, 0, 'vehicles2', 'helicopter_rotor/f0');
+    const shadow = this.scene.add.sprite(0, 0, 'vehicles2', 'helicopter_shadow/S');
+    // the helicopter flies over everything: above the street layer's sort range
+    body.setDepth(2e6);
+    rotor.setDepth(2e6 + 1);
+    this.host.layer.add(body);
+    this.host.layer.add(rotor);
+    this.host.groundLayer.add(shadow);
+    shadow.setDepth(1e6 - 1);
+    this.helis.push({ x: b.x, y: b.y, ang: 0, dir: 2, body, rotor, shadow, t: 0 });
   }
 
   destroy(): void {
-    if (this.cruiser) {
-      this.cruiser.sprite.destroy();
-      this.cruiser.shadow.destroy();
+    for (const u of this.units) {
+      u.sprite.destroy();
+      u.shadow.destroy();
+      for (const o of u.crew) o.sprite.destroy();
     }
-    for (const o of this.officers) o.sprite.destroy();
-    this.cruiser = null;
-    this.officers = [];
+    for (const h of this.helis) {
+      h.body.destroy();
+      h.rotor.destroy();
+      h.shadow.destroy();
+    }
+    this.units = [];
+    this.helis = [];
+    this.queue = [];
+    this.plan = null;
   }
 
-  /** Can any officer (or the cruiser's crew) see this point? */
+  /** Can any officer, unit crew or helicopter see this point? Helicopters look over the buildings. */
   sees(p: { x: number; y: number }): boolean {
     const range = BALANCE.wanted.policeSightTiles;
-    const eyes = this.officers.map((o) =>
-      o.inCar && this.cruiser ? { x: this.cruiser.v.x, y: this.cruiser.v.y } : o,
-    );
-    return eyes.some((e) => canSee(e, p, range, this.host.buildings));
+    for (const u of this.units)
+      for (const o of u.crew) {
+        const e = o.inCar ? { x: u.v.x, y: u.v.y } : o;
+        if (canSee(e, p, range, this.host.buildings)) return true;
+      }
+    const H = BALANCE.police.heli;
+    return this.helis.some((h) => Math.hypot(h.x - p.x, h.y - p.y) <= H.sightTiles * TILE);
   }
 
   /**
@@ -128,58 +226,129 @@ export class Police {
    * foot or in a stopped car).
    */
   update(dt: number, w: WantedState, player: PlayerView): number {
-    if (w.stars > 0 && !this.cruiser) this.spawn();
-    const c = this.cruiser;
-    if (!c) return 0;
+    if (w.stars > 0 && (this.plan === null || w.stars > this.plan.stars)) this.respond(w.stars);
     if (w.stars === 0) {
+      this.queue = [];
+      this.plan = null;
+      if (!this.active) return 0;
       // the chase is over: they fade away
       this.fade += dt;
       const a = Math.max(0, 1 - this.fade / 2);
-      c.sprite.setAlpha(a);
-      c.shadow.setAlpha(a);
-      for (const o of this.officers) o.sprite.setAlpha(a);
+      for (const u of this.units) {
+        u.sprite.setAlpha(a);
+        u.shadow.setAlpha(a);
+        for (const o of u.crew) o.sprite.setAlpha(a);
+      }
+      for (const h of this.helis) {
+        h.body.setAlpha(a);
+        h.rotor.setAlpha(a);
+        h.shadow.setAlpha(a);
+      }
       if (a <= 0) this.destroy();
       return 0;
     }
-    const P = BALANCE.police;
+    this.fade = 0;
+    // dispatch: one unit at a time from the precinct, so they don't spawn inside each other
+    this.spawnT -= dt;
+    if (this.queue.length > 0 && this.spawnT <= 0) {
+      const b = this.host.base;
+      this.makeUnit(this.queue.shift()!, b.x, b.y, b.dir, false);
+      this.spawnT = BALANCE.police.spawnGapSeconds;
+    }
+    this.roadblocks(dt, w, player);
     const target = w.seen || !w.lastKnown ? { x: player.x, y: player.y } : w.lastKnown;
-    const aboard = this.officers.every((o) => o.inCar);
-    // officers on foot go back to the car when the player drives off
-    if (player.driving && !aboard) {
-      for (const o of this.officers)
+    let busting = 0;
+    for (const u of this.units) busting += this.updateUnit(u, dt, w, player, target);
+    for (const h of this.helis) this.updateHeli(h, dt, target);
+    return busting;
+  }
+
+  /** 3★+: a roadblock may go up across the road ahead of a driving player (docs/05). */
+  private roadblocks(dt: number, w: WantedState, player: PlayerView): void {
+    const R = BALANCE.police.roadblock;
+    // far-away roadblocks are cleared
+    for (const u of [...this.units])
+      if (u.parked && Math.hypot(u.v.x - player.x, u.v.y - player.y) > R.despawnTiles * TILE)
+        this.removeUnit(u);
+    const max = this.plan?.roadblocks ?? 0;
+    const up = this.units.filter((u) => u.parked).length;
+    if (!player.driving || up >= max || player.heading === undefined) return;
+    const chance = 1 - Math.pow(1 - roadblockChancePerMinute(w.stars, false), dt / 60);
+    if (!this.host.rng.chance(chance)) return;
+    const ax = player.x + Math.cos(player.heading) * R.aheadTiles * TILE;
+    const ay = player.y + Math.sin(player.heading) * R.aheadTiles * TILE;
+    const r = onRoad(this.host.roads, ax, ay);
+    const line = this.host.roads.lines[r.line];
+    if (!line || r.d > 2 * TILE) return;
+    const p = pointAt(line.path, r.s);
+    const q = pointAt(line.path, r.s + 8);
+    // across the road: the car's heading is the road's direction turned a quarter
+    const along = Math.atan2(q.y - p.y, q.x - p.x);
+    const dir = dirOf(along + Math.PI / 2);
+    const u = this.makeUnit('cruiser', p.x, p.y, dir, true);
+    u.v.heading = (dir * Math.PI) / 4;
+    const spots = exitSpots(u.v, BALANCE.walker.radius);
+    u.crew.forEach((o, k) => {
+      const s = spots[k] ?? spots[0]!;
+      o.x = s.x;
+      o.y = s.y;
+      o.inCar = false;
+    });
+  }
+
+  private removeUnit(u: Unit): void {
+    u.sprite.destroy();
+    u.shadow.destroy();
+    for (const o of u.crew) o.sprite.destroy();
+    this.units = this.units.filter((q) => q !== u);
+  }
+
+  private updateUnit(
+    u: Unit,
+    dt: number,
+    w: WantedState,
+    player: PlayerView,
+    shared: { x: number; y: number },
+  ): number {
+    const P = BALANCE.police;
+    const target = { x: shared.x + u.offset.x, y: shared.y + u.offset.y };
+    const aboard = u.crew.every((o) => o.inCar);
+    // crews on foot go back to the car when the player drives off (roadblock crews hold their spot)
+    if (player.driving && !aboard && !u.parked) {
+      for (const o of u.crew)
         if (!o.inCar) {
-          o.goal = { x: c.v.x, y: c.v.y };
-          if (Math.hypot(o.x - c.v.x, o.y - c.v.y) < 40) o.inCar = true;
+          o.goal = { x: u.v.x, y: u.v.y };
+          if (Math.hypot(o.x - u.v.x, o.y - u.v.y) < 40) o.inCar = true;
         }
     }
-    if (aboard) this.driveCruiser(dt, target, player, w);
-    else {
-      c.v.speed = 0;
-    }
+    if (u.parked) u.v.speed = 0;
+    else if (aboard) this.driveUnit(u, dt, target, player, w);
+    else u.v.speed = 0;
     // get out when close to a player on foot, or at the reported spot
-    const dTarget = Math.hypot(c.v.x - target.x, c.v.y - target.y);
+    const dTarget = Math.hypot(u.v.x - target.x, u.v.y - target.y);
     if (
       aboard &&
+      !u.parked &&
       !player.driving &&
-      Math.abs(c.v.speed) < 30 &&
-      (dTarget < P.arriveDistance * 3 || this.pathLeft(c) < P.arriveDistance)
+      Math.abs(u.v.speed) < 30 &&
+      (dTarget < P.arriveDistance * 3 || this.pathLeft(u) < P.arriveDistance)
     ) {
-      const spots = exitSpots(c.v, BALANCE.walker.radius);
-      this.officers.forEach((o, k) => {
-        const s = spots[k] ?? spots[0]!;
+      const spots = exitSpots(u.v, BALANCE.walker.radius);
+      u.crew.forEach((o, k) => {
+        const s = spots[k % spots.length] ?? spots[0]!;
         o.x = s.x;
         o.y = s.y;
         o.inCar = false;
       });
     }
     let busting = 0;
-    for (const o of this.officers) {
+    for (const o of u.crew) {
       o.sprite.setVisible(!o.inCar);
       if (o.inCar) continue;
-      if (!player.driving) {
+      if (!player.driving || u.parked) {
         const chase = w.seen || this.sees(player);
-        if (chase) o.goal = { x: player.x, y: player.y };
-        else {
+        if (chase && !(u.parked && player.driving)) o.goal = { x: player.x, y: player.y };
+        else if (!u.parked) {
           o.goalT -= dt;
           if (!o.goal || o.goalT <= 0 || Math.hypot(o.goal.x - o.x, o.goal.y - o.y) < 12) {
             const r = searchRadius(w.stars) * this.host.rng.next() * 0.8;
@@ -224,81 +393,115 @@ export class Police {
       const near = Math.hypot(o.x - player.x, o.y - player.y) <= BALANCE.wanted.bustTiles * TILE;
       if (near && (!player.driving || player.speed < BALANCE.wanted.stoppedCarSpeed)) busting++;
     }
-    this.drawCruiser();
+    this.drawUnit(u);
     return busting;
   }
 
-  private driveCruiser(
+  private driveUnit(
+    u: Unit,
     dt: number,
     target: { x: number; y: number },
     player: PlayerView,
     w: WantedState,
   ): void {
-    const c = this.cruiser!;
     const P = BALANCE.police;
-    c.planT -= dt;
-    const moved = !c.planned || Math.hypot(c.planned.x - target.x, c.planned.y - target.y) > 3 * TILE;
-    if (c.planT <= 0 || moved) {
-      c.path = route(this.host.roads, c.v, target);
-      c.planned = { ...target };
-      c.planT = 1.5;
+    u.planT -= dt;
+    const moved = !u.planned || Math.hypot(u.planned.x - target.x, u.planned.y - target.y) > 3 * TILE;
+    if (u.planT <= 0 || moved) {
+      u.path = route(this.host.roads, u.v, target);
+      u.planned = { ...target };
+      u.planT = 1.5;
     }
     // close and in sight: drive straight at the player's car
-    const direct = player.driving && w.seen && Math.hypot(player.x - c.v.x, player.y - c.v.y) < 6 * TILE;
-    while (c.path.length > 1 && Math.hypot(c.path[0]!.x - c.v.x, c.path[0]!.y - c.v.y) < P.lookAhead)
-      c.path.shift();
-    const aim = direct ? target : (c.path[0] ?? target);
-    const left = direct ? Math.hypot(target.x - c.v.x, target.y - c.v.y) : this.pathLeft(c);
-    const want = Math.atan2(aim.y - c.v.y, aim.x - c.v.x);
-    let diff = want - c.v.heading;
+    const direct = player.driving && w.seen && Math.hypot(player.x - u.v.x, player.y - u.v.y) < 6 * TILE;
+    while (u.path.length > 1 && Math.hypot(u.path[0]!.x - u.v.x, u.path[0]!.y - u.v.y) < P.lookAhead)
+      u.path.shift();
+    const aim = direct ? { x: player.x, y: player.y } : (u.path[0] ?? target);
+    const left = direct ? Math.hypot(player.x - u.v.x, player.y - u.v.y) : this.pathLeft(u);
+    const want = Math.atan2(aim.y - u.v.y, aim.x - u.v.x);
+    let diff = want - u.v.heading;
     while (diff > Math.PI) diff -= 2 * Math.PI;
     while (diff < -Math.PI) diff += 2 * Math.PI;
     let throttle = left < P.arriveDistance && !player.driving ? -1 : Math.abs(diff) > 1.6 ? 0.4 : 1;
     let steer = Math.max(-1, Math.min(1, diff * 2.2));
-    if (c.reverseT > 0) {
-      c.reverseT -= dt;
+    if (u.reverseT > 0) {
+      u.reverseT -= dt;
       throttle = -1;
       steer = -steer;
     }
-    if (throttle < 0 && c.v.speed <= 0 && c.reverseT <= 0) throttle = 0;
-    drive(c.v, { throttle, steer, handbrake: false }, dt, this.host.solids(), this.host.rules);
+    if (throttle < 0 && u.v.speed <= 0 && u.reverseT <= 0) throttle = 0;
+    drive(u.v, { throttle, steer, handbrake: false }, dt, this.host.solids(), this.host.rules);
     // stuck against something: back up a little
-    if (throttle > 0 && Math.abs(c.v.speed) < 10) c.stuckT += dt;
-    else c.stuckT = 0;
-    if (c.stuckT > 1.2) {
-      c.reverseT = 0.9;
-      c.stuckT = 0;
+    if (throttle > 0 && Math.abs(u.v.speed) < 10) u.stuckT += dt;
+    else u.stuckT = 0;
+    if (u.stuckT > 1.2) {
+      u.reverseT = 0.9;
+      u.stuckT = 0;
     }
   }
 
-  private pathLeft(c: NonNullable<Police['cruiser']>): number {
+  /** The helicopter circles the target (the player when seen, else the last known spot) at its altitude. */
+  private updateHeli(h: Heli, dt: number, target: { x: number; y: number }): void {
+    const H = BALANCE.police.heli;
+    h.t += dt;
+    h.ang += dt * 0.6;
+    const gx = target.x + Math.cos(h.ang) * H.orbit;
+    const gy = target.y + Math.sin(h.ang) * H.orbit;
+    const dx = gx - h.x;
+    const dy = gy - h.y;
+    const d = Math.hypot(dx, dy);
+    if (d > 1) {
+      const step = Math.min(d, H.speed * dt);
+      h.x += (dx / d) * step;
+      h.y += (dy / d) * step;
+      h.dir = facingFromWorld(dx, dy);
+    }
+    const name = DIRS[h.dir] as string;
+    const s = worldToScreen(h.x, h.y);
+    const sx = Math.round(s.x);
+    const sy = Math.round(s.y);
+    h.shadow.setFrame(`helicopter_shadow/${name}`);
+    h.shadow.setPosition(sx, sy);
+    h.body.setFrame(`helicopter/${name}`);
+    h.body.setPosition(sx, sy - H.altitudePx);
+    const mount = MOUNTS[name] ?? [0, -40];
+    h.rotor.setFrame(`helicopter_rotor/f${Math.floor(h.t * H.rotorFps) % 4}`);
+    h.rotor.setPosition(sx + mount[0], sy - H.altitudePx + mount[1]);
+  }
+
+  private pathLeft(u: Unit): number {
     let d = 0;
-    let prev = { x: c.v.x, y: c.v.y };
-    for (const p of c.path) {
+    let prev = { x: u.v.x, y: u.v.y };
+    for (const p of u.path) {
       d += Math.hypot(p.x - prev.x, p.y - prev.y);
       prev = p;
     }
     return d;
   }
 
-  private drawCruiser(): void {
-    const c = this.cruiser!;
-    const dir = dirOf(c.v.heading);
-    const ref = vehicleFrame('police_car', dir);
-    if (c.sprite.frame.name !== ref.frame) {
-      c.sprite.setFrame(ref.frame);
-      c.shadow.setTexture(this.host.carShadow('police_car', dir));
+  private drawUnit(u: Unit): void {
+    const dir = dirOf(u.v.heading);
+    const ref = vehicleFrame(u.model, dir);
+    if (u.sprite.frame.name !== ref.frame) {
+      u.sprite.setFrame(ref.frame);
+      u.shadow.setTexture(this.host.carShadow(u.model, dir));
     }
-    const s = worldToScreen(c.v.x, c.v.y);
-    c.shadow.setPosition(Math.round(s.x), Math.round(s.y));
-    this.host.place(c.sprite, c.v.x, c.v.y, stats(c.v).halfLength * 0.7);
+    const s = worldToScreen(u.v.x, u.v.y);
+    u.shadow.setPosition(Math.round(s.x), Math.round(s.y));
+    this.host.place(u.sprite, u.v.x, u.v.y, stats(u.v).halfLength * 0.7);
   }
 
-  /** The cruiser as a turned box, for collisions and sorting. */
-  cruiserBox(): Obb | null {
-    const c = this.cruiser;
-    if (!c) return null;
-    const S = stats(c.v);
-    return { x: c.v.x, y: c.v.y, hx: S.halfLength, hy: S.halfWidth, ang: c.v.heading };
+  /** Every unit as a turned box, for collisions and sorting. */
+  boxes(): { obb: Obb; sprite: Phaser.GameObjects.Sprite }[] {
+    return this.units.map((u) => {
+      const S = stats(u.v);
+      return {
+        obb: { x: u.v.x, y: u.v.y, hx: S.halfLength, hy: S.halfWidth, ang: u.v.heading },
+        sprite: u.sprite,
+      };
+    });
   }
 }
+
+/** Where the rotor hub sits on the body, per facing (art/vehicles2.json mounts). */
+const MOUNTS = vehicles2Json.mounts.helicopter_rotor as unknown as Record<string, [number, number]>;

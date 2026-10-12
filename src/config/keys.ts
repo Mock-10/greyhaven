@@ -12,6 +12,8 @@ export const KEYS = {
   vehicle: 'F',
   handbrake: 'SPACE',
   debugOverlay: 'F3',
+  /** Put on or take off a mask (docs/11). */
+  mask: 'M',
   /** Skip the guided first day (docs/11). */
   skipGuide: 'F2',
   /** Sight lines on/off (docs/19) until the settings menu exists. */

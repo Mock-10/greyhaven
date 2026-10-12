@@ -59,7 +59,9 @@ export type DoorTarget =
   | 'dealer'
   | 'garage'
   | 'depot'
-  | 'site_trailer';
+  | 'site_trailer'
+  | 'pawn'
+  | 'precinct';
 
 /** A street door: a hotspot on the pavement in front of an entrance. */
 export interface Door {

@@ -150,6 +150,24 @@ def repair_kit():
                  (-8, 8, -2.5, 2.5, -1, 15))
 
 
+def drill():
+    """The ATM drill (Phase 3): a pistol-grip power drill with a long bit."""
+    def parts(P):
+        body = rbox(P, (0.5, 0, 9.6), (4.6, 1.7, 1.9), 1.2)
+        grip = capsule(P, (1.6, 0, 8.0), (2.6, 0, 2.6), 1.4)
+        battery = rbox(P, (2.8, 0, 1.6), (2.6, 2.0, 1.1), 0.5)
+        chuck = cyl_y_soft(rot_z(P, np.pi / 2), (0, 5.6, 9.6), 1.2, 0.9)
+        bit = capsule(P, (-6.0, 0, 9.6), (-11.0, 0, 9.6), 0.45)
+        return [np.minimum(body, battery), grip, np.minimum(chuck, bit)]
+    return Model(parts, [solid('red', 3.0, 0.4), solid('night', 2.0, 0.3), solid('blueg', 4.2, 0.9)],
+                 (-12, 8, -3, 3, 0, 13))
+
+
+def mask():
+    """A balaclava on a dark head form (the fence's masks, docs/04)."""
+    return humans.human(skin_tone=2.6, upper=('night', 1.0), hair=('night', 1.0), mask=True)
+
+
 def cyl_y_soft(P, c, r, hh):
     q = P - np.asarray(c, float)
     d1 = np.sqrt(q[:, 0] ** 2 + q[:, 2] ** 2) - r
@@ -428,6 +446,14 @@ FACES = {
     'hr': lambda: humans.human(skin_tone=3.2, upper=('teal', 2.4), hair=('khaki', 2.8), hair_style='long', jacket=True),
     'landlord': lambda: humans.human(skin_tone=2.6, upper=('wood', 2.2), hair=('white', 3.0), hair_style='bald'),
     'player': lambda: humans.office_worker(),
+    # Phase 3 crime contacts and the cop you bribe
+    'fence': lambda: humans.human(skin_tone=2.2, upper=('wood', 1.6), hair=('night', 2.0), hair_style='short', vest=('khaki', 2.2)),
+    'dealer': lambda: humans.human(skin_tone=1.6, upper=('night', 1.4), hair=('night', 0.8), hair_style='bald', jacket=True),
+    'supplier': lambda: humans.human(skin_tone=3.0, upper=('sage', 2.0), hair=('wood', 2.2), hood=('sage', 1.6)),
+    'gang': lambda: humans.human(skin_tone=2.0, upper=('red', 2.0), hair=('night', 1.0), hat='cap'),
+    'cop': lambda: humans.human(skin_tone=2.8, upper=('navy', 2.4), hair=('wood', 1.4), hat='cap', badge=True),
+    'masked': lambda: humans.human(skin_tone=2.6, upper=('night', 1.6), hair=('night', 1.0), mask=True),
+    'clerk': lambda: humans.human(skin_tone=2.9, upper=('sage', 2.4), hair=('khaki', 2.2), hair_style='long', vest=('red', 2.4)),
 }
 
 # name -> (model factory, view angle, cell size)
@@ -436,7 +462,7 @@ ICONS = {
     'item/fuel_can': (fuel_can, 0.4, 32), 'item/first_aid': (first_aid, -0.6, 32), 'item/lockpicks': (lockpicks, -0.6, 32),
     'item/toolbox': (toolbox, 0.6, 32), 'item/repair_kit': (repair_kit, -0.6, 32), 'item/phone': (phone, -0.6, 32),
     'item/wallet': (wallet, -0.6, 32), 'item/cash': (cash, 0.5, 32), 'item/watch': (watch, -0.6, 32),
-    'item/junk': (junk, 0.3, 32),
+    'item/junk': (junk, 0.3, 32), 'item/drill': (drill, 0.5, 32),
     'app/messages': (envelope, -0.6, 40), 'app/bank': (bank, 0.6, 40), 'app/jobs': (clipboard, -0.6, 40),
     'app/contacts': (address_book, -0.6, 40),
     'job/lumber': (axe, -0.6, 32), 'job/delivery': (parcel, 0.6, 32), 'app/bag': (duffel, 0.5, 40), 'app/shelter': (cot, 0.6, 40),
@@ -446,6 +472,7 @@ ICONS = {
 }
 for k, f in FACES.items():
     ICONS[f'face/{k}'] = ((lambda f=f: bust(f())), 0.785, 32)
+ICONS['item/mask'] = ((lambda: bust(mask())), 0.785, 32)
 
 # outfits (milestone 6b): a dress form wearing the outfit's top and bottom (src/data/looks.ts: the same ramps,
 # a shift of one tone ~ one step of base)

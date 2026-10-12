@@ -5,7 +5,7 @@ import type { GameState } from './store';
 import { ONBOARD_STEPS } from '../data/onboarding';
 
 /** Bump whenever the save shape changes, and add a migration below plus its test (CLAUDE.md rule 5). */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export const SLOTS = ['slot1', 'slot2', 'slot3'] as const;
 export const AUTO_SLOTS = ['auto1', 'auto2'] as const;
@@ -128,6 +128,17 @@ export const MIGRATIONS: Record<number, (state: Obj) => Obj> = {
     ...s,
     oddJobs: { gig: null, lastDay: { carWash: 0, barShift: 0 } },
     onboarding: { step: ONBOARD_STEPS.length, skipped: false, tipSent: true },
+  }),
+  /** 5 → 6 (Phase 3, crime and police): no reputation yet, nothing on file, nothing hit, no masks or drill. */
+  5: (s) => ({
+    ...s,
+    inventory: { ...(s.inventory as Obj), drill: 0 },
+    crime: { rep: 0, pending: [], contacts: ['dez', 'marlo', 'fence', 'dealer'], knownFaceUntil: 0 },
+    heat: { ids: [] },
+    crimeLog: { stores: {}, houses: {}, atms: {} },
+    goods: [],
+    masks: [],
+    maskOn: null,
   }),
 };
 

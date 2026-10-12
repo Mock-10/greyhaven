@@ -6,12 +6,76 @@ import { BALANCE } from '../config/balance';
 import { BG_DAY, DIRS, PAL, SHADOW_RGB, TILE, UI_BASE_H, UI_BASE_W } from '../config/constants';
 import { KEYS } from '../config/keys';
 import { FixedStep } from '../core/clock';
-import { Rng } from '../core/rng';
+import { Rng, hashString } from '../core/rng';
 import { createState, loadSettings, saveSettings, type GameState, type Settings } from '../core/store';
 import { framePixels, frameInfo, opaqueAt } from '../assets/atlasLoader';
 import type { AtlasKey } from '../assets/manifest';
 import { paintPlayer } from '../assets/playerLook';
 import { outfitOf, playerCostume, type Look } from '../data/looks';
+import { BALANCE_CRIME } from '../config/balanceCrime';
+import { BALANCE_POLICE } from '../config/balancePolice';
+import {
+  arrested,
+  completeCrime,
+  restocked,
+  starsCleared,
+  tierFor,
+  type RepChange,
+} from '../systems/reputation';
+import {
+  callSeconds,
+  cameraSource,
+  fileIdentification,
+  knownFace,
+  pruneHeat,
+  sighted,
+  wipeFootage as wipeFile,
+  type Disguise,
+} from '../systems/identify';
+import {
+  cctvDisable,
+  cctvWipe,
+  crackSafe,
+  cutPanel,
+  grabRegister,
+  intimidate,
+  leaveStore,
+  onShopFloor,
+  openBackDoor,
+  startRobbery,
+  tickRobbery,
+  type RobberyState,
+} from '../systems/robbery';
+import type { CrimeReport } from '../systems/reputation';
+import type { CrimeStep } from '../data/interiors';
+import { atmReady, robAtm, type AtmMethod } from '../systems/atmCrime';
+import {
+  burglaryStars,
+  cutHousePanel,
+  leaveHouse,
+  ownerSees,
+  pickDoor,
+  rollHouse,
+  rollOccupant,
+  scareOwner,
+  searchRoom,
+  startBurglary,
+  tickBurglary,
+  type BurglaryState,
+  type House,
+} from '../systems/burglary';
+import { GOODS_NAMES, LAYOUTS } from '../data/burglary';
+import { changedOutfit, emptyChase, tickChaos, type ChaseState } from '../systems/response';
+import { fencePage } from '../world/fence';
+import {
+  bribeJudge,
+  book,
+  hireLawyer,
+  judgeOffered,
+  lawyerOffered,
+  sentence,
+  type Sentence,
+} from '../systems/jail';
 import { highlight, HIGHLIGHT_PAD } from '../assets/highlight';
 import { outlinePixels } from '../assets/outline';
 import { addPixelsTexture } from '../assets/runtimeTextures';
@@ -36,15 +100,7 @@ import { StreetLife } from '../world/streetLife';
 import { Police } from '../world/police';
 import { buildRoads, type RoadGraph } from '../systems/roads';
 import { startFlee } from '../systems/crowd';
-import {
-  addStars,
-  arrest,
-  canSee,
-  emptyWanted,
-  reportCrime,
-  searchRadius,
-  tickWanted,
-} from '../systems/wanted';
+import { addStars, canSee, emptyWanted, reportCrime, searchRadius, tickWanted } from '../systems/wanted';
 import { typeOfModel } from '../data/vehicles';
 import { facingFromWorld, roundHalfEven, worldToScreen, worldToTile } from '../iso/projection';
 import { rasterizeShadows, shadowAlpha, shadowShape, type Rect } from '../iso/shadows';
@@ -76,7 +132,7 @@ import { rollTrunk, takeLoot, type LootItem } from '../systems/loot';
 import { lockTool, wearLockpicks } from '../systems/shop';
 import { atmPage, bagPage, phoneRoot, PHONE_SENDERS, type PhoneCtx } from '../world/phone';
 import { clothingPage, dealerPage, lockerPage, wardrobePage, type ShopCtx } from '../world/shops';
-import type { ListPage } from '../ui/listPanel';
+import type { ListPage, ListRow } from '../ui/listPanel';
 import { bayFree, boughtCar, payDealer } from '../systems/dealer';
 import type { ListRequest } from './ListScene';
 import { INTERIORS, interiorForDoor, isOpen, type InteriorDef, type InteriorId } from '../data/interiors';
@@ -256,6 +312,9 @@ export interface HudSnapshot {
 const SHADOW_VALUES = { box: BALANCE.render.shadowBoxValue, blob: BALANCE.render.shadowBlobValue };
 const BG_NIGHT = 0x2e2430;
 
+/** The palette-swapped player in the fence's mask (art/source/pack_player.py style 'masked'). */
+const MASKED_COSTUME = 'player/masked';
+
 export class WorldScene extends Phaser.Scene {
   private params!: Params;
   private settings!: Settings;
@@ -402,6 +461,16 @@ export class WorldScene extends Phaser.Scene {
             placed: null,
             door: null,
           });
+        // the Linden Avenue front doors (the delivery drops) can be broken into (Phase 3, docs/04)
+        else if (z.id.startsWith('drop_') && z.npc)
+          this.usables.push({
+            id: `house:${z.id}`,
+            x: z.npc.x,
+            y: z.npc.y,
+            label: 'BREAK IN',
+            placed: null,
+            door: null,
+          });
         // the weekend odd jobs' street spots (milestone 8): Squeaky's wash apron
         else if (z.id.startsWith('gig_') && z.npc) {
           const gig = z.id.slice(4) as GigId;
@@ -513,6 +582,9 @@ export class WorldScene extends Phaser.Scene {
   private bustT = 0;
   /** Crimes are numbered, so several witnesses of one crime raise its stars once (docs/05). */
   private crimeSeq = 0;
+  /** This chase's once-only moves (bribe, outfit change...): reset when the stars clear (systems/response.ts). */
+  private chase: ChaseState = emptyChase();
+  private lastStars = 0;
   private reported = new Set<number>();
   /** A car alarm about to reach the police. */
   private alarm: { t: number; at: { x: number; y: number } } | null = null;
@@ -545,8 +617,7 @@ export class WorldScene extends Phaser.Scene {
           const S = stats(c.v);
           out.push({ x: c.v.x, y: c.v.y, hx: S.halfLength, hy: S.halfWidth, ang: c.v.heading });
         }
-        const cr = this.police?.cruiserBox();
-        if (cr) out.push(cr);
+        for (const b of this.police?.boxes() ?? []) out.push(b.obb);
         return out;
       },
       carShadow,
@@ -576,7 +647,7 @@ export class WorldScene extends Phaser.Scene {
    * A crime happened at `at` (docs/05): an officer who sees it raises the stars at once; people who see it run and
    * phone the police, which takes 6–10 seconds and can be stopped.
    */
-  private crime(stars: number, at: { x: number; y: number }): void {
+  private crime(stars: number, at: { x: number; y: number }, hearTiles = 0): void {
     const W = BALANCE.wanted;
     const id = ++this.crimeSeq;
     if (this.police?.active && this.police.sees(at)) {
@@ -584,12 +655,18 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
     const night = darkness(this.minuteOfDay()) > 0.5;
-    const range = night ? W.witnessNightTiles : W.witnessTiles;
+    const range = Math.max(night ? W.witnessNightTiles : W.witnessTiles, hearTiles);
     for (const pv of this.life?.peds ?? []) {
       const q = pv.ped;
       if (q.call || !canSee(q, at, range, this.buildingBoxes)) continue;
       const [lo, hi] = W.callSeconds as [number, number];
-      q.call = { t: lo + (hi - lo) * this.rng.next(), at: { ...at }, stars, crime: id };
+      const known = knownFace(this.state.heat, this.state.minutes);
+      const t = callSeconds(lo + (hi - lo) * this.rng.next(), {
+        knownFace: known,
+        watchingMask: false,
+        postalUniform: false,
+      });
+      q.call = { t, at: { ...at }, stars, crime: id };
       startFlee(q, at);
     }
   }
@@ -626,6 +703,7 @@ export class WorldScene extends Phaser.Scene {
       y: street.y,
       driving: !!car && Math.abs(car.v.speed) > W.stoppedCarSpeed,
       speed: car ? Math.abs(car.v.speed) : 0,
+      heading: car?.v.heading,
     };
     const busting = this.police.update(dt, wanted, view);
     const seen = !this.inside && this.police.active && this.police.sees(street);
@@ -634,10 +712,16 @@ export class WorldScene extends Phaser.Scene {
       const chance = 1 - Math.pow(1 - W.hotCarChancePerMinute, dt / 60);
       if (this.rng.chance(chance)) addStars(wanted, W.crimeStars.hotCar, street);
     }
+    // an officer who sees a bare face during a chase puts it on file (docs/05)
+    if (seen && wanted.stars > 0) sighted(this.state.heat, 'police', this.disguise(), this.state.minutes);
     if (tickWanted(wanted, dt, seen, street)) {
       this.toast('POLICE', 'YOU LOST THEM.');
       this.reported.clear();
     }
+    // sustained 4★ in police sight goes to 5★ (docs/05)
+    if (tickChaos(this.chase, wanted, dt)) this.toast('POLICE', 'ALL UNITS. ARMORED RESPONSE IS ROLLING.');
+    if (this.lastStars > 0 && wanted.stars === 0) this.chaseOver();
+    this.lastStars = wanted.stars;
     // people get out of the way of a fast car
     if (car && Math.abs(car.v.speed) > 70)
       for (const pv of this.life.peds) {
@@ -653,6 +737,29 @@ export class WorldScene extends Phaser.Scene {
     } else this.bustT = Math.max(0, this.bustT - dt * 2);
   }
 
+  /** What the player wears for identification: a mask, or a work uniform's name tag (docs/04, docs/05). */
+  private disguise(): Disguise {
+    return { masked: !!this.state.maskOn, uniform: outfitOf(this.state.look.outfit).from === 'uniform' };
+  }
+
+  /** The stars cleared without an arrest (escaped or bribed): waiting reputation pays with the escape bonus. */
+  private chaseOver(): void {
+    this.chase = emptyChase();
+    pruneHeat(this.state.heat, this.state.minutes);
+    this.repNews(starsCleared(this.state.crime));
+  }
+
+  /** A crime is done and its payout in hand (docs/04): reputation now, or after the chase. */
+  private crimeDone(payout: number): void {
+    this.repNews(completeCrime(this.state.crime, payout, this.state.wanted.stars > 0));
+  }
+
+  /** Tier-ups reach the phone from Dez, who hears everything at the bar. */
+  private repNews(ch: RepChange | null): void {
+    if (!ch) return;
+    for (const m of ch.messages) this.toast('DEZ', m);
+  }
+
   /** Arrested (docs/05): the fine, maybe jail and seized dirty cash, the stolen car impounded, release at Precinct 1. */
   private doArrest(surrendered: boolean): void {
     // busted in the middle of a lockpick or a hotwire: the panel closes
@@ -665,7 +772,9 @@ export class WorldScene extends Phaser.Scene {
     const st = this.state;
     const stars = Math.max(1, st.wanted.stars);
     const arrestedAt = st.minutes;
-    const o = arrest(st.money, st.record, stars, st.minutes, surrendered);
+    // the court's sentence first; the jail screen can still change it before booking (systems/jail.ts)
+    const s = sentence(st.record, stars, st.minutes, surrendered);
+    const repLost = arrested(st.crime);
     const car = this.drivenCar();
     let impounded = false;
     if (car) {
@@ -676,29 +785,101 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     st.wanted = emptyWanted();
+    this.chase = emptyChase();
+    this.lastStars = 0;
     this.bustT = 0;
     this.alarm = null;
     for (const pv of this.life?.peds ?? []) pv.ped.call = null;
     this.police?.destroy();
-    const day = Math.floor(st.minutes / 1440);
-    st.minutes = o.jailDays > 0 ? (day + o.jailDays) * 1440 + BALANCE.sleep.wakeMinute : st.minutes + 60;
-    // the record follows the person into every job (docs/03): freeze, extra work, no clean-record bonus
-    arrestEffects(st.career, arrestedAt, st.minutes);
-    const door = this.map.zones?.find((z) => z.id === 'precinct')?.npc ?? this.map.spawn;
-    st.player.x = door.x + 14;
-    st.player.y = door.y;
-    this.camCtl.snap();
-    const lines = [
-      o.repeat ? 'REPEAT OFFENSE' : 'FIRST OFFENSE: A FINE ONLY',
-      `FINE $${o.fine}${surrendered ? ' (SURRENDERED: -30%)' : ''}${o.paid < o.fine ? `, PAID $${o.paid}` : ''}`,
-    ];
-    if (o.jailDays > 0) lines.push(`${o.jailDays} DAY${o.jailDays > 1 ? 'S' : ''} IN JAIL`);
-    if (o.seized > 0) lines.push(`DIRTY CASH SEIZED: $${o.seized}`);
-    if (impounded) lines.push('THE STOLEN CAR WAS IMPOUNDED');
-    lines.push(`PROMOTION FROZEN ${BALANCE.careers.freezeDays} DAYS, EXTRA WORK AFTER`);
-    lines.push('RELEASED AT PRECINCT 1, PEWTER STREET');
+    // booked at the precinct: the face goes on file
+    sighted(st.heat, 'police', { masked: false, uniform: false }, st.minutes);
     this.prompt?.setVisible(false);
     this.scene.pause();
+    const done = () => this.booked(s, arrestedAt, impounded, repLost);
+    if (lawyerOffered(s) || judgeOffered(s, tierFor(st.crime.rep))) this.jailScreen(s, done);
+    else done();
+  }
+
+  /** The jail screen (docs/05): a lawyer cuts a day, the judge (Connected) turns jail into a fine. */
+  private jailScreen(s: Sentence, done: () => void): void {
+    const st = this.state;
+    const tier = tierFor(st.crime.rep);
+    const page = (): ListPage => {
+      const rows: ListRow[] = [];
+      if (lawyerOffered(s))
+        rows.push({
+          label: 'HIRE A LAWYER',
+          icon: 'app/jobs',
+          sub: 'ONE DAY LESS, CLEAN MONEY',
+          detail: `$${BALANCE_POLICE.bribes.lawyer}`,
+          act: () => ({ say: hireLawyer(s, st.money).text }),
+        });
+      if (judgeOffered(s, tier))
+        rows.push({
+          label: 'BRIBE THE JUDGE',
+          icon: 'item/cash',
+          sub: 'A FINE INSTEAD OF JAIL, DIRTY CASH',
+          detail: `$${BALANCE_POLICE.bribes.judge}`,
+          act: () => ({ say: bribeJudge(s, st.money, tier).text }),
+        });
+      rows.push({
+        label: s.jailDays > 0 ? 'SERVE THE TIME' : 'PAY THE FINE',
+        icon: 'face/cop',
+        sub: s.jailDays > 0 ? `${s.jailDays} DAY${s.jailDays > 1 ? 'S' : ''}` : 'AND WALK OUT',
+        act: () => ({ close: true }),
+      });
+      return {
+        title: 'BOOKED',
+        icon: 'face/cop',
+        lines: [
+          `FINE $${s.fine}`,
+          s.jailDays > 0 ? `JAIL ${s.jailDays} DAY${s.jailDays > 1 ? 'S' : ''}` : 'NO JAIL',
+        ],
+        rows,
+      };
+    };
+    hook().minigame = 'jail';
+    this.scene.launch('list', {
+      style: 'menu',
+      name: 'jail',
+      root: page,
+      onChange: () => this.syncMoneyHook(),
+      clock: () => formatClock(calendar(this.state.minutes).minute),
+    } satisfies ListRequest);
+    this.game.events.once('list:closed', () => {
+      hook().minigame = null;
+      done();
+    });
+  }
+
+  /** Book the arrest: the fine, any seizure, jail time, the career record, release at Precinct 1. */
+  private booked(s: Sentence, arrestedAt: number, impounded: boolean, repLost: number): void {
+    const st = this.state;
+    const o = book(s, st.money, st.record, {}, st.minutes);
+    st.minutes = o.releaseAt;
+    // the record follows the person into every job (docs/03): freeze, extra work, no clean-record bonus
+    arrestEffects(st.career, arrestedAt, st.minutes);
+    // released at Precinct 1's front desk; the street door is outside
+    const door = this.map.doors?.find((d) => d.target === 'precinct');
+    const zone = this.map.zones?.find((z) => z.id === 'precinct')?.npc ?? this.map.spawn;
+    st.streetReturn = door ? { x: door.x, y: door.y + 12 } : { x: zone.x + 14, y: zone.y };
+    st.player.x = st.streetReturn.x;
+    st.player.y = st.streetReturn.y;
+    const lobby = INTERIORS.precinct;
+    this.enterInterior(lobby, { x: lobby.entrance!.x - 40, y: lobby.entrance!.y - 60 });
+    this.camCtl.snap();
+    const lines = [
+      s.repeat ? 'REPEAT OFFENSE' : 'FIRST OFFENSE: A FINE ONLY',
+      `FINE $${s.fine}${s.surrendered ? ' (SURRENDERED: -30%)' : ''}${o.paid < s.fine ? `, PAID $${o.paid}` : ''}`,
+    ];
+    if (s.judge) lines.push('THE JUDGE MADE IT A FINE');
+    else if (o.jailDays > 0)
+      lines.push(`${o.jailDays} DAY${o.jailDays > 1 ? 'S' : ''} IN JAIL${s.lawyer ? ' (LAWYER)' : ''}`);
+    if (o.seizedCash > 0) lines.push(`DIRTY CASH SEIZED: $${o.seizedCash}`);
+    if (impounded) lines.push('THE STOLEN CAR WAS IMPOUNDED');
+    if (repLost > 0) lines.push(`STREET REP LOST: ${repLost}`);
+    lines.push(`PROMOTION FROZEN ${BALANCE.careers.freezeDays} DAYS, EXTRA WORK AFTER`);
+    lines.push('RELEASED AT PRECINCT 1, PEWTER STREET');
     this.scene.launch('menu', { info: { title: 'BUSTED', lines } });
     this.game.events.once('menu:closed', () => {
       this.scene.resume();
@@ -726,7 +907,7 @@ export class WorldScene extends Phaser.Scene {
    * world until it closes.
    */
   private openList(name: 'phone' | 'atm' | 'bag'): void {
-    const ctx: PhoneCtx = { state: this.state, wallet: this.wallet() };
+    const ctx: PhoneCtx = { state: this.state, wallet: this.wallet(), chase: this.chase };
     const root = { phone: phoneRoot, atm: atmPage, bag: bagPage }[name];
     this.openPanel(name, () => root(ctx));
   }
@@ -901,7 +1082,7 @@ export class WorldScene extends Phaser.Scene {
     this.state.look = { ...look };
     paintPlayer(this.textures, look);
     paintPlayerActions(this.textures, look);
-    const costume = playerCostume(look);
+    const costume = this.state.maskOn ? MASKED_COSTUME : playerCostume(look);
     hook().look = { ...look };
     if (costume === this.state.player.costume) return;
     this.state.player.costume = costume;
@@ -968,6 +1149,7 @@ export class WorldScene extends Phaser.Scene {
       });
     });
     kb.on(`keydown-${KEYS.debugOverlay}`, () => this.setDebug(!this.debugOn));
+    kb.on(`keydown-${KEYS.mask}`, () => free() && this.toggleMask());
     kb.on(`keydown-${KEYS.skipGuide}`, () => {
       if (!free() || !onboardingActive(this.state.onboarding)) return;
       skipOnboarding(this.state.onboarding);
@@ -1176,8 +1358,19 @@ export class WorldScene extends Phaser.Scene {
       cue: p.interact ? (p.sprite.startsWith('int/') ? { kind: 'atlas', name } : { kind: 'runtime' }) : null,
     };
     this.placed.push(placed);
-    if (p.interact)
+    if (p.interact) {
       this.usables.push({ id: p.interact.id, x: p.x, y: p.y, label: p.interact.label, placed, door: null });
+      // every ATM can also be robbed (Phase 3, docs/04): TAB picks it
+      if (p.interact.id.startsWith('atm') && !this.isReference)
+        this.usables.push({
+          id: `rob:${p.interact.id}`,
+          x: p.x,
+          y: p.y,
+          label: 'ROB ATM',
+          placed,
+          door: null,
+        });
+    }
     if (p.shadow.kind === 'box') {
       const { hx, hy } = p.shadow;
       this.footprints.push({
@@ -1397,6 +1590,8 @@ export class WorldScene extends Phaser.Scene {
       this.state.minutes = advance(this.state.minutes, dt, this.settings.dayLengthMinutes);
       this.runDays(true);
       if (this.playing) this.guideTick();
+      if (this.robbery && !this.robbery.done) this.robReport(tickRobbery(this.robbery, dt, this.rng));
+      if (this.burglary && !this.burglary.done) this.burgleTick(dt);
       // Dez checks in once on the first evening (the HUD mockup's message).
       if (
         !this.dezTold &&
@@ -1462,7 +1657,11 @@ export class WorldScene extends Phaser.Scene {
     } else {
       this.player.stop();
       // standing: a tool or interact animation if one is playing, else the idle sprite
-      const action = p.costume.startsWith('player/') ? this.actions.frame(p.costume.slice(7), p.dir) : null;
+      // the masked sprite has no tool animations yet (art debt): it stands
+      const action =
+        p.costume.startsWith('player/') && p.costume !== MASKED_COSTUME
+          ? this.actions.frame(p.costume.slice(7), p.dir)
+          : null;
       const ref = action
         ? { atlas: ACTIONS_TEXTURE, frame: action }
         : characterFrame(p.costume, 'idle', p.dir);
@@ -1647,6 +1846,9 @@ export class WorldScene extends Phaser.Scene {
     else if (u.id.startsWith('trunk:')) this.lootTrunk(u.id.slice(6));
     else if (u.id.startsWith('pump')) this.usePump(u);
     else if (u.id.startsWith('atm')) this.openList('atm');
+    else if (u.id.startsWith('rob:atm')) this.robAtmStart(u.id.slice(4), u);
+    else if (u.id.startsWith('house:')) this.breakIn(u.id.slice(6), u);
+    else if (u.id === 'owner') this.scareOff();
     else if (u.id.startsWith('job:')) this.jobTask(u.id.slice(4) as TaskId);
     else if (u.id.startsWith('gig:')) this.gigAction(u.id.slice(4) as GigId);
   }
@@ -1685,6 +1887,13 @@ export class WorldScene extends Phaser.Scene {
     }
     const open = isOpen(def.hours, this.minuteOfDay());
     const keyCard = def.id === 'tower_lobby' && hasKeyCard(this.state.career);
+    if (!open && !keyCard && def.id === 'store' && this.state.inventory.lockpicks > 0) {
+      // the night job (docs/04): pick the back door, then the alarm panel inside has 10 seconds
+      this.state.streetReturn = { x: door.x, y: door.y + 12 };
+      this.pendingRob = 'night';
+      this.openLockpick('BACK DOOR');
+      return;
+    }
     if (!open && !keyCard) {
       const h = def.hours as { from: number; to: number };
       const hhmm = (m: number) =>
@@ -1710,6 +1919,11 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private npcsOnDuty(def: InteriorDef, json: InteriorJson): boolean[] {
+    // a burglary house's owner shows only when someone is up (asleep in bed, or out)
+    if (def.id.startsWith('house_')) {
+      const o = this.burglary?.occupant;
+      return json.npcs.map(() => o === 'awake' || o === 'calling');
+    }
     const m = this.minuteOfDay();
     return json.npcs.map((_, i) => npcOnDuty(def.npcs[i]?.hours ?? null, m));
   }
@@ -1830,6 +2044,8 @@ export class WorldScene extends Phaser.Scene {
     const back = this.streetSaved;
     if (!back) return;
     this.guide('leftHome');
+    if (this.robbery) this.robLeave();
+    if (this.burglary?.doorOpen) this.burgleLeave();
     this.leaveInteriorView();
     this.inGround.setVisible(false);
     this.inObjects.setVisible(false);
@@ -1895,6 +2111,13 @@ export class WorldScene extends Phaser.Scene {
       const d = r.doors[spot.door] as DoorRuntime;
       const pr = doorPrompt(d, { minuteOfDay: this.minuteOfDay(), keyCard: hasKeyCard(this.state.career) });
       if (pr.blocked) {
+        // the store's staff door can be picked: that's the robbery's back room (docs/04)
+        if (r.def.id === 'store' && d.rule.kind === 'locked') {
+          this.ensureRobbery();
+          this.pendingRob = 'door';
+          this.openLockpick('STAFF DOOR');
+          return;
+        }
         this.toast('DOOR', pr.label);
         return;
       }
@@ -1948,6 +2171,21 @@ export class WorldScene extends Phaser.Scene {
         break;
       case 'gig':
         this.gigAction(a.gig);
+        break;
+      case 'crime':
+        this.robStep(a.step);
+        break;
+      case 'burgle':
+        this.burgleRoom(a.room);
+        break;
+      case 'housePanel':
+        this.housePanel();
+        break;
+      case 'fence':
+        this.openPanel('fence', () => fencePage(this.state));
+        break;
+      case 'frontDesk':
+        this.frontDesk();
         break;
     }
   }
@@ -2169,6 +2407,441 @@ export class WorldScene extends Phaser.Scene {
     this.updateInteriorObjective();
   }
 
+  // ---------------------------------------------------------------- store robbery (docs/04, Phase 3)
+
+  private robbery: RobberyState | null = null;
+  private pendingRob: CrimeStep | 'door' | 'night' | 'panel' | null = null;
+  /** One crime id per robbery report key, so the same crime raises the stars once (wanted.reportCrime). */
+  private robIds = new Map<string, number>();
+
+  /** The robbery in progress, started now if there isn't one (an open store, with the clerk). */
+  private ensureRobbery(): RobberyState {
+    if (!this.robbery) {
+      this.robbery = startRobbery(this.rng, 'open', { uniform: this.disguise().uniform });
+      this.robIds.clear();
+      // a store robbed in the last day has nothing left in the till or the safe
+      if (
+        !restocked(this.state.crimeLog.stores.store, this.state.minutes, BALANCE_CRIME.robbery.restockMinutes)
+      ) {
+        this.robbery.register = 0;
+        this.robbery.safe = 0;
+      }
+    }
+    return this.robbery;
+  }
+
+  private robStep(step: CrimeStep): void {
+    const seed = this.rng.int(1, 2 ** 30);
+    if (step === 'register') {
+      const r = this.inside;
+      const clerk = r ? r.def.npcs.findIndex((n) => n.role === 'clerk') : -1;
+      if (!r || clerk < 0 || !r.npcs[clerk]) {
+        this.toast('REGISTER', 'NOBODY TO OPEN IT.');
+        return;
+      }
+      const s = this.ensureRobbery();
+      if (s.registerOpen) {
+        this.toast('REGISTER', s.register > 0 ? 'ALREADY OPEN.' : 'EMPTY.');
+        return;
+      }
+      this.pendingRob = 'register';
+      this.openMinigame({ kind: 'intimidate', seed, label: 'CLERK' });
+      return;
+    }
+    const s = this.robbery;
+    if (step === 'safe') {
+      if (!s?.backDoorOpen) {
+        this.toast('SAFE', 'THE BACK ROOM IS LOCKED.');
+        return;
+      }
+      if (s.safeOpen || s.safe <= 0) {
+        this.toast('SAFE', 'EMPTY.');
+        return;
+      }
+      this.pendingRob = 'safe';
+      this.openMinigame({ kind: 'safeCrack', seed, label: 'BACK ROOM', tier: 1 });
+      return;
+    }
+    // the security desk works whenever you're in there; it starts the job if nothing else has
+    this.ensureRobbery();
+    this.pendingRob = step;
+    if (step === 'cctv') this.openMinigame({ kind: 'bypass', seed, label: 'CCTV', seconds: 15 });
+    else this.openMinigame({ kind: 'wipe', seed, label: 'DVR' });
+  }
+
+  private robDone(r: MinigameResult): void {
+    const step = this.pendingRob;
+    this.pendingRob = null;
+    const st = this.state;
+    if (step === 'night') {
+      this.wearPicks(r.grade === 'fail' || r.grade === null);
+      if (r.grade === null || r.grade === 'fail') return;
+      const def = INTERIORS.store;
+      this.robbery = startRobbery(this.rng, 'night', { uniform: this.disguise().uniform });
+      this.robIds.clear();
+      if (!restocked(st.crimeLog.stores.store, st.minutes, BALANCE_CRIME.robbery.restockMinutes))
+        this.robbery.safe = 0;
+      openBackDoor(this.robbery);
+      this.fade(() => {
+        this.enterInterior(def, def.entrance ?? { x: 40, y: 40 });
+        this.unlockStaffDoor();
+        this.toast('ALARM', 'THE PANEL BEEPS. CUT IT!');
+        const left = Math.max(1, (this.robbery?.panelDeadline ?? 0) - (this.robbery?.t ?? 0));
+        this.pendingRob = 'panel';
+        this.time.delayedCall(BALANCE.ui.keyGuardMs, () =>
+          this.openMinigame({
+            kind: 'bypass',
+            seed: this.rng.int(1, 2 ** 30),
+            label: 'BACK DOOR',
+            seconds: left,
+          }),
+        );
+      });
+      return;
+    }
+    const s = this.robbery;
+    if (!s) return;
+    if (step === 'panel') {
+      this.robReport(cutPanel(s, r.grade !== null && r.grade !== 'fail'));
+      this.toast(
+        'ALARM',
+        s.panel === 'cut' ? 'PANEL CUT. THE SAFE IS IN THE BACK.' : 'THE ALARM IS RINGING!',
+      );
+      return;
+    }
+    if (step === 'door') {
+      this.wearPicks(r.grade === 'fail' || r.grade === null);
+      if (r.grade === null || r.grade === 'fail') return;
+      openBackDoor(s);
+      this.unlockStaffDoor();
+      return;
+    }
+    if (r.grade === null) return;
+    if (step === 'register') {
+      onShopFloor(s, !!st.maskOn);
+      if (!intimidate(s, r.grade as Grade, this.rng)) {
+        this.toast('CLERK', 'THEY FROZE. THE ALARM IS PRESSED.');
+        return;
+      }
+      const got = grabRegister(s, r.grade as Grade, st.money);
+      this.toast('REGISTER', got > 0 ? `+$${got} DIRTY.` : 'NOTHING IN THE TILL.');
+    } else if (step === 'safe') {
+      const got = crackSafe(s, r.grade as Grade, st.money);
+      this.toast('SAFE', got > 0 ? `+$${got} DIRTY.` : 'IT WOULDNT OPEN.');
+    } else if (step === 'cctv') {
+      if (r.grade === 'fail') this.toast('CCTV', 'WRONG WIRE. STILL RECORDING.');
+      else {
+        cctvDisable(s);
+        this.toast('CCTV', 'CAMERAS OFF.');
+      }
+    } else if (step === 'wipe') {
+      if (r.grade === 'fail') this.toast('DVR', 'NOT ALL OF IT. THE TAPE STILL HAS YOU.');
+      else {
+        cctvWipe(s);
+        wipeFile(st.heat, 'store');
+        this.toast('DVR', 'THE TAPE IS CLEAN.');
+      }
+    }
+    this.syncMoneyHook();
+  }
+
+  /** The staff door to the back room stands open once picked. */
+  private unlockStaffDoor(): void {
+    const d = this.inside?.doors.find((q) => q.rule.kind === 'locked');
+    if (!d) return;
+    d.rule = { kind: 'open' };
+    d.open = true;
+    this.worldChanged();
+  }
+
+  /** Robbery reports reach the police at the store's street door. */
+  private robReport(reports: CrimeReport[]): void {
+    const at = this.state.streetReturn ?? this.state.player;
+    for (const q of reports) {
+      let id = this.robIds.get(q.key);
+      if (id === undefined) {
+        id = ++this.crimeSeq;
+        this.robIds.set(q.key, id);
+      }
+      if (reportCrime(this.state.wanted, this.reported, id, q.stars, at))
+        this.toast('POLICE', 'THE STORE CALLED IT IN.');
+    }
+  }
+
+  /** Walking out: back across the shop floor (on camera), the clerk's call, the face on file, the reputation. */
+  private robLeave(): void {
+    const s = this.robbery;
+    if (!s) return;
+    const st = this.state;
+    if (s.mode === 'open') onShopFloor(s, !!st.maskOn);
+    const res = leaveStore(s);
+    this.robbery = null;
+    this.robReport(res.reports);
+    if (res.take > 0 || s.nerve !== null) st.crimeLog.stores.store = st.minutes;
+    if (res.identified && (res.take > 0 || s.nerve !== null)) {
+      fileIdentification(st.heat, s.uniform ? 'witness' : cameraSource('store'), st.minutes);
+      this.toast('CCTV', 'THE CAMERAS GOT YOUR FACE.');
+    }
+    if (res.take > 0) this.crimeDone(res.take);
+  }
+
+  // ---------------------------------------------------------------- the fence and masks (docs/04, docs/05)
+
+  /** Precinct 1's desk sergeant reads out your record (docs/05). */
+  private frontDesk(): void {
+    const st = this.state;
+    const window = BALANCE.wanted.recordDays * 1440;
+    const recent = st.record.arrests.filter((m) => st.minutes - m < window).length;
+    const known = knownFace(st.heat, st.minutes);
+    this.toast(
+      'DESK SERGEANT',
+      `${recent ? `${recent} ARREST${recent > 1 ? 'S' : ''} IN TWO WEEKS. ` : 'A CLEAN SHEET. '}${known ? 'AND WE KNOW YOUR FACE.' : 'MOVE ALONG.'}`,
+    );
+  }
+
+  /** M: put the mask on or take it off. Doing it unseen during a chase shortens the escape (docs/05). */
+  private toggleMask(): void {
+    if (!this.playing || this.state.driving) return;
+    const st = this.state;
+    if (st.masks.length === 0) {
+      this.toast('MASK', 'NO MASK. THE FENCE AT THE PAWN SHOP SELLS THEM.');
+      return;
+    }
+    st.maskOn = st.maskOn ? null : (st.masks[0] ?? null);
+    if (st.wanted.stars > 0 && !st.wanted.seen) changedOutfit(this.chase, st.wanted);
+    this.setLook(st.look);
+    hook().masked = !!st.maskOn;
+  }
+
+  // ---------------------------------------------------------------- ATM robbery (docs/04, Phase 3)
+
+  private pendingAtm: { id: string; method: AtmMethod; at: { x: number; y: number } } | null = null;
+
+  /** E on ROB ATM: the drill if one is in the bag (loud, sure), else the hack (silent, a fail trips the alarm). */
+  private robAtmStart(id: string, at: { x: number; y: number }): void {
+    if (!atmReady(this.state.crimeLog.atms[id], this.state.minutes)) {
+      this.toast('ATM', 'EMPTY. WAITING FOR A REFILL.');
+      return;
+    }
+    const method: AtmMethod = this.state.inventory.drill > 0 ? 'drill' : 'hack';
+    this.pendingAtm = { id, method, at: { x: at.x, y: at.y } };
+    this.openMinigame({
+      kind: method === 'drill' ? 'drill' : 'atmHack',
+      seed: this.rng.int(1, 2 ** 30),
+      label: districtAt(this.map, at.x, at.y),
+    });
+  }
+
+  private robAtmDone(r: MinigameResult): void {
+    const job = this.pendingAtm;
+    this.pendingAtm = null;
+    if (!job || r.grade === null) return;
+    const st = this.state;
+    const d = this.disguise();
+    const res = robAtm(this.rng, job.method, r.grade as Grade, st.money, {
+      downtown: districtAt(this.map, job.at.x, job.at.y) === this.map.name,
+      masked: d.masked,
+      uniform: d.uniform,
+      drillUses: st.inventory.drill,
+    });
+    st.inventory.drill = res.drillUses;
+    // the ATM's own alarm goes straight to the police; anyone who sees (or hears the drill) calls it in
+    const id = ++this.crimeSeq;
+    for (const q of res.reports)
+      if (reportCrime(st.wanted, this.reported, id, q.stars, job.at))
+        this.toast('POLICE', 'THE ATM ALARM WENT OFF.');
+    if (res.cash > 0 || res.noiseTiles > 0) this.crime(res.stars, job.at, res.noiseTiles);
+    if (res.identified && res.cash > 0) fileIdentification(st.heat, cameraSource(job.id), st.minutes);
+    if (res.cash > 0) {
+      st.crimeLog.atms[job.id] = st.minutes;
+      this.toast('ATM', `+$${res.cash} DIRTY.${res.identified ? ' THE CAMERA SAW YOUR FACE.' : ''}`);
+      this.crimeDone(res.cash);
+    } else this.toast('ATM', r.grade === 'fail' ? 'IT LOCKED UP.' : 'NOTHING CAME OUT.');
+    this.syncMoneyHook();
+  }
+
+  // ---------------------------------------------------------------- house burglary (docs/04, Phase 3)
+
+  private burglary: BurglaryState | null = null;
+  /** The house's street door, where the police get the call. */
+  private burgleDoor: { x: number; y: number } | null = null;
+  private pendingBurgle: { step: 'door' } | { step: 'panel' } | { step: 'room'; room: number } | null = null;
+  private burgleIds = new Map<string, number>();
+
+  /** A house's layout and alarm, the same every time for this game (rolled from the game's seed and the house). */
+  private houseFor(id: string): House {
+    return rollHouse(new Rng(hashString(`${this.state.seed}:${id}`)), id);
+  }
+
+  /** Cars in the driveway today: by day an empty driveway means nobody's home (assumed: half the houses a day). */
+  private carsOutside(id: string): boolean {
+    const day = calendar(this.state.minutes).day;
+    return new Rng(hashString(`${this.state.seed}:${id}:${day}`)).chance(
+      BALANCE_CRIME.burglary.carsOutsideChance,
+    );
+  }
+
+  /** E at a Linden Avenue front door: pick the lock (anyone watching calls it in). */
+  private breakIn(id: string, at: { x: number; y: number }): void {
+    const st = this.state;
+    if (!restocked(st.crimeLog.houses[id], st.minutes, BALANCE_CRIME.burglary.restockMinutes)) {
+      this.toast('HOUSE', 'CLEANED OUT ALREADY. NOTHING LEFT WORTH TAKING.');
+      return;
+    }
+    if (this.burglary?.house.id !== id) {
+      const house = this.houseFor(id);
+      const occupant = rollOccupant(this.rng, this.minuteOfDay(), this.carsOutside(id));
+      this.burglary = startBurglary(this.rng, house, occupant, { uniform: this.disguise().uniform });
+      this.burgleIds.clear();
+    }
+    this.burgleDoor = { x: at.x, y: at.y };
+    // picking a front door in view of the street is a crime anyone can see
+    this.crime(burglaryStars(this.burglary), at);
+    this.pendingBurgle = { step: 'door' };
+    this.openLockpick('FRONT DOOR');
+  }
+
+  private burgleDone(r: MinigameResult): void {
+    const p = this.pendingBurgle;
+    this.pendingBurgle = null;
+    const s = this.burglary;
+    if (!p || !s) return;
+    const st = this.state;
+    if (p.step === 'door') {
+      this.wearPicks(r.grade === 'fail' || r.grade === null);
+      if (r.grade === null || !pickDoor(s, r.grade as Grade)) return;
+      const def = INTERIORS[`house_${s.house.layout}` as InteriorId];
+      st.streetReturn = { x: this.burgleDoor?.x ?? st.player.x, y: (this.burgleDoor?.y ?? st.player.y) + 12 };
+      this.fade(() => {
+        this.enterInterior(def, def.entrance ?? { x: 40, y: 40 });
+        if (s.panel === 'armed') this.toast('ALARM', 'THE KEYPAD BEEPS BY THE DOOR. 10 SECONDS!');
+        // an owner who is up sees the intruder come in and reaches for the phone
+        if (s.occupant === 'awake') {
+          ownerSees(s, this.rng);
+          this.toast('OWNER', "WHO'S THERE?! I'M CALLING THE POLICE!");
+        }
+        this.updateNpcs(true);
+        this.refreshOwner();
+      });
+      return;
+    }
+    if (p.step === 'panel') {
+      this.burgleReport(cutHousePanel(s, r.grade !== null && r.grade !== 'fail'));
+      this.toast('ALARM', s.panel === 'cut' ? 'ALARM OFF.' : 'THE ALARM IS RINGING!');
+      this.refreshOwner();
+      return;
+    }
+    if (r.grade === null) return;
+    const taken = searchRoom(s, p.room, r.grade as Grade, st.money);
+    const names = taken.map((g) => GOODS_NAMES[g.kind]);
+    this.toast('SEARCH', taken.length ? `TOOK ${names.join(', ')}.` : 'NOTHING WORTH TAKING.');
+    this.syncMoneyHook();
+    this.refreshOwner();
+  }
+
+  /** A room's search grid: its goods as glinting items among the junk (no goods icons yet: art debt). */
+  private burgleRoom(room: number): void {
+    const s = this.burglary;
+    if (!s?.doorOpen) return;
+    const r = s.rooms[room];
+    if (!r || r.searched) {
+      this.toast('SEARCH', 'ALREADY TURNED OVER.');
+      return;
+    }
+    const items: LootItem[] = r.goods.map((g) =>
+      g.kind === 'cash_tin'
+        ? { kind: 'cash', value: g.value }
+        : { kind: g.kind === 'jewellery' ? 'watch' : 'phone', value: 0 },
+    );
+    for (let k = 0; k < BALANCE_CRIME.burglary.junkPerRoom; k++) items.push({ kind: 'junk', value: 0 });
+    this.pendingBurgle = { step: 'room', room };
+    const name = LAYOUTS[s.house.layout].rooms[room]?.name ?? 'ROOM';
+    this.openMinigame({ kind: 'search', seed: this.rng.int(1, 2 ** 30), label: name, items });
+  }
+
+  private housePanel(): void {
+    const s = this.burglary;
+    if (!s || s.panel !== 'armed' || s.panelDeadline === null) {
+      this.toast('ALARM', s?.panel === 'cut' ? 'ALREADY CUT.' : 'NOT ARMED.');
+      return;
+    }
+    this.pendingBurgle = { step: 'panel' };
+    this.openMinigame({
+      kind: 'bypass',
+      seed: this.rng.int(1, 2 ** 30),
+      label: 'KEYPAD',
+      seconds: Math.max(1, s.panelDeadline - s.t),
+    });
+  }
+
+  private burgleTick(dt: number): void {
+    const s = this.burglary;
+    if (!s) return;
+    const before = s.occupant;
+    this.burgleReport(tickBurglary(s, dt, this.rng));
+    if (before === 'asleep' && s.occupant === 'calling') {
+      this.toast('OWNER', 'A LIGHT GOES ON. SOMEONE IS ON THE PHONE!');
+      this.updateNpcs(true);
+      this.refreshOwner();
+    }
+    // walked off without getting in: the job is over
+    if (!s.doorOpen && !this.inside && this.burgleDoor) {
+      const p = this.state.player;
+      if (
+        Math.hypot(p.x - this.burgleDoor.x, p.y - this.burgleDoor.y) >
+        BALANCE_CRIME.burglary.giveUpTiles * TILE
+      )
+        this.burglary = null;
+    }
+  }
+
+  /** The owner's spot is a SCARE THEM OFF prompt while they are on the phone (docs/05: within 2 tiles, E). */
+  private refreshOwner(): void {
+    this.usables = this.usables.filter((u) => u.id !== 'owner');
+    const r = this.inside;
+    if (!r || this.burglary?.occupant !== 'calling') return;
+    const n = r.json.npcs[0];
+    if (n)
+      this.usables.push({ id: 'owner', x: n.x, y: n.y, label: 'SCARE THEM OFF', placed: null, door: null });
+  }
+
+  private scareOff(): void {
+    const s = this.burglary;
+    if (s && scareOwner(s)) this.toast('OWNER', 'OKAY! OKAY! TAKE WHAT YOU WANT!');
+    this.refreshOwner();
+  }
+
+  private burgleReport(reports: CrimeReport[]): void {
+    const at = this.burgleDoor ?? this.state.player;
+    for (const q of reports) {
+      let id = this.burgleIds.get(q.key);
+      if (id === undefined) {
+        id = ++this.crimeSeq;
+        this.burgleIds.set(q.key, id);
+      }
+      if (reportCrime(this.state.wanted, this.reported, id, q.stars, at))
+        this.toast('POLICE', 'THE HOUSE CALLED IT IN.');
+    }
+  }
+
+  /** Out of the house with the goods: into the bag for the fence, the cash tins already counted, reputation. */
+  private burgleLeave(): void {
+    const s = this.burglary;
+    if (!s) return;
+    const st = this.state;
+    const res = leaveHouse(s);
+    this.burglary = null;
+    this.usables = this.usables.filter((u) => u.id !== 'owner');
+    st.goods.push(...res.goods);
+    if (res.payout > 0) {
+      st.crimeLog.houses[s.house.id] = st.minutes;
+      this.crimeDone(res.payout);
+    }
+    if (res.identified) fileIdentification(st.heat, 'witness', st.minutes);
+    if (res.goods.length)
+      this.toast('GOODS', `${res.goods.length} ITEM${res.goods.length > 1 ? 'S' : ''} FOR THE FENCE.`);
+  }
+
   // ---------------------------------------------------------------- the guided first day (docs/11)
 
   /** Where the player stood when the guide's first step began on the street. */
@@ -2218,7 +2891,18 @@ export class WorldScene extends Phaser.Scene {
     this.showContextPose();
     // the panel's logic arrives when the scene starts (next frame); until then, nothing stale
     hook().minigameState = null;
-    if (!(req.kind === 'lockpick' || req.kind === 'hotwire' || req.kind === 'search')) this.scene.pause();
+    const live = [
+      'lockpick',
+      'hotwire',
+      'search',
+      'intimidate',
+      'safeCrack',
+      'atmHack',
+      'drill',
+      'wipe',
+      'bypass',
+    ];
+    if (!live.includes(req.kind)) this.scene.pause();
     this.scene.launch('minigame', req);
   }
 
@@ -2228,10 +2912,15 @@ export class WorldScene extends Phaser.Scene {
     // keys pressed in the panel (the hotwire's F terminal, E) must not also act in the world
     this.resumedAt = this.time.now;
     if (this.pendingTrunk) this.trunkMinigameDone(r);
-    else if (r.kind === 'lockpick' || r.kind === 'hotwire') this.carMinigameDone(r);
+    else if (this.pendingRob || this.pendingBurgle) {
+      // the robbery's own lockpicks (staff door, back door) are handled in robDone
+    } else if (r.kind === 'lockpick' || r.kind === 'hotwire') this.carMinigameDone(r);
     if (r.kind === 'duffel') this.launderDone(r);
     if (r.kind === 'shop' && this.state.money.clean < this.cleanAtShop) this.guide('bought');
     if (this.pendingGig && r.kind === this.pendingGig) this.gigTaskDone(r);
+    if (this.pendingRob) this.robDone(r);
+    if (this.pendingAtm) this.robAtmDone(r);
+    if (this.pendingBurgle) this.burgleDone(r);
     if (this.pendingTask && r.kind === TASKS[this.pendingTask].game) {
       const task = this.pendingTask;
       this.pendingTask = null;
@@ -2476,8 +3165,7 @@ export class WorldScene extends Phaser.Scene {
   /** Traffic and the police cruiser as turned boxes. */
   private movingSolids(): Solid[] {
     const boxes = [...(this.life?.carBoxes().map((c) => c.obb) ?? [])];
-    const cr = this.police?.cruiserBox();
-    if (cr) boxes.push(cr);
+    for (const b of this.police?.boxes() ?? []) boxes.push(b.obb);
     return boxes.map((o) => ({
       kind: 'obox' as const,
       x: o.x,
@@ -2856,6 +3544,13 @@ export class WorldScene extends Phaser.Scene {
     c.v.looted = true;
     const got = takeLoot(haul, this.state.money, this.state.inventory);
     this.guide('looted');
+    // reputation counts the haul at what it's worth: the cash plus the fence's price for phones and watches
+    const F = BALANCE_CRIME.fence;
+    const worth =
+      got.cash +
+      haul.filter((i) => i.kind === 'phone').length * F.phone +
+      haul.filter((i) => i.kind === 'watch').length * F.watch;
+    if (worth > 0) this.crimeDone(worth);
     this.toast('TRUNK', got.summary === 'NOTHING' ? 'NOTHING WORTH TAKING.' : `TOOK ${got.summary}.`);
     if (got.cash > 0 && this.state.wanted.stars === 0)
       this.objective('WASH THE CASH: DEZ, THE LOW TIDE BACK ROOM (18:00-02:00)');
@@ -2953,6 +3648,7 @@ export class WorldScene extends Phaser.Scene {
         }
         this.removeCar(c);
         this.state.money.dirty += price;
+        this.crimeDone(price);
         this.objective('WASH THE CASH: DEZ, THE LOW TIDE BACK ROOM (18:00-02:00)');
         walk(to, home, () => {
           s.destroy();
@@ -2993,10 +3689,7 @@ export class WorldScene extends Phaser.Scene {
     for (const pv of this.life?.peds ?? [])
       add(pv.sprite, { x: pv.ped.x, y: pv.ped.y, hx: r, hy: r, ang: 0 }, this.spriteRect(pv.sprite));
     for (const c of this.life?.carBoxes() ?? []) add(c.sprite, c.obb, this.spriteRect(c.sprite));
-    if (this.police?.cruiser) {
-      const box = this.police.cruiserBox() as Obb;
-      add(this.police.cruiser.sprite, box, this.spriteRect(this.police.cruiser.sprite));
-    }
+    for (const b of this.police?.boxes() ?? []) add(b.sprite, b.obb, this.spriteRect(b.sprite));
     for (const o of this.police?.officers ?? [])
       if (!o.inCar) add(o.sprite, { x: o.x, y: o.y, hx: r, hy: r, ang: 0 }, this.spriteRect(o.sprite));
     if (this.marloWalker && this.marloPos) {
@@ -3353,6 +4046,10 @@ export class WorldScene extends Phaser.Scene {
     h.job = this.state.career.current;
     h.shiftDone = [...(this.state.career.shift?.done ?? [])];
     h.objective = this.objectiveText;
+    h.rep = this.state.crime.rep;
+    h.robbing = !!this.robbery;
+    h.goods = this.state.goods.length;
+    h.masked = !!this.state.maskOn;
     this.syncMoneyHook();
     h.driving = this.state.driving;
     h.cars = this.state.vehicles.map((v) => ({
