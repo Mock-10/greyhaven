@@ -80,6 +80,12 @@ export const BALANCE_CRIME = {
     grabShare: GRAB_SHARE,
     /** A burgled house has nothing worth taking for this many in-game minutes (assumed: a week). */
     restockMinutes: 7 * 24 * 60,
+    /** Chance a house has cars in the driveway on a given day (assumed; by day no cars means nobody home). */
+    carsOutsideChance: 0.5,
+    /** Junk items mixed into a room's search grid. */
+    junkPerRoom: 4,
+    /** Walk this far from a door you failed to pick and the job is dropped. */
+    giveUpTiles: 6,
   },
 
   /** ATM robbery (docs/04: tier 2, hack or drill, $800–1,500, 2★ or 3★ downtown; docs/10: the drill at Known). */

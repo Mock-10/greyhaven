@@ -672,3 +672,71 @@ test('ATM hack: repeat the arrows, the cassette pays dirty and earns reputation 
   await page.waitForFunction(() => (window.__DL__.rep ?? 0) > 0 || window.__DL__.stars > 0);
   expect(problems).toEqual([]);
 });
+
+test('house burglary: pick a Linden Avenue door, search the living room, leave with goods (Phase 3)', async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const problems = await boot(page, '?scene=world&zoom=3&time=11:00&x=63&y=2342');
+  await cheat(page, 'item lockpicks 10');
+  for (let k = 0; k < 6; k++) {
+    if ((await page.evaluate(() => window.__DL__.target)) === 'house:drop_2') break;
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(150);
+  }
+  expect(await page.evaluate(() => window.__DL__.target)).toBe('house:drop_2');
+  for (let attempt = 0; attempt < 6; attempt++) {
+    await page.keyboard.press('KeyE');
+    await page.waitForFunction(() => window.__DL__.minigame === 'lockpick', null, { timeout: 10_000 });
+    await playLockpick(page);
+    const inside = await page
+      .waitForFunction(() => window.__DL__.area.startsWith('house_'), null, { timeout: 6_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (inside) break;
+    await page.waitForFunction(() => window.__DL__.minigame === null, null, { timeout: 20_000 });
+    await page.waitForTimeout(800);
+  }
+  const area = await page.evaluate(() => window.__DL__.area);
+  // stand in front of the living room's TV (each layout's first search)
+  const tv: Record<string, string> = {
+    house_bungalow: 'tp 124 144',
+    house_family: 'tp 214 124',
+    house_townhouse: 'tp 130 140',
+  };
+  await page.waitForTimeout(600);
+  await cheat(page, tv[area]!);
+  await page.waitForTimeout(300);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'search', null, { timeout: 10_000 });
+  await page.waitForFunction(() => (window.__DL__.minigameState as { cells?: unknown })?.cells);
+  const cells = await page.evaluate(() =>
+    (window.__DL__.minigameState as { cells: { item: { kind: string } | null }[] }).cells
+      .map((c, i) => ({ i, kind: c.item?.kind ?? 'junk' }))
+      .filter((c) => c.kind !== 'junk')
+      .map((c) => c.i),
+  );
+  for (const cell of cells) {
+    for (let k = 0; k < 12; k++) {
+      const g = await page.evaluate(
+        () => window.__DL__.minigameState as { cursor: number; cols: number; done: boolean } | null,
+      );
+      if (!g || g.done || g.cursor === cell) break;
+      const sameRow = Math.floor(g.cursor / g.cols) === Math.floor(cell / g.cols);
+      await page.keyboard.press(sameRow ? 'ArrowRight' : 'ArrowDown');
+    }
+    await page.keyboard.press('Space');
+  }
+  await page.waitForFunction(() => window.__DL__.minigame === null, null, { timeout: 20_000 });
+  const entrance: Record<string, string> = {
+    house_bungalow: 'tp 211 176',
+    house_family: 'tp 261 208',
+    house_townhouse: 'tp 71 208',
+  };
+  await cheat(page, entrance[area]!);
+  await page.waitForFunction((a) => window.__DL__.target === `${a}:exit`, area);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.area === 'street');
+  await page.waitForFunction(() => (window.__DL__.goods ?? 0) > 0 || window.__DL__.dirty > 0);
+  expect(problems).toEqual([]);
+});

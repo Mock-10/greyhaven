@@ -72,6 +72,8 @@ export interface DebugHook {
   /** Street reputation points and the robbery in progress, for the e2e tests. */
   rep?: number;
   robbing?: boolean;
+  /** Burglary goods carried for the fence. */
+  goods?: number;
 }
 
 declare global {

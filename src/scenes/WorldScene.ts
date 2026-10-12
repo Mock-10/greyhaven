@@ -6,7 +6,7 @@ import { BALANCE } from '../config/balance';
 import { BG_DAY, DIRS, PAL, SHADOW_RGB, TILE, UI_BASE_H, UI_BASE_W } from '../config/constants';
 import { KEYS } from '../config/keys';
 import { FixedStep } from '../core/clock';
-import { Rng } from '../core/rng';
+import { Rng, hashString } from '../core/rng';
 import { createState, loadSettings, saveSettings, type GameState, type Settings } from '../core/store';
 import { framePixels, frameInfo, opaqueAt } from '../assets/atlasLoader';
 import type { AtlasKey } from '../assets/manifest';
@@ -49,6 +49,22 @@ import {
 import type { CrimeReport } from '../systems/reputation';
 import type { CrimeStep } from '../data/interiors';
 import { atmReady, robAtm, type AtmMethod } from '../systems/atmCrime';
+import {
+  burglaryStars,
+  cutHousePanel,
+  leaveHouse,
+  ownerSees,
+  pickDoor,
+  rollHouse,
+  rollOccupant,
+  scareOwner,
+  searchRoom,
+  startBurglary,
+  tickBurglary,
+  type BurglaryState,
+  type House,
+} from '../systems/burglary';
+import { GOODS_NAMES, LAYOUTS } from '../data/burglary';
 import { changedOutfit, emptyChase, type ChaseState } from '../systems/response';
 import { fencePage } from '../world/fence';
 import {
@@ -442,6 +458,16 @@ export class WorldScene extends Phaser.Scene {
             x: z.npc.x,
             y: z.npc.y,
             label: 'SLEEP (SHELTER)',
+            placed: null,
+            door: null,
+          });
+        // the Linden Avenue front doors (the delivery drops) can be broken into (Phase 3, docs/04)
+        else if (z.id.startsWith('drop_') && z.npc)
+          this.usables.push({
+            id: `house:${z.id}`,
+            x: z.npc.x,
+            y: z.npc.y,
+            label: 'BREAK IN',
             placed: null,
             door: null,
           });
@@ -1569,6 +1595,7 @@ export class WorldScene extends Phaser.Scene {
       this.runDays(true);
       if (this.playing) this.guideTick();
       if (this.robbery && !this.robbery.done) this.robReport(tickRobbery(this.robbery, dt, this.rng));
+      if (this.burglary && !this.burglary.done) this.burgleTick(dt);
       // Dez checks in once on the first evening (the HUD mockup's message).
       if (
         !this.dezTold &&
@@ -1825,6 +1852,8 @@ export class WorldScene extends Phaser.Scene {
     else if (u.id.startsWith('atm')) this.openList('atm');
     else if (u.id.startsWith('rob:atm')) this.robAtmStart(u.id.slice(4), u);
     else if (u.id === 'fence') this.openFence();
+    else if (u.id.startsWith('house:')) this.breakIn(u.id.slice(6), u);
+    else if (u.id === 'owner') this.scareOff();
     else if (u.id.startsWith('job:')) this.jobTask(u.id.slice(4) as TaskId);
     else if (u.id.startsWith('gig:')) this.gigAction(u.id.slice(4) as GigId);
   }
@@ -1895,6 +1924,11 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private npcsOnDuty(def: InteriorDef, json: InteriorJson): boolean[] {
+    // a burglary house's owner shows only when someone is up (asleep in bed, or out)
+    if (def.id.startsWith('house_')) {
+      const o = this.burglary?.occupant;
+      return json.npcs.map(() => o === 'awake' || o === 'calling');
+    }
     const m = this.minuteOfDay();
     return json.npcs.map((_, i) => npcOnDuty(def.npcs[i]?.hours ?? null, m));
   }
@@ -2016,6 +2050,7 @@ export class WorldScene extends Phaser.Scene {
     if (!back) return;
     this.guide('leftHome');
     if (this.robbery) this.robLeave();
+    if (this.burglary?.doorOpen) this.burgleLeave();
     this.leaveInteriorView();
     this.inGround.setVisible(false);
     this.inObjects.setVisible(false);
@@ -2144,6 +2179,12 @@ export class WorldScene extends Phaser.Scene {
         break;
       case 'crime':
         this.robStep(a.step);
+        break;
+      case 'burgle':
+        this.burgleRoom(a.room);
+        break;
+      case 'housePanel':
+        this.housePanel();
         break;
     }
   }
@@ -2615,6 +2656,188 @@ export class WorldScene extends Phaser.Scene {
     this.syncMoneyHook();
   }
 
+  // ---------------------------------------------------------------- house burglary (docs/04, Phase 3)
+
+  private burglary: BurglaryState | null = null;
+  /** The house's street door, where the police get the call. */
+  private burgleDoor: { x: number; y: number } | null = null;
+  private pendingBurgle: { step: 'door' } | { step: 'panel' } | { step: 'room'; room: number } | null = null;
+  private burgleIds = new Map<string, number>();
+
+  /** A house's layout and alarm, the same every time for this game (rolled from the game's seed and the house). */
+  private houseFor(id: string): House {
+    return rollHouse(new Rng(hashString(`${this.state.seed}:${id}`)), id);
+  }
+
+  /** Cars in the driveway today: by day an empty driveway means nobody's home (assumed: half the houses a day). */
+  private carsOutside(id: string): boolean {
+    const day = calendar(this.state.minutes).day;
+    return new Rng(hashString(`${this.state.seed}:${id}:${day}`)).chance(
+      BALANCE_CRIME.burglary.carsOutsideChance,
+    );
+  }
+
+  /** E at a Linden Avenue front door: pick the lock (anyone watching calls it in). */
+  private breakIn(id: string, at: { x: number; y: number }): void {
+    const st = this.state;
+    if (!restocked(st.crimeLog.houses[id], st.minutes, BALANCE_CRIME.burglary.restockMinutes)) {
+      this.toast('HOUSE', 'CLEANED OUT ALREADY. NOTHING LEFT WORTH TAKING.');
+      return;
+    }
+    if (this.burglary?.house.id !== id) {
+      const house = this.houseFor(id);
+      const occupant = rollOccupant(this.rng, this.minuteOfDay(), this.carsOutside(id));
+      this.burglary = startBurglary(this.rng, house, occupant, { uniform: this.disguise().uniform });
+      this.burgleIds.clear();
+    }
+    this.burgleDoor = { x: at.x, y: at.y };
+    // picking a front door in view of the street is a crime anyone can see
+    this.crime(burglaryStars(this.burglary), at);
+    this.pendingBurgle = { step: 'door' };
+    this.openLockpick('FRONT DOOR');
+  }
+
+  private burgleDone(r: MinigameResult): void {
+    const p = this.pendingBurgle;
+    this.pendingBurgle = null;
+    const s = this.burglary;
+    if (!p || !s) return;
+    const st = this.state;
+    if (p.step === 'door') {
+      this.wearPicks(r.grade === 'fail' || r.grade === null);
+      if (r.grade === null || !pickDoor(s, r.grade as Grade)) return;
+      const def = INTERIORS[`house_${s.house.layout}` as InteriorId];
+      st.streetReturn = { x: this.burgleDoor?.x ?? st.player.x, y: (this.burgleDoor?.y ?? st.player.y) + 12 };
+      this.fade(() => {
+        this.enterInterior(def, def.entrance ?? { x: 40, y: 40 });
+        if (s.panel === 'armed') this.toast('ALARM', 'THE KEYPAD BEEPS BY THE DOOR. 10 SECONDS!');
+        // an owner who is up sees the intruder come in and reaches for the phone
+        if (s.occupant === 'awake') {
+          ownerSees(s, this.rng);
+          this.toast('OWNER', "WHO'S THERE?! I'M CALLING THE POLICE!");
+        }
+        this.updateNpcs(true);
+        this.refreshOwner();
+      });
+      return;
+    }
+    if (p.step === 'panel') {
+      this.burgleReport(cutHousePanel(s, r.grade !== null && r.grade !== 'fail'));
+      this.toast('ALARM', s.panel === 'cut' ? 'ALARM OFF.' : 'THE ALARM IS RINGING!');
+      this.refreshOwner();
+      return;
+    }
+    if (r.grade === null) return;
+    const taken = searchRoom(s, p.room, r.grade as Grade, st.money);
+    const names = taken.map((g) => GOODS_NAMES[g.kind]);
+    this.toast('SEARCH', taken.length ? `TOOK ${names.join(', ')}.` : 'NOTHING WORTH TAKING.');
+    this.syncMoneyHook();
+    this.refreshOwner();
+  }
+
+  /** A room's search grid: its goods as glinting items among the junk (no goods icons yet: art debt). */
+  private burgleRoom(room: number): void {
+    const s = this.burglary;
+    if (!s?.doorOpen) return;
+    const r = s.rooms[room];
+    if (!r || r.searched) {
+      this.toast('SEARCH', 'ALREADY TURNED OVER.');
+      return;
+    }
+    const items: LootItem[] = r.goods.map((g) =>
+      g.kind === 'cash_tin'
+        ? { kind: 'cash', value: g.value }
+        : { kind: g.kind === 'jewellery' ? 'watch' : 'phone', value: 0 },
+    );
+    for (let k = 0; k < BALANCE_CRIME.burglary.junkPerRoom; k++) items.push({ kind: 'junk', value: 0 });
+    this.pendingBurgle = { step: 'room', room };
+    const name = LAYOUTS[s.house.layout].rooms[room]?.name ?? 'ROOM';
+    this.openMinigame({ kind: 'search', seed: this.rng.int(1, 2 ** 30), label: name, items });
+  }
+
+  private housePanel(): void {
+    const s = this.burglary;
+    if (!s || s.panel !== 'armed' || s.panelDeadline === null) {
+      this.toast('ALARM', s?.panel === 'cut' ? 'ALREADY CUT.' : 'NOT ARMED.');
+      return;
+    }
+    this.pendingBurgle = { step: 'panel' };
+    this.openMinigame({
+      kind: 'bypass',
+      seed: this.rng.int(1, 2 ** 30),
+      label: 'KEYPAD',
+      seconds: Math.max(1, s.panelDeadline - s.t),
+    });
+  }
+
+  private burgleTick(dt: number): void {
+    const s = this.burglary;
+    if (!s) return;
+    const before = s.occupant;
+    this.burgleReport(tickBurglary(s, dt, this.rng));
+    if (before === 'asleep' && s.occupant === 'calling') {
+      this.toast('OWNER', 'A LIGHT GOES ON. SOMEONE IS ON THE PHONE!');
+      this.updateNpcs(true);
+      this.refreshOwner();
+    }
+    // walked off without getting in: the job is over
+    if (!s.doorOpen && !this.inside && this.burgleDoor) {
+      const p = this.state.player;
+      if (
+        Math.hypot(p.x - this.burgleDoor.x, p.y - this.burgleDoor.y) >
+        BALANCE_CRIME.burglary.giveUpTiles * TILE
+      )
+        this.burglary = null;
+    }
+  }
+
+  /** The owner's spot is a SCARE THEM OFF prompt while they are on the phone (docs/05: within 2 tiles, E). */
+  private refreshOwner(): void {
+    this.usables = this.usables.filter((u) => u.id !== 'owner');
+    const r = this.inside;
+    if (!r || this.burglary?.occupant !== 'calling') return;
+    const n = r.json.npcs[0];
+    if (n)
+      this.usables.push({ id: 'owner', x: n.x, y: n.y, label: 'SCARE THEM OFF', placed: null, door: null });
+  }
+
+  private scareOff(): void {
+    const s = this.burglary;
+    if (s && scareOwner(s)) this.toast('OWNER', 'OKAY! OKAY! TAKE WHAT YOU WANT!');
+    this.refreshOwner();
+  }
+
+  private burgleReport(reports: CrimeReport[]): void {
+    const at = this.burgleDoor ?? this.state.player;
+    for (const q of reports) {
+      let id = this.burgleIds.get(q.key);
+      if (id === undefined) {
+        id = ++this.crimeSeq;
+        this.burgleIds.set(q.key, id);
+      }
+      if (reportCrime(this.state.wanted, this.reported, id, q.stars, at))
+        this.toast('POLICE', 'THE HOUSE CALLED IT IN.');
+    }
+  }
+
+  /** Out of the house with the goods: into the bag for the fence, the cash tins already counted, reputation. */
+  private burgleLeave(): void {
+    const s = this.burglary;
+    if (!s) return;
+    const st = this.state;
+    const res = leaveHouse(s);
+    this.burglary = null;
+    this.usables = this.usables.filter((u) => u.id !== 'owner');
+    st.goods.push(...res.goods);
+    if (res.payout > 0) {
+      st.crimeLog.houses[s.house.id] = st.minutes;
+      this.crimeDone(res.payout);
+    }
+    if (res.identified) fileIdentification(st.heat, 'witness', st.minutes);
+    if (res.goods.length)
+      this.toast('GOODS', `${res.goods.length} ITEM${res.goods.length > 1 ? 'S' : ''} FOR THE FENCE.`);
+  }
+
   // ---------------------------------------------------------------- the guided first day (docs/11)
 
   /** Where the player stood when the guide's first step began on the street. */
@@ -2685,7 +2908,7 @@ export class WorldScene extends Phaser.Scene {
     // keys pressed in the panel (the hotwire's F terminal, E) must not also act in the world
     this.resumedAt = this.time.now;
     if (this.pendingTrunk) this.trunkMinigameDone(r);
-    else if (this.pendingRob) {
+    else if (this.pendingRob || this.pendingBurgle) {
       // the robbery's own lockpicks (staff door, back door) are handled in robDone
     } else if (r.kind === 'lockpick' || r.kind === 'hotwire') this.carMinigameDone(r);
     if (r.kind === 'duffel') this.launderDone(r);
@@ -2693,6 +2916,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.pendingGig && r.kind === this.pendingGig) this.gigTaskDone(r);
     if (this.pendingRob) this.robDone(r);
     if (this.pendingAtm) this.robAtmDone(r);
+    if (this.pendingBurgle) this.burgleDone(r);
     if (this.pendingTask && r.kind === TASKS[this.pendingTask].game) {
       const task = this.pendingTask;
       this.pendingTask = null;
@@ -3824,6 +4048,7 @@ export class WorldScene extends Phaser.Scene {
     h.objective = this.objectiveText;
     h.rep = this.state.crime.rep;
     h.robbing = !!this.robbery;
+    h.goods = this.state.goods.length;
     h.masked = !!this.state.maskOn;
     this.syncMoneyHook();
     h.driving = this.state.driving;

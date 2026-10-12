@@ -10,6 +10,10 @@ import office from '../art/interiors/office_floor.json';
 import trailer from '../art/interiors/site_trailer.json';
 import store from '../art/interiors/store.json';
 import lobby from '../art/interiors/tower_lobby.json';
+import bungalow from '../art/interiors/house_bungalow.json';
+import family from '../art/interiors/house_family.json';
+import townhouse from '../art/interiors/house_townhouse.json';
+import { LAYOUTS } from '../src/data/burglary';
 import { INTERIORS, interiorForDoor } from '../src/data/interiors';
 import { collides } from '../src/systems/movement';
 import {
@@ -34,6 +38,9 @@ const J = {
   garage,
   depot,
   site_trailer: trailer,
+  house_bungalow: bungalow,
+  house_family: family,
+  house_townhouse: townhouse,
 } as unknown as Record<string, InteriorJson>;
 const rules = (j: InteriorJson) => ({ radius: 6, mapW: j.W, mapH: j.D, smallScale: 0.6, smallSlack: 2 });
 
@@ -54,6 +61,22 @@ describe('interiors in the game', () => {
         expect(collides(def.elevator.x, def.elevator.y, solids, rules(j)), `${def.id} lift`).toBe(false);
     }
     expect(interiorForDoor('chop_shop')).toBeNull();
+  });
+
+  it('burglary houses: a search per room in data/burglary.ts order, the keypad, one owner (Phase 3)', () => {
+    for (const layout of ['bungalow', 'family', 'townhouse'] as const) {
+      const id = `house_${layout}` as const;
+      const spots = useSpots(J[id]!, INTERIORS[id], createDoors(J[id]!, INTERIORS[id]));
+      const rooms = spots.flatMap((u) =>
+        u.kind === 'action' && u.action.kind === 'burgle' ? [u.action.room] : [],
+      );
+      expect(rooms.sort(), id).toEqual(LAYOUTS[layout].rooms.map((_, k) => k));
+      expect(
+        spots.some((u) => u.kind === 'action' && u.action.kind === 'housePanel'),
+        id,
+      ).toBe(true);
+      expect(J[id]!.npcs.length, id).toBe(1);
+    }
   });
 
   it('applies the door rules: locked, key card, staff hours', () => {

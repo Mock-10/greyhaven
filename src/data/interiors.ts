@@ -18,7 +18,10 @@ export type InteriorId =
   | 'dealer'
   | 'garage'
   | 'depot'
-  | 'site_trailer';
+  | 'site_trailer'
+  | 'house_bungalow'
+  | 'house_family'
+  | 'house_townhouse';
 
 export type CrimeStep = 'register' | 'safe' | 'cctv' | 'wipe';
 
@@ -40,6 +43,10 @@ export type Action =
   | { kind: 'dealer' }
   /** A weekend odd job's task spot (data/oddJobs.ts): the bar's taps. */
   | { kind: 'gig'; gig: GigId }
+  /** Search a burglary house's room (index into data/burglary.ts LAYOUTS[layout].rooms). */
+  | { kind: 'burgle'; room: number }
+  /** The house alarm's keypad by the front door. */
+  | { kind: 'housePanel' }
   /** A step of a store robbery (systems/robbery.ts): the register, the safe, the CCTV desk, the DVR. */
   | { kind: 'crime'; step: CrimeStep }
   | { kind: 'later'; who: string; text: string };
@@ -289,9 +296,38 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
       { role: 'crew', hours: h(8, 17) },
     ],
   },
+  // the Phase 3 burglary houses on Linden Avenue (docs/04, docs/18 decisions): entered by picking the front door
+  house_bungalow: house('house_bungalow', { x: 211, y: 178 }, ['LIVING ROOM', 'KITCHEN', 'BEDROOM']),
+  house_family: house('house_family', { x: 261, y: 210 }, [
+    'LIVING ROOM',
+    'KITCHEN',
+    'MAIN BEDROOM',
+    'KIDS ROOM',
+  ]),
+  house_townhouse: house('house_townhouse', { x: 71, y: 210 }, ['LIVING ROOM', 'STUDY', 'BEDROOM']),
 };
 
 /** The interior a street door leads to, if any. */
+/** A burglary house: a SEARCH prompt per room (in data/burglary.ts order), the keypad, the owner's spot. */
+function house(id: InteriorId, entrance: { x: number; y: number }, rooms: readonly string[]): InteriorDef {
+  const actions: InteriorDef['actions'] = {
+    'ALARM PANEL': { label: 'ALARM PANEL', action: { kind: 'housePanel' } },
+  };
+  rooms.forEach(
+    (r, k) => (actions[`SEARCH ${r}`] = { label: `SEARCH ${r}`, action: { kind: 'burgle', room: k } }),
+  );
+  return {
+    id,
+    name: 'A HOUSE ON LINDEN AVENUE',
+    street: null,
+    hours: null,
+    entrance,
+    actions,
+    doors: [],
+    npcs: [{ role: 'owner', hours: null }],
+  };
+}
+
 export function interiorForDoor(target: DoorTarget): InteriorDef | null {
   return Object.values(INTERIORS).find((d) => d.street === target) ?? null;
 }
