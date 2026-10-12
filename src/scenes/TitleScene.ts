@@ -5,8 +5,6 @@ import Phaser from 'phaser';
 import { PAL } from '../config/constants';
 import { pixelText } from '../ui/bitmapFont';
 import { textWidth } from '../ui/pixelFont';
-import type { WorldScene } from './WorldScene';
-import type { Params } from '../debug/params';
 
 export class TitleScene extends Phaser.Scene {
   private items: Phaser.GameObjects.GameObject[] = [];
@@ -59,11 +57,9 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private start(): void {
-    // The first click lets the browser start audio; Phaser unlocks its sound manager on it.
-    const world = this.scene.get('world') as WorldScene;
-    world.startPlay();
-    const params = this.registry.get('params') as Params;
-    this.scene.launch('hud', params);
+    // The first click lets the browser start audio; Phaser unlocks its sound manager on it. A new game opens the
+    // character creator (docs/11), which starts the day.
+    this.scene.launch('creator');
     this.scene.stop();
   }
 }

@@ -1,7 +1,7 @@
 """Vehicles with realistic, crisp forms: planar greenhouse (one raked windshield, flat roof,
 tumblehome sides), a tight-radius lower body with sloped hood, and flat inset lights."""
 import numpy as np
-from sdf import Model, ell, capsule, rbox, cyl_y, solid, RID
+from sdf import Model, ell, capsule, rbox, cyl_y, solid, RID, hash3
 
 WB = 27.0          # half wheelbase
 WR = 6.6           # wheel radius
@@ -235,6 +235,101 @@ def van(color=('white', 3.0)):
     return Model(parts, mats, (-46, 46, -19, 19, 0, 36))
 
 
+# ---------------------------------------------------------------- beater (Phase 2, the dealer's cheapest car)
+BWB = 24.0                       # shorter wheelbase
+BRW_LO, BRW_HI = -33.5, -14.0    # long, raked hatch glass
+
+
+def _rwb_x(z):
+    return BRW_LO + (BRW_HI - BRW_LO) * (z - BELT) / (ROOF - BELT)
+
+
+def _cabin_hatch(P):
+    y, z = P[:, 1], P[:, 2]
+    h = ROOF - BELT
+    ws = plane(P, (WS_LO - 2.0, 0, BELT), (h, 0, WS_LO - WS_HI))
+    rw = plane(P, (BRW_LO, 0, BELT), (-h, 0, BRW_HI - BRW_LO))
+    side = (np.abs(y) - (CAB_Y - 0.6 - TUMBLE * (z - BELT))) / np.sqrt(1 + TUMBLE ** 2)
+    return np.maximum.reduce([ws, rw, side, z - (ROOF - 0.8), (BELT - 1.5) - z])
+
+
+def beater(color=('khaki', 2.2), door=('stone', 2.4)):
+    """An old, boxy two-box hatchback: faded paint, one primer-grey door, rust along the sills and a dented
+    bumper. Flat glass and visible pillars like the sedan, never a rounded bubble."""
+    cr, cb = color
+    L = 39.0
+
+    def parts(P):
+        body = np.maximum(_body(P, L, 16.4), -_arches_b(P))
+        mir = np.minimum(rbox(P, (10.4, 16.8, 20.4), (1.3, 1.0, 0.9), 0.4), rbox(P, (10.4, -16.8, 20.4), (1.3, 1.0, 0.9), 0.4))
+        return [body, _cabin_hatch(P), _wheels_b(P), mir]
+
+    def body_mat(p, n):
+        x, y, z = p[:, 0], p[:, 1], p[:, 2]
+        N = len(p)
+        ramp = np.full(N, RID[cr]); base = np.full(N, float(cb)); shine = np.full(N, 0.15)
+        side = np.abs(n[:, 1]) > 0.55
+        under = side & (z > 9.0) & (z < 15.6)
+        base = np.where(under, base - 0.25, base)
+        sill = side & (z < 9.0)
+        ramp = np.where(sill, RID['asph'], ramp); base = np.where(sill, 1.5, base)
+        # the primer door (front left only), faded and flat
+        pd = side & (y > 0) & (x > -9.0) & (x < 12.4) & (z > 9.0)
+        ramp = np.where(pd, RID[door[0]], ramp); base = np.where(pd, door[1], base); shine = np.where(pd, 0.0, shine)
+        for xs in (12.4, -9.0, -27.0):
+            seam = side & (np.abs(x - xs) < 0.4) & (z > 9.0) & (z < BELT)
+            base = np.where(seam, base - 1.0, base)
+        for xh in (5.0, -14.0):
+            hd = side & (np.abs(x - xh) < 1.5) & (np.abs(z - 17.0) < 0.45)
+            base = np.where(hd, base + 1.0, base)
+        # rust: blotches along the sills and around the rear arches
+        rr = side & (z > 8.2) & (z < 12.5) & (hash3(np.floor(x / 2.2), np.floor(z / 1.6), np.sign(y), 11) > 0.62)
+        rr &= (x < -18) | (np.abs(x) < 6) | (x > 26)
+        ramp = np.where(rr & ~pd, RID['brick'], ramp); base = np.where(rr & ~pd, 2.2, base)
+        # sun-faded roofline and bonnet: one tone lighter in patches
+        top = n[:, 2] > 0.7
+        fade = top & (hash3(np.floor(x / 4.0), np.floor(y / 4.0), 3, 5) > 0.72)
+        base = np.where(fade, base + 0.3, base)
+        ramp, base, shine = _lights(p, n, ramp, base, shine, L)
+        # a dent in the front bumper
+        dent = (n[:, 0] > 0.6) & (z < 10.8) & (y > 6) & (y < 12)
+        base = np.where(dent, base - 0.6, base)
+        return ramp, base, shine
+
+    def cabin_mat(p, n):
+        x, y, z = p[:, 0], p[:, 1], p[:, 2]
+        N = len(p)
+        ramp = np.full(N, RID[cr]); base = np.full(N, float(cb) + 0.3); shine = np.full(N, 0.15)
+        wsf = (n[:, 0] > 0.35) & (n[:, 2] > 0.3)
+        rwf = (n[:, 0] < -0.35) & (n[:, 2] > 0.2)
+        sidef = np.abs(n[:, 1]) > 0.7
+        half = CAB_Y - 0.6 - TUMBLE * (z - BELT)
+        zin = (z > BELT + 0.6) & (z < ROOF - 1.8)
+        ws_g = wsf & zin & (np.abs(y) < half - 1.3)
+        rw_g = rwf & zin & (np.abs(y) < half - 1.8)
+        sd_g = sidef & zin & (x < _ws_x(z) - 3.8) & (x > _rwb_x(z) + 2.6) & (np.abs(x - (-9.0)) > 1.0) & (np.abs(x - (-24.0)) > 1.0)
+        glass = ws_g | rw_g | sd_g
+        ramp = np.where(glass, RID['glass'], ramp)
+        g = 1.2 + np.clip((z - BELT) / (ROOF - BELT), 0, 1) * 1.2
+        refl = np.abs(np.mod(x * 0.55 + y * 0.35 + z * 0.9, 9.0) - 4.5) < 1.1
+        base = np.where(glass, g + refl * 0.6, base)
+        shine = np.where(glass, 0.9, shine)
+        trim = sidef & (np.abs(z - (BELT + 0.4)) < 0.4)
+        ramp = np.where(trim & ~glass, RID['night'], ramp); base = np.where(trim & ~glass, 1.2, base)
+        return ramp, base, shine
+
+    mats = [body_mat, cabin_mat, _tire_mat(BWB), solid('night', 1.4)]
+    return Model(parts, mats, (-42, 42, -19, 19, 0, 32))
+
+
+def _wheels_b(P):
+    return _wheels(P, BWB)
+
+
+def _arches_b(P):
+    return _arches(P, BWB)
+
+
 VEHICLES = {
     'sedan_clay': lambda: sedan(('clay', 2.5)),
     'sedan_teal': lambda: sedan(('teal', 2.6)),
@@ -244,4 +339,6 @@ VEHICLES = {
     'police_car': lambda: sedan(('navy', 1.7), police=True),
     'van_white': lambda: van(('white', 3.0)),
     'van_sage': lambda: van(('sage', 2.5)),
+    'beater_khaki': lambda: beater(('khaki', 2.1), ('stone', 2.4)),
+    'beater_brick': lambda: beater(('brick', 2.6), ('lavlt', 2.2)),
 }

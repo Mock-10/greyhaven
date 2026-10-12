@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import apartment from '../art/interiors/apartment.json';
 import bar from '../art/interiors/bar.json';
+import clothing from '../art/interiors/clothing.json';
+import dealer from '../art/interiors/dealer.json';
+import hardware from '../art/interiors/hardware.json';
 import office from '../art/interiors/office_floor.json';
 import store from '../art/interiors/store.json';
 import lobby from '../art/interiors/tower_lobby.json';
@@ -16,10 +19,16 @@ import {
   type InteriorJson,
 } from '../src/world/interiorModel';
 
-const J = { apartment, bar, office_floor: office, store, tower_lobby: lobby } as unknown as Record<
-  string,
-  InteriorJson
->;
+const J = {
+  apartment,
+  bar,
+  office_floor: office,
+  store,
+  tower_lobby: lobby,
+  hardware,
+  clothing,
+  dealer,
+} as unknown as Record<string, InteriorJson>;
 const rules = (j: InteriorJson) => ({ radius: 6, mapW: j.W, mapH: j.D, smallScale: 0.6, smallSlack: 2 });
 
 describe('interiors in the game', () => {
@@ -89,6 +98,22 @@ describe('interiors in the game', () => {
     const spots = useSpots(j, INTERIORS.store, createDoors(j, INTERIORS.store));
     const labels = spots.flatMap((s) => (s.kind === 'action' ? [s.label] : []));
     expect(labels).toEqual(['SHOP']);
+  });
+
+  it('opens the Hedgerow Way shops: hardware stock, clothes, fitting booth, the car desk', () => {
+    const labels = (id: 'hardware' | 'clothing' | 'dealer') =>
+      useSpots(J[id]!, INTERIORS[id], createDoors(J[id]!, INTERIORS[id]))
+        .filter((u) => u.kind === 'action')
+        .map((u) => (u.kind === 'action' ? u.action.kind : ''));
+    expect(labels('hardware')).toEqual(['shop']);
+    expect(labels('clothing').sort()).toEqual(['clothes', 'wardrobe']);
+    expect(labels('dealer')).toEqual(['dealer']);
+    expect(INTERIORS.hardware.actions.SHOP?.action).toEqual({ kind: 'shop', shop: 'hardware' });
+    expect(INTERIORS.apartment.actions['CHANGE OUTFIT']?.action).toEqual({ kind: 'wardrobe' });
+    for (const id of ['hardware', 'clothing', 'dealer'] as const) {
+      expect(INTERIORS[id].doors.length, id).toBe(J[id]!.items.filter((i) => i.door).length);
+      expect(INTERIORS[id].npcs.length, id).toBe(J[id]!.npcs.length);
+    }
   });
 
   it('puts NPCs on duty by the clock', () => {

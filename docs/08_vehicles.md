@@ -58,7 +58,12 @@
 - **Repair kit** (hardware store, $150): E USE REPAIR KIT on any unlocked car below 50% health brings it to 50%. A wrecked car (0%) can't be saved by a kit.
 
 ## Phase 2 build (milestone 6a, 2026-10-12)
-- **Dealer cars are scenery** for now: the used-car lot on Hedgerow Way shows two rows of cars that can't be entered, bought or stolen. Buying (beater and sedan) comes with the dealer's sales cabin in milestone 6b.
+- **Dealer cars are scenery**: the used-car lot on Hedgerow Way shows rows of display cars that can't be entered, bought or stolen.
 - **House driveway cars** on Linden Avenue are ordinary parked cars: they can be lockpicked, hotwired, looted and sold to Marlo like any other.
 - New roads have two lanes each way. Traffic picks a lane, stops at the stop lines and only turns right for now.
 
+
+## Phase 2 build (milestone 6b, 2026-10-12)
+- **Buying a car:** the salesman's desk in the lot's cabin sells beaters ($1,500; khaki or brick) and sedans ($5,000; teal, clay, khaki or lavender). Clean money: the bank first, then carried clean cash.
+- The car is **registered to you**: unlocked, keyed (F gets in, no hotwire), a full tank, never hot, and its trunk isn't a loot target. It waits in the **pickup bay** (the first bay of the lot's front row) and drives out through a gap in the pennants. While a car stands in the bay, the desk asks you to move it first.
+- **Beater stats** (`BALANCE.vehicles.types.beater`): top speed 198 units/s (70 vs the sedan's 85), acceleration 110, turn rate 2.1, health 70, tank 30. A shorter hatchback body with a primer door, rust and a faded roof (`art/source/cars.py`).

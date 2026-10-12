@@ -10,6 +10,8 @@ import { Rng } from '../core/rng';
 import { createState, loadSettings, saveSettings, type GameState, type Settings } from '../core/store';
 import { framePixels, frameInfo, opaqueAt } from '../assets/atlasLoader';
 import type { AtlasKey } from '../assets/manifest';
+import { paintPlayer } from '../assets/playerLook';
+import { playerCostume, type Look } from '../data/looks';
 import { highlight, HIGHLIGHT_PAD } from '../assets/highlight';
 import { outlinePixels } from '../assets/outline';
 import { addPixelsTexture } from '../assets/runtimeTextures';
@@ -69,6 +71,9 @@ import { credit } from '../systems/finance';
 import { rollTrunk, takeLoot, type LootItem } from '../systems/loot';
 import { lockTool, wearLockpicks } from '../systems/shop';
 import { atmPage, bagPage, phoneRoot, PHONE_SENDERS, type PhoneCtx } from '../world/phone';
+import { clothingPage, dealerPage, wardrobePage, type ShopCtx } from '../world/shops';
+import type { ListPage } from '../ui/listPanel';
+import { bayFree, boughtCar, payDealer } from '../systems/dealer';
 import type { ListRequest } from './ListScene';
 import { INTERIORS, interiorForDoor, isOpen, type InteriorDef, type InteriorId } from '../data/interiors';
 import { JOBS, TASK_NAMES, type TaskId } from '../data/jobs';
@@ -651,14 +656,29 @@ export class WorldScene extends Phaser.Scene {
    * world until it closes.
    */
   private openList(name: 'phone' | 'atm' | 'bag'): void {
-    if (!this.playing || this.isReference || this.scene.isPaused() || this.busy) return;
-    if (this.time.now - this.resumedAt < BALANCE.ui.keyGuardMs) return;
     const ctx: PhoneCtx = { state: this.state, wallet: this.wallet() };
     const root = { phone: phoneRoot, atm: atmPage, bag: bagPage }[name];
+    this.openPanel(name, () => root(ctx));
+  }
+
+  /** The shop lists (milestone 6b): the clothing store, the wardrobe and fitting booths, the used-car desk. */
+  private openShopList(name: 'clothing' | 'wardrobe' | 'dealer'): void {
+    const ctx: ShopCtx = {
+      state: this.state,
+      wear: (outfit) => this.setLook({ ...this.state.look, outfit }),
+      buyCar: (model) => this.buyCar(model),
+    };
+    const root = { clothing: clothingPage, wardrobe: wardrobePage, dealer: dealerPage }[name];
+    this.openPanel(name, () => root(ctx));
+  }
+
+  private openPanel(name: string, root: () => ListPage): void {
+    if (!this.playing || this.isReference || this.scene.isPaused() || this.busy) return;
+    if (this.time.now - this.resumedAt < BALANCE.ui.keyGuardMs) return;
     const req: ListRequest = {
       style: name === 'phone' ? 'phone' : 'menu',
       name,
-      root: () => root(ctx),
+      root,
       onChange: () => this.syncMoneyHook(),
       clock: () => formatClock(calendar(this.state.minutes).minute),
     };
@@ -790,6 +810,27 @@ export class WorldScene extends Phaser.Scene {
     for (const f of await store.all()) metas[f.meta.slot] = f.meta;
     const err = await this.saveTo(nextAutoSlot(metas));
     if (!err) this.toast('AUTOSAVE', 'GAME SAVED.');
+  }
+
+  /** The look the player wears (docs/11). */
+  get look(): Look {
+    return this.state.look;
+  }
+
+  /** Change the player's look (the creator, the clothing store, a wardrobe): repaint the palette-swapped sprites. */
+  setLook(look: Look): void {
+    this.state.look = { ...look };
+    paintPlayer(this.textures, look);
+    const costume = playerCostume(look);
+    hook().look = { ...look };
+    if (costume === this.state.player.costume) return;
+    this.state.player.costume = costume;
+    this.ensureWalkAnims(costume);
+    if (this.player) {
+      const ref = characterFrame(costume, 'idle', this.state.player.dir);
+      this.player.stop();
+      this.player.setTexture(ref.atlas, ref.frame);
+    }
   }
 
   /** Called by the title screen once the player clicks. */
@@ -1198,6 +1239,9 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private createPlayer(): void {
+    // the palette-swapped player (docs/11): paint the 'player' texture in this game's look first
+    paintPlayer(this.textures, this.state.look);
+    hook().look = { ...this.state.look };
     const costume = this.state.player.costume;
     this.ensureWalkAnims(costume);
     const p = this.state.player;
@@ -1759,6 +1803,15 @@ export class WorldScene extends Phaser.Scene {
       case 'launder':
         this.startLaundering();
         break;
+      case 'clothes':
+        this.openShopList('clothing');
+        break;
+      case 'wardrobe':
+        this.openShopList('wardrobe');
+        break;
+      case 'dealer':
+        this.openShopList('dealer');
+        break;
       case 'clock':
         this.clockAction();
         break;
@@ -2009,8 +2062,23 @@ export class WorldScene extends Phaser.Scene {
     const usable: Usable = { id: `car:${v.id}`, x: v.x, y: v.y, label: 'LOCKPICK', placed, door: null };
     const rear = trunkSpot(v);
     const trunk: Usable = { id: `trunk:${v.id}`, ...rear, label: 'LOOT TRUNK', placed: null, door: null };
-    this.usables.push(usable, trunk);
+    // a car bought indoors joins the street's usables, which are put away while you're inside
+    (this.streetSaved?.usables ?? this.usables).push(usable, trunk);
     this.cars.push({ v, placed, shadow, usable, trunk });
+  }
+
+  /** The used-car desk (docs/08): pay, then the car waits in the lot's pickup bay, keyed and full. */
+  private buyCar(model: string): string {
+    const st = this.state;
+    const slot = this.map.zones?.find((z) => z.id === 'dealer_pickup')?.slots?.[0];
+    if (!slot) return 'NO CARS TODAY.';
+    if (!bayFree(st.vehicles, slot)) return 'MOVE THE CAR IN THE PICKUP BAY FIRST.';
+    if (!payDealer(st.money, st.finance, st.minutes, model)) return 'NOT ENOUGH CLEAN MONEY.';
+    const v = boughtCar(`bought${Math.floor(st.minutes)}_${st.vehicles.length}`, model, slot);
+    st.vehicles.push(v);
+    this.addCarView(v);
+    this.syncMoneyHook();
+    return 'SOLD. IT IS IN THE PICKUP BAY, KEYS IN.';
   }
 
   private removeCar(c: CarView): void {
@@ -2865,6 +2933,8 @@ export class WorldScene extends Phaser.Scene {
       speed: v.speed,
       health: v.health,
       looted: !!v.looted,
+      model: v.model,
+      owned: !!v.owned,
     }));
     const tile = worldToTile(p.x, p.y);
     this.game.events.emit('debug:stats', {

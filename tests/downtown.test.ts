@@ -110,15 +110,22 @@ describe('Downtown map (vector ground)', () => {
     expect(ground(DOWNTOWN.spawn.x, DOWNTOWN.spawn.y)).toMatch(/^(sidewalk|kerb|plaza|terrazzo)/);
   });
 
-  it('has a reachable street door for every Phase 1 interior', () => {
+  it('has a reachable street door for every interior', () => {
     const doors = DOWNTOWN.doors ?? [];
     expect(doors.map((d) => d.target).sort()).toEqual([
       'apartment',
       'bar',
       'chop_shop',
+      'clothing',
+      'dealer',
+      'hardware',
       'store',
       'tower_lobby',
     ]);
+    // the used-car lot's pickup bay holds a bought car (milestone 6b)
+    const bay = DOWNTOWN.zones?.find((z) => z.id === 'dealer_pickup')?.slots?.[0];
+    expect(bay).toBeDefined();
+    expect(solidsHit(bay!.x, bay!.y)).toEqual([]);
     for (const d of doors) {
       expect(solidsHit(d.x, d.y), d.label).toEqual([]);
       expect(ROAD.has(ground(d.x, d.y) ?? 'asphalt'), d.label).toBe(false);

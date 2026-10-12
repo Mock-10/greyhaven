@@ -93,5 +93,10 @@ The sim script is in `tools/econ_sim.py`. Re-run it after any change to pay, pay
 - **HR bribes** come from the bank: $150 covers a missed shift from the last 7 days (the −5 XP comes back, no pay), $600 lifts a promotion freeze.
 
 ## Phase 2 build (milestone 6a, 2026-10-12)
-- The hardware store, the clothing store and the car dealer's lot now stand on Hedgerow Way, but they are **facades** until milestone 6b builds their doors, interiors and stock. Until then, lockpicks, the toolbox and repair kits come only from trunks (or the cheat console).
+- The hardware store, the clothing store and the car dealer's lot now stand on Hedgerow Way.
+
+## Phase 2 build (milestone 6b, 2026-10-12)
+- **Hardware store** (open 08:00–21:00): lockpicks $40, toolbox $120, repair kit $150, clean carried cash.
+- **Clothing store** (open 09:00–21:00): outfits in clean carried cash, bought once and kept in the wardrobe: grey hoodie $60, work khakis $80, white shirt $90, red jacket $140, clay coat $180, navy suit $300 (prices assumed; `BALANCE.clothing`). Changing at a fitting booth or the apartment wardrobe is free.
+- **Used-car lot** (desk open 09:00–18:00): beater $1,500 and sedan $5,000 (the table above), clean money only. The bank card pays first, then carried clean cash (assumed). Dirty cash is refused.
 

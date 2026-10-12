@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 warnings.filterwarnings('ignore')
 import numpy as np
 import decor as D
+import decor_shops as DS
 import interiors as I
 import props2
 import rooms
@@ -46,7 +47,7 @@ def _tag(module):
             setattr(module, name, wrap)
 
 
-for mod in (D, I, props2, J):
+for mod in (D, I, props2, DS, J):
     _tag(mod)
 
 
