@@ -111,4 +111,33 @@ export const BALANCE_JOBS = {
     /** Mood at the end for each grade: only three of the boss's favourite replies reach excellent. */
     moodFor: { excellent: 88, good: 66, ok: 45, poor: 25 },
   },
+
+  /** Fell direction (lumberjack): fell each tree into the clear lane. The aim sweeps back and forth `sweep` degrees
+   *  either side of the lane at `aimSpeed` degrees a second; the tree's lean and the wind push its fall off the aim
+   *  by up to `leanMax` and `windMax` degrees, so aim against them. A fall within `great`, `good` or `lane` degrees
+   *  of the lane's centre lands clean, close, or just in; outside it hits something. Each tree falls on its own
+   *  (wherever the lean takes it) after `seconds`. */
+  fell: {
+    trees: 3,
+    seconds: 6,
+    sweep: 60,
+    aimSpeed: 70,
+    leanMin: 4,
+    leanMax: 14,
+    windMax: 10,
+    great: 5,
+    good: 11,
+    lane: 20,
+    /** Score per tree: clean, close, just in (a miss scores 0). */
+    worth: { great: 1, good: 0.75, ok: 0.5 },
+  },
+
+  /** Doorstep (delivery): walk the street strip to the house on each parcel's label and hand it over. Houses on the
+   *  strip, parcels per task, the timer, a step's time, and the share of time left for an excellent grade. */
+  doorstep: { houses: 8, parcels: 3, seconds: 16, stepTime: 0.18, excellentTimeShare: 0.3 },
+
+  /** Signature (delivery): trace the customer's squiggle with the mouse. The pad is 1 wide and `aspect` tall. A
+   *  pen sample within `tolerance` of the line is on it, and a point of the line is covered when a sample passed
+   *  within `tolerance` of it. The score is coverage × the share of samples on the line. */
+  signature: { points: 48, seconds: 8, tolerance: 0.045, aspect: 0.36, waves: 3, amplitude: 0.11 },
 } as const;
