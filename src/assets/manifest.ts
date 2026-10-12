@@ -18,6 +18,12 @@ import inOfficePng from '../../art/interiors/office_floor.png';
 import inOfficeJson from '../../art/interiors/office_floor.json';
 import inBarPng from '../../art/interiors/bar.png';
 import inBarJson from '../../art/interiors/bar.json';
+import inHardwarePng from '../../art/interiors/hardware.png';
+import inHardwareJson from '../../art/interiors/hardware.json';
+import inClothingPng from '../../art/interiors/clothing.png';
+import inClothingJson from '../../art/interiors/clothing.json';
+import inDealerPng from '../../art/interiors/dealer.png';
+import inDealerJson from '../../art/interiors/dealer.json';
 import charactersPng from '../../art/characters.png';
 import charactersJson from '../../art/characters.json';
 import stepsPng from '../../art/characters_steps.png';
@@ -52,6 +58,9 @@ export const ATLASES = {
   in_tower_lobby: { url: inLobbyPng, json: inLobbyJson as unknown as AtlasJson },
   in_office_floor: { url: inOfficePng, json: inOfficeJson as unknown as AtlasJson },
   in_bar: { url: inBarPng, json: inBarJson as unknown as AtlasJson },
+  in_hardware: { url: inHardwarePng, json: inHardwareJson as unknown as AtlasJson },
+  in_clothing: { url: inClothingPng, json: inClothingJson as unknown as AtlasJson },
+  in_dealer: { url: inDealerPng, json: inDealerJson as unknown as AtlasJson },
 } as const;
 
 /** Ground material swatches for vector-ground maps (art/ground.png, read as pixels, not drawn as frames). */

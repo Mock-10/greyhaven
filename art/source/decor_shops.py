@@ -249,15 +249,18 @@ def key_cutter():
 
 # ======================================================================= the car dealer's cabin
 def car_model_stand():
-    """A small scale model of a sedan on a plinth: the dealer's pride (front toward +y)."""
+    """A scale model of a sedan on a low glass-topped plinth: the dealer's pride (front toward +y)."""
     def parts(P):
-        plinth = rbox(P, (0, 0, 7), (5, 5, 7), 0.4)
-        body = rbox(P, (0, 0, 15.2), (2.4, 5.0, 1.0), 0.6)
-        cab = rbox(P, (0, -0.4, 16.8), (2.0, 2.4, 0.8), 0.5)
-        wheels = np.minimum.reduce([cyl_y(P, (sx * 2.2, sy * 3.4, 14.4), 0.0, 0.0, 0.0) if False else
-                                    ell(P, (sx * 2.3, sy * 3.4, 14.4), (0.5, 0.9, 0.9)) for sx in (-1, 1) for sy in (-1, 1)])
-        return [plinth, smin(body, cab, 0.4), wheels]
-    return M(parts, [solid('night', 2.6, 0.4), solid('red', 2.8, 0.9), solid('asph', 1.2)], (-6, 6, -6, 6, 0, 18))
+        plinth = rbox(P, (0, 0, 4.5), (5.5, 7.5, 4.5), 0.4)
+        body = rbox(P, (0, 0, 11.2), (3.0, 6.6, 1.3), 0.8)
+        cab = rbox(P, (0, -0.6, 13.4), (2.5, 3.2, 1.1), 0.7)
+        wheels = np.minimum.reduce([ell(P, (sx * 2.9, sy * 4.2, 10.0), (0.7, 1.2, 1.2)) for sx in (-1, 1) for sy in (-1, 1)])
+        return [plinth, body, cab, wheels]
+
+    def cabm(p, n):
+        glass = np.abs(n[:, 2]) < 0.6
+        return np.where(glass, RID['glass'], RID['red']), np.where(glass, 3.4, 2.9), np.where(glass, 1.0, 0.9)
+    return M(parts, [solid('night', 2.6, 0.4), solid('red', 2.8, 0.9), cabm, solid('asph', 1.2)], (-7, 7, -9, 9, 0, 16))
 
 
 SHOP_DECOR = {

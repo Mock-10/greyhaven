@@ -1,0 +1,979 @@
+{
+ "id": "hardware",
+ "image": "hardware.png",
+ "W": 256,
+ "D": 192,
+ "wallH": 62,
+ "wallT": 5,
+ "partH": 11,
+ "floorKinds": [
+  [
+   "concrete_a",
+   "concrete_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "concrete_a",
+   "concrete_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "concrete_a",
+   "concrete_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ],
+  [
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a",
+   "linoleum_a"
+  ]
+ ],
+ "partitions": [
+  {
+   "axis": "x",
+   "pos": 64,
+   "a0": 0,
+   "a1": 96,
+   "gaps": [
+    [
+     56,
+     78
+    ]
+   ]
+  },
+  {
+   "axis": "y",
+   "pos": 96,
+   "a0": 0,
+   "a1": 64,
+   "gaps": []
+  }
+ ],
+ "stubGaps": [
+  [
+   "A",
+   180,
+   214
+  ]
+ ],
+ "segments": [
+  {
+   "frame": "seg_x64_0",
+   "x": 8.0,
+   "y": 64,
+   "axis": "x",
+   "pos": 64
+  },
+  {
+   "frame": "seg_x64_1",
+   "x": 24.0,
+   "y": 64,
+   "axis": "x",
+   "pos": 64
+  },
+  {
+   "frame": "seg_x64_2",
+   "x": 40.0,
+   "y": 64,
+   "axis": "x",
+   "pos": 64
+  },
+  {
+   "frame": "seg_x64_3",
+   "x": 52.0,
+   "y": 64,
+   "axis": "x",
+   "pos": 64
+  },
+  {
+   "frame": "seg_x64_4",
+   "x": 79.0,
+   "y": 64,
+   "axis": "x",
+   "pos": 64
+  },
+  {
+   "frame": "seg_x64_5",
+   "x": 88.0,
+   "y": 64,
+   "axis": "x",
+   "pos": 64
+  },
+  {
+   "frame": "seg_y96_0",
+   "x": 96,
+   "y": 8.0,
+   "axis": "y",
+   "pos": 96
+  },
+  {
+   "frame": "seg_y96_1",
+   "x": 96,
+   "y": 24.0,
+   "axis": "y",
+   "pos": 96
+  },
+  {
+   "frame": "seg_y96_2",
+   "x": 96,
+   "y": 40.0,
+   "axis": "y",
+   "pos": 96
+  },
+  {
+   "frame": "seg_y96_3",
+   "x": 96,
+   "y": 56.0,
+   "axis": "y",
+   "pos": 96
+  }
+ ],
+ "items": [
+  {
+   "frame": "item_0_storage_shelf",
+   "kind": "storage_shelf",
+   "x": 30,
+   "y": 8,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 15,
+    "hy": 6,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_1_storage_shelf",
+   "kind": "storage_shelf",
+   "x": 64,
+   "y": 8,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 15,
+    "hy": 6,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_2_cardboard_boxes",
+   "kind": "cardboard_boxes",
+   "x": 12,
+   "y": 46,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 6,
+    "h": 14
+   }
+  },
+  {
+   "frame": "item_3_cardboard_boxes",
+   "kind": "cardboard_boxes",
+   "x": 82,
+   "y": 44,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 6,
+    "h": 10
+   }
+  },
+  {
+   "frame": "item_4_broom",
+   "kind": "broom",
+   "x": 0,
+   "y": 30,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966
+  },
+  {
+   "frame": "item_5_door_leaf",
+   "kind": "door_leaf",
+   "x": 67,
+   "y": 64,
+   "wz": 0.0,
+   "zBias": 3,
+   "ang": 0.0,
+   "prompt": "STAFF ONLY",
+   "door": {
+    "axis": "x",
+    "pos": 64,
+    "g0": 56,
+    "g1": 78
+   }
+  },
+  {
+   "frame": "item_6_paint_shelf",
+   "kind": "paint_shelf",
+   "x": 124,
+   "y": 8,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 15,
+    "hy": 6,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_7_paint_shelf",
+   "kind": "paint_shelf",
+   "x": 158,
+   "y": 8,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 15,
+    "hy": 6,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_8_tool_pegboard",
+   "kind": "tool_pegboard",
+   "x": 206,
+   "y": 0,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_9_step_ladder",
+   "kind": "step_ladder",
+   "x": 186,
+   "y": 18,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_10_bulk_bins",
+   "kind": "bulk_bins",
+   "x": 214,
+   "y": 14,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 13,
+    "hy": 6,
+    "h": 16
+   }
+  },
+  {
+   "frame": "item_11_plant_tall",
+   "kind": "plant_tall",
+   "x": 244,
+   "y": 14,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_12_tool_pegboard",
+   "kind": "tool_pegboard",
+   "x": 0,
+   "y": 104,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966
+  },
+  {
+   "frame": "item_13_lumber_rack",
+   "kind": "lumber_rack",
+   "x": 10,
+   "y": 158,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 17,
+    "h": 30
+   }
+  },
+  {
+   "frame": "item_14_shelf_unit",
+   "kind": "shelf_unit",
+   "x": 86,
+   "y": 102,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 24,
+    "hy": 5,
+    "h": 24
+   }
+  },
+  {
+   "frame": "item_15_shelf_unit",
+   "kind": "shelf_unit",
+   "x": 86,
+   "y": 144,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 24,
+    "hy": 5,
+    "h": 24
+   }
+  },
+  {
+   "frame": "item_16_bulk_bins",
+   "kind": "bulk_bins",
+   "x": 152,
+   "y": 104,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "box",
+    "hx": 13,
+    "hy": 6,
+    "h": 16
+   }
+  },
+  {
+   "frame": "item_17_shelf_unit",
+   "kind": "shelf_unit",
+   "x": 150,
+   "y": 158,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 20,
+    "hy": 5,
+    "h": 24
+   }
+  },
+  {
+   "frame": "item_18_cardboard_boxes",
+   "kind": "cardboard_boxes",
+   "x": 46,
+   "y": 180,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 6,
+    "h": 14
+   }
+  },
+  {
+   "frame": "item_19_cardboard_boxes",
+   "kind": "cardboard_boxes",
+   "x": 104,
+   "y": 182,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 6,
+    "h": 10
+   }
+  },
+  {
+   "frame": "item_20_cardboard_boxes",
+   "kind": "cardboard_boxes",
+   "x": 176,
+   "y": 62,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 7,
+    "hy": 6,
+    "h": 10
+   }
+  },
+  {
+   "frame": "item_21_counter_run",
+   "kind": "counter_run",
+   "x": 212,
+   "y": 112,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 32,
+    "h": 14
+   }
+  },
+  {
+   "frame": "item_22_item",
+   "kind": "item",
+   "x": 210,
+   "y": 96,
+   "wz": 20.5,
+   "zBias": 30,
+   "ang": 1.5707963267948966,
+   "prompt": "SHOP"
+  },
+  {
+   "frame": "item_23_key_cutter",
+   "kind": "key_cutter",
+   "x": 210,
+   "y": 124,
+   "wz": 20.5,
+   "zBias": 31,
+   "ang": 1.5707963267948966
+  },
+  {
+   "frame": "item_24_trash_bin",
+   "kind": "trash_bin",
+   "x": 248,
+   "y": 62,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_25_entrance_mat",
+   "kind": "entrance_mat",
+   "x": 196,
+   "y": 184,
+   "wz": 0.0,
+   "zBias": -300,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_26_plant_snake",
+   "kind": "plant_snake",
+   "x": 246,
+   "y": 182,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_27_wall_camera",
+   "kind": "wall_camera",
+   "x": 236,
+   "y": 8,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0
+  }
+ ],
+ "npcs": [
+  {
+   "costume": "road_worker",
+   "dir": 4,
+   "walk": 0.0,
+   "x": 238,
+   "y": 108,
+   "zBias": 40
+  },
+  {
+   "costume": "civilian_a",
+   "dir": 6,
+   "walk": 0.6,
+   "x": 120,
+   "y": 176,
+   "zBias": 0
+  }
+ ],
+ "frames": {
+  "floor": {
+   "x": 0,
+   "y": 301,
+   "w": 456,
+   "h": 240,
+   "anchor": [
+    196.0,
+    4.0
+   ]
+  },
+  "walls": {
+   "x": 0,
+   "y": 0,
+   "w": 468,
+   "h": 300,
+   "anchor": [
+    202.0,
+    72.0
+   ]
+  },
+  "stubs": {
+   "x": 469,
+   "y": 0,
+   "w": 468,
+   "h": 245,
+   "anchor": [
+    202.0,
+    12.0
+   ]
+  },
+  "seg_x64_0": {
+   "x": 657,
+   "y": 542,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    73.0,
+    -14.0
+   ]
+  },
+  "seg_x64_1": {
+   "x": 692,
+   "y": 542,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    57.0,
+    -22.0
+   ]
+  },
+  "seg_x64_2": {
+   "x": 727,
+   "y": 542,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    41.0,
+    -30.0
+   ]
+  },
+  "seg_x64_3": {
+   "x": 937,
+   "y": 542,
+   "w": 26,
+   "h": 28,
+   "anchor": [
+    25.0,
+    -38.0
+   ]
+  },
+  "seg_x64_4": {
+   "x": 964,
+   "y": 542,
+   "w": 20,
+   "h": 25,
+   "anchor": [
+    -5.0,
+    -53.0
+   ]
+  },
+  "seg_x64_5": {
+   "x": 762,
+   "y": 542,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -7.0,
+    -54.0
+   ]
+  },
+  "seg_y96_0": {
+   "x": 797,
+   "y": 542,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -71.0,
+    -30.0
+   ]
+  },
+  "seg_y96_1": {
+   "x": 832,
+   "y": 542,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -55.0,
+    -38.0
+   ]
+  },
+  "seg_y96_2": {
+   "x": 867,
+   "y": 542,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -39.0,
+    -46.0
+   ]
+  },
+  "seg_y96_3": {
+   "x": 902,
+   "y": 542,
+   "w": 34,
+   "h": 32,
+   "anchor": [
+    -23.0,
+    -54.0
+   ]
+  },
+  "item_0_storage_shelf": {
+   "x": 457,
+   "y": 301,
+   "w": 52,
+   "h": 72,
+   "anchor": [
+    26.0,
+    58.0
+   ]
+  },
+  "item_1_storage_shelf": {
+   "x": 510,
+   "y": 301,
+   "w": 52,
+   "h": 72,
+   "anchor": [
+    26.0,
+    58.0
+   ]
+  },
+  "item_2_cardboard_boxes": {
+   "x": 353,
+   "y": 542,
+   "w": 40,
+   "h": 45,
+   "anchor": [
+    20.0,
+    34.0
+   ]
+  },
+  "item_3_cardboard_boxes": {
+   "x": 394,
+   "y": 542,
+   "w": 40,
+   "h": 45,
+   "anchor": [
+    20.0,
+    34.0
+   ]
+  },
+  "item_4_broom": {
+   "x": 558,
+   "y": 542,
+   "w": 19,
+   "h": 44,
+   "anchor": [
+    8.0,
+    36.0
+   ]
+  },
+  "item_5_door_leaf": {
+   "x": 807,
+   "y": 301,
+   "w": 35,
+   "h": 68,
+   "anchor": [
+    18.0,
+    57.0
+   ]
+  },
+  "item_6_paint_shelf": {
+   "x": 701,
+   "y": 301,
+   "w": 52,
+   "h": 69,
+   "anchor": [
+    26.0,
+    54.0
+   ]
+  },
+  "item_7_paint_shelf": {
+   "x": 754,
+   "y": 301,
+   "w": 52,
+   "h": 69,
+   "anchor": [
+    26.0,
+    54.0
+   ]
+  },
+  "item_8_tool_pegboard": {
+   "x": 144,
+   "y": 542,
+   "w": 42,
+   "h": 50,
+   "anchor": [
+    22.0,
+    54.0
+   ]
+  },
+  "item_9_step_ladder": {
+   "x": 230,
+   "y": 542,
+   "w": 26,
+   "h": 47,
+   "anchor": [
+    13.0,
+    39.0
+   ]
+  },
+  "item_10_bulk_bins": {
+   "x": 257,
+   "y": 542,
+   "w": 47,
+   "h": 47,
+   "anchor": [
+    23.0,
+    34.0
+   ]
+  },
+  "item_11_plant_tall": {
+   "x": 843,
+   "y": 301,
+   "w": 46,
+   "h": 68,
+   "anchor": [
+    23.0,
+    55.0
+   ]
+  },
+  "item_12_tool_pegboard": {
+   "x": 187,
+   "y": 542,
+   "w": 42,
+   "h": 50,
+   "anchor": [
+    20.0,
+    54.0
+   ]
+  },
+  "item_13_lumber_rack": {
+   "x": 89,
+   "y": 542,
+   "w": 54,
+   "h": 67,
+   "anchor": [
+    27.0,
+    52.0
+   ]
+  },
+  "item_14_shelf_unit": {
+   "x": 563,
+   "y": 301,
+   "w": 68,
+   "h": 72,
+   "anchor": [
+    34.0,
+    54.0
+   ]
+  },
+  "item_15_shelf_unit": {
+   "x": 632,
+   "y": 301,
+   "w": 68,
+   "h": 72,
+   "anchor": [
+    34.0,
+    54.0
+   ]
+  },
+  "item_16_bulk_bins": {
+   "x": 305,
+   "y": 542,
+   "w": 47,
+   "h": 47,
+   "anchor": [
+    24.0,
+    33.0
+   ]
+  },
+  "item_17_shelf_unit": {
+   "x": 890,
+   "y": 301,
+   "w": 60,
+   "h": 68,
+   "anchor": [
+    30.0,
+    52.0
+   ]
+  },
+  "item_18_cardboard_boxes": {
+   "x": 435,
+   "y": 542,
+   "w": 40,
+   "h": 45,
+   "anchor": [
+    20.0,
+    34.0
+   ]
+  },
+  "item_19_cardboard_boxes": {
+   "x": 476,
+   "y": 542,
+   "w": 40,
+   "h": 45,
+   "anchor": [
+    20.0,
+    34.0
+   ]
+  },
+  "item_20_cardboard_boxes": {
+   "x": 517,
+   "y": 542,
+   "w": 40,
+   "h": 45,
+   "anchor": [
+    20.0,
+    34.0
+   ]
+  },
+  "item_21_counter_run": {
+   "x": 0,
+   "y": 542,
+   "w": 88,
+   "h": 68,
+   "anchor": [
+    44.0,
+    44.0
+   ]
+  },
+  "item_22_item": {
+   "x": 609,
+   "y": 542,
+   "w": 47,
+   "h": 43,
+   "anchor": [
+    25.0,
+    30.0
+   ]
+  },
+  "item_23_key_cutter": {
+   "x": 43,
+   "y": 611,
+   "w": 24,
+   "h": 23,
+   "anchor": [
+    12.0,
+    16.0
+   ]
+  },
+  "item_24_trash_bin": {
+   "x": 68,
+   "y": 611,
+   "w": 22,
+   "h": 23,
+   "anchor": [
+    11.0,
+    16.0
+   ]
+  },
+  "item_25_entrance_mat": {
+   "x": 0,
+   "y": 611,
+   "w": 42,
+   "h": 25,
+   "anchor": [
+    21.0,
+    13.0
+   ]
+  },
+  "item_26_plant_snake": {
+   "x": 578,
+   "y": 542,
+   "w": 30,
+   "h": 44,
+   "anchor": [
+    15.0,
+    35.0
+   ]
+  },
+  "item_27_wall_camera": {
+   "x": 91,
+   "y": 611,
+   "w": 24,
+   "h": 23,
+   "anchor": [
+    14.0,
+    58.0
+   ]
+  }
+ }
+}

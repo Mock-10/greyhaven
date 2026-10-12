@@ -19,6 +19,7 @@ from PIL import Image
 from sdf import Model, RID, capsule, cyl_z, ell, rbox, render, scaled, smin, solid
 from props2 import lump
 import humans
+import decor_shops, cars
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
@@ -445,6 +446,21 @@ ICONS = {
 }
 for k, f in FACES.items():
     ICONS[f'face/{k}'] = ((lambda f=f: bust(f())), 0.785, 32)
+
+# outfits (milestone 6b): a dress form wearing the outfit's top and bottom (src/data/looks.ts: the same ramps,
+# a shift of one tone ~ one step of base)
+OUTFIT_COLOURS = {
+    'teal_jacket': (('teal', 2.4), ('blueg', 1.5)), 'sage_casual': (('sage', 2.4), ('blueg', 2.4)),
+    'plum_knit': (('plum', 3.2), ('lav', 2.4)), 'grey_hoodie': (('stone', 1.6), ('asph', 3.0)),
+    'work_khaki': (('khaki', 2.4), ('wood', 2.4)), 'white_shirt': (('white', 3.2), ('lav', 2.4)),
+    'red_jacket': (('red', 2.4), ('night', 3.0)), 'clay_coat': (('clay', 2.4), ('wood', 1.6)),
+    'navy_suit': (('navy', 1.8), ('navy', 1.6)),
+}
+for k, (top, bot) in OUTFIT_COLOURS.items():
+    ICONS[f'outfit/{k}'] = ((lambda t=top, b=bot: decor_shops.mannequin(t, b)), -0.4, 32)
+# cars the used-car lot sells (milestone 6b)
+for k in ('beater_khaki', 'beater_brick', 'sedan_teal', 'sedan_clay', 'sedan_khaki', 'sedan_lav'):
+    ICONS[f'car/{k}'] = ((lambda k=k: cars.VEHICLES[k]()), -0.6, 32)
 
 
 def fit(factory, ang, size):

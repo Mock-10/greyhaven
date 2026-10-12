@@ -5,7 +5,8 @@
 import type { DoorTarget } from '../maps/types';
 import type { ShopId } from './items';
 
-export type InteriorId = 'apartment' | 'store' | 'tower_lobby' | 'office_floor' | 'bar';
+export type InteriorId =
+  'apartment' | 'store' | 'tower_lobby' | 'office_floor' | 'bar' | 'hardware' | 'clothing' | 'dealer';
 
 export type Action =
   | { kind: 'sleep' }
@@ -14,6 +15,12 @@ export type Action =
   | { kind: 'elevator'; to: InteriorId }
   | { kind: 'shop'; shop?: ShopId }
   | { kind: 'launder' }
+  /** The clothing store's till: buy outfits (systems/clothing.ts). */
+  | { kind: 'clothes' }
+  /** A wardrobe or fitting booth: change into an outfit you own. */
+  | { kind: 'wardrobe' }
+  /** The car dealer's desk: buy a car (systems/dealer.ts). */
+  | { kind: 'dealer' }
   | { kind: 'later'; who: string; text: string };
 
 /** How a door leaf behaves: always openable, locked, or open only under a condition. */
@@ -66,10 +73,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     entrance: { x: 161, y: 178 },
     actions: {
       'SLEEP / SAVE': { label: 'SLEEP', action: { kind: 'sleep' } },
-      'CHANGE OUTFIT': {
-        label: 'CHANGE OUTFIT',
-        action: { kind: 'later', who: 'WARDROBE', text: 'OUTFITS AND MASKS ARRIVE IN PHASE 3.' },
-      },
+      'CHANGE OUTFIT': { label: 'CHANGE OUTFIT', action: { kind: 'wardrobe' } },
       STASH: {
         label: 'STASH',
         action: { kind: 'later', who: 'STASH', text: 'THE STASH OPENS WITH PROPERTY IN PHASE 5.' },
@@ -155,6 +159,51 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
       { role: 'pool player', hours: h(19, 1) },
       { role: 'regular', hours: h(20, 2) },
     ],
+  },
+  // Phase 2 shops on Hedgerow Way (milestone 6b). Plain trade names, like the infill signs: business names need
+  // the user's approval (docs/01 "Names"). Shops close at 21:00 (docs/01); the dealer keeps office hours.
+  hardware: {
+    id: 'hardware',
+    name: 'HARDWARE',
+    street: 'hardware',
+    hours: h(8, 21),
+    entrance: { x: 197, y: 180 },
+    actions: {
+      SHOP: { label: 'SHOP', action: { kind: 'shop', shop: 'hardware' } },
+    },
+    doors: [{ kind: 'locked', label: 'STAFF ONLY' }],
+    npcs: [
+      { role: 'clerk', hours: h(8, 21) },
+      { role: 'customer', hours: h(9, 18) },
+    ],
+  },
+  clothing: {
+    id: 'clothing',
+    name: 'CLOTHING',
+    street: 'clothing',
+    hours: h(9, 21),
+    entrance: { x: 193, y: 180 },
+    actions: {
+      'BUY CLOTHES': { label: 'BUY CLOTHES', action: { kind: 'clothes' } },
+      'CHANGE OUTFIT': { label: 'CHANGE OUTFIT', action: { kind: 'wardrobe' } },
+    },
+    doors: [],
+    npcs: [
+      { role: 'clerk', hours: h(9, 21) },
+      { role: 'shopper', hours: h(10, 19) },
+    ],
+  },
+  dealer: {
+    id: 'dealer',
+    name: 'USED CARS',
+    street: 'dealer',
+    hours: h(9, 18),
+    entrance: { x: 104, y: 116 },
+    actions: {
+      'BUY A CAR': { label: 'BUY A CAR', action: { kind: 'dealer' } },
+    },
+    doors: [],
+    npcs: [{ role: 'salesman', hours: h(9, 18) }],
   },
 };
 

@@ -1,0 +1,503 @@
+{
+ "id": "dealer",
+ "image": "dealer.png",
+ "W": 160,
+ "D": 128,
+ "wallH": 62,
+ "wallT": 5,
+ "partH": 11,
+ "floorKinds": [
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ],
+  [
+   "carpet_a",
+   "carpet_a",
+   "carpet_a",
+   "carpet_a"
+  ]
+ ],
+ "partitions": [],
+ "stubGaps": [
+  [
+   "A",
+   90,
+   118
+  ]
+ ],
+ "segments": [],
+ "items": [
+  {
+   "frame": "item_0_rug",
+   "kind": "rug",
+   "x": 72,
+   "y": 64,
+   "wz": 0.0,
+   "zBias": -300,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_1_exec_desk",
+   "kind": "exec_desk",
+   "x": 72,
+   "y": 50,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 16,
+    "hy": 8,
+    "h": 14
+   },
+   "prompt": "BUY A CAR"
+  },
+  {
+   "frame": "item_2_office_chair",
+   "kind": "office_chair",
+   "x": 72,
+   "y": 33,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 5
+   }
+  },
+  {
+   "frame": "item_3_desk_clutter",
+   "kind": "desk_clutter",
+   "x": 76,
+   "y": 47,
+   "wz": 17.3,
+   "zBias": 3,
+   "ang": 0.0
+  },
+  {
+   "frame": "item_4_wooden_chair",
+   "kind": "wooden_chair",
+   "x": 62,
+   "y": 72,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_5_wooden_chair",
+   "kind": "wooden_chair",
+   "x": 82,
+   "y": 72,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 3.141592653589793,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_6_filing_cabinet",
+   "kind": "filing_cabinet",
+   "x": 112,
+   "y": 10,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 6,
+    "h": 24
+   }
+  },
+  {
+   "frame": "item_7_plant_tall",
+   "kind": "plant_tall",
+   "x": 12,
+   "y": 12,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 6
+   }
+  },
+  {
+   "frame": "item_8_waiting_chairs",
+   "kind": "waiting_chairs",
+   "x": 10,
+   "y": 36,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 12,
+    "h": 12
+   }
+  },
+  {
+   "frame": "item_9_trash_bin",
+   "kind": "trash_bin",
+   "x": 100,
+   "y": 22,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_10_floor_lamp",
+   "kind": "floor_lamp",
+   "x": 128,
+   "y": 100,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 3
+   }
+  },
+  {
+   "frame": "item_11_news_rack",
+   "kind": "news_rack",
+   "x": 8,
+   "y": 64,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": -1.5707963267948966,
+   "shadow": {
+    "kind": "box",
+    "hx": 5,
+    "hy": 7,
+    "h": 18
+   }
+  },
+  {
+   "frame": "item_12_water_cooler",
+   "kind": "water_cooler",
+   "x": 148,
+   "y": 12,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 5
+   }
+  },
+  {
+   "frame": "item_13_side_table",
+   "kind": "side_table",
+   "x": 148,
+   "y": 44,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 1.5707963267948966,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_14_coffee_machine",
+   "kind": "coffee_machine",
+   "x": 148,
+   "y": 43,
+   "wz": 12.1,
+   "zBias": 2,
+   "ang": 1.5707963267948966
+  },
+  {
+   "frame": "item_15_car_model_stand",
+   "kind": "car_model_stand",
+   "x": 22,
+   "y": 104,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "box",
+    "hx": 6,
+    "hy": 8,
+    "h": 16
+   }
+  },
+  {
+   "frame": "item_16_plant_snake",
+   "kind": "plant_snake",
+   "x": 148,
+   "y": 108,
+   "wz": 0.0,
+   "zBias": 0,
+   "ang": 0.0,
+   "shadow": {
+    "kind": "blob",
+    "r": 4
+   }
+  },
+  {
+   "frame": "item_17_entrance_mat",
+   "kind": "entrance_mat",
+   "x": 104,
+   "y": 120,
+   "wz": 0.0,
+   "zBias": -300,
+   "ang": 0.0
+  }
+ ],
+ "npcs": [
+  {
+   "costume": "office_worker",
+   "dir": 2,
+   "walk": 0.0,
+   "x": 72,
+   "y": 31,
+   "zBias": 10
+  }
+ ],
+ "frames": {
+  "floor": {
+   "x": 618,
+   "y": 0,
+   "w": 296,
+   "h": 160,
+   "anchor": [
+    132.0,
+    4.0
+   ]
+  },
+  "walls": {
+   "x": 0,
+   "y": 0,
+   "w": 308,
+   "h": 220,
+   "anchor": [
+    138.0,
+    72.0
+   ]
+  },
+  "stubs": {
+   "x": 309,
+   "y": 0,
+   "w": 308,
+   "h": 165,
+   "anchor": [
+    138.0,
+    12.0
+   ]
+  },
+  "item_0_rug": {
+   "x": 160,
+   "y": 221,
+   "w": 84,
+   "h": 47,
+   "anchor": [
+    42.0,
+    24.0
+   ]
+  },
+  "item_1_exec_desk": {
+   "x": 0,
+   "y": 221,
+   "w": 62,
+   "h": 62,
+   "anchor": [
+    31.0,
+    45.0
+   ]
+  },
+  "item_2_office_chair": {
+   "x": 352,
+   "y": 221,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_3_desk_clutter": {
+   "x": 575,
+   "y": 221,
+   "w": 30,
+   "h": 23,
+   "anchor": [
+    15.0,
+    14.0
+   ]
+  },
+  "item_4_wooden_chair": {
+   "x": 414,
+   "y": 221,
+   "w": 26,
+   "h": 38,
+   "anchor": [
+    13.0,
+    30.0
+   ]
+  },
+  "item_5_wooden_chair": {
+   "x": 441,
+   "y": 221,
+   "w": 26,
+   "h": 38,
+   "anchor": [
+    13.0,
+    30.0
+   ]
+  },
+  "item_6_filing_cabinet": {
+   "x": 63,
+   "y": 221,
+   "w": 38,
+   "h": 58,
+   "anchor": [
+    19.0,
+    47.0
+   ]
+  },
+  "item_7_plant_tall": {
+   "x": 915,
+   "y": 0,
+   "w": 46,
+   "h": 68,
+   "anchor": [
+    23.0,
+    55.0
+   ]
+  },
+  "item_8_waiting_chairs": {
+   "x": 245,
+   "y": 221,
+   "w": 42,
+   "h": 46,
+   "anchor": [
+    21.0,
+    34.0
+   ]
+  },
+  "item_9_trash_bin": {
+   "x": 606,
+   "y": 221,
+   "w": 22,
+   "h": 23,
+   "anchor": [
+    11.0,
+    16.0
+   ]
+  },
+  "item_10_floor_lamp": {
+   "x": 102,
+   "y": 221,
+   "w": 26,
+   "h": 58,
+   "anchor": [
+    13.0,
+    50.0
+   ]
+  },
+  "item_11_news_rack": {
+   "x": 288,
+   "y": 221,
+   "w": 32,
+   "h": 44,
+   "anchor": [
+    16.0,
+    34.0
+   ]
+  },
+  "item_12_water_cooler": {
+   "x": 129,
+   "y": 221,
+   "w": 30,
+   "h": 48,
+   "anchor": [
+    15.0,
+    39.0
+   ]
+  },
+  "item_13_side_table": {
+   "x": 383,
+   "y": 221,
+   "w": 30,
+   "h": 41,
+   "anchor": [
+    15.0,
+    32.0
+   ]
+  },
+  "item_14_coffee_machine": {
+   "x": 507,
+   "y": 221,
+   "w": 24,
+   "h": 25,
+   "anchor": [
+    13.0,
+    18.0
+   ]
+  },
+  "item_15_car_model_stand": {
+   "x": 468,
+   "y": 221,
+   "w": 38,
+   "h": 38,
+   "anchor": [
+    19.0,
+    27.0
+   ]
+  },
+  "item_16_plant_snake": {
+   "x": 321,
+   "y": 221,
+   "w": 30,
+   "h": 44,
+   "anchor": [
+    15.0,
+    35.0
+   ]
+  },
+  "item_17_entrance_mat": {
+   "x": 532,
+   "y": 221,
+   "w": 42,
+   "h": 25,
+   "anchor": [
+    21.0,
+    13.0
+   ]
+  }
+ }
+}

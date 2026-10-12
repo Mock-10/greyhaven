@@ -1032,7 +1032,8 @@ def block_boulevard_band():
     top = DT_EDGE + 4
     # west of Pewter Street: the hardware and clothing stores and their neighbours, a service alley behind
     xr = tc(20) - HW - SWK
-    row(['shop_hardware', 'shop_clothing', 'shop_cafe', 'walkup_tan', 'shop_bakery'], tc(0.5), fy, 0, gap=6)
+    row(['shop_hardware', 'shop_clothing', 'shop_cafe', 'walkup_tan', 'shop_bakery'], tc(0.5), fy, 0, gap=6,
+        doors={0: (18 - 3.9, 'hardware', 'HARDWARE STORE'), 1: (16 - 3.9, 'clothing', 'CLOTHING STORE')})
     # behind the shops: a service strip with the bins, then a small car park for the shoppers, hedged off from the
     # pocket park
     ground('concrete', rect(0, fy - tc(3.4), xr, fy - tc(1.9)))
@@ -1074,7 +1075,7 @@ def block_boulevard_band():
     lx0 = mill_x(fy) + HW + SWK + 6
     lx1 = gull_x(fy) - HW - SWK - 6
     ground('lot', rect(lx0, top, lx1, fy))
-    building('dealer_office', lx0 + half('dealer_office')[0] + 10, front_y('dealer_office', fy - 6), 0)
+    building('dealer_office', lx0 + half('dealer_office')[0] + 10, front_y('dealer_office', fy - 6), 0, door=(4.0, 'dealer', 'USED CARS'))
     cx0 = lx0 + 2 * half('dealer_office')[0] + 40
     names = ['sedan_lav', 'sedan_khaki', 'van_white', 'sedan_teal', 'sedan_clay', 'taxi', 'sedan_lav', 'van_sage']
     k = 0
@@ -1083,10 +1084,18 @@ def block_boulevard_band():
         for _ in range(n):
             if x > lx1 - 30 or k >= len(names):
                 break
-            car(names[k], x, row_y, 2)
             ground('paint_white', rect(x - 24, row_y + 44, x + 24, row_y + 46))
+            if row_y == top + 140 and x == cx0:
+                # the pickup bay (milestone 6b): a car bought in the cabin waits here, nose to the street, and leaves
+                # through the gap in the pennants
+                ZONES.append({'id': 'dealer_pickup', 'x0': x - 26, 'y0': row_y - 44, 'x1': x + 26, 'y1': row_y + 44,
+                              'slots': [{'x': round(float(x), 1), 'y': round(float(row_y), 1), 'dir': 2}]})
+            else:
+                car(names[k], x, row_y, 2)
             x += tc(2.2); k += 1
     for x in np.arange(cx0 - 20, lx1 - 30, 52.0):
+        if abs(x - cx0) < 36:
+            continue
         prop('pennants', x, fy - 8, dir=0)
     for x in (cx0 + 30, cx0 + tc(4)):
         prop('sandwich_board', x, fy + 10)
