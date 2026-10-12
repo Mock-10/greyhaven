@@ -149,7 +149,7 @@ They are recorded in docs 01, 02, 08 and 11.
 
 ### Git state
 - **`main`:** 1fb5da7 (PRs #9, #10 and #11 merged), plus this handover (a CHANGELOG-only commit). Pages deploys from main: https://mock-10.github.io/greyhaven/.
-- **`claude/p2-map-shops`:** M6a. The WIP commit is 7d92bf5; the handover commit adds the docs, the drafts and the screenshots. No PR yet.
+- **`claude/p2-map-shops`:** M6a. Head 8033220 (the WIP commit 7d92bf5 plus the handover commit with the docs, the drafts and the screenshots). No PR yet.
 - Other `claude/*` branches are merged and can be ignored.
 
 ### Answered decisions, in short (full text in the docs)
