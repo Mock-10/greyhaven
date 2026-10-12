@@ -29,8 +29,37 @@ def ch(key, idx, walk=0.0):
     return rooms.ch(key, idx, walk)
 
 
+# Phase 5 (docs/09): the same houses as homes you own (rooms_property.py): no search prompts, no owner, the bed
+# sleeps and saves, the wardrobe changes outfits, the alarm panel is just furniture, and a stash and the basement
+# door join them.
+HOME = {'on': False}
+
+
 def search(model, facing, x, y, shadow, room):
+    if HOME['on']:
+        if room in ('BEDROOM', 'MAIN BEDROOM'):
+            return it(model, facing, x, y, shadow, hl='idle', prompt=('E', 'CHANGE OUTFIT'))
+        return it(model, facing, x, y, shadow)
     return it(model, facing, x, y, shadow, hl='idle', valuable=True, prompt=('E', f'SEARCH {room}'))
+
+
+def bed(x, y):
+    if HOME['on']:
+        return it(I.bed(), 0.0, x, y, ('box', 24, 16, 12), hl='idle', prompt=('E', 'SLEEP / SAVE'))
+    return it(I.bed(), 0.0, x, y, ('box', 24, 16, 12))
+
+
+def owner(S, key, x, y):
+    if not HOME['on']:
+        S.append(it(ch(key, 2, 0.0), 0, x, y, ('blob', 6)))
+
+
+def home_extras(S, stash_at, door_at, door_facing):
+    """The stash under a loose board and the door down to the hideout (docs/09), only in a home you own."""
+    if HOME['on']:
+        S.append(it(I.floor_stash(), '+y', *stash_at, None, hl='idle', prompt=('E', 'STASH'), z_bias=-200))
+        S.append(it(D.door_leaf(True, ('night', 2.2)), door_facing, *door_at, None, hl='idle',
+                    prompt=('E', 'BASEMENT'), z_bias=3))
 
 
 def hall_keypad():
@@ -54,6 +83,8 @@ def hall_keypad():
 
 
 def alarm(facing, x, y):
+    if HOME['on']:
+        return it(hall_keypad(), facing, x, y, ('blob', 4))
     return it(hall_keypad(), facing, x, y, ('blob', 4), hl='idle', prompt=('E', 'ALARM PANEL'))
 
 
@@ -70,7 +101,7 @@ def house_bungalow():
     parts_ = [('y', 96, 0, 192, [(120, 142)]), ('x', 96, 96, 256, [(166, 188)])]
     S = []
     # --- bedroom: bed head against wall B, nightstand, wardrobe (the search), armchair corner
-    S.append(it(I.bed(), 0.0, 36, 34, ('box', 24, 16, 12)))
+    S.append(bed(36, 34))
     S.append(it(I.nightstand(), '+x', 9, 62, ('box', 5, 5, 12)))
     S.append(it(D.table_lamp(), '+x', 9, 62, None, wz=12.0, z_bias=2))
     S.append(it(D.rug(30, 14, ('sage', 2.2), 'stone'), '+y', 40, 66, None, z_bias=-300))
@@ -100,8 +131,9 @@ def house_bungalow():
     S.append(it(D.coat_rack(), '+y', 246, 132, ('blob', 3)))
     S.append(it(D.plant_tall(7), '+y', 120, 180, ('blob', 6)))
     S.append(it(D.entrance_mat(), '+y', 211, 184, None, z_bias=-300))
-    # --- the owner (shown when home and awake)
-    S.append(it(ch('char/civilian_a', 2, 0.0), 0, 60, 110, ('blob', 6)))
+    # --- the owner (shown when home and awake); a home of yours has the stash and the basement door instead
+    owner(S, 'char/civilian_a', 60, 110)
+    home_extras(S, (56, 84), (0, 80), '+x')
     return rooms.compose(W_t, D_t, floor, walls, S, partitions=parts_, stub_gaps=[('A', 200, 222)])
 
 
@@ -119,7 +151,7 @@ def house_family():
     parts_ = [('y', 112, 0, 224, [(60, 82), (150, 172)]), ('x', 112, 0, 112, []), ('x', 96, 112, 320, [(206, 228)])]
     S = []
     # --- main bedroom
-    S.append(it(I.bed(), 0.0, 36, 34, ('box', 24, 16, 12)))
+    S.append(bed(36, 34))
     S.append(it(I.nightstand(), '+x', 9, 62, ('box', 5, 5, 12)))
     S.append(it(D.table_lamp(), '+x', 9, 62, None, wz=12.0, z_bias=2))
     S.append(it(D.rug(32, 16, ('red', 2.2), 'stone'), '+y', 42, 76, None, z_bias=-300))
@@ -157,8 +189,9 @@ def house_family():
     S.append(it(D.coat_rack(), '+y', 296, 150, ('blob', 3)))
     S.append(it(D.plant_tall(5), '+y', 310, 178, ('blob', 6)))
     S.append(it(D.entrance_mat(), '+y', 261, 216, None, z_bias=-300))
-    # --- the owner (shown when home and awake)
-    S.append(it(ch('char/civilian_b', 2, 0.0), 0, 160, 186, ('blob', 6)))
+    # --- the owner (shown when home and awake); a home of yours has the stash and the basement door instead
+    owner(S, 'char/civilian_b', 160, 186)
+    home_extras(S, (60, 92), (0, 88), '+x')
     return rooms.compose(W_t, D_t, floor, walls, S, partitions=parts_, stub_gaps=[('A', 250, 272)])
 
 

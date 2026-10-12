@@ -258,6 +258,7 @@ def ground(mat, poly):
 
 # shadows / footprints of props, in world units: ('blob', r) or ('box', hx, hy, h)
 PROP = {
+    'for_sale_sign': ('blob', 3),
     'lamp': ('blob', 4), 'bench': ('box', 17, 5, 12), 'trash_can': ('blob', 5), 'hydrant': ('blob', 4),
     'mailbox': ('blob', 4), 'planter': ('blob', 13), 'tree_a': ('blob', 26), 'tree_b': ('blob', 26), 'pine': ('blob', 18),
     'bush': ('blob', 12), 'dumpster': ('box', 16, 8, 17), 'crate': ('box', 8, 8, 15), 'barrel_teal': ('blob', 6),
@@ -1175,6 +1176,14 @@ def block_linden():
         if k % 3 != 1:
             car(['sedan_teal', 'sedan_clay', 'sedan_khaki', 'sedan_lav'][k % 4], dwx + 17, house_front - 20, 2, parked=True)
         prop('mailbox', cx + 22, fy - 6, dir=0)
+        # two houses are for sale (Phase 5, docs/09): a sign on the lawn, and the driveway is the home's garage spot
+        sale = {1: 'linden4', 4: 'linden10'}.get(k)
+        if sale:
+            prop('for_sale_sign', cx - 26, fy - 16, dir=0, interact={'id': f'sale:{sale}', 'label': 'HOUSE FOR SALE'})
+            ZONES.append({'id': f'park_{sale}', 'x0': round(dwx, 1), 'y0': round(house_front - 2 * hy + 10, 1),
+                          'x1': round(dwx + 34, 1), 'y1': round(fy, 1),
+                          'slots': [{'x': round(dwx + 17, 1), 'y': round(house_front - 20, 1), 'dir': 2}],
+                          'npc': {'x': round(dwx + 17, 1), 'y': round(fy - 8, 1)}})
         # a delivery drop (milestone 7): the front door at the top of the path; even numbers from the west end
         ZONES.append({'id': f'drop_{2 + 2 * k}', 'x0': round(cx - 10, 1), 'y0': round(house_front, 1),
                       'x1': round(cx + 10, 1), 'y1': round(house_front + 16, 1),

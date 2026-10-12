@@ -26,6 +26,7 @@ import decor_jobs as J
 import rooms_jobs
 import rooms_houses
 import rooms_crime
+import rooms_property
 
 TOL = 1.5
 SEATS = {'office_chair', 'wooden_chair', 'bar_stool', 'booth', 'armchair', 'sofa'}
@@ -66,7 +67,7 @@ def capture(room):
     real = rooms.compose
     rooms.compose = fake_compose
     try:
-        (getattr(rooms, room, None) or getattr(rooms_jobs, room, None) or getattr(rooms_houses, room, None) or getattr(rooms_crime, room))()
+        (getattr(rooms, room, None) or getattr(rooms_jobs, room, None) or getattr(rooms_houses, room, None) or getattr(rooms_crime, room, None) or getattr(rooms_property, room))()
     except Captured:
         pass
     finally:
@@ -85,7 +86,7 @@ def footprint(item):
     c, s = np.cos(ang), np.sin(ang)
     pts = np.array([[x, y] for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))])
     world = np.stack([pts[:, 0] * c - pts[:, 1] * s + wx, pts[:, 0] * s + pts[:, 1] * c + wy], 1)
-    return dict(kind=kind, poly=world, z0=z0 + fl.get('wz', 0.0), z1=z1 + fl.get('wz', 0.0), wz=fl.get('wz', 0.0),
+    return dict(kind=kind, needs=fl.get('needs', ''), poly=world, z0=z0 + fl.get('wz', 0.0), z1=z1 + fl.get('wz', 0.0), wz=fl.get('wz', 0.0),
                 flat=(z1 - z0) <= 1.6 or fl.get('z_bias', 0) == -300, ang=ang, x=wx, y=wy, fl=fl)
 
 
@@ -149,6 +150,8 @@ def check(room):
             a, b = floor[i], floor[j]
             if 'person' in (a['kind'], b['kind']) and ({a['kind'], b['kind']} & SEATS):
                 continue                     # a person may stand at a stool or sit-stand behind a chair
+            if a['needs'] and b['needs'] and a['needs'].lstrip('!') == b['needs'].lstrip('!') and a['needs'] != b['needs']:
+                continue                     # an add-on's station and what stands there before it's bought
             d = penetration(a['poly'], b['poly'])
             if d > TOL:
                 issues.append(f"overlap  {a['kind']} @({a['x']:.0f},{a['y']:.0f}) x {b['kind']} @({b['x']:.0f},{b['y']:.0f}): {d:.1f}")
