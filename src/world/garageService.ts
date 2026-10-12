@@ -35,7 +35,9 @@ export function servicePage(ctx: ServiceCtx): ListPage {
   rows.push({
     label: 'REPAIR',
     icon: 'item/repair_kit',
-    sub: rc ? `${Math.round((v.health / stats(v).health) * 100)}% NOW${mechanic ? ', STAFF -20%' : ''}` : 'NOT A SCRATCH',
+    sub: rc
+      ? `${Math.round((v.health / stats(v).health) * 100)}% NOW${v.flat ? ', FLAT TYRES' : ''}${mechanic ? ', STAFF -20%' : ''}`
+      : 'NOT A SCRATCH',
     detail: rc ? money(rc) : undefined,
     enabled: rc > 0 && st.money.bank + st.money.clean >= rc,
     act: () => {

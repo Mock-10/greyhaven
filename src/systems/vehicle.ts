@@ -4,6 +4,9 @@
 import { BALANCE } from '../config/balance';
 import { typeOfModel, type VehicleType } from '../data/vehicles';
 import { collides, type CollisionRules, type Solid } from './movement';
+import type { Obb } from '../iso/staticDepth';
+import type { OwnedWeapon } from './combat';
+import type { Goods } from './burglary';
 
 export interface Vehicle {
   id: string;
@@ -31,9 +34,17 @@ export interface Vehicle {
   /** Mechanic upgrades (docs/08, Phase 4): levels per upgrade; missing means none. */
   mods?: CarMods;
   /** What the player keeps in this car's trunk (docs/08, Phase 4): weapons and burglary goods. */
-  stash?: { weapons: { id: string; registered: boolean; clip: number }[]; goods: { kind: string; value: number }[] };
+  stash?: TrunkStash;
+  /** Tyres burst on a police spike strip (docs/05): slow and loose until the garage repairs it. */
+  flat?: boolean;
   /** Seconds since it hit zero health; it explodes after BALANCE.vehicles.explodeSeconds (docs/08). */
   burning?: number;
+}
+
+/** Your own car's trunk (docs/08): weapons and burglary goods, within the type's trunk slots. */
+export interface TrunkStash {
+  weapons: OwnedWeapon[];
+  goods: Goods[];
 }
 
 /** docs/08 upgrade levels. */
@@ -99,10 +110,20 @@ export function vehicleSolid(v: Vehicle): Solid {
   return { kind: 'obox', x: v.x, y: v.y, hx: halfLength, hy: halfWidth, r: 0, ang: v.heading };
 }
 
+/** The car's middle is over a spike strip (a turned box), within the car's half width. */
+export function onStrip(v: Pick<Vehicle, 'x' | 'y' | 'type'>, s: Obb): boolean {
+  const { halfWidth } = stats(v);
+  const dx = v.x - s.x;
+  const dy = v.y - s.y;
+  const along = dx * Math.cos(s.ang) + dy * Math.sin(s.ang);
+  const across = -dx * Math.sin(s.ang) + dy * Math.cos(s.ang);
+  return Math.abs(along) <= s.hx + halfWidth && Math.abs(across) <= s.hy + halfWidth;
+}
+
 export function topSpeed(v: Vehicle): number {
   const V = BALANCE.vehicles;
   const S = stats(v);
-  return S.topSpeed * (v.health < S.health * V.fireShare ? V.limpFactor : 1);
+  return S.topSpeed * (v.health < S.health * V.fireShare ? V.limpFactor : 1) * (v.flat ? V.flat.speed : 1);
 }
 
 /**
@@ -135,7 +156,14 @@ export function drive(
   if (inp.handbrake && th !== 0) v.speed *= Math.max(0, 1 - 2.5 * dt);
   // steering tightens at low speed and flips when reversing (docs/08)
   const grip = Math.min(1, Math.abs(v.speed) / 60);
-  const turn = inp.steer * sp.turnRate * grip * (inp.handbrake ? 1.5 : 1) * Math.sign(v.speed || 1) * dt;
+  const turn =
+    inp.steer *
+    sp.turnRate *
+    grip *
+    (v.flat ? BALANCE.vehicles.flat.turn : 1) *
+    (inp.handbrake ? 1.5 : 1) *
+    Math.sign(v.speed || 1) *
+    dt;
   const prev = { x: v.x, y: v.y, heading: v.heading };
   const heading = v.heading + turn;
   const mx = Math.cos(heading) * v.speed * dt;

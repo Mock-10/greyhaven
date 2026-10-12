@@ -333,7 +333,18 @@ export const BALANCE = {
       },
     },
     /** docs/08 trunk slots by type (the cruiser, SWAT van and armored police SUV have none for the player). */
-    trunkSlots: { sedan: 4, taxi: 4, van: 10, police: 0, swat: 0, armored: 0, beater: 2, pickup: 6, sports: 2, armoredSuv: 4 },
+    trunkSlots: {
+      sedan: 4,
+      taxi: 4,
+      van: 10,
+      police: 0,
+      swat: 0,
+      armored: 0,
+      beater: 2,
+      pickup: 6,
+      sports: 2,
+      armoredSuv: 4,
+    },
     /** docs/08 damage states as shares of the car's health: smoke below half, fire and −30% top speed below a
      *  quarter; at zero it explodes after a few seconds. */
     smokeShare: 0.5,
@@ -359,6 +370,11 @@ export const BALANCE = {
     mechanicDiscount: 0.2,
     /** docs/08 insurance: a bought car that's destroyed comes back at home for this share of its value. */
     insuranceShare: 0.1,
+    /** Burst tyres (spike strips, docs/05): top speed and steering kept; tyres level 2 resists (docs/08); what the
+     *  garage adds to the repair for new tyres. */
+    flat: { speed: 0.5, turn: 0.6, resistLevel: 2, repair: 200 },
+    /** docs/08 hidden compartment: share of police searches it passes. */
+    hiddenPassChance: 0.7,
     /** Damage per unit of impact speed; below these healths the car smokes / loses 30% top speed (docs/08). */
     damagePerSpeed: 0.12,
     /** Bumps slower than this do no damage (parking, scraping a wall). */
@@ -471,6 +487,10 @@ export const BALANCE = {
     recordDays: 14,
   },
 
+  /** docs/08 pulling drivers out of traffic cars: only cars this slow, from this close to the driver's door (a gap
+   *  beside the car's side); some drivers swing at you first. */
+  carjack: { maxSpeed: 20, reachTiles: 1.2, doorGap: 6, fightShare: 0.25, fightDamage: 12 },
+
   /** Police officers and their cruiser (milestone 4: one car and two officers at 1–2★, docs/15). */
   police: {
     officers: 2,
@@ -492,7 +512,15 @@ export const BALANCE = {
      *  at this radius and sees this far, over buildings (assumed). */
     heli: { altitudePx: 96, speed: 150, orbit: 70, sightTiles: 16, rotorFps: 20 },
     /** Roadblocks (3★+): parked across the road this far ahead of a driving player; cleared when this far away. */
-    roadblock: { aheadTiles: 9, despawnTiles: 30 },
+    /** Roadblocks (3★+) go up ahead of a driving player; each lays a spike strip this far up the road towards the
+     *  player (docs/05), as long as the road is wide (half-length) and this thick, in world units. */
+    roadblock: {
+      aheadTiles: 9,
+      despawnTiles: 30,
+      spikeGapTiles: 2.5,
+      spikeHalfTiles: 1.6,
+      spikeHalfWidth: 5,
+    },
   },
 
   /** The pedestrian crowd (docs/01, milestone 4), in world units and real seconds. */

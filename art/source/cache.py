@@ -22,6 +22,9 @@ def factories():
         f['char/' + k] = v
     for k, v in cars.VEHICLES.items():
         f['veh/' + k] = v
+    import cars2
+    for k, v in cars2.VEHICLES2.items():
+        f['veh/' + k] = v
     from sdf import scaled
     for k, v in env.BUILDINGS.items():
         f['bld/' + k] = (lambda v: (lambda: scaled(v(), BLD_SCALE)))(v)

@@ -84,10 +84,12 @@ describe('the clothing store and the wardrobe', () => {
 });
 
 describe('the used-car lot (docs/08)', () => {
-  it('sells beaters and sedans at the docs prices', () => {
+  it('sells beaters, sedans and the Phase 4 cars at the docs prices', () => {
     expect(carPrice('beater_khaki')).toBe(1500);
     expect(carPrice('sedan_teal')).toBe(5000);
-    expect(new Set(DEALER_STOCK.map(typeOfModel))).toEqual(new Set(['beater', 'sedan']));
+    expect(new Set(DEALER_STOCK.map(typeOfModel))).toEqual(
+      new Set(['beater', 'sedan', 'pickup', 'sports', 'armoredSuv']),
+    );
   });
 
   it('charges the bank first, then clean cash, and records it', () => {

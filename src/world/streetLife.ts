@@ -12,7 +12,15 @@ import { facingFromWorld, worldToScreen } from '../iso/projection';
 import type { Rect } from '../iso/shadows';
 import type { Obb } from '../iso/staticDepth';
 import type { MapData } from '../maps/types';
-import { buildWalkways, crowdTarget, spawnPed, stepPed, type Ped, type Walkways } from '../systems/crowd';
+import {
+  buildWalkways,
+  crowdTarget,
+  spawnPed,
+  startFlee,
+  stepPed,
+  type Ped,
+  type Walkways,
+} from '../systems/crowd';
 import { pointAt } from '../systems/paths';
 import {
   buildLanes,
@@ -133,6 +141,32 @@ export class StreetLife {
     if (!pv) return;
     pv.sprite.destroy();
     this.peds = this.peds.filter((q) => q !== pv);
+  }
+
+  /** Pull a traffic car out of the flow (docs/08 pulling drivers out): it stops being traffic. */
+  takeCar(id: string): TrafficCar | null {
+    const cv = this.cars.find((c) => c.car.id === id);
+    if (!cv) return null;
+    cv.sprite.destroy();
+    cv.shadow.destroy();
+    this.cars = this.cars.filter((c) => c !== cv);
+    return cv.car;
+  }
+
+  /** The driver pulled out: someone in the crowd at the car door, running from `from`. */
+  addDriver(x: number, y: number, from: { x: number; y: number }): Ped | null {
+    const rng = this.host.rng;
+    if (!this.walk.paths.length) return null;
+    const costume = CROWD_COSTUMES[rng.int(0, CROWD_COSTUMES.length - 1)] as string;
+    this.host.ensureWalkAnims(costume);
+    const ped = spawnPed(this.walk, this.nextId++, costume, 0, 0, rng);
+    ped.x = x;
+    ped.y = y;
+    startFlee(ped, from);
+    const sprite = this.scene.add.sprite(0, 0, 'characters', characterFrame(costume, 'idle', 0).frame);
+    this.host.layer.add(sprite);
+    this.peds.push({ ped, sprite });
+    return ped;
   }
 
   private trySpawnPed(): void {

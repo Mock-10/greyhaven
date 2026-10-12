@@ -62,6 +62,8 @@ export interface Unit {
   reverseT: number;
   /** A roadblock: parked across the road, never drives. */
   parked: boolean;
+  /** The roadblock's spike strip (docs/05 3★): across the road on the side the player comes from. */
+  spikes?: { x: number; y: number; ang: number; img: Phaser.GameObjects.Image };
   /** Where this unit aims, off the shared target so they spread out. */
   offset: { x: number; y: number };
 }
@@ -194,6 +196,7 @@ export class Police {
 
   destroy(): void {
     for (const u of this.units) {
+      u.spikes?.img.destroy();
       u.sprite.destroy();
       u.shadow.destroy();
       for (const o of u.crew) o.sprite.destroy();
@@ -287,6 +290,16 @@ export class Police {
     const dir = dirOf(along + Math.PI / 2);
     const u = this.makeUnit('cruiser', p.x, p.y, dir, true);
     u.v.heading = (dir * Math.PI) / 4;
+    // the spike strip a little up the road, towards the player
+    const gap = R.spikeGapTiles * TILE;
+    const near = [pointAt(line.path, r.s - gap), pointAt(line.path, r.s + gap)].sort(
+      (a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y),
+    )[0]!;
+    const sp = worldToScreen(near.x, near.y);
+    const img = this.scene.add.image(Math.round(sp.x), Math.round(sp.y), 'fx', `spikes/${DIRS[dir]}`);
+    img.setDepth(1e6 - 3);
+    this.host.groundLayer.add(img);
+    u.spikes = { x: near.x, y: near.y, ang: (dir * Math.PI) / 4, img };
     const spots = exitSpots(u.v, BALANCE.walker.radius);
     u.crew.forEach((o, k) => {
       const s = spots[k] ?? spots[0]!;
@@ -306,7 +319,26 @@ export class Police {
     }
   }
 
+  /** The spike strips down, as turned boxes (the driven car's tyres burst crossing one, docs/08). */
+  spikeStrips(): Obb[] {
+    const R = BALANCE.police.roadblock;
+    return this.units.flatMap((u) =>
+      u.spikes
+        ? [
+            {
+              x: u.spikes.x,
+              y: u.spikes.y,
+              hx: R.spikeHalfTiles * TILE,
+              hy: R.spikeHalfWidth,
+              ang: u.spikes.ang,
+            },
+          ]
+        : [],
+    );
+  }
+
   private removeUnit(u: Unit): void {
+    u.spikes?.img.destroy();
     u.sprite.destroy();
     u.shadow.destroy();
     for (const o of u.crew) o.sprite.destroy();

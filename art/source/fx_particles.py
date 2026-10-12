@@ -33,6 +33,7 @@ PAPER = [C('white', 5), C('white', 4), C('stone', 4)]
 RAIN = [C('lavlt', 5), C('lavlt', 4), C('glass', 5)]
 SKID = [C('asph', 0), C('night', 0)]
 BLOOD = [C('red', 2), C('red', 1), C('red', 0), C('plum', 0)]
+SPIKES = [C('stone', 5), C('night', 2), C('night', 4), C('night', 0)]
 
 
 def grid(w, h, cx, cy):
@@ -241,6 +242,31 @@ def blood_drop(f):
     return img, w // 2, h // 2
 
 
+def spikes(a):
+    """A police spike strip (Phase 4, docs/05 3★) lying flat across the road along on-screen direction a (0 = SE):
+    a dark hinged metal band with pale spike points along it and a darker shadow edge on the lower side."""
+    t = a * np.pi / 4
+    d = np.array([np.cos(t) - np.sin(t), (np.cos(t) + np.sin(t)) / 2])
+    d = d / np.linalg.norm(d)
+    half = 26.0
+    w, h = int(abs(d[0]) * half * 2 + 8), int(abs(d[1]) * half * 2 + 8)
+    X, Y, thr = grid(w, h, w / 2, h / 2)
+    along = X * d[0] + Y * d[1]
+    across = -X * d[1] + Y * d[0]
+    band = (np.abs(along) < half) & (np.abs(across) < 1.3)
+    shadow = (np.abs(along) < half) & (across >= 1.3) & (across < 2.3)
+    # a hinge every 6 px, spikes between them catching the light
+    seg = np.mod(along + half, 6.0)
+    spike = band & (np.abs(seg - 3.0) < 0.7) & (across < 0.2)
+    hinge = band & (seg < 0.8)
+    img = np.zeros((h, w, 4), np.uint8)
+    img[shadow, :3] = SPIKES[3]; img[shadow, 3] = 160
+    img[band, :3] = SPIKES[1]; img[band, 3] = 255
+    img[hinge, :3] = SPIKES[2]
+    img[spike, :3] = SPIKES[0]
+    return img, w // 2, h // 2
+
+
 def frames():
     out = {}
     for f in range(6):
@@ -261,6 +287,8 @@ def frames():
         out[f'streak/{v}'] = streak(v)
     for a, dn in enumerate(DIRS):
         out[f'skid/{dn}'] = skid(a)
+    for a, dn in enumerate(DIRS):
+        out[f'spikes/{dn}'] = spikes(a)
     for f in range(4):
         out[f'blood_pool/{f}'] = blood_pool(f)
     for f in range(3):
@@ -281,6 +309,7 @@ ANIMS = {
     'splash': {'frames': 4, 'note': 'raindrop hitting the ground (anchor: impact point)'},
     'streak': {'frames': 2, 'note': 'rain streak variants (anchor: bottom end); draw at ~45% opacity'},
     'skid': {'frames': 1, 'per_direction': True, 'note': 'tyre-mark decal on the ground, fades slowly'},
+    'spikes': {'frames': 1, 'per_direction': True, 'note': 'police spike strip across the road (direction = across)'},
     'blood_pool': {'frames': 4, 'note': 'ground decal under someone who went down; step the frames as it spreads'},
     'blood_drop': {'frames': 3, 'note': 'spatter variants where a hit lands (ground decal)'},
 }
@@ -317,7 +346,8 @@ def preview(fr, path, scale=4):
     for k in fr:
         groups.setdefault(k.split('/')[0], []).append(k)
     rows = list(groups.values())
-    cw, ch = 28, 22
+    cw = max(28, max(fr[k][0].shape[1] for k in fr) + 2)
+    ch = max(22, max(fr[k][0].shape[0] for k in fr) + 2)
     W = cw * max(len(r) for r in rows)
     Hh = ch * len(rows)
     bg = np.zeros((Hh, W, 4), np.uint8)

@@ -5,7 +5,7 @@ import type { GameState } from './store';
 import { ONBOARD_STEPS } from '../data/onboarding';
 
 /** Bump whenever the save shape changes, and add a migration below plus its test (CLAUDE.md rule 5). */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 export const SLOTS = ['slot1', 'slot2', 'slot3'] as const;
 export const AUTO_SLOTS = ['auto1', 'auto2'] as const;
@@ -152,6 +152,18 @@ export const MIGRATIONS: Record<number, (state: Obj) => Obj> = {
       reloading: 0,
       calm: 10,
     },
+  }),
+  /** 7 → 8 (Phase 4, vehicles): every saved car gets no upgrades and an empty trunk; nothing is burning. */
+  7: (s) => ({
+    ...s,
+    vehicles: ((s.vehicles as Obj[]) ?? []).map((v) => {
+      const { burning: _burning, ...rest } = v;
+      return {
+        ...rest,
+        mods: v.mods ?? { engine: 0, brakes: 0, armor: 0, tires: 0, hidden: 0 },
+        stash: v.stash ?? { weapons: [], goods: [] },
+      };
+    }),
   }),
 };
 

@@ -35,9 +35,10 @@ export function payClean(m: Money, f: Finance, at: number, what: string, price: 
 export function repairCost(v: Vehicle, mechanic: boolean): number {
   const S = stats(v);
   const missing = Math.max(0, 1 - v.health / S.health);
-  if (missing <= 0) return 0;
+  const tyres = v.flat ? BALANCE.vehicles.flat.repair : 0;
+  if (missing <= 0) return Math.round(tyres * (mechanic ? 1 - BALANCE.vehicles.mechanicDiscount : 1));
   const [lo, hi] = BALANCE.vehicles.repairShare;
-  const base = BALANCE.vehicles.types[v.type].value * (lo + (hi - lo) * missing);
+  const base = BALANCE.vehicles.types[v.type].value * (lo + (hi - lo) * missing) + tyres;
   return Math.round(base * (mechanic ? 1 - BALANCE.vehicles.mechanicDiscount : 1));
 }
 
@@ -45,6 +46,7 @@ export function repair(v: Vehicle): void {
   v.health = stats(v).health;
   v.wrecked = false;
   v.burning = undefined;
+  v.flat = undefined;
 }
 
 /** The next level's price, or null at the top. */
