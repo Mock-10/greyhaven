@@ -10,6 +10,8 @@ import { Rng } from '../core/rng';
 import { createState, loadSettings, saveSettings, type GameState, type Settings } from '../core/store';
 import { framePixels, frameInfo, opaqueAt } from '../assets/atlasLoader';
 import type { AtlasKey } from '../assets/manifest';
+import { paintPlayer } from '../assets/playerLook';
+import { playerCostume, type Look } from '../data/looks';
 import { highlight, HIGHLIGHT_PAD } from '../assets/highlight';
 import { outlinePixels } from '../assets/outline';
 import { addPixelsTexture } from '../assets/runtimeTextures';
@@ -792,6 +794,27 @@ export class WorldScene extends Phaser.Scene {
     if (!err) this.toast('AUTOSAVE', 'GAME SAVED.');
   }
 
+  /** The look the player wears (docs/11). */
+  get look(): Look {
+    return this.state.look;
+  }
+
+  /** Change the player's look (the creator, the clothing store, a wardrobe): repaint the palette-swapped sprites. */
+  setLook(look: Look): void {
+    this.state.look = { ...look };
+    paintPlayer(this.textures, look);
+    const costume = playerCostume(look);
+    hook().look = { ...look };
+    if (costume === this.state.player.costume) return;
+    this.state.player.costume = costume;
+    this.ensureWalkAnims(costume);
+    if (this.player) {
+      const ref = characterFrame(costume, 'idle', this.state.player.dir);
+      this.player.stop();
+      this.player.setTexture(ref.atlas, ref.frame);
+    }
+  }
+
   /** Called by the title screen once the player clicks. */
   startPlay(): void {
     this.playing = true;
@@ -1198,6 +1221,9 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private createPlayer(): void {
+    // the palette-swapped player (docs/11): paint the 'player' texture in this game's look first
+    paintPlayer(this.textures, this.state.look);
+    hook().look = { ...this.state.look };
     const costume = this.state.player.costume;
     this.ensureWalkAnims(costume);
     const p = this.state.player;

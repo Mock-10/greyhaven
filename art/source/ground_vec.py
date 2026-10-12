@@ -194,7 +194,7 @@ def write_swatches(out_png, out_json, seed=3):
     meta = {'period': PERIOD, 'w': SW, 'h': SH, 'voidHeight': VOID_H,
             'materials': [{'name': m, 'id': MAT_ID[m], 'row': k, 'height': MATERIALS[m][0], 'side': MATERIALS[m][1],
                            'left': MATERIALS[m][2], 'right': MATERIALS[m][3]} for k, m in enumerate(MAT_ORDER)],
-            'ramps': {n: [list(map(int, RAMP_RGB[i, k])) for k in range(6)] for n, i in RID.items()}}
+            'ramps': {n: [list(map(int, RAMP_RGB[i, k])) for k in range(6)] for n, i in RID.items() if not n.startswith('mk_')}}
     json.dump(meta, open(out_json, 'w'), indent=1)
 
 

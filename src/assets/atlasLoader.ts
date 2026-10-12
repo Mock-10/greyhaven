@@ -45,6 +45,11 @@ export function registerAtlases(textures: Phaser.Textures.TextureManager): void 
   }
 }
 
+/** An atlas's loaded pixels (the image as shipped, before any runtime repaint). */
+export function atlasPixels(atlas: AtlasKey): { data: Uint8ClampedArray; width: number } | undefined {
+  return pixels.get(atlas);
+}
+
 export function setPivot(frame: Phaser.Textures.Frame, ax: number, ay: number): void {
   frame.customPivot = true;
   frame.pivotX = ax / frame.width;

@@ -70,6 +70,9 @@ export function propFrame(name: string): FrameRef {
 }
 
 export function characterFrame(costume: string, pose: Pose, dir: number): FrameRef {
+  // the palette-swapped player (docs/11): 'player/<hair style>', every pose in the one 'player' texture
+  if (costume.startsWith('player/'))
+    return { atlas: 'player', frame: `${costume.slice(7)}/${pose}/${dirName(dir)}` };
   const atlas = pose === 'step1' || pose === 'step2' ? 'steps' : 'characters';
   return { atlas, frame: `${costume}/${pose}/${dirName(dir)}` };
 }

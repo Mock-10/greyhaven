@@ -57,6 +57,10 @@ export interface DebugHook {
   /** Current opacity of a placed object by sprite key (first match), for occlusion checks. */
   alphaOf: (sprite: string) => number | null;
   errors: string[];
+  /** The character creator's current choices and row, while it is open. */
+  creator?: { name: string; style: string; skin: string; hair: string; outfit: string; row: string };
+  /** The look the player wears (docs/11). */
+  look?: { name: string; style: string; skin: string; hair: string; outfit: string };
 }
 
 declare global {

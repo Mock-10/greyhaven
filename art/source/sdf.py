@@ -46,6 +46,12 @@ RAMP_HEX = {
     'red':    ['4e2736', '6f3545', '98454f', 'b95e5e', 'd08478', 'e5b0a2'],
     'navy':   ['262a40', '353c5e', '485682', '5e72a0', '8195c0', 'adbbdb'],
     'asph':   ['2d222e', '362c39', '423844', '504754', '605764', '726975'],
+    # Marker ramps for palette-swapped player sprites (docs/11 character creator, pack_player.py). Never shipped
+    # as colours: the game recolours each marker tone to the chosen skin, hair or outfit ramp at load.
+    'mk_skin': ['ff0000', 'ff0028', 'ff0050', 'ff0078', 'ff00a0', 'ff00c8'],
+    'mk_hair': ['00ff00', '00ff28', '00ff50', '00ff78', '00ffa0', '00ffc8'],
+    'mk_top':  ['0000ff', '2800ff', '5000ff', '7800ff', 'a000ff', 'c800ff'],
+    'mk_bot':  ['ff00ff', 'ff28ff', 'ff50ff', 'ff78ff', 'ffa0ff', 'ffc8ff'],
 }
 RAMP_ORDER = list(RAMP_HEX.keys())
 RID = {n: i + 1 for i, n in enumerate(RAMP_ORDER)}

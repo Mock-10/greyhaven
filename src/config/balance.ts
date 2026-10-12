@@ -403,6 +403,9 @@ export const BALANCE = {
     length: 80,
   },
 
+  /** The character creator (docs/11): the preview turns one direction every `spinSeconds`, drawn at this scale. */
+  creator: { spinSeconds: 0.6, previewScale: 2 },
+
   /** Sleeping at home skips to this minute of the next day (docs/01: 06:00). */
   sleep: { wakeMinute: 6 * 60 },
 

@@ -116,6 +116,30 @@ describe('saves (docs/12)', () => {
     expect(Object.keys(st.inventory).sort()).toEqual(Object.keys(fresh.inventory).sort());
   });
 
+  it('migrates a version 2 save to version 3 (the look and the wardrobe)', () => {
+    const fresh = createState(1, 'downtown', { x: 0, y: 0 });
+    const v2 = JSON.parse(JSON.stringify(fresh)) as Record<string, unknown>;
+    delete v2.look;
+    delete v2.wardrobe;
+    (v2.player as Record<string, unknown>).costume = 'office_worker';
+    const old = { game: 'doublelife', version: 2, meta: {}, state: v2, checksum: '' } as unknown as SaveFile;
+    old.checksum = checksum(v2);
+    const r = validate(old);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const st = r.file.state;
+    expect(st.look).toEqual({
+      name: 'ALEX',
+      style: 'short',
+      skin: 'fair',
+      hair: 'brown',
+      outfit: 'teal_jacket',
+    });
+    expect(st.wardrobe).toEqual(['teal_jacket', 'sage_casual', 'plum_knit']);
+    expect(st.player.costume).toBe('player/short');
+    expect(Object.keys(st).sort()).toEqual(Object.keys(fresh).sort());
+  });
+
   it('rotates the two autosaves, keeping the newest', () => {
     expect(nextAutoSlot({})).toBe('auto1');
     const a = makeSave(state(), 'auto1', 100).meta;

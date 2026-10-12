@@ -130,7 +130,7 @@ def pack_ground(seed=3):
     from sdf import RID, RAMP_RGB
     json.dump({'image': 'ground.png', 'period': V.PERIOD, 'w': V.SW, 'h': V.SH, 'voidHeight': V.VOID_H, 'seed': seed,
                'materials': mats,
-               'ramps': {n: [[int(v) for v in RAMP_RGB[i, k]] for k in range(6)] for n, i in RID.items()}},
+               'ramps': {n: [[int(v) for v in RAMP_RGB[i, k]] for k in range(6)] for n, i in RID.items() if not n.startswith('mk_')}},
               open(os.path.join(ART, 'ground.json'), 'w'), indent=0)
     print('ground sheet', sheet.shape, os.path.getsize(os.path.join(ART, 'ground.png')) // 1024, 'KB')
 

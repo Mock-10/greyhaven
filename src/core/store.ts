@@ -6,6 +6,7 @@ import { BALANCE } from '../config/balance';
 import { createCareer, type CareerState } from '../systems/career';
 import { createFinance, type Finance, type Money } from '../systems/finance';
 import type { InteriorId } from '../data/interiors';
+import { DEFAULT_LOOK, STARTING_OUTFITS, playerCostume, type Look } from '../data/looks';
 import type { LaunderLog } from '../systems/laundering';
 import type { Vehicle } from '../systems/vehicle';
 import { emptyWanted, type WantedState } from '../systems/wanted';
@@ -22,7 +23,7 @@ export interface PlayerState {
   sprinting: boolean;
   health: number;
   armor: number;
-  /** Costume key in the characters atlas. */
+  /** Costume key: 'player/<hair style>' for the palette-swapped player (docs/11), or a characters-atlas costume. */
   costume: string;
 }
 
@@ -51,6 +52,10 @@ export interface GameState {
   /** Map the player is on. */
   map: string;
   player: PlayerState;
+  /** The character creator's choices and the outfit being worn (docs/11; data/looks.ts). */
+  look: Look;
+  /** Outfits the player owns (the starting three plus clothing-store buys), worn by changing at a wardrobe. */
+  wardrobe: string[];
   /** Carried clean, dirty, and banked clean cash (docs/02). */
   money: Money;
   /** Bank statement and rent (systems/finance.ts). */
@@ -115,8 +120,10 @@ export function createState(
       sprinting: false,
       health: BALANCE.player.maxHealth,
       armor: 0,
-      costume: 'office_worker',
+      costume: playerCostume(DEFAULT_LOOK),
     },
+    look: { ...DEFAULT_LOOK },
+    wardrobe: [...STARTING_OUTFITS],
     money: {
       clean: BALANCE.economy.startClean,
       dirty: BALANCE.economy.startDirty,

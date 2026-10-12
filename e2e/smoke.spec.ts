@@ -70,7 +70,19 @@ test('boots, starts from the title and moves the walker', async ({ page }) => {
   const problems = await boot(page, '?seed=1');
   expect(await page.evaluate(() => window.__DL__.started)).toBe(false);
   await page.mouse.click(640, 360);
+  // a new game opens the character creator (docs/11): type a name, pick a hair style, start the day
+  await page.waitForFunction(() => window.__DL__.minigame === 'creator');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.type('Robin');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowRight');
+  expect(await page.evaluate(() => window.__DL__.creator)).toMatchObject({ name: 'ROBIN', style: 'long' });
+  await page.keyboard.press('Enter');
   await page.waitForFunction(() => window.__DL__.started === true);
+  expect(await page.evaluate(() => window.__DL__.look)).toMatchObject({ name: 'ROBIN', style: 'long' });
 
   const before = await page.evaluate(() => window.__DL__.walker);
   await page.keyboard.down('KeyS');

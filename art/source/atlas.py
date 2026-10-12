@@ -91,12 +91,13 @@ s = pack_grid('tiles', rows, '64x32 iso diamond; anchor = top vertex of the diam
 preview(s, 'tiles', 3)
 
 # palette
-pal = {n: ['#' + c for c in RAMP_HEX[n]] for n in RAMP_ORDER}
+pal = {n: ['#' + c for c in RAMP_HEX[n]] for n in RAMP_ORDER if not n.startswith('mk_')}
 json.dump({'note': 'Each ramp dark->light. Grey Weather swatches are used exactly; gold is reserved for valuables and interactables.',
            'ramps': pal}, open(os.path.join(OUT, 'palette.json'), 'w'), indent=1)
 S = 16
-img = np.zeros((len(RAMP_ORDER) * S, 6 * S, 3), np.uint8)
-for r, n in enumerate(RAMP_ORDER):
+PAL_ORDER = [n for n in RAMP_ORDER if not n.startswith('mk_')]
+img = np.zeros((len(PAL_ORDER) * S, 6 * S, 3), np.uint8)
+for r, n in enumerate(PAL_ORDER):
     for c, hx in enumerate(RAMP_HEX[n]):
         img[r * S:(r + 1) * S, c * S:(c + 1) * S] = [int(hx[i:i + 2], 16) for i in (0, 2, 4)]
 Image.fromarray(img).save(os.path.join(OUT, 'palette.png'))
