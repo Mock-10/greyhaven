@@ -60,3 +60,6 @@ Each saved car gets `mods` (upgrade levels) and `stash` (its trunk: weapons and 
 ## Phase 5 build (milestone 15, 2026-10-12): save v9
 `property`: homes owned (id, add-ons, stash of dirty cash, goods and weapons), tax owed, and the apartment's stash. Cars may carry `storedAt` (the home whose garage keeps them), and the area inside a home or its hideout names the home (`area.home`). Migration 8 → 9 starts everyone with no homes and an empty apartment stash.
 
+## Phase 5 build (milestone 16, 2026-10-12): save v10
+Each owned home gains `ops` (per operation: when the running batch started, what it will be worth, and what's waiting to be collected). Migration 9 → 10 gives every home an empty `ops`.
+

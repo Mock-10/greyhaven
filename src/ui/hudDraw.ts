@@ -442,7 +442,8 @@ export interface RadarInput {
   /** Ground kind at a world point: a tile kind or a vector-ground material name (maps/groundQuery.ts). */
   groundAt: (x: number, y: number) => string | undefined;
   buildings: readonly { x: number; y: number; hx: number; hy: number }[];
-  blips: readonly { kind: 'police' | 'objective' | 'home' | 'shop'; x: number; y: number }[];
+  /** 'stalled': a home whose operation needs restocking (docs/09), the home in red. */
+  blips: readonly { kind: 'police' | 'objective' | 'home' | 'stalled' | 'shop'; x: number; y: number }[];
   search?: { x: number; y: number; r: number } | null;
 }
 
@@ -544,6 +545,7 @@ export function radar(s: Surface, cx: number, cy: number, r: number, scale: numb
           if (Math.abs(dx) + Math.abs(dy) <= 2)
             px(s, ix + dx, iy + dy, Math.abs(dx) + Math.abs(dy) === 2 ? C.INK : C.GOLD);
     } else if (b.kind === 'home') sprite(s, ix - 3, iy - 3, HOME, { '#': C.INK, c: C.CREAM });
+    else if (b.kind === 'stalled') sprite(s, ix - 3, iy - 3, HOME, { '#': C.INK, c: C.POLICE_R });
     else sprite(s, ix - 2, iy - 2, SHOP, { '#': C.INK, g: C.SAGE4 });
   }
   if (inp.heading === undefined) sprite(s, cx - 3, cy - 3, ARROW, { '#': C.INK, w: C.CREAM });

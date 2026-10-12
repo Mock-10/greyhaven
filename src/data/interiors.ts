@@ -2,6 +2,7 @@
 // in Phase 1, door rules, NPC roles and schedules, entrances and elevator links. The geometry and sprites
 // come from art/interiors/<id>.json (art/source/export_interiors.py).
 
+import type { OpId } from '../systems/operations';
 import type { GigId } from './oddJobs';
 import type { DoorTarget } from '../maps/types';
 import type { ShopId } from './items';
@@ -66,6 +67,8 @@ export type Action =
   /** The hideout's plans table (buy add-ons) and workbench. */
   | { kind: 'plans' }
   | { kind: 'workbench' }
+  /** An operation's station (systems/operations.ts): the press, the chop bay. */
+  | { kind: 'op'; op: OpId }
   | { kind: 'later'; who: string; text: string };
 
 /** How a door leaf behaves: always openable, locked, or open only under a condition. */
@@ -357,6 +360,8 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
       PLANS: { label: 'PLANS', action: { kind: 'plans' } },
       WORKBENCH: { label: 'WORKBENCH', action: { kind: 'workbench' } },
       'STASH ROOM': { label: 'STASH', action: { kind: 'stash' } },
+      PRESS: { label: 'THE PRESS', action: { kind: 'op', op: 'press' } },
+      'CHOP BAY': { label: 'THE CHOP BAY', action: { kind: 'op', op: 'chopBay' } },
     },
     // the stash room's door; the world opens it once the add-on is built
     doors: [{ kind: 'locked', label: 'LOCKED: BUILD THE STASH ROOM (PLANS)' }],

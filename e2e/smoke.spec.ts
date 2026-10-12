@@ -873,3 +873,67 @@ test('a house on Linden Avenue: buy it, go down to the basement, build the stash
   expect(await page.evaluate(() => window.__DL__.dirty)).toBe(0);
   expect(problems).toEqual([]);
 });
+
+test('the counterfeit press: build it, restock it, two days later count the fake notes for a bonus (Phase 5)', async ({
+  page,
+}) => {
+  test.setTimeout(150_000);
+  const problems = await boot(page, '?scene=world&zoom=3&time=11:00&x=574&y=2372');
+  await cheat(page, 'bank 80000');
+  await cheat(page, 'rep 100000');
+  await cheat(page, 'dirty 1000');
+  await page.waitForFunction(() => window.__DL__.target === 'sale:linden10');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'sale');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('1');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  await cheat(page, 'tp 593 2345');
+  await page.waitForFunction(() => window.__DL__.target === 'home:linden10');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.area === 'home_family', null, { timeout: 15_000 });
+  await cheat(page, 'tp 30 90');
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('home_family:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.area === 'hideout', null, { timeout: 15_000 });
+  // the plans: the press is the fourth row
+  await cheat(page, 'tp 176 146');
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('hideout:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'plans');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('4');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.homes?.[0]?.addons.includes('press'));
+  await page.waitForTimeout(600);
+  // restock with the carried dirty cash
+  await cheat(page, 'tp 132 80');
+  await page.waitForFunction(() => window.__DL__.target?.startsWith('hideout:'));
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'press');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('1');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.homes?.[0]?.ops.press?.running === true);
+  expect(await page.evaluate(() => window.__DL__.dirty)).toBe(0);
+  // two days on, collect: the money count first
+  await cheat(page, 'day 3');
+  await page.waitForFunction(() => (window.__DL__.homes?.[0]?.ops.press?.ready ?? 0) > 0);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'press');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('1');
+  await page.waitForFunction(() => window.__DL__.minigame === 'moneyCount');
+  await page.waitForTimeout(400);
+  for (let b = 0; b < 3; b++) {
+    for (let k = 0; k < 10; k++) await page.keyboard.press('Space');
+    await page.keyboard.press('KeyB');
+  }
+  await page.waitForFunction(() => window.__DL__.minigame === null, null, { timeout: 20_000 });
+  await page.waitForFunction(() => window.__DL__.dirty > 2600);
+  expect(problems).toEqual([]);
+});

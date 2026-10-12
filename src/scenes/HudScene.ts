@@ -211,6 +211,11 @@ export class HudScene extends Phaser.Scene {
               x: d.x,
               y: d.y,
             })),
+          ...snap.homes.map((q) => ({
+            kind: q.stalled ? ('stalled' as const) : ('home' as const),
+            x: q.x,
+            y: q.y,
+          })),
           ...snap.marks.map((q) => ({ kind: 'objective' as const, x: q.x, y: q.y })),
           ...snap.police.map((q) => ({ kind: 'police' as const, x: q.x, y: q.y })),
         ],

@@ -187,8 +187,11 @@ import {
 import { MODEL_COLOUR, TYPE_LABEL } from '../data/vehicles';
 import { HOMES, HOME_IDS, PROPERTY_TYPES, type HomeId } from '../data/property';
 import { homeOf, stashAt } from '../systems/property';
+import { collect, nightlyRaids, runOps, startChop, stalled, type OpId } from '../systems/operations';
 import {
   garagePage,
+  opsPage,
+  type OpsCtx,
   plansPage,
   salePage,
   stashPage,
@@ -359,6 +362,8 @@ export interface HudSnapshot {
   police: { x: number; y: number }[];
   /** Gold objective marks on the radar: the job's drops, yard spots, or where to clock in. */
   marks: { x: number; y: number }[];
+  /** Homes you own on the radar; red while an operation stalls (docs/09). */
+  homes: { x: number; y: number; stalled: boolean }[];
   /** An officer is busting the player: the surrender prompt. */
   surrender: boolean;
   /** The first-day guide is on: the hint strip offers F2 to skip it. */
@@ -1332,6 +1337,12 @@ export class WorldScene extends Phaser.Scene {
     const wake = BALANCE.sleep.wakeMinute;
     const crossed = Math.floor((st.minutes - wake) / 1440) > Math.floor((st.calendarAt - wake) / 1440);
     const msgs = runCalendar(st, st.calendarAt, st.minutes);
+    // the hideouts' operations finish their batches; at night the police may raid them (docs/09)
+    const risky = knownFace(st.heat, st.minutes) || st.wanted.stars > BALANCE.property.ops.raidAboveStars;
+    msgs.push(
+      ...runOps(st.property, st.minutes),
+      ...nightlyRaids(st.property, st.calendarAt, st.minutes, risky, this.rng),
+    );
     st.calendarAt = st.minutes;
     for (const m of msgs) this.toast(m.who, m.text);
     if (msgs.length) this.updateInteriorObjective();
@@ -2591,6 +2602,9 @@ export class WorldScene extends Phaser.Scene {
       case 'workbench':
         this.openWorkbench();
         break;
+      case 'op':
+        this.openOps(a.op);
+        break;
       case 'elevator': {
         const to = INTERIORS[a.to];
         this.fade(() => this.enterInterior(to, to.elevator ?? to.entrance ?? { x: 40, y: 40 }));
@@ -3161,6 +3175,67 @@ export class WorldScene extends Phaser.Scene {
     this.openPanel('plans', () => plansPage(this.state, id, () => (this.rebuildRoom = true)));
   }
 
+  /** The press's fake cash waiting to be counted (the money count, docs/06), from this home. */
+  private pendingCount: HomeId | null = null;
+
+  /** An operation's station in the hideout (docs/09). */
+  private openOps(op: OpId): void {
+    const id = this.homeHere;
+    const h = id ? homeOf(this.state.property, id) : null;
+    if (!id || !h) return;
+    const st = this.state;
+    const z = this.map.zones?.find((q) => q.id === `park_${id}`);
+    const onDriveway = () =>
+      this.cars.find((c) => !!z && parkedIn(c.v, z) && !c.v.owned && !c.v.wrecked) ?? null;
+    const ctx: OpsCtx = {
+      state: st,
+      home: h,
+      op,
+      collect: () => {
+        if (op === 'press') {
+          // count the fake notes first: the grade sets the bonus
+          this.pendingCount = id;
+          this.time.delayedCall(BALANCE.ui.keyGuardMs, () =>
+            this.openMinigame({ kind: 'moneyCount', label: 'FRESH NOTES' }),
+          );
+          return { close: true };
+        }
+        const n = collect(h, op);
+        st.money.dirty += n;
+        this.syncMoneyHook();
+        return { say: `+$${n.toLocaleString('en-US')} DIRTY.` };
+      },
+      car: onDriveway()?.v ?? null,
+      chop:
+        op === 'chopBay'
+          ? () => {
+              const c = onDriveway();
+              if (!c) return false;
+              const value = chopPrice(c.v, this.rng.next(), tierFor(st.crime.rep));
+              if (!startChop(h, value, st.minutes)) return false;
+              if (st.lastCar === c.v.id) st.lastCar = null;
+              this.removeCar(c);
+              return true;
+            }
+          : null,
+    };
+    this.openPanel(op, () => opsPage(ctx));
+  }
+
+  private countDone(r: MinigameResult): void {
+    const h = this.pendingCount ? homeOf(this.state.property, this.pendingCount) : null;
+    this.pendingCount = null;
+    if (!h) return;
+    const grade = (r.grade ?? 'fail') as keyof typeof BALANCE.property.ops.countBonus;
+    const n = collect(h, 'press', BALANCE.property.ops.countBonus[grade] ?? 0);
+    this.state.money.dirty += n;
+    this.syncMoneyHook();
+    this.toast(
+      'THE PRESS',
+      `+$${n.toLocaleString('en-US')} IN FAKE NOTES (${(r.grade ?? 'fail').toUpperCase()}).`,
+    );
+  }
+
   private openWorkbench(): void {
     const id = this.homeHere;
     if (!id) return;
@@ -3542,6 +3617,7 @@ export class WorldScene extends Phaser.Scene {
       // the robbery's own lockpicks (staff door, back door) are handled in robDone
     } else if (r.kind === 'lockpick' || r.kind === 'hotwire') this.carMinigameDone(r);
     if (r.kind === 'duffel') this.launderDone(r);
+    if (r.kind === 'moneyCount' && this.pendingCount) this.countDone(r);
     if (r.kind === 'shop' && this.state.money.clean < this.cleanAtShop) this.guide('bought');
     if (this.pendingGig && r.kind === this.pendingGig) this.gigTaskDone(r);
     if (this.pendingRob) this.robDone(r);
@@ -4771,6 +4847,9 @@ export class WorldScene extends Phaser.Scene {
       id: x.id,
       addons: [...x.addons],
       dirty: x.stash.dirty,
+      ops: Object.fromEntries(
+        Object.entries(x.ops ?? {}).map(([k, o]) => [k, { running: o.since !== null, ready: o.ready }]),
+      ),
     }));
     h.traffic = (this.life?.cars ?? []).map((cv) => ({
       id: cv.car.id,
@@ -4856,6 +4935,10 @@ export class WorldScene extends Phaser.Scene {
             : null,
         police: this.police?.blips() ?? [],
         marks: this.jobMarks().map((m) => ({ x: m.x, y: m.y })),
+        homes: this.state.property.homes.flatMap((h) => {
+          const z = this.map.zones?.find((q) => q.id === HOMES[h.id].door)?.npc;
+          return z ? [{ x: z.x, y: z.y, stalled: stalled(h) }] : [];
+        }),
         surrender: this.bustT > 0,
         guide: onboardingActive(this.state.onboarding),
       };
