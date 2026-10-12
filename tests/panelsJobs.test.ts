@@ -6,6 +6,9 @@ import { MEETING_QUESTIONS } from '../src/data/meetings';
 import { BoltTorqueGame } from '../src/minigames/boltTorque';
 import { ChopGame } from '../src/minigames/chop';
 import { DiagnoseGame } from '../src/minigames/diagnose';
+import { DoorstepGame } from '../src/minigames/doorstep';
+import { FellGame } from '../src/minigames/fell';
+import { SignatureGame } from '../src/minigames/signature';
 import { LoadGame } from '../src/minigames/load';
 import { MeetingGame } from '../src/minigames/meeting';
 import { ResprayGame } from '../src/minigames/respray';
@@ -28,6 +31,11 @@ import {
   diagnoseOption,
   drawBoltTorque,
   drawChop,
+  drawDoorstep,
+  drawFell,
+  drawSignature,
+  doorstepHouse,
+  signaturePad,
   drawDiagnose,
   drawLoad,
   drawMeeting,
@@ -184,5 +192,43 @@ describe('job panel layouts never overlap', () => {
     check('meeting', (s) => drawMeeting(s, X, Y, g, 'TASK 3/3'));
     while (!g.done) g.choose(0);
     check('meeting', (s) => drawMeeting(s, X, Y, g, 'TASK 3/3'));
+  });
+
+  it('fell direction, after a cut, a timeout and the end', () => {
+    const g = new FellGame(new Rng(8));
+    check('fell', (s) => drawFell(s, X, Y, g, 'TASK 2/3'));
+    g.cut();
+    check('fell', (s) => drawFell(s, X, Y, g, 'TASK 2/3'));
+    g.update(99);
+    g.update(99);
+    check('fell', (s) => drawFell(s, X, Y, g, 'TASK 2/3'));
+  });
+
+  it('doorstep, big house numbers, a wrong door and the end', () => {
+    const g = new DoorstepGame(new Rng(9));
+    for (let k = 0; k < g.numbers.length; k++) g.numbers[k] = 191 + k * 2;
+    check('doorstep', (s) => drawDoorstep(s, X, Y, g, 'TASK 3/3'));
+    for (let k = 0; k < g.numbers.length; k++) {
+      const h = doorstepHouse(X, Y, k);
+      expect(textWidthPx(String(g.numbers[k]))).toBeLessThan(h.w - 2);
+      expect(h.x + h.w).toBeLessThanOrEqual(X + JOB_PANEL_SIZE.doorstep.w - 8);
+    }
+    g.errors = 9;
+    g.deliver();
+    if (g.last?.ok) g.deliver();
+    check('doorstep', (s) => drawDoorstep(s, X, Y, g, 'TASK 3/3'));
+    g.update(999);
+    check('doorstep', (s) => drawDoorstep(s, X, Y, g, 'TASK 3/3'));
+  });
+
+  it('signature, mid-stroke and at the end', () => {
+    const g = new SignatureGame(new Rng(10));
+    const P = signaturePad(X, Y, g);
+    expect(P.y + P.h + 6).toBeLessThan(Y + 126);
+    g.penDown(0.1, 0.1);
+    g.penMove(0.6, 0.3);
+    check('signature', (s) => drawSignature(s, X, Y, g, 'TASK 3/3'));
+    g.penUp();
+    check('signature', (s) => drawSignature(s, X, Y, g, 'TASK 3/3'));
   });
 });

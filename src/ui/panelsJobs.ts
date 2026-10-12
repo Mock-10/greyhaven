@@ -7,10 +7,13 @@
 import type { BoltTorqueGame } from '../minigames/boltTorque';
 import type { ChopGame } from '../minigames/chop';
 import type { DiagnoseGame } from '../minigames/diagnose';
+import type { DoorstepGame } from '../minigames/doorstep';
+import type { FellGame } from '../minigames/fell';
 import type { LoadGame, Piece } from '../minigames/load';
 import type { MeetingGame } from '../minigames/meeting';
 import type { ResprayGame } from '../minigames/respray';
 import type { RouteGame } from '../minigames/route';
+import type { SignatureGame } from '../minigames/signature';
 import type { StampSignGame } from '../minigames/stampSign';
 import type { TyreChangeGame, ArrowDir } from '../minigames/tyreChange';
 import { TYRE_STEPS } from '../minigames/tyreChange';
@@ -45,6 +48,9 @@ export const JOB_PANEL_SIZE = {
   route: { w: 248, h: 176 },
   stampSign: { w: 248, h: 176 },
   meeting: { w: 248, h: 176 },
+  fell: { w: 248, h: 176 },
+  doorstep: { w: 248, h: 176 },
+  signature: { w: 248, h: 176 },
 } as const;
 export type JobPanelKind = keyof typeof JOB_PANEL_SIZE;
 
@@ -836,6 +842,234 @@ export function drawMeeting(s: Surface, x: number, y: number, g: MeetingGame, ta
   blend(s, y + 146, y + 149, x + 8, x + 8 + Math.round((W - 16) * (g.timeLeft / g.timeTotal)), C.GOLD_LO);
   footer(s, x, y, 'meeting', [
     ['1-3', 'ANSWER'],
+    ['ESC', 'QUIT'],
+  ]);
+}
+
+// ------------------------------------------------------------------ fell direction
+const LEAF: RGB = [50, 64, 56];
+const LEAF_HI: RGB = [98, 116, 98];
+
+/** An arrow along direction (dx, dy) from (x0, y0), `len` long, with a small head. */
+function arrowLine(s: Surface, x0: number, y0: number, dx: number, dy: number, len: number, col: RGB): void {
+  for (let t = 0; t <= len; t += 0.5) {
+    const ax = Math.round(x0 + dx * t);
+    const ay = Math.round(y0 + dy * t);
+    px(s, ax, ay, col);
+    px(s, ax + 1, ay, col);
+    px(s, ax, ay + 1, col);
+  }
+  const hx = x0 + dx * len;
+  const hy = y0 + dy * len;
+  for (const side of [-1, 1])
+    for (let t = 0; t <= 4; t += 0.5)
+      px(s, Math.round(hx - dx * t + -dy * side * t), Math.round(hy - dy * t + dx * side * t), col);
+}
+
+export function drawFell(s: Surface, x: number, y: number, g: FellGame, task: string): void {
+  const F = BALANCE_JOBS.fell;
+  jobFrame(s, x, y, 'fell', 'FELL', task);
+  if (g.done && g.grade) return jobResult(s, x, y, 'fell', g.grade, 'TREES DOWN');
+  const tr = g.tree;
+  if (!tr) return;
+  // the clearing seen from above: grass, the clear lane, and what must not be hit all around it
+  const cx = x + 66;
+  const cy = y + 90;
+  const R = 54;
+  const dir = (deg: number) => [Math.sin((deg * Math.PI) / 180), -Math.cos((deg * Math.PI) / 180)] as const;
+  for (let j = -R; j <= R; j++)
+    for (let i = -R; i <= R; i++) {
+      if (i * i + j * j > R * R) continue;
+      const ang = ((Math.atan2(i, -j) * 180) / Math.PI + 360) % 360;
+      const inLane = Math.abs(((ang - tr.lane + 540) % 360) - 180) <= F.lane;
+      px(
+        s,
+        cx + i,
+        cy + j,
+        inLane ? (i * i + j * j > 100 ? WOOD_LO : C.SAGE1) : (i * 7 + j * 13) % 23 ? C.SAGE1 : LEAF_HI,
+      );
+    }
+  // the lane's centre line, and the trees, the truck and the cabin round the rest of the clearing
+  const [lx, ly] = dir(tr.lane);
+  for (let t = 12; t < R - 2; t += 3) px(s, Math.round(cx + lx * t), Math.round(cy + ly * t), WOOD);
+  for (let k = 0; k < 14; k++) {
+    const a = tr.lane + F.lane + 10 + k * ((360 - 2 * F.lane - 20) / 13);
+    const [ox, oy] = dir(a);
+    const ox0 = Math.round(cx + ox * (R - 9));
+    const oy0 = Math.round(cy + oy * (R - 9));
+    if (k === 4) {
+      blend(s, oy0 - 5, oy0 + 6, ox0 - 7, ox0 + 8, C.HP_LO); // the log truck
+      blend(s, oy0 - 3, oy0 + 1, ox0 + 2, ox0 + 6, C.GLASS4);
+    } else if (k === 9) {
+      blend(s, oy0 - 6, oy0 + 7, ox0 - 6, ox0 + 7, WOOD_LO); // the site cabin
+      blend(s, oy0 - 6, oy0 - 3, ox0 - 7, ox0 + 8, BARK_LO);
+    } else {
+      disc(s, ox0, oy0, 5, LEAF);
+      disc(s, ox0 - 1, oy0 - 1, 2, LEAF_HI);
+    }
+  }
+  // the tree: a stump with its crown, the lean and the wind as arrows across the lane's end
+  const [tx, ty] = dir(tr.lane + 90);
+  const ex = cx + lx * (R - 16);
+  const ey = cy + ly * (R - 16);
+  arrowLine(
+    s,
+    Math.round(ex),
+    Math.round(ey),
+    tx * Math.sign(tr.lean),
+    ty * Math.sign(tr.lean),
+    Math.abs(tr.lean) * 2,
+    BARK,
+  );
+  if (Math.abs(tr.wind) >= 1)
+    arrowLine(
+      s,
+      Math.round(ex - lx * 8),
+      Math.round(ey - ly * 8),
+      tx * Math.sign(tr.wind),
+      ty * Math.sign(tr.wind),
+      Math.abs(tr.wind) * 2,
+      C.GLASS4,
+    );
+  // the aim: where the cut points
+  const [ax, ay] = dir(g.aim);
+  for (let t = 8; t <= R; t += 0.5) {
+    px(s, Math.round(cx + ax * t), Math.round(cy + ay * t), C.HP);
+    px(s, Math.round(cx + ax * t) + 1, Math.round(cy + ay * t), C.HP);
+  }
+  disc(s, cx, cy, 7, BARK);
+  disc(s, cx, cy, 4, WOOD);
+  const rx = x + 132;
+  text(s, rx, y + 32, `TREE ${g.round + 1}/${g.trees.length}`, C.CREAM);
+  if (g.last && g.last.t < 0.6) {
+    const w = { great: 'CLEAN', good: 'CLOSE', ok: 'JUST IN', miss: 'HIT IT' }[g.last.result];
+    stampWord(s, rx + 3, y + 50, w, g.last.result !== 'miss');
+  } else text(s, rx, y + 50, 'FELL IT DOWN', C.MUTED);
+  text(s, rx, y + 62, 'THE LANE', C.MUTED);
+  blend(s, y + 78, y + 81, rx, rx + 12, BARK);
+  text(s, rx + 18, y + 76, 'LEAN', C.MUTED);
+  blend(s, y + 92, y + 95, rx, rx + 12, C.GLASS4);
+  text(s, rx + 18, y + 90, 'WIND', C.MUTED);
+  blend(s, y + 106, y + 109, rx, rx + 12, C.HP);
+  text(s, rx + 18, y + 104, 'YOUR AIM', C.MUTED);
+  text(s, rx, y + 120, 'AIM AGAINST THEM', C.MUTED);
+  timeBar(s, x + 8, y + 150 - 7, JOB_PANEL_SIZE.fell.w - 16, 1 - g.t / F.seconds);
+  footer(s, x, y, 'fell', [
+    ['SPACE', 'CUT'],
+    ['ESC', 'QUIT'],
+  ]);
+}
+
+// ------------------------------------------------------------------ doorstep
+const HOUSE_W = 28;
+const WALLS: readonly RGB[] = [
+  [185, 180, 140],
+  [157, 176, 201],
+  [201, 172, 132],
+  [147, 163, 135],
+  [222, 214, 200],
+  [187, 147, 129],
+];
+
+export function doorstepHouse(x: number, y: number, k: number): Box {
+  return { x: x + 12 + k * HOUSE_W, y: y + 36, w: HOUSE_W, h: 66 };
+}
+
+export function drawDoorstep(s: Surface, x: number, y: number, g: DoorstepGame, task: string): void {
+  jobFrame(s, x, y, 'doorstep', 'DOORSTEP', task);
+  if (g.done && g.grade) return jobResult(s, x, y, 'doorstep', g.grade, 'PARCELS DELIVERED');
+  const label = g.label;
+  // the street strip: a row of narrow houses, each with a roof, a window, a door and its number above it
+  blend(s, y + 30, y + 110, x + 8, x + JOB_PANEL_SIZE.doorstep.w - 8, C.INK, 0.7);
+  g.numbers.forEach((n, k) => {
+    const h = doorstepHouse(x, y, k);
+    const wall = WALLS[(n * 7) % WALLS.length] as RGB;
+    const top = h.y + 12 + ((n * 3) % 3) * 2;
+    for (let j = 0; j < 8; j++) blend(s, top - 8 + j, top - 7 + j, h.x + 7 - j, h.x + h.w - 7 + j, BARK_LO); // roof
+    blend(s, top, h.y + h.h - 6, h.x + 1, h.x + h.w - 1, wall);
+    blend(s, top + 4, top + 11, h.x + 5, h.x + 12, C.GLASS4);
+    blend(s, h.y + h.h - 24, h.y + h.h - 6, h.x + 15, h.x + 23, k === g.at ? C.CREAM : NAVY_LO); // the door
+    const ns = String(n);
+    blend(s, h.y + h.h - 36, h.y + h.h - 27, h.x + 2, h.x + h.w - 2, C.PLATE);
+    text(s, h.x + Math.round((h.w - textWidthPx(ns)) / 2), h.y + h.h - 35, ns, C.CREAM);
+  });
+  blend(s, y + 102, y + 110, x + 8, x + JOB_PANEL_SIZE.doorstep.w - 8, C.PLATE_HI); // the pavement
+  // the courier, in uniform, at the door
+  const c = doorstepHouse(x, y, g.at);
+  const fx = c.x + c.w / 2 - 3;
+  blend(s, y + 92, y + 96, fx + 1, fx + 6, SKIN);
+  blend(s, y + 96, y + 103, fx, fx + 7, NAVY);
+  blend(s, y + 98, y + 102, fx + 5, fx + 10, C.KHAKI4); // the parcel
+  if (g.last && g.last.t < 0.3) blend(s, y + 31, y + 33, c.x, c.x + c.w, g.last.ok ? C.SAGE4 : C.RED3);
+  // the parcel's label
+  icon(s, x + 8, y + 112, 'job/delivery');
+  if (label !== null) {
+    text(s, x + 46, y + 114, 'DELIVER TO', C.MUTED);
+    text(s, x + 46, y + 124, `NO. ${label}`, C.CREAM, C.INK, 2);
+  }
+  const rx = x + 150;
+  text(s, rx, y + 114, `PARCEL ${Math.min(g.parcel + 1, g.parcels.length)}/${g.parcels.length}`, C.CREAM);
+  if (g.last && g.last.t < 0.6 && !g.last.ok) stampWord(s, rx + 3, y + 129, 'WRONG DOOR', false);
+  else text(s, rx, y + 128, `WRONG ${g.errors}`, g.errors ? C.RED3 : C.MUTED);
+  bar(s, x + 8, y + 148, JOB_PANEL_SIZE.doorstep.w - 16, 5, g.timeLeft / g.timeTotal, C.GOLD, C.GOLD_LO);
+  footer(s, x, y, 'doorstep', [
+    ['A/D', 'WALK'],
+    ['SPACE', 'HAND OVER'],
+    ['CLICK', 'GO TO'],
+  ]);
+}
+
+// ------------------------------------------------------------------ signature
+/** The signature pad on screen: map the mouse to pad units (0–1 across) with it. */
+export function signaturePad(x: number, y: number, g: SignatureGame): Box {
+  const w = JOB_PANEL_SIZE.signature.w - 28;
+  return { x: x + 14, y: y + 36, w, h: Math.round(w * g.aspect) };
+}
+
+export function drawSignature(s: Surface, x: number, y: number, g: SignatureGame, task: string): void {
+  jobFrame(s, x, y, 'signature', 'SIGNATURE', task);
+  if (g.done && g.grade) return jobResult(s, x, y, 'signature', g.grade, 'SIGNED FOR');
+  const P = signaturePad(x, y, g);
+  // the courier's handheld: a dark body round a pale screen
+  blend(s, P.y - 6, P.y + P.h + 6, P.x - 6, P.x + P.w + 6, C.PLATE_HI);
+  blend(s, P.y, P.y + P.h, P.x, P.x + P.w, C.STONE5);
+  blend(s, P.y + P.h - 12, P.y + P.h - 11, P.x + 8, P.x + P.w - 8, C.MUTED); // the sign-here line
+  const toPx = (q: { x: number; y: number }) =>
+    [Math.round(P.x + q.x * P.w), Math.round(P.y + q.y * P.w)] as const;
+  // the customer's line, faint where it is still to trace, sage where the pen has covered it
+  for (let k = 1; k < g.line.length; k++) {
+    const [ax, ay] = toPx(g.line[k - 1]!);
+    const [bx, by] = toPx(g.line[k]!);
+    const col = g.covered[k] && g.covered[k - 1] ? C.SAGE4 : C.MUTED;
+    const n = Math.max(Math.abs(bx - ax), Math.abs(by - ay), 1);
+    for (let t = 0; t <= n; t++)
+      px(s, Math.round(ax + ((bx - ax) * t) / n), Math.round(ay + ((by - ay) * t) / n), col);
+  }
+  // the pen's strokes
+  for (const st of g.strokes)
+    for (let k = 1; k < st.length; k++) {
+      const [ax, ay] = toPx(st[k - 1]!);
+      const [bx, by] = toPx(st[k]!);
+      const n = Math.max(Math.abs(bx - ax), Math.abs(by - ay), 1);
+      for (let t = 0; t <= n; t++) {
+        const qx = Math.round(ax + ((bx - ax) * t) / n);
+        const qy = Math.round(ay + ((by - ay) * t) / n);
+        px(s, qx, qy, NAVY_LO);
+        px(s, qx, qy + 1, NAVY_LO);
+      }
+    }
+  text(s, x + 8, y + 128, `COVERED ${Math.round(g.coverage * 100)}%`, C.CREAM);
+  text(
+    s,
+    x + 120,
+    y + 128,
+    `ON THE LINE ${Math.round(g.accuracy * 100)}%`,
+    g.samples && g.accuracy < 0.7 ? C.RED3 : C.MUTED,
+  );
+  timeBar(s, x + 8, y + 143, JOB_PANEL_SIZE.signature.w - 16, g.timeLeft / g.timeTotal);
+  footer(s, x, y, 'signature', [
+    ['DRAG', 'TRACE IT'],
+    ['RELEASE', 'DONE'],
     ['ESC', 'QUIT'],
   ]);
 }
