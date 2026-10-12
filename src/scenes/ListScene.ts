@@ -7,6 +7,7 @@ import { UI_BASE_H, UI_BASE_W } from '../config/constants';
 import { hook } from '../debug/hooks';
 import { blend, clear, createSurface, type Surface } from '../ui/hudDraw';
 import { drawList, LIST_SIZE, listLayout, type ListPage, type ListStyle } from '../ui/listPanel';
+import { dimAlpha, Presence, transition } from '../ui/anim/transition';
 
 export interface ListRequest {
   style: ListStyle;
@@ -23,6 +24,7 @@ const TEX = 'list-canvas';
 const handled = new WeakSet<KeyboardEvent>();
 
 export class ListScene extends Phaser.Scene {
+  private presence = new Presence();
   private req!: ListRequest;
   private stack: (() => ListPage)[] = [];
   private page!: ListPage;
@@ -50,6 +52,8 @@ export class ListScene extends Phaser.Scene {
   }
 
   create(): void {
+    // the panel unfolds as it opens (ui/anim/transition.ts)
+    this.presence = new Presence();
     hook().minigame = this.req.name;
     hook().listPage = this.page;
     this.openedAt = this.time.now;
@@ -218,6 +222,7 @@ export class ListScene extends Phaser.Scene {
 
   update(): void {
     const dt = Math.min(0.1, this.game.loop.rawDelta / 1000);
+    this.presence.update(dt);
     if (this.message) {
       this.message.t += dt;
       if (this.message.t > 4) this.message = null;
@@ -229,7 +234,7 @@ export class ListScene extends Phaser.Scene {
     const s = this.surface;
     if (!s || !this.tex) return;
     clear(s);
-    blend(s, 0, s.height, 0, s.width, [20, 14, 24], 0.35);
+    blend(s, 0, s.height, 0, s.width, [20, 14, 24], dimAlpha(0.35, this.presence.t));
     const { x, y } = this.pos;
     drawList(
       s,
@@ -243,6 +248,7 @@ export class ListScene extends Phaser.Scene {
       this.stack.length > 1,
       this.req.clock?.() ?? '',
     );
+    transition(s, { x, y, ...LIST_SIZE[this.req.style] }, this.presence.t);
     const ctx = this.tex.getContext();
     const img = ctx.createImageData(s.width, s.height);
     img.data.set(s.data);

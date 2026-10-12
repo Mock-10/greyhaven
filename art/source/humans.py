@@ -7,8 +7,16 @@ S = 1.0   # overall scale: ~36px tall person (≈7.3 heads)
 def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night', 1.2),
           hair=('wood', 1.2), hair_style='short', sleeves='long', tie=False, shirt=None, hat=None,
           mask=False, hood=None, vest=None, case=False, bag=False, badge=False, jacket=False,
-          belt=True, walk=0.0, lower_skin=False, skin_ramp='skin'):
-    """Facing +x. Origin at the feet. `walk` in [-1,1] swings legs/arms."""
+          belt=True, walk=0.0, lower_skin=False, skin_ramp='skin', pose=None, held=None):
+    """Facing +x. Origin at the feet. `walk` in [-1,1] swings legs/arms.
+
+    pose (optional, actions.py): a dict overriding joints after they are computed. Leg keys (hipL/R, kneeL/R,
+    ankL/R) are final positions; arm keys (shL/R, elL/R, wrL/R) are in the upright torso frame and bend with it.
+    'lean' tips the upper body forward at the hips (the head moves forward by `lean` units), 'crouch' lowers the
+    hips and torso by N units (the knees bend forward to keep the leg lengths) and 'head' offsets the head
+    (a nod, in the torso frame). held (optional): f(P, joints) -> (distance, material) for a hand-held tool,
+    added as an extra part; joints holds the final joints plus dirL/dirR (forearm directions), handL/handR
+    (hand centres), 'body' (torso-frame direction -> world) and the pose itself."""
     w = walk
     # joint positions (units before scale)
     hipY, shY = 2.45, 3.95
@@ -20,18 +28,62 @@ def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night
     wrL = np.array([0.8 - 2.6 * w, shY + 0.8, 17.8]); wrR = np.array([0.8 + 2.6 * w, -shY - 0.8, 17.8])
     if case:
         wrR = np.array([1.2, -shY - 0.9, 17.6]); elR = np.array([0.6, -shY - 0.8, 23.6])
+    upw = headw = None      # torso-frame / head-frame warps, only for posed models
+    crouch = 0.0
+    hold_j = None
+    arms_posed = False
+    if pose is not None or held is not None:
+        pz = pose or {}
+        jt = dict(kneeL=kneeL, kneeR=kneeR, ankL=ankL, ankR=ankR, hipL=hipL, hipR=hipR,
+                  shL=shL, shR=shR, elL=elL, elR=elR, wrL=wrL, wrR=wrR)
+        for k in jt:
+            if k in pz:
+                jt[k] = np.asarray(pz[k], float)
+        crouch = float(pz.get('crouch', 0.0))
+        th = float(np.arctan2(float(pz.get('lean', 0.0)), 17.0))
+        hv = np.asarray(pz.get('head', (0.0, 0.0, 0.0)), float)
+        br = float(pz.get('breath', 0.0))
+        if br:      # an in-breath: shoulders, arms and head rise a little
+            for k, f in (('shL', 1.0), ('shR', 1.0), ('elL', 0.75), ('elR', 0.75), ('wrL', 0.5), ('wrR', 0.5)):
+                jt[k] = jt[k] + (0.0, 0.0, br * f)
+            hv = hv + (0.0, 0.0, br)
+        upw, headw, body = _bend(th, crouch, hv)
+        piv = np.array([0.0, 0.0, 19.2])
+        for k in ('shL', 'shR', 'elL', 'elR', 'wrL', 'wrR'):
+            jt[k] = body(jt[k] - piv) + piv - (0.0, 0.0, crouch)
+        for k in ('hipL', 'hipR'):
+            if k not in pz:
+                jt[k] = jt[k] - (0.0, 0.0, crouch)
+        if crouch > 0:
+            for s in 'LR':
+                if 'knee' + s not in pz:
+                    jt['knee' + s] = _knee(jt['hip' + s], jt['ank' + s])
+        kneeL, kneeR, ankL, ankR = jt['kneeL'], jt['kneeR'], jt['ankL'], jt['ankR']
+        hipL, hipR, shL, shR = jt['hipL'], jt['hipR'], jt['shL'], jt['shR']
+        elL, elR, wrL, wrR = jt['elL'], jt['elR'], jt['wrL'], jt['wrR']
+        dirL = (wrL - elL) / max(L(wrL - elL), 1e-6); dirR = (wrR - elR) / max(L(wrR - elR), 1e-6)
+        hold_j = dict(jt, dirL=dirL, dirR=dirR, handL=wrL + dirL * 1.6, handR=wrR + dirR * 1.6, body=body, pose=pz)
+        arms_posed = th != 0 or any(k in pz for k in ('elL', 'elR', 'wrL', 'wrR'))
+    pelz = 18.4 - crouch
 
     def parts(p):
         P = p / S
         x, y, z = P[:, 0], P[:, 1], P[:, 2]
+        Pu = P if upw is None else upw(P)
+        Ph = Pu if headw is None else headw(Pu)
         out = []
         # ---- 0 skin: head, neck, hands, nose, ears
-        head = smin(ell(P, (0.1, 0, 35.3), (2.6, 2.3, 2.9)), ell(P, (0.6, 0, 33.8), (2.1, 1.9, 2.0)), 1.2)
-        neck = capsule(P, (0, 0, 31.4), (0.1, 0, 33.6), 1.25, 1.2)
-        nose = ell(P, (2.8, 0, 34.8), (0.75, 0.55, 0.95))
-        ears = np.minimum(ell(P, (0, 2.45, 35.0), (0.55, 0.45, 0.95)), ell(P, (0, -2.45, 35.0), (0.55, 0.45, 0.95)))
-        handL = ell(P, wrL + (0.3, 0.1, -1.7), (1.0, 0.95, 1.9))
-        handR = ell(P, wrR + (0.3, -0.1, -1.7), (1.0, 0.95, 1.9))
+        head = smin(ell(Ph, (0.1, 0, 35.3), (2.6, 2.3, 2.9)), ell(Ph, (0.6, 0, 33.8), (2.1, 1.9, 2.0)), 1.2)
+        neck = capsule(Ph, (0, 0, 31.4), (0.1, 0, 33.6), 1.25, 1.2)
+        nose = ell(Ph, (2.8, 0, 34.8), (0.75, 0.55, 0.95))
+        ears = np.minimum(ell(Ph, (0, 2.45, 35.0), (0.55, 0.45, 0.95)), ell(Ph, (0, -2.45, 35.0), (0.55, 0.45, 0.95)))
+        if not arms_posed:
+            handL = ell(P, wrL + (0.3, 0.1, -1.7), (1.0, 0.95, 1.9))
+            handR = ell(P, wrR + (0.3, -0.1, -1.7), (1.0, 0.95, 1.9))
+        else:   # posed: the hand follows the forearm
+            dL, dR = hold_j['dirL'], hold_j['dirR']
+            handL = capsule(P, wrL + dL * 0.7, wrL + dL * 2.5, 1.05, 1.0)
+            handR = capsule(P, wrR + dR * 0.7, wrR + dR * 2.5, 1.05, 1.0)
         skin = smin(smin(head, neck, 0.8), nose, 0.4)
         skin = np.minimum.reduce([skin, ears, handL, handR])
         if sleeves == 'short':
@@ -41,25 +93,26 @@ def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night
                 skin = np.minimum(skin, capsule(P, kn - (0, 0, 0.5), an, 1.78, 1.28))
         out.append(skin * S)
         # ---- 1 hair
-        cap = ell(P, (-0.25, 0, 35.6), (2.8, 2.52, 3.05))
-        hl = 35.35 + 0.38 * x + 0.75 * np.maximum(np.abs(y) - 1.3, 0)
-        hairc = np.maximum(cap, (hl - z) / 1.2)
+        xh, yh, zh = Ph[:, 0], Ph[:, 1], Ph[:, 2]
+        cap = ell(Ph, (-0.25, 0, 35.6), (2.8, 2.52, 3.05))
+        hl = 35.35 + 0.38 * xh + 0.75 * np.maximum(np.abs(yh) - 1.3, 0)
+        hairc = np.maximum(cap, (hl - zh) / 1.2)
         if hair_style == 'long':
-            hairc = np.minimum(hairc, smin(ell(P, (-2.0, 0, 31.0), (1.5, 2.9, 5.2)), ell(P, (-1.8, 0, 35.2), (1.5, 2.7, 2.5)), 1.0))
+            hairc = np.minimum(hairc, smin(ell(Ph, (-2.0, 0, 31.0), (1.5, 2.9, 5.2)), ell(Ph, (-1.8, 0, 35.2), (1.5, 2.7, 2.5)), 1.0))
         elif hair_style == 'bald':
             hairc = hairc + 20
         elif hair_style == 'bun':
-            hairc = np.minimum(hairc, ell(P, (-2.2, 0, 38.0), (1.4, 1.4, 1.4)))
+            hairc = np.minimum(hairc, ell(Ph, (-2.2, 0, 38.0), (1.4, 1.4, 1.4)))
         out.append(hairc * S)
         # ---- 2 upper body (jacket / shirt)
-        pel = ell(P, (0, 0, 19.8), (2.75, 3.5, 3.0))
-        waist = ell(P, (0.0, 0, 23.4), (2.45, 3.1, 3.2))
-        chest = ell(P, (0.25, 0, 28.0), (2.9, 3.85, 4.0))
+        pel = ell(Pu, (0, 0, 19.8), (2.75, 3.5, 3.0))
+        waist = ell(Pu, (0.0, 0, 23.4), (2.45, 3.1, 3.2))
+        chest = ell(Pu, (0.25, 0, 28.0), (2.9, 3.85, 4.0))
         shoulders = capsule(P, shL + (0, -0.3, 0), shR + (0, 0.3, 0), 1.7)
         torso = smin(smin(waist, chest, 2.2), shoulders, 1.6)
         torso = smin(torso, pel, 2.0)
         if jacket:
-            torso = smin(torso, ell(P, (0, 0, 18.8), (3.0, 4.35, 2.9)), 1.5)
+            torso = smin(torso, ell(Pu, (0, 0, 18.8), (3.0, 4.35, 2.9)), 1.5)
         uarm = np.minimum(capsule(P, shL, elL, 1.4, 1.22), capsule(P, shR, elR, 1.4, 1.22))
         farm = np.minimum(capsule(P, elL, wrL, 1.22, 0.95), capsule(P, elR, wrR, 1.22, 0.95))
         up = smin(torso, uarm, 1.0)
@@ -72,7 +125,7 @@ def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night
             cf = capsule(P, kn, an + (0, 0, 0.4), 1.65, 1.2)
             return smin(th, cf, 0.9)
         lowr = np.minimum(leg(hipL, kneeL, ankL), leg(hipR, kneeR, ankR))
-        lowr = smin(lowr, ell(P, (0, 0, 18.4), (2.7, 3.3, 2.4)), 1.5)
+        lowr = smin(lowr, ell(P, (0, 0, pelz), (2.7, 3.3, 2.4)), 1.5)
         if lower_skin:
             lowr = np.maximum(lowr, (z - 10.2) * 1.0)         # shorts: only above the knee
         out.append(lowr * S)
@@ -83,25 +136,25 @@ def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night
         # ---- 5 headwear / hood / extras
         extra = np.full(len(P), 1e3)
         if hat == 'hard':
-            dome = ell(P, (0, 0, 37.2), (3.3, 3.1, 2.3))
-            dome = np.maximum(dome, (36.3 - z))
-            brim = rbox(P, (1.9, 0, 36.7), (3.2, 3.2, 0.35), 0.3)
+            dome = ell(Ph, (0, 0, 37.2), (3.3, 3.1, 2.3))
+            dome = np.maximum(dome, (36.3 - zh))
+            brim = rbox(Ph, (1.9, 0, 36.7), (3.2, 3.2, 0.35), 0.3)
             extra = np.minimum(dome, brim)
         elif hat == 'cap':
-            dome = np.maximum(ell(P, (-0.1, 0, 36.6), (3.15, 2.9, 2.4)), (36.1 - z))
-            brim = rbox(P, (3.0, 0, 36.2), (1.8, 2.1, 0.3), 0.25)
+            dome = np.maximum(ell(Ph, (-0.1, 0, 36.6), (3.15, 2.9, 2.4)), (36.1 - zh))
+            brim = rbox(Ph, (3.0, 0, 36.2), (1.8, 2.1, 0.3), 0.25)
             extra = np.minimum(dome, brim)
         if hood is not None:
-            hd = smin(ell(P, (-1.0, 0, 34.8), (3.6, 3.4, 4.4)), ell(P, (-2.0, 0, 31.0), (3.0, 4.6, 2.4)), 1.5)
-            opening = ell(P, (2.5, 0, 35.0), (2.4, 2.1, 2.5))
+            hd = smin(ell(Ph, (-1.0, 0, 34.8), (3.6, 3.4, 4.4)), ell(Ph, (-2.0, 0, 31.0), (3.0, 4.6, 2.4)), 1.5)
+            opening = ell(Ph, (2.5, 0, 35.0), (2.4, 2.1, 2.5))
             hd = np.maximum(hd, -opening)
             extra = np.minimum(extra, hd)
         out.append(extra * S)
         # ---- 6 mask / face covering
         mk = np.full(len(P), 1e3)
         if mask:
-            m = ell(P, (0.7, 0, 34.2), (2.55, 2.25, 2.0))
-            mk = np.maximum(m, z - 35.15)
+            m = ell(Ph, (0.7, 0, 34.2), (2.55, 2.25, 2.0))
+            mk = np.maximum(m, zh - 35.15)
         out.append(mk * S)
         # ---- 7 prop: briefcase / duffel
         pr = np.full(len(P), 1e3)
@@ -115,10 +168,14 @@ def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night
             strap = np.minimum(strap, capsule(P, shL + (0, -0.2, 0.5), (-0.8, shY + 2.0, 19.8), 0.45))
             pr = np.minimum(pr, strap)
         out.append(pr * S)
+        if held is not None:
+            out.append(held(P, hold_j)[0] * S)
         return out
 
     def skin_mat(p, n):
         P = p / S
+        if upw is not None:
+            P = headw(upw(P))
         x, y, z = P[:, 0], P[:, 1], P[:, 2]
         base = np.full(len(P), skin_tone)
         ramp = np.full(len(P), RID[skin_ramp])
@@ -137,6 +194,8 @@ def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night
 
     def upper_mat(p, n):
         P = p / S
+        if upw is not None:
+            P = upw(P)
         x, y, z = P[:, 0], P[:, 1], P[:, 2]
         ramp = np.full(len(P), RID[upper[0]]); base = np.full(len(P), upper[1])
         if tie or shirt:
@@ -196,7 +255,51 @@ def human(skin_tone=2.6, upper=('lav', 1.6), lower=('night', 1.8), shoes=('night
 
     mats = [skin_mat, hair_mat, upper_mat, lower_mat, solid(shoes[0], shoes[1]), extra_mat, solid('asph', 1.1), prop_mat]
     bbox = (-6, 8, -10, 10, 0, 40)
+    if held is not None:
+        mats.append(held(np.zeros((1, 3)), hold_j)[1])     # (ramp, base, shine) or callable(p, n)
+    if hold_j is not None:
+        bbox = (-12, 17, -13, 13, 0, 50)
     return Model(parts, mats, bbox)
+
+
+def _knee(hip, ank, thigh=8.609, shin=8.110):
+    """Two-bone knee in the leg's x-z plane, bending forward (+x)."""
+    d = np.array([ank[0] - hip[0], ank[2] - hip[2]])
+    n = max(float(np.hypot(*d)), 1e-6)
+    if n >= thigh + shin - 1e-3:
+        t = thigh / (thigh + shin)
+        return hip + (ank - hip) * t
+    a = (thigh * thigh - shin * shin + n * n) / (2 * n)
+    h = np.sqrt(max(thigh * thigh - a * a, 0.0))
+    u = d / n
+    v = np.array([-u[1], u[0]])          # perpendicular; pick the forward one
+    if v[0] < 0:
+        v = -v
+    k = np.array([hip[0], hip[2]]) + u * a + v * h
+    return np.array([k[0], (hip[1] + ank[1]) / 2, k[1]])
+
+
+def _bend(th, crouch, hv):
+    """Warps for a posed body: torso frame (bent forward by th at the hips, lowered by crouch) and head nod."""
+    def body(v):
+        v = np.asarray(v, float)
+        c, s = np.cos(th), np.sin(th)
+        return np.array([v[0] * c + v[2] * s, v[1], -v[0] * s + v[2] * c])
+
+    def upw(P):
+        r = P - (0.0, 0.0, 19.2 - crouch)
+        t = np.clip((r[:, 2] + 2.0) / 5.0, 0.0, 1.0)
+        a = -th * t * t * (3 - 2 * t)
+        c, s = np.cos(a), np.sin(a)
+        return np.stack([r[:, 0] * c + r[:, 2] * s, r[:, 1], -r[:, 0] * s + r[:, 2] * c + 19.2], 1)
+
+    def headw(P):
+        if not hv.any():
+            return P
+        t = np.clip((P[:, 2] - 31.0) / 2.5, 0.0, 1.0)
+        return P - hv[None, :] * (t * t * (3 - 2 * t))[:, None]
+
+    return upw, headw, body
 
 
 # ------------------------------------------------------------------ costumes

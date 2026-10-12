@@ -2,6 +2,7 @@
 // opens it and pauses the world. Drawing lives in ui/menus.ts; this scene handles input, storage and files.
 
 import Phaser from 'phaser';
+import { dimAlpha, Presence, transition } from '../ui/anim/transition';
 import { UI_BASE_H, UI_BASE_W } from '../config/constants';
 import { exportName, SLOTS, AUTO_SLOTS, validate, type SaveFile, type SlotId } from '../core/save';
 import { saveStore, type SaveStore } from '../core/storage';
@@ -32,6 +33,7 @@ export function saveSummary(f: SaveFile): string {
 }
 
 export class MenuScene extends Phaser.Scene {
+  private presence = new Presence();
   private mode: Mode = 'main';
   private selected = 0;
   private message: string | null = null;
@@ -63,6 +65,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.presence = new Presence();
     hook().minigame = this.info ? 'arrest' : 'menu';
     this.image = this.add.image(0, 0, '__WHITE').setOrigin(0, 0);
     this.layout();
@@ -305,11 +308,18 @@ export class MenuScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------- drawing
 
+  /** Redraws only while the menu unfolds; after that it redraws on input. */
+  update(): void {
+    if (this.presence.t >= 1) return;
+    this.presence.update(Math.min(0.1, this.game.loop.rawDelta / 1000));
+    this.redraw();
+  }
+
   private redraw(): void {
     const s = this.surface;
     if (!s || !this.tex) return;
     clear(s);
-    blend(s, 0, s.height, 0, s.width, [20, 14, 24], 0.45);
+    blend(s, 0, s.height, 0, s.width, [20, 14, 24], dimAlpha(0.45, this.presence.t));
     const { x, y } = this.pos;
     const footer =
       this.store?.kind === 'none'
@@ -318,6 +328,7 @@ export class MenuScene extends Phaser.Scene {
           ? null
           : 'SAVES LIVE IN THIS BROWSER ONLY. EXPORT TO BACK UP.';
     drawMenu(s, x, y, this.title, 'GREYHAVEN', this.rows(), this.selected, footer, this.message);
+    transition(s, { x, y, ...MENU_PANEL }, this.presence.t);
     const ctx = this.tex.getContext();
     const img = ctx.createImageData(s.width, s.height);
     img.data.set(s.data);

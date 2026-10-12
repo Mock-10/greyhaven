@@ -1,0 +1,621 @@
+{
+ "image": "fx.png",
+ "cell": [
+  0,
+  0
+ ],
+ "note": "Particle sprites for src/fx (art/source/fx_particles.py). Frame keys <kind>/<frame> or skid/<DIR>; each frame has its own rect and anchor. Faded by dithering, never smooth alpha, except the rain streaks (drawn at ~45%).",
+ "anims": {
+  "dust": {
+   "frames": 6,
+   "note": "footsteps, sprint starts and wheels on dirt; grows and thins (anchor: centre)"
+  },
+  "exhaust": {
+   "frames": 6,
+   "note": "tailpipe puff; drift up and back"
+  },
+  "tyre": {
+   "frames": 7,
+   "note": "tyre smoke from hard braking and skids"
+  },
+  "spark": {
+   "frames": 3,
+   "note": "hot point that cools (hotwire, metal hits, scrapes)"
+  },
+  "glint": {
+   "frames": 4,
+   "note": "cash sparkle; valuables only (gold)"
+  },
+  "chip": {
+   "frames": 4,
+   "note": "tumbling glass/plastic shard (crashes); cycle the frames while it flies"
+  },
+  "leaf": {
+   "frames": 4,
+   "note": "falling leaf, cycle while it drifts"
+  },
+  "leaf_dry": {
+   "frames": 4,
+   "note": "dry leaf"
+  },
+  "paper": {
+   "frames": 4,
+   "note": "paper scrap flipping"
+  },
+  "splash": {
+   "frames": 4,
+   "note": "raindrop hitting the ground (anchor: impact point)"
+  },
+  "streak": {
+   "frames": 2,
+   "note": "rain streak variants (anchor: bottom end); draw at ~45% opacity"
+  },
+  "skid": {
+   "frames": 1,
+   "per_direction": true,
+   "note": "tyre-mark decal on the ground, fades slowly"
+  }
+ },
+ "frames": {
+  "chip/0": {
+   "x": 120,
+   "y": 80,
+   "w": 3,
+   "h": 3,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "chip/1": {
+   "x": 124,
+   "y": 80,
+   "w": 3,
+   "h": 3,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "chip/2": {
+   "x": 0,
+   "y": 90,
+   "w": 3,
+   "h": 3,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "chip/3": {
+   "x": 4,
+   "y": 90,
+   "w": 3,
+   "h": 3,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "dust/0": {
+   "x": 87,
+   "y": 25,
+   "w": 16,
+   "h": 14,
+   "anchor": [
+    8,
+    7
+   ]
+  },
+  "dust/1": {
+   "x": 104,
+   "y": 25,
+   "w": 16,
+   "h": 14,
+   "anchor": [
+    8,
+    7
+   ]
+  },
+  "dust/2": {
+   "x": 0,
+   "y": 50,
+   "w": 16,
+   "h": 14,
+   "anchor": [
+    8,
+    7
+   ]
+  },
+  "dust/3": {
+   "x": 17,
+   "y": 50,
+   "w": 16,
+   "h": 14,
+   "anchor": [
+    8,
+    7
+   ]
+  },
+  "dust/4": {
+   "x": 34,
+   "y": 50,
+   "w": 16,
+   "h": 14,
+   "anchor": [
+    8,
+    7
+   ]
+  },
+  "dust/5": {
+   "x": 51,
+   "y": 50,
+   "w": 16,
+   "h": 14,
+   "anchor": [
+    8,
+    7
+   ]
+  },
+  "exhaust/0": {
+   "x": 68,
+   "y": 50,
+   "w": 14,
+   "h": 14,
+   "anchor": [
+    7,
+    7
+   ]
+  },
+  "exhaust/1": {
+   "x": 83,
+   "y": 50,
+   "w": 14,
+   "h": 14,
+   "anchor": [
+    7,
+    7
+   ]
+  },
+  "exhaust/2": {
+   "x": 98,
+   "y": 50,
+   "w": 14,
+   "h": 14,
+   "anchor": [
+    7,
+    7
+   ]
+  },
+  "exhaust/3": {
+   "x": 113,
+   "y": 50,
+   "w": 14,
+   "h": 14,
+   "anchor": [
+    7,
+    7
+   ]
+  },
+  "exhaust/4": {
+   "x": 0,
+   "y": 65,
+   "w": 14,
+   "h": 14,
+   "anchor": [
+    7,
+    7
+   ]
+  },
+  "exhaust/5": {
+   "x": 15,
+   "y": 65,
+   "w": 14,
+   "h": 14,
+   "anchor": [
+    7,
+    7
+   ]
+  },
+  "glint/0": {
+   "x": 0,
+   "y": 80,
+   "w": 9,
+   "h": 9,
+   "anchor": [
+    4,
+    4
+   ]
+  },
+  "glint/1": {
+   "x": 10,
+   "y": 80,
+   "w": 9,
+   "h": 9,
+   "anchor": [
+    4,
+    4
+   ]
+  },
+  "glint/2": {
+   "x": 20,
+   "y": 80,
+   "w": 9,
+   "h": 9,
+   "anchor": [
+    4,
+    4
+   ]
+  },
+  "glint/3": {
+   "x": 30,
+   "y": 80,
+   "w": 9,
+   "h": 9,
+   "anchor": [
+    4,
+    4
+   ]
+  },
+  "leaf/0": {
+   "x": 23,
+   "y": 90,
+   "w": 3,
+   "h": 2,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "leaf/1": {
+   "x": 8,
+   "y": 90,
+   "w": 2,
+   "h": 3,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "leaf/2": {
+   "x": 27,
+   "y": 90,
+   "w": 3,
+   "h": 2,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "leaf/3": {
+   "x": 11,
+   "y": 90,
+   "w": 2,
+   "h": 3,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "leaf_dry/0": {
+   "x": 31,
+   "y": 90,
+   "w": 3,
+   "h": 2,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "leaf_dry/1": {
+   "x": 14,
+   "y": 90,
+   "w": 2,
+   "h": 3,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "leaf_dry/2": {
+   "x": 35,
+   "y": 90,
+   "w": 3,
+   "h": 2,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "leaf_dry/3": {
+   "x": 17,
+   "y": 90,
+   "w": 2,
+   "h": 3,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "paper/0": {
+   "x": 39,
+   "y": 90,
+   "w": 3,
+   "h": 2,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "paper/1": {
+   "x": 45,
+   "y": 90,
+   "w": 3,
+   "h": 1,
+   "anchor": [
+    1,
+    0
+   ]
+  },
+  "paper/2": {
+   "x": 20,
+   "y": 90,
+   "w": 2,
+   "h": 3,
+   "anchor": [
+    1,
+    1
+   ]
+  },
+  "paper/3": {
+   "x": 43,
+   "y": 90,
+   "w": 1,
+   "h": 2,
+   "anchor": [
+    0,
+    1
+   ]
+  },
+  "skid/E": {
+   "x": 30,
+   "y": 65,
+   "w": 11,
+   "h": 11,
+   "anchor": [
+    5,
+    5
+   ]
+  },
+  "skid/N": {
+   "x": 42,
+   "y": 65,
+   "w": 11,
+   "h": 11,
+   "anchor": [
+    5,
+    5
+   ]
+  },
+  "skid/NE": {
+   "x": 54,
+   "y": 65,
+   "w": 11,
+   "h": 11,
+   "anchor": [
+    5,
+    5
+   ]
+  },
+  "skid/NW": {
+   "x": 66,
+   "y": 65,
+   "w": 11,
+   "h": 11,
+   "anchor": [
+    5,
+    5
+   ]
+  },
+  "skid/S": {
+   "x": 78,
+   "y": 65,
+   "w": 11,
+   "h": 11,
+   "anchor": [
+    5,
+    5
+   ]
+  },
+  "skid/SE": {
+   "x": 90,
+   "y": 65,
+   "w": 11,
+   "h": 11,
+   "anchor": [
+    5,
+    5
+   ]
+  },
+  "skid/SW": {
+   "x": 102,
+   "y": 65,
+   "w": 11,
+   "h": 11,
+   "anchor": [
+    5,
+    5
+   ]
+  },
+  "skid/W": {
+   "x": 114,
+   "y": 65,
+   "w": 11,
+   "h": 11,
+   "anchor": [
+    5,
+    5
+   ]
+  },
+  "spark/0": {
+   "x": 99,
+   "y": 80,
+   "w": 5,
+   "h": 5,
+   "anchor": [
+    2,
+    2
+   ]
+  },
+  "spark/1": {
+   "x": 105,
+   "y": 80,
+   "w": 5,
+   "h": 5,
+   "anchor": [
+    2,
+    2
+   ]
+  },
+  "spark/2": {
+   "x": 111,
+   "y": 80,
+   "w": 5,
+   "h": 5,
+   "anchor": [
+    2,
+    2
+   ]
+  },
+  "splash/0": {
+   "x": 40,
+   "y": 80,
+   "w": 13,
+   "h": 9,
+   "anchor": [
+    6,
+    6
+   ]
+  },
+  "splash/1": {
+   "x": 54,
+   "y": 80,
+   "w": 13,
+   "h": 9,
+   "anchor": [
+    6,
+    6
+   ]
+  },
+  "splash/2": {
+   "x": 68,
+   "y": 80,
+   "w": 13,
+   "h": 9,
+   "anchor": [
+    6,
+    6
+   ]
+  },
+  "splash/3": {
+   "x": 82,
+   "y": 80,
+   "w": 13,
+   "h": 9,
+   "anchor": [
+    6,
+    6
+   ]
+  },
+  "streak/0": {
+   "x": 117,
+   "y": 80,
+   "w": 2,
+   "h": 4,
+   "anchor": [
+    0,
+    3
+   ]
+  },
+  "streak/1": {
+   "x": 96,
+   "y": 80,
+   "w": 2,
+   "h": 6,
+   "anchor": [
+    0,
+    5
+   ]
+  },
+  "tyre/0": {
+   "x": 0,
+   "y": 0,
+   "w": 28,
+   "h": 24,
+   "anchor": [
+    14,
+    12
+   ]
+  },
+  "tyre/1": {
+   "x": 29,
+   "y": 0,
+   "w": 28,
+   "h": 24,
+   "anchor": [
+    14,
+    12
+   ]
+  },
+  "tyre/2": {
+   "x": 58,
+   "y": 0,
+   "w": 28,
+   "h": 24,
+   "anchor": [
+    14,
+    12
+   ]
+  },
+  "tyre/3": {
+   "x": 87,
+   "y": 0,
+   "w": 28,
+   "h": 24,
+   "anchor": [
+    14,
+    12
+   ]
+  },
+  "tyre/4": {
+   "x": 0,
+   "y": 25,
+   "w": 28,
+   "h": 24,
+   "anchor": [
+    14,
+    12
+   ]
+  },
+  "tyre/5": {
+   "x": 29,
+   "y": 25,
+   "w": 28,
+   "h": 24,
+   "anchor": [
+    14,
+    12
+   ]
+  },
+  "tyre/6": {
+   "x": 58,
+   "y": 25,
+   "w": 28,
+   "h": 24,
+   "anchor": [
+    14,
+    12
+   ]
+  }
+ }
+}
