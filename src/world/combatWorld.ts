@@ -351,7 +351,7 @@ export class CombatWorld {
             this.tracer(from, tr.at);
             if (tr.hit) {
               this.bloodDrop(p.x, p.y);
-              const r = hurt(this.host.vitals(), this.host.combat(), shot.damage);
+              const r = hurt(this.host.vitals(), this.host.combat(), shot.damage * W().copDamageShare);
               if (r.down) {
                 this.host.playerDown();
                 return;

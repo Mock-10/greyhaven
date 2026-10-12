@@ -625,6 +625,8 @@ export class WorldScene extends Phaser.Scene {
   /** This chase's once-only moves (bribe, outfit change...): reset when the stars clear (systems/response.ts). */
   private chase: ChaseState = emptyChase();
   private lastStars = 0;
+  /** The player was a known face when this chase began. */
+  private knownAtChase = false;
   private reported = new Set<number>();
   /** A car alarm about to reach the police. */
   private alarm: { t: number; at: { x: number; y: number } } | null = null;
@@ -887,7 +889,10 @@ export class WorldScene extends Phaser.Scene {
     }
     // an officer who sees a bare face during a chase puts it on file (docs/05)
     if (seen && wanted.stars > 0) sighted(this.state.heat, 'police', this.disguise(), this.state.minutes);
-    if (seen && wanted.stars > 0)
+    // a face already on file when the chase began, seen with a visible weapon: +1★ (docs/05)
+    if (this.lastStars === 0 && wanted.stars > 0)
+      this.knownAtChase = knownFace(this.state.heat, this.state.minutes);
+    if (seen && wanted.stars > 0 && this.knownAtChase)
       policeSighting(
         this.chase,
         wanted,

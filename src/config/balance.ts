@@ -624,7 +624,10 @@ export const BALANCE = {
     /** Gunshots are heard this far (tiles): witnesses call it in. */
     gunfireHearTiles: 16,
     /** Seconds between an officer's shots (min, max). */
-    copShootEvery: [1.1, 1.9] as readonly [number, number],
+    copShootEvery: [1.6, 2.8] as readonly [number, number],
+    /** Police rounds do this share of their weapon's damage to the player (assumed, so a firefight lasts long
+     *  enough to run or fight back; armor still helps). */
+    copDamageShare: 0.45,
     /** The barrel sits this far in front of the shooter and this high (world units). */
     muzzleReach: 12,
     handHeight: 22,
