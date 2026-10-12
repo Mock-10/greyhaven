@@ -16,7 +16,7 @@ Sprites:
   items     furniture and decoration, sorted by x + y + z_bias like compose()
 Characters in the drafts become NPC spots (costume, facing, position); the game draws and schedules them.
 
-Usage: python3 export_interiors.py [room ...]   (default: every Phase 1 interior)
+Usage: python3 export_interiors.py [room ...]   (default: every interior; the M7 job sites come from rooms_jobs.py)
 """
 import os, sys, json, warnings
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -32,7 +32,8 @@ from scene import _hull
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', 'interiors')
-ROOMS = ['apartment', 'store', 'tower_lobby', 'office_floor', 'bar', 'hardware', 'clothing', 'dealer']
+ROOMS = ['apartment', 'store', 'tower_lobby', 'office_floor', 'bar', 'hardware', 'clothing', 'dealer', 'garage', 'depot',
+         'site_trailer']
 
 
 def capture(room):
