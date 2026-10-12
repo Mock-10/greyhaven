@@ -1,6 +1,12 @@
-// The 3 × 5 pixel font (art/source/pixfont.py): caps, digits and punctuation. Glyphs are stored as
-// 15-character bit strings, row by row. Narrow punctuation is trimmed to its inked columns.
+// The pixel fonts. `body` is the 5 × 7 font (art/source/pixfont7.py → font7.json; UI redesign 2026-10-12: larger
+// text), used for everything people read. `small` is the original 3 × 5 font (art/source/pixfont.py), kept for tiny
+// captions such as radar labels. Glyphs are bit strings, row by row; one blank column separates glyphs.
 
+import F7 from './font7.json';
+
+export type FontId = 'body' | 'small';
+
+/** The 3 × 5 font: 15-character bit strings. */
 export const GLYPHS: Readonly<Record<string, string>> = {
   A: '010101111101101', B: '110101110101110', C: '011100100100011', D: '110101101101110',
   E: '111100110100111', F: '111100110100100', G: '011100101101011', H: '101101111101101',
@@ -24,8 +30,35 @@ export const GLYPHS: Readonly<Record<string, string>> = {
 const TRIMMED = new Set(['.', ',', ':', "'", '!']);
 export const GLYPH_H = 5;
 
-/** Glyph columns as a 5-row bit matrix, with narrow punctuation trimmed (pixfont.text_px). */
-export function glyph(ch: string): boolean[][] {
+const BODY = F7 as { height: number; space: number; digits: string; glyphs: Record<string, string> };
+const BODY_W = 5;
+
+/** Every character the body font draws (besides the space). */
+export const BODY_CHARS: readonly string[] = Object.keys(BODY.glyphs);
+
+export function fontHeight(font: FontId = 'body'): number {
+  return font === 'body' ? BODY.height : GLYPH_H;
+}
+
+/** A body (5 × 7) glyph: proportional for letters and punctuation, full width for digits (pixfont7.glyph). */
+function glyph7(ch: string): boolean[][] {
+  const H = BODY.height;
+  if (ch === ' ') return Array.from({ length: H }, () => Array<boolean>(BODY.space).fill(false));
+  const bits = BODY.glyphs[ch.toUpperCase()] ?? (BODY.glyphs['?'] as string);
+  const rows = Array.from({ length: H }, (_, r) =>
+    Array.from({ length: BODY_W }, (_, c) => bits[r * BODY_W + c] === '#'),
+  );
+  if (BODY.digits.includes(ch)) return rows;
+  const used = [...Array(BODY_W).keys()].filter((c) => rows.some((row) => row[c]));
+  if (!used.length) return rows;
+  const lo = Math.min(...used);
+  const hi = Math.max(...used);
+  return rows.map((row) => row.slice(lo, hi + 1));
+}
+
+/** Glyph columns as a bit matrix (the small font trims narrow punctuation, like pixfont.text_px). */
+export function glyph(ch: string, font: FontId = 'body'): boolean[][] {
+  if (font === 'body') return glyph7(ch);
   const bits = GLYPHS[ch.toUpperCase()] ?? (GLYPHS['?'] as string);
   let rows = [0, 1, 2, 3, 4].map((r) => [0, 1, 2].map((c) => bits[r * 3 + c] === '1'));
   if (TRIMMED.has(ch)) {
@@ -37,17 +70,16 @@ export function glyph(ch: string): boolean[][] {
   return rows;
 }
 
-/** Text as a bit matrix, glyphs separated by one blank column (pixfont.text_px). */
-export function textBits(s: string): boolean[][] {
-  const rows: boolean[][] = [[], [], [], [], []];
+/** Text as a bit matrix, glyphs separated by one blank column. */
+export function textBits(s: string, font: FontId = 'body'): boolean[][] {
+  const rows: boolean[][] = Array.from({ length: fontHeight(font) }, () => []);
   [...s].forEach((ch, i) => {
     if (i > 0) rows.forEach((r) => r.push(false));
-    const g = glyph(ch);
-    g.forEach((r, y) => (rows[y] as boolean[]).push(...r));
+    glyph(ch, font).forEach((r, y) => (rows[y] as boolean[]).push(...r));
   });
   return rows;
 }
 
-export function textWidth(s: string, scale = 1): number {
-  return (textBits(s)[0] as boolean[]).length * scale;
+export function textWidth(s: string, scale = 1, font: FontId = 'body'): number {
+  return (textBits(s, font)[0] as boolean[]).length * scale;
 }

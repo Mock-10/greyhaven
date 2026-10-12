@@ -52,7 +52,7 @@ import { depthAmong, depthRange, obbFirst, staticOrder, type Box, type Obb } fro
 import { DOWNTOWN } from '../maps/downtown';
 import { tileSeed as referenceSeed, TEST_MAP } from '../maps/testMap';
 import type { Door, MapData, Placement } from '../maps/types';
-import { advance, calendar, darkness, sleepUntil, tintAt } from '../systems/clock';
+import { advance, calendar, darkness, formatClock, sleepUntil, tintAt } from '../systems/clock';
 import {
   arrestEffects,
   clockIn,
@@ -659,6 +659,7 @@ export class WorldScene extends Phaser.Scene {
       name,
       root: () => root(ctx),
       onChange: () => this.syncMoneyHook(),
+      clock: () => formatClock(calendar(this.state.minutes).minute),
     };
     this.prompt?.setVisible(false);
     hook().minigame = name;
@@ -2232,7 +2233,8 @@ export class WorldScene extends Phaser.Scene {
     let best: { id: string; d: number } | null = null;
     for (const u of this.usables) {
       if (u.hidden) continue;
-      const zone = u.id.startsWith('zone:');
+      // from a car only Marlo's yard counts as a zone (the shelter is for people on foot)
+      const zone = u.id === 'zone:marlo_spot';
       const reach = u.id.startsWith('pump') ? V.pumpReach : zone ? 0 : -1;
       if (reach < 0) continue;
       const d = zone ? 0 : distToCar(car.v, u.x, u.y);
@@ -2345,6 +2347,7 @@ export class WorldScene extends Phaser.Scene {
       tier: 0,
       tool: this.pickTool,
       label,
+      uses: this.state.inventory.lockpicks,
     });
   }
 

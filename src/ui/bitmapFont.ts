@@ -1,16 +1,17 @@
-// Registers the 3 × 5 pixel font as a Phaser bitmap font. Glyphs are white so `setTint` gives the
-// exact palette colour. One blank column separates glyphs, like pixfont.text_px.
+// Registers the 5 × 7 body pixel font (ui/pixelFont.ts, UI redesign 2026-10-12) as a Phaser bitmap font. Glyphs are
+// white so `setTint` gives the exact palette colour. One blank column separates glyphs, like pixfont7.text_px.
 
 import type Phaser from 'phaser';
-import { GLYPHS, GLYPH_H, glyph } from './pixelFont';
+import { BODY_CHARS, fontHeight, glyph } from './pixelFont';
 
 export const PIXEL_FONT = 'pixel';
-const LINE_H = GLYPH_H + 2;
+const GLYPH_H = fontHeight('body');
+const LINE_H = GLYPH_H + 3;
 
 export function registerPixelFont(scene: Phaser.Scene): void {
   if (scene.cache.bitmapFont.exists(PIXEL_FONT)) return;
-  const chars = Object.keys(GLYPHS);
-  const cellW = 4;
+  const chars = [' ', ...BODY_CHARS];
+  const cellW = 6;
   const canvas = document.createElement('canvas');
   canvas.width = chars.length * cellW;
   canvas.height = GLYPH_H;

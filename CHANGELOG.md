@@ -22,13 +22,17 @@ Track each phase from docs/15_roadmap.md here. Tick a phase only when its "Done 
    - the system docs for the next milestone: 01 (streets, the two-lanes-each-way rule), 02 (shops), 03 (jobs), 08 (vehicles, the car dealer), 11 (creator, phone), 18 (interiors: the questions and drafts), 13 (art);
    - `art/STYLE_GUIDE.md` before any art.
 2. **Check where the code is.** Run `git fetch origin`, then look at the open PRs:
-   - **Milestone 5 (money and phone)** is PR #10 from `claude/p2-money-phone`. If it is still open and its CI is green, merge it (autopilot). If CI is red, fix it first.
+   - **Milestone 5 (money and phone)** was merged in PR #10 on 2026-10-12.
+   - **The UI redesign** (larger text, more pictures; your request of 2026-10-12) is on `claude/ui-redesign`. If its PR is still open and CI is green, merge it (autopilot). If CI is red, fix it first.
    - **Milestone 6 (map growth, shops, creator)** was started on `claude/p2-map-shops`, with **unfinished, untested** work committed as "WIP Phase 2 milestone 6". It holds:
      - `art/source/suburb.py`: houses, the Swiftish Couriers depot, the Torque & Sons garage, the dealer cabin, Ashby Timber's site trailer, and woods props;
      - multi-lane road support started in `art/source/downtown_map.py`;
      - `src/maps/types.ts`: lanes with stop lines, and a separate `roads` centre-line list;
      - `src/systems/traffic.ts`: a light phase per stop line, so lanes can turn.
-     Continue on that branch: merge `main` into it once PR #10 is in, then run `npx tsc --noEmit`, `npm test` and the map pipeline (`downtown_map.py --no-render` → `check_city.py` → `pack_city.py`) to see where it stands.
+   - **To continue M6:**
+     - Merge `main` into that branch once the UI redesign is in.
+     - New UI must follow the redesign: the 5 × 7 font, pictures from `art/source/ui_icons.py`, and the sizes in docs/11.
+     - Then run `npx tsc --noEmit`, `npm test` and the map pipeline (`downtown_map.py --no-render` → `check_city.py` → `pack_city.py`) to see where it stands.
 3. **Set up the container** before npm, preview or Playwright:
    - `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1`
    - `npm install`
@@ -61,6 +65,51 @@ Status key: [x] done and playable · [~] partly done (what's left is said) · [ 
 - [x] Trunk looting (brought forward). (M5)
 - [ ] Guided first day (no bus or taxi step; trunk looting in step 5).
 - [ ] Econ sim re-run, tests, screenshots, notes, PR.
+
+### UI redesign: larger text and more pictures (your request, 2026-10-12)
+**What changed:**
+- **Text:** a new 5 × 7 pixel font (`art/source/pixfont7.py` → `src/ui/font7.json`) for everything you read: the HUD, prompts in the world, panels, the phone, menus and the title. The old 3 × 5 font is left only for tiny captions.
+- **Pictures:** `art/source/ui_icons.py` renders 35 small 3D models with the game's own renderer, so they match the world art. The atlas is `art/ui_icons.png`; a contact sheet is in `art/drafts/hud/ui_icons_sheet.png`.
+  - item pictures: shop goods, tools, trunk loot;
+  - phone app pictures, plus an axe and a parcel for the jobs;
+  - HUD badges;
+  - contact portraits.
+- **HUD:**
+  - bigger panels with a heart, a vest, bills, a sun or moon, and pump and wrench pictures;
+  - stars at 2×;
+  - a bigger radar;
+  - messages with the sender's portrait and up to two lines;
+  - bigger key hints, which move up a row when they would hit the objective (the driving hints).
+- **The phone (P):** drawn as a handset.
+  - The home screen is a grid of app tiles with badges: unread messages, and "!" when rent is late. A BAG app is new.
+  - Every list has pictures. Contacts open a card with the person's portrait.
+  - The job board shows a picture for each job.
+- **ATM:** a grid of cash buttons. **Bag (I):** a grid of item tiles with counts. **Shop:** picture cards.
+- **Trunk search:** the loot shows as pictures.
+- **Lockpick:** shows the tool's picture and the uses left.
+- **Minigames and the pause menu:** bigger panels.
+
+**How to try it:**
+- Walk around and read the HUD. Press **P** for the phone and **I** for the bag.
+- Use the plaza ATM and the Open Most Hours counter.
+- Pick a car lock, or loot a trunk.
+- Screenshots are in `docs/screenshots/ui_redesign/`. Regenerate them with `npm run build && node tools/ui_shots.ts`.
+
+**Fixes along the way:**
+- While driving, the shelter's SLEEP prompt was targeted from anywhere on the map (a milestone 5 bug); from a car, only Marlo's spot counts now.
+- The lockpick panel's TOOL line showed the target ("CAR DOOR") instead of the tool.
+- The HUD's message slide now runs on real frame time.
+
+**Assumptions (please review):**
+- The redesign keeps the palette, the plate style, the gold rules and the screen positions of the hud.py mockups; only the sizes, the font and the pictures changed.
+- At 720p the open phone covers the cash panel (the world is paused while it's open).
+- Contact portraits are rendered from the person models, so faces are small and simple at 32 px.
+
+**Art debt:** none. All pictures come from `art/source/ui_icons.py`. The hand-drawn pixel item icons were removed.
+
+**Known issues:**
+- The title, the phone and the minigame panels assume the UI scale of the HUD: 2× at 720p, 3× at 1080p.
+- At 640 × 360 UI pixels, the larger HUD leaves less of the world uncovered on small windows.
 
 ### Milestone 5: money and the phone (2026-10-11)
 **How to try** (`https://mock-10.github.io/greyhaven/` once the PR is merged):

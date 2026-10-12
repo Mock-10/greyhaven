@@ -19,7 +19,7 @@ At the start of every session:
 4. `art/STYLE_GUIDE.md` before any visual work (plus `art/reference/README.md` for the palette references and close-ups).
 5. `docs/16_open_questions.md`: things you must **ask about**, never assume.
 6. Before building any **interior**, follow `docs/18_interiors.md`: ask the user its question list, render a draft with `art/source/interiors.py`, and get approval before implementing it.
-7. Before building any **HUD or UI**, open the mockups in `art/drafts/hud/` and match them.
+7. Before building any **HUD or UI**, open the mockups in `art/drafts/hud/` and match them, with the sizes, the 5 × 7 font and the pictures of the UI redesign (docs/11, 2026-10-12: larger text, more images).
 
 **The docs are the source of truth.** If code and docs disagree, the docs win, unless the user says otherwise. Then update the docs in the same change.
 

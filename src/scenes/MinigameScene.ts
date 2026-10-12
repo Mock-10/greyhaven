@@ -45,7 +45,14 @@ import {
 
 export type MinigameRequest =
   | { kind: 'filing' | 'dataEntry'; seed: number; task: string }
-  | { kind: 'lockpick'; seed: number; tier: number; tool: 'none' | 'basic' | 'pro'; label: string }
+  | {
+      kind: 'lockpick';
+      seed: number;
+      tier: number;
+      tool: 'none' | 'basic' | 'pro';
+      label: string;
+      uses?: number;
+    }
   | { kind: 'hotwire'; seed: number; bonusSeconds: number }
   | { kind: 'search'; seed: number; label: string; items: LootItem[] }
   | { kind: 'moneyCount'; label: string }
@@ -257,10 +264,10 @@ export class MinigameScene extends Phaser.Scene {
     } else if (g instanceof HotwireGame) {
       const L = hotwireLayout(x, y, g.left.length);
       L.left.forEach((pt, k) => {
-        if (this.inRect(q, { x: x + 8, y: pt.y - 3, w: 34, h: 12 })) g.pickLeft(k);
+        if (this.inRect(q, { x: x + 8, y: pt.y - 4, w: 48, h: 16 })) g.pickLeft(k);
       });
       L.right.forEach((pt, k) => {
-        if (this.inRect(q, { x: pt.x - 2, y: pt.y - 3, w: 32, h: 12 })) g.pickRight(k);
+        if (this.inRect(q, { x: pt.x - 2, y: pt.y - 4, w: 42, h: 16 })) g.pickRight(k);
       });
     } else if (g instanceof SkillCheckGame) g.hit();
     else if (g instanceof MoneyCountGame) g.count();
@@ -371,7 +378,7 @@ export class MinigameScene extends Phaser.Scene {
       drawFiling(s, x, y, g, req.task, d ? { x: d.x - d.dx, y: d.y - d.dy } : null);
     } else if (req.kind === 'dataEntry' && g instanceof DataEntryGame) drawEntry(s, x, y, g, req.task);
     else if (req.kind === 'lockpick' && g instanceof SkillCheckGame)
-      drawLockpick(s, x, y, g, req.tier, req.label);
+      drawLockpick(s, x, y, g, req.tier, req.label, req.tool, req.uses ?? 0);
     else if (req.kind === 'hotwire' && g instanceof HotwireGame) drawHotwire(s, x, y, g);
     else if (req.kind === 'moneyCount' && g instanceof MoneyCountGame) drawMoneyCount(s, x, y, g, req.label);
     else if (req.kind === 'duffel' && g instanceof DuffelGame) {

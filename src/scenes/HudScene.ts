@@ -16,6 +16,7 @@ import {
   objective,
   plate,
   radar,
+  senderIcon,
   stars,
   text,
   textWidthPx,
@@ -23,12 +24,14 @@ import {
   topLeft,
   topRight,
   vehiclePanel,
+  VITALS,
   type Surface,
 } from '../ui/hudDraw';
 import type { HudSnapshot } from './WorldScene';
 import { groundSampler } from '../maps/groundQuery';
 import { money } from './hudFormat';
 import type { Params } from '../debug/params';
+import { SENDER_ICON } from '../data/senders';
 
 interface Stats {
   fps: number;
@@ -106,8 +109,9 @@ export class HudScene extends Phaser.Scene {
     }
   }
 
-  update(_t: number, deltaMs: number): void {
-    const dt = deltaMs / 1000;
+  update(): void {
+    // raw frame time, like the world: Phaser's smoothed delta crawls in slow (headless) frames
+    const dt = Math.min(0.1, this.game.loop.rawDelta / 1000);
     if (this.toastMsg) {
       this.toastMsg.t += dt;
       const next = this.toastQueue[0];
@@ -140,7 +144,7 @@ export class HudScene extends Phaser.Scene {
       stars(
         s,
         Math.floor(W / 2),
-        6,
+        5,
         snap.stars,
         snap.starsFlash && Math.floor(this.time.now / 250) % 2 === 0,
       );
@@ -151,7 +155,7 @@ export class HudScene extends Phaser.Scene {
         dirty: money(snap.money.dirty),
         night: darkness(cal.minute) > 0.5,
       });
-      radar(s, 46, H - 46, BALANCE.hud.radarRadius, BALANCE.hud.radarScale, {
+      radar(s, 52, H - 52, BALANCE.hud.radarRadius, BALANCE.hud.radarScale, {
         px: snap.px,
         py: snap.py,
         heading: snap.heading,
@@ -169,8 +173,8 @@ export class HudScene extends Phaser.Scene {
         ],
         search: snap.search,
       });
-      objective(s, Math.floor(W / 2), H - 20, snap.objective || this.objectiveText);
-      if (snap.vehicle) vehiclePanel(s, 6, 46, snap.vehicle);
+      objective(s, Math.floor(W / 2), H - 24, snap.objective || this.objectiveText);
+      if (snap.vehicle) vehiclePanel(s, 6, 6 + VITALS.h + 4, snap.vehicle);
       const hints: [string, string][] = snap.surrender
         ? [['Y', 'SURRENDER']]
         : snap.vehicle
@@ -191,24 +195,29 @@ export class HudScene extends Phaser.Scene {
                 ['SHIFT', 'SPRINT'],
               ];
       // a plate behind the hints, so they read over light pavement (handover known issue)
-      const hw = hintKeysWidth(hints) - 8;
-      plate(s, W - 10 - hw, H - 23, hw + 8, 15, C.LAVLT2, 0.82);
-      hintKeys(s, W - 6 - hw, H - 20, hints);
-      let stackY = H - 52;
+      const hw = hintKeysWidth(hints) - 10;
+      // the hint strip sits beside the objective, or a row above it when both don't fit (the driving hints)
+      const objW = textWidthPx(snap.objective || this.objectiveText) + 24;
+      const hintsY = W - 12 - hw < Math.floor(W / 2) + Math.ceil(objW / 2) + 6 ? H - 48 : H - 26;
+      plate(s, W - 12 - hw, hintsY, hw + 12, 19, C.LAVLT2, 0.82);
+      hintKeys(s, W - 6 - hw, hintsY + 4, hints);
+      let stackY = hintsY - 6;
       if (this.toastMsg) {
         const t = this.toastMsg.t;
         const out = Math.max(0, t - BALANCE.hud.toastSeconds) / 0.4;
         const inn = Math.max(0, 0.25 - t) / 0.25;
-        toast(s, W - 6, stackY, this.toastMsg.who, this.toastMsg.text, Math.max(out, inn));
-        stackY -= 16;
+        const who = this.toastMsg.who;
+        stackY -= 40 + 4;
+        toast(s, W - 6, stackY, who, this.toastMsg.text, senderIcon(who, SENDER_ICON), Math.max(out, inn));
       }
       if (this.streetMsg) {
         const label = this.streetMsg.name;
         const dist = snap.district;
-        const w = Math.max(textWidthPx(label), textWidthPx(dist)) + 10;
-        plate(s, W - 6 - w, stackY, w, 20, C.LAVLT2);
-        text(s, W - 6 - w + 5, stackY + 4, label, C.CREAM);
-        text(s, W - 6 - w + 5, stackY + 11, dist, C.MUTED);
+        const w = Math.max(textWidthPx(label), textWidthPx(dist)) + 14;
+        stackY -= 26 + 4;
+        plate(s, W - 6 - w, stackY, w, 26, C.LAVLT2);
+        text(s, W - 6 - w + 7, stackY + 4, label, C.CREAM);
+        text(s, W - 6 - w + 7, stackY + 14, dist, C.MUTED);
       }
     }
     if (this.debugOn && this.stats) {
@@ -223,9 +232,9 @@ export class HudScene extends Phaser.Scene {
         `CHUNKS ${st.chunks}`,
       ];
       const w = Math.max(...lines.map((l) => textWidthPx(l))) + 8;
-      const dy = snap?.vehicle ? 46 + CAR_PANEL.h + 4 : 46;
-      plate(s, 6, dy, w, lines.length * 7 + 6, C.LAVLT2);
-      lines.forEach((l, k) => text(s, 10, dy + 3 + k * 7, l, C.CREAM));
+      const dy = 6 + VITALS.h + 4 + (snap?.vehicle ? CAR_PANEL.h + 4 : 0);
+      plate(s, 6, dy, w, lines.length * 10 + 6, C.LAVLT2);
+      lines.forEach((l, k) => text(s, 10, dy + 4 + k * 10, l, C.CREAM));
     }
     const ctx = this.tex.getContext();
     const img = ctx.createImageData(s.width, s.height);
