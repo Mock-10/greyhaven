@@ -76,9 +76,11 @@ export class CarFx {
       let dh = c.heading - this.prev.heading;
       dh = Math.atan2(Math.sin(dh), Math.cos(dh));
       const turnRate = Math.abs(dh) / dt;
+      // braking forward (not reversing) counts even when a slow frame hides the deceleration
       skidding =
         speed > W.skidSpeed &&
-        (decel > W.skidDecel || c.handbrake || turnRate > W.skidTurn) &&
+        (c.throttle >= 0 || c.speed > 0) &&
+        (decel > W.skidDecel || c.throttle < -0.5 || c.handbrake || turnRate > W.skidTurn) &&
         c.impact === 0;
     }
     if (skidding) {

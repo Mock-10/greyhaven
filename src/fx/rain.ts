@@ -33,10 +33,10 @@ export class RainSim {
 
   private spawn(anywhere: boolean): Drop {
     const r = this.rng;
-    // streaks drift left as they fall, so they start up to half a view height to the right
+    // streaks drift left as they fall, so they start up to a third of a view height to the right
     const land = r.range(0, this.h);
     return {
-      x: r.range(0, this.w + this.h / 2),
+      x: r.range(0, this.w + this.h / 3),
       y: anywhere ? r.range(-20, land) : r.range(-40, -4),
       land,
       v: r.chance(0.5) ? 1 : 0,
@@ -59,7 +59,7 @@ export class RainSim {
     for (let k = this.drops.length - 1; k >= 0; k--) {
       const d = this.drops[k] as Drop;
       d.y += vy * dt;
-      d.x -= (vy / 2) * dt;
+      d.x -= (vy / 3) * dt;
       if (d.y >= d.land) {
         if (d.splash) out.push({ x: d.x, y: d.land });
         if (this.drops.length > want) this.drops.splice(k, 1);

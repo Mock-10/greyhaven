@@ -73,7 +73,7 @@ export const FX_PRESETS = {
     jitter: 0,
     decal: true,
     hold: true,
-    alpha: 0.6,
+    alpha: 0.9,
   }),
   /** Hot sparks: hotwiring, metal on metal, a car scraping a wall. */
   sparks: spec({

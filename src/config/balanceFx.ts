@@ -79,8 +79,9 @@ export const FX = {
   },
   rain: {
     /** Streaks on screen at full rain, per 100 × 100 screen pixels (at 1×). */
-    density: 2.2,
-    /** Fall speed in screen pixels a second; streaks slant down-left at half that sideways. */
+    density: 24,
+    /** Fall speed in screen pixels a second; streaks slant down-left at a third of that sideways (like the
+     *  reference rainy dusk). */
     fallSpeed: 300,
     /** Share of streaks that end in a splash on the ground. */
     splashShare: 0.6,

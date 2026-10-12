@@ -162,10 +162,10 @@ def paper(f):
 def streak(v):
     """A falling rain streak, slanted down-left like the reference rainy dusk (STYLE_GUIDE: 3-6 px, #bcafb6)."""
     L = [4, 6][v]
-    w, h = L // 2 + 1, L
+    w, h = (L - 1) // 3 + 1, L
     img = np.zeros((h, w, 4), np.uint8)
     for y in range(h):
-        x = w - 1 - y // 2
+        x = w - 1 - y // 3
         img[y, x, :3] = H('#bcafb6'); img[y, x, 3] = 255
     return img, 0, h - 1
 

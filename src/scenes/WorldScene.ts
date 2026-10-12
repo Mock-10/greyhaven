@@ -129,6 +129,9 @@ import { askPersist, saveStore } from '../core/storage';
 import { CHEAT_HELP, parseCheat } from '../debug/cheats';
 import { CheatConsole } from '../debug/cheatConsole';
 import { lampTextures, windowGlowTexture } from '../world/nightLights';
+import { WorldFx } from '../fx/worldFx';
+import { groundSampler } from '../maps/groundQuery';
+import { ACTIONS_TEXTURE, contextAction, paintPlayerActions, PlayerActions } from '../anim/playerActions';
 
 interface Placed {
   placement: Placement;
@@ -285,6 +288,13 @@ export class WorldScene extends Phaser.Scene {
   private launderPending = false;
   private resumedAt = -1e9;
   private toldOutOfFuel = false;
+  /** Effects: dust, exhaust, skids, crashes, rain, cash glints (fx/worldFx.ts). */
+  private fx: WorldFx | null = null;
+  /** The hardest hit and the controls of the driven car since the last frame, for the car's effects. */
+  private carImpact = 0;
+  private carInput = { throttle: 0, handbrake: false };
+  /** The player's tool and interact animations (anim/playerActions.ts). */
+  private actions = new PlayerActions();
 
   constructor() {
     super('world');
@@ -379,6 +389,11 @@ export class WorldScene extends Phaser.Scene {
       this.createCars();
       this.createLamps();
       this.createStreetLife();
+      this.fx = new WorldFx(this, this.objectLayer, this.overlayLayer, {
+        depthAt: (x, y) => this.moverDepth(x, y),
+        seed: this.state.seed,
+        view: () => this.camCtl.view(),
+      });
     }
 
     this.debugGfx = this.add.graphics();
@@ -684,6 +699,7 @@ export class WorldScene extends Phaser.Scene {
     };
     this.prompt?.setVisible(false);
     hook().minigame = name;
+    this.showContextPose();
     this.scene.pause();
     this.scene.launch('list', req);
     this.game.events.once('list:closed', () => {
@@ -821,6 +837,7 @@ export class WorldScene extends Phaser.Scene {
   setLook(look: Look): void {
     this.state.look = { ...look };
     paintPlayer(this.textures, look);
+    paintPlayerActions(this.textures, look);
     const costume = playerCostume(look);
     hook().look = { ...look };
     if (costume === this.state.player.costume) return;
@@ -1241,6 +1258,7 @@ export class WorldScene extends Phaser.Scene {
   private createPlayer(): void {
     // the palette-swapped player (docs/11): paint the 'player' texture in this game's look first
     paintPlayer(this.textures, this.state.look);
+    paintPlayerActions(this.textures, this.state.look);
     hook().look = { ...this.state.look };
     const costume = this.state.player.costume;
     this.ensureWalkAnims(costume);
@@ -1355,7 +1373,11 @@ export class WorldScene extends Phaser.Scene {
       this.player.anims.timeScale = p.sprinting ? BALANCE.walker.sprintFpsMultiplier : 1;
     } else {
       this.player.stop();
-      const ref = characterFrame(p.costume, 'idle', p.dir);
+      // standing: a tool or interact animation if one is playing, else the idle sprite
+      const action = p.costume.startsWith('player/') ? this.actions.frame(p.costume.slice(7), p.dir) : null;
+      const ref = action
+        ? { atlas: ACTIONS_TEXTURE, frame: action }
+        : characterFrame(p.costume, 'idle', p.dir);
       if (this.player.texture.key !== ref.atlas || this.player.frame.name !== ref.frame)
         this.player.setTexture(ref.atlas, ref.frame);
     }
@@ -1376,7 +1398,8 @@ export class WorldScene extends Phaser.Scene {
 
   private playerBounds(): Rect {
     const sp = this.player as Phaser.GameObjects.Sprite;
-    const f = frameInfo(sp.texture.key as 'characters', sp.frame.name);
+    const g = this.geometryFrame(sp);
+    const f = frameInfo(g.atlas as 'characters', g.frame);
     return { x: sp.x - f.ax + f.bounds.x, y: sp.y - f.ay + f.bounds.y, w: f.bounds.w, h: f.bounds.h };
   }
 
@@ -1515,6 +1538,8 @@ export class WorldScene extends Phaser.Scene {
     if (this.time.now - this.resumedAt < BALANCE.ui.keyGuardMs) return;
     const u = this.usables.find((x) => x.id === this.target);
     if (!u) return;
+    // reach out to whatever is used
+    this.actions.play('use');
     if (u.id.startsWith('witness:')) {
       const ped = this.life?.peds.find((pv) => `witness:${pv.ped.id}` === u.id)?.ped;
       if (ped) {
@@ -1617,6 +1642,7 @@ export class WorldScene extends Phaser.Scene {
     this.inGround.setVisible(true);
     this.inObjects.setVisible(true);
     const view = new InteriorView(this, json, def, this.inGround, this.inObjects);
+    this.fx?.setLayers(this.inObjects, this.overlayLayer);
     const doors = createDoors(json, def);
     const npcs = this.npcsOnDuty(def, json);
     this.inside = { def, json, view, doors, npcs };
@@ -1718,6 +1744,7 @@ export class WorldScene extends Phaser.Scene {
     this.inObjects.setVisible(false);
     this.groundLayer.setVisible(true);
     this.objectLayer.setVisible(true);
+    this.fx?.setLayers(this.objectLayer, this.overlayLayer);
     Object.assign(this, back);
     this.streetSaved = null;
     if (this.player) {
@@ -1948,6 +1975,7 @@ export class WorldScene extends Phaser.Scene {
   private openMinigame(req: MinigameRequest): void {
     this.prompt?.setVisible(false);
     hook().minigame = req.kind;
+    this.showContextPose();
     // the panel's logic arrives when the scene starts (next frame); until then, nothing stale
     hook().minigameState = null;
     if (!(req.kind === 'lockpick' || req.kind === 'hotwire' || req.kind === 'search')) this.scene.pause();
@@ -2172,6 +2200,8 @@ export class WorldScene extends Phaser.Scene {
     ];
     const fuelBefore = v.fuel;
     const impact = drive(v, input, dt, [...this.solids, ...others], this.collisionRules);
+    this.carImpact = Math.max(this.carImpact, impact);
+    this.carInput = input;
     if (impact > BALANCE.vehicles.crashToastSpeed && v.wrecked) this.toast('CAR', 'WRECKED. GET OUT: F.');
     if (fuelBefore > 0 && v.fuel === 0 && !this.toldOutOfFuel) {
       this.toldOutOfFuel = true;
@@ -2769,9 +2799,22 @@ export class WorldScene extends Phaser.Scene {
   // ---------------------------------------------------------------- per frame
 
   /** A sprite's cell on screen with a per-pixel opacity test, for occlusion coverage. */
+  /**
+   * The atlas frame whose shape stands for a sprite in bounds and occlusion tests. A player playing a tool
+   * animation (a runtime texture, not in the atlas registry) counts as their idle sprite.
+   */
+  private geometryFrame(sp: Phaser.GameObjects.Sprite): FrameRef {
+    if (sp.texture.key === ACTIONS_TEXTURE) {
+      const p = this.state.player;
+      return characterFrame(p.costume, 'idle', p.dir);
+    }
+    return { atlas: sp.texture.key as AtlasKey, frame: sp.frame.name };
+  }
+
   private masked(sp: Phaser.GameObjects.Sprite, frame?: FrameRef): MaskedSprite {
-    const atlas = frame?.atlas ?? (sp.texture.key as AtlasKey);
-    const name = frame?.frame ?? sp.frame.name;
+    const g = frame ?? this.geometryFrame(sp);
+    const atlas = g.atlas as AtlasKey;
+    const name = g.frame;
     const f = frameInfo(atlas, name);
     return {
       x: sp.x - f.ax,
@@ -2881,6 +2924,60 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** Depth for a small moving thing (an effect) at a ground point, like the player's (syncPlayer). */
+  private moverDepth(x: number, y: number): number {
+    if (this.inside || !this.map.ground) return depthOf(x, y);
+    const s = worldToScreen(x, y);
+    const b = { x: s.x - 6, y: s.y - 12, w: 12, h: 14 };
+    const near = this.statics.filter((o) => rectsOverlap(o.bounds, b));
+    return depthAmong([x - 2, y - 2, x + 2, y + 2], near, -1);
+  }
+
+  /** Show the pose for what just opened (the world pauses under most panels, so set it now). */
+  private showContextPose(): void {
+    this.actions.hold(contextAction(hook().minigame));
+    this.syncPlayer();
+  }
+
+  private updateFx(dt: number): void {
+    this.actions.hold(contextAction(hook().minigame));
+    this.actions.update(dt, this.state.player.moving || !!this.drivenCar());
+    const fx = this.fx;
+    if (!fx) return;
+    const car = this.drivenCar();
+    const p = this.state.player;
+    const sampler = groundSampler(this.map);
+    fx.update(dt, {
+      walker: car || !this.player ? null : { x: p.x, y: p.y, moving: p.moving, sprinting: p.sprinting },
+      car: car
+        ? {
+            x: car.v.x,
+            y: car.v.y,
+            heading: car.v.heading,
+            speed: car.v.speed,
+            running: car.v.running && !car.v.wrecked && car.v.fuel > 0,
+            halfLength: stats(car.v).halfLength,
+            halfWidth: stats(car.v).halfWidth,
+            throttle: this.carInput.throttle,
+            handbrake: this.carInput.handbrake,
+            impact: this.carImpact,
+          }
+        : null,
+      groundAt: (x, y) => (this.inside ? undefined : sampler(x, y)),
+      minutes: this.state.minutes,
+      seed: this.state.seed,
+      indoors: !!this.inside,
+      cash: this.state.money.clean + this.state.money.dirty,
+    });
+    this.carImpact = 0;
+    // a crash shakes the view, in whole screen pixels
+    const sh = fx.shakeOffset;
+    if (sh.x || sh.y) {
+      const cam = this.cameras.main;
+      cam.setScroll(cam.scrollX + sh.x / cam.zoom, cam.scrollY + sh.y / cam.zoom);
+    }
+  }
+
   update(_time: number, deltaMs: number): void {
     const dt = deltaMs / 1000;
     // The simulation runs on real elapsed time (capped by the fixed step), not Phaser's smoothed delta,
@@ -2904,6 +3001,8 @@ export class WorldScene extends Phaser.Scene {
     } else this.updateStreet();
     this.updateLead(dt);
     this.camCtl.update(dt);
+    // raw frame time, like the simulation (the smoothed delta crawls in slow frames)
+    this.updateFx(Math.min(0.1, this.game.loop.rawDelta / 1000));
     if (!this.inside) this.ground.update(this.camCtl.view());
     this.drawDebug();
 

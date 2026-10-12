@@ -22,6 +22,8 @@ export interface FxLayerOptions {
   /** Depth for a moving object at a ground point (WorldScene's footprint-aware rule); default x + y. */
   depthAt?: (x: number, y: number) => number;
   seed?: number;
+  /** The visible area in art pixels (iso/camera.ts CameraController.view); default the camera's worldView. */
+  view?: () => { x: number; y: number; w: number; h: number };
 }
 
 export class FxLayer {
@@ -31,6 +33,7 @@ export class FxLayer {
   private rain = new RainSim(5);
   private rainLevel = 0;
   private depthAt: (x: number, y: number) => number;
+  private view: () => { x: number; y: number; w: number; h: number };
 
   constructor(
     private scene: Phaser.Scene,
@@ -40,6 +43,12 @@ export class FxLayer {
   ) {
     this.sim = new ParticleSim(o.seed ?? 1, FX.world.maxParticles);
     this.depthAt = o.depthAt ?? depthOf;
+    this.view =
+      o.view ??
+      (() => {
+        const v = this.scene.cameras.main.worldView;
+        return { x: v.x, y: v.y, w: v.width, h: v.height };
+      });
   }
 
   /** Move the effects to other layers (entering or leaving an interior). Live particles are dropped. */
@@ -78,9 +87,8 @@ export class FxLayer {
 
   update(dt: number): void {
     // rain first: its splashes join this frame's particles
-    const cam = this.scene.cameras.main;
-    const view = cam.worldView;
-    const splashes = this.rain.update(dt, Math.ceil(view.width), Math.ceil(view.height), this.rainLevel);
+    const view = this.view();
+    const splashes = this.rain.update(dt, Math.ceil(view.w), Math.ceil(view.h), this.rainLevel);
     for (const s of splashes) {
       const g = screenToWorld(view.x + s.x, view.y + s.y);
       this.sim.emit(FX_PRESETS.splash, g.x, g.y, 0, 1);
