@@ -67,6 +67,29 @@ import {
 import { GOODS_NAMES, LAYOUTS } from '../data/burglary';
 import { changedOutfit, emptyChase, tickChaos, type ChaseState } from '../systems/response';
 import { fencePage } from '../world/fence';
+import { CombatWorld } from '../world/combatWorld';
+import { armsPage } from '../world/arms';
+import {
+  addAmmo,
+  cycleWeapon,
+  drawnWeapon,
+  giveWeapon,
+  statsOf,
+  armorShare,
+  hudWeapon,
+  moveFactor,
+  pickUp,
+  reload,
+  revive,
+  seizeUnregistered,
+  selectSlot,
+  setRaised,
+  tickCombat,
+  visibleWeapon,
+  type Box as ShotBox,
+} from '../systems/combat';
+import { WEAPONS, type WeaponId } from '../data/weapons';
+import { policeSighting } from '../systems/response';
 import {
   bribeJudge,
   book,
@@ -102,7 +125,7 @@ import { buildRoads, type RoadGraph } from '../systems/roads';
 import { startFlee } from '../systems/crowd';
 import { addStars, canSee, emptyWanted, reportCrime, searchRadius, tickWanted } from '../systems/wanted';
 import { typeOfModel } from '../data/vehicles';
-import { facingFromWorld, roundHalfEven, worldToScreen, worldToTile } from '../iso/projection';
+import { facingFromWorld, roundHalfEven, screenToWorld, worldToScreen, worldToTile } from '../iso/projection';
 import { rasterizeShadows, shadowAlpha, shadowShape, type Rect } from '../iso/shadows';
 import { GroundRenderer } from '../iso/tilemap';
 import { VectorGroundRenderer } from '../iso/vectorGroundRenderer';
@@ -288,6 +311,10 @@ export interface HudSnapshot {
   stars: number;
   health: number;
   armor: number;
+  /** The weapon panel (docs/11): label and CLIP/RESERVE. */
+  weapon: { label: string; ammo: string };
+  /** The weapon is raised: draw the crosshair at the mouse. */
+  aiming: boolean;
   district: string;
   street: string | null;
   map: MapData;
@@ -471,6 +498,16 @@ export class WorldScene extends Phaser.Scene {
             placed: null,
             door: null,
           });
+        // the arms dealer's open van in the alley (Phase 4, docs/07)
+        else if (z.id === 'arms_dealer' && z.npc)
+          this.usables.push({
+            id: 'zone:arms_dealer',
+            x: z.npc.x,
+            y: z.npc.y,
+            label: 'ARMS DEALER',
+            placed: null,
+            door: null,
+          });
         // the weekend odd jobs' street spots (milestone 8): Squeaky's wash apron
         else if (z.id.startsWith('gig_') && z.npc) {
           const gig = z.id.slice(4) as GigId;
@@ -576,6 +613,9 @@ export class WorldScene extends Phaser.Scene {
 
   private life: StreetLife | null = null;
   private police: Police | null = null;
+  private combatWorld: CombatWorld | null = null;
+  /** Mouse buttons in the street (Phase 4): left fires, right raises the weapon. */
+  private mouse = { left: false, right: false, x: 0, y: 0 };
   private roads: RoadGraph | null = null;
   private buildingBoxes: [number, number, number, number][] = [];
   /** Seconds an officer has been close enough to bust the player (docs/05). */
@@ -640,6 +680,139 @@ export class WorldScene extends Phaser.Scene {
       rules: this.collisionRules,
       buildings: this.buildingBoxes,
       base,
+    });
+    this.combatWorld = new CombatWorld(this, {
+      layer: this.objectLayer,
+      groundLayer: this.groundLayer,
+      rng: this.rng,
+      place: (sp, x, y, r) => place(sp as Phaser.GameObjects.Sprite, x, y, r),
+      player: () => this.state.player,
+      vitals: () => this.state.player,
+      combat: () => this.state.combat,
+      wanted: () => this.state.wanted,
+      peds: () =>
+        this.inside
+          ? []
+          : (this.life?.peds ?? []).map((pv) => ({
+              id: pv.ped.id,
+              x: pv.ped.x,
+              y: pv.ped.y,
+              sprite: pv.sprite,
+            })),
+      removePed: (id) => this.life?.removePed(id),
+      cops: () => (this.inside ? [] : (this.police?.officers ?? []).filter((o) => !o.inCar)),
+      removeCop: (sp) => this.police?.removeOfficer(sp),
+      blockers: () => this.shotBlockers(),
+      buildings: this.buildingBoxes,
+      crime: (stars, at, hear) => this.crime(stars, at, hear),
+      toast: (who, text) => this.toast(who, text),
+      playerDown: () => this.playerDown(),
+      addUsable: (id, x, y, label) =>
+        (this.streetSaved?.usables ?? this.usables).push({ id, x, y, label, placed: null, door: null }),
+      removeUsable: (id) => {
+        this.usables = this.usables.filter((u) => u.id !== id);
+        if (this.streetSaved) this.streetSaved.usables = this.streetSaved.usables.filter((u) => u.id !== id);
+      },
+      playAction: (a) => this.actions.play(a, BALANCE.combatWorld.flashSeconds * 6),
+    });
+  }
+
+  /** What stops a bullet in the street: buildings and every car, as ground boxes. */
+  private shotBlockers(): ShotBox[] {
+    const out: ShotBox[] = [...this.buildingBoxes];
+    const add = (o: { x: number; y: number; hx: number; hy: number; ang: number }) => {
+      const c = Math.abs(Math.cos(o.ang));
+      const sn = Math.abs(Math.sin(o.ang));
+      const ex = o.hx * c + o.hy * sn;
+      const ey = o.hx * sn + o.hy * c;
+      out.push([o.x - ex, o.y - ey, o.x + ex, o.y + ey]);
+    };
+    for (const c of this.cars) {
+      if (c.v.id === this.state.driving) continue;
+      const S = stats(c.v);
+      add({ x: c.v.x, y: c.v.y, hx: S.halfLength, hy: S.halfWidth, ang: c.v.heading });
+    }
+    for (const b of this.life?.carBoxes() ?? []) add(b.obb);
+    for (const b of this.police?.boxes() ?? []) add(b.obb);
+    return out;
+  }
+
+  /** The aim: from the player to the ground point under the mouse. */
+  private aimAngle(): number {
+    const cam = this.cameras.main;
+    const wp = cam.getWorldPoint(this.mouse.x, this.mouse.y);
+    const g = screenToWorld(wp.x, wp.y);
+    const p = this.state.player;
+    return Math.atan2(g.y - p.y, g.x - p.x);
+  }
+
+  /** Combat each fixed step (on foot in the street): timers, the trigger, facing the aim, the aim pose. */
+  private combatTick(dt: number): void {
+    const st = this.state;
+    tickCombat(st.combat, st.player, dt);
+    const can = this.playing && !this.inside && !st.driving && !hook().minigame && !this.busy;
+    setRaised(st.combat, can && this.mouse.right);
+    if (!can) {
+      this.combatWorld?.trigger(0, false);
+      return;
+    }
+    const aiming = st.combat.raised || this.mouse.left;
+    const angle = this.aimAngle();
+    if (aiming) st.player.dir = facingFromWorld(Math.cos(angle), Math.sin(angle));
+    this.combatWorld?.trigger(angle, this.mouse.left);
+    const w = drawnWeapon(st.combat);
+    const cls = w ? WEAPONS[w.id].cls : null;
+    const pose =
+      st.combat.raised && cls
+        ? cls === 'handgun'
+          ? 'aim_pistol'
+          : cls === 'heavy'
+            ? 'aim_heavy'
+            : cls === 'melee'
+              ? null
+              : 'aim_rifle'
+        : null;
+    this.actions.hold(pose);
+  }
+
+  /** Down at 0 HP (docs/05 "Death"): wake at 06:00 in St. Brine's infirmary, pay 10% of carried clean cash. */
+  private playerDown(): void {
+    const st = this.state;
+    const D = BALANCE.death;
+    const bill = Math.min(
+      st.money.clean,
+      Math.max(D.minBill, Math.min(D.maxBill, Math.round(st.money.clean * D.billShare))),
+    );
+    st.money.clean -= bill;
+    st.wanted = emptyWanted();
+    this.chase = emptyChase();
+    this.lastStars = 0;
+    this.bustT = 0;
+    this.police?.destroy();
+    this.combatWorld?.clear();
+    revive(st.player, st.combat);
+    st.minutes = sleepUntil(st.minutes, BALANCE.sleep.wakeMinute);
+    const z = this.map.zones?.find((q) => q.id === 'shelter')?.npc ?? this.map.spawn;
+    st.player.x = z.x + 14;
+    st.player.y = z.y;
+    this.camCtl.snap();
+    this.prompt?.setVisible(false);
+    this.scene.pause();
+    this.scene.launch('menu', {
+      info: {
+        title: 'DOWN',
+        lines: [
+          "YOU WOKE UP IN ST. BRINE'S INFIRMARY",
+          `06:00, ${calendar(st.minutes).weekday}`,
+          `THE BILL: $${bill} (CLEAN CASH)`,
+          'YOU KEPT YOUR THINGS. THE STARS ARE GONE.',
+        ],
+      },
+    });
+    this.game.events.once('menu:closed', () => {
+      this.scene.resume();
+      this.resumedAt = this.time.now;
+      this.runDays(true);
     });
   }
 
@@ -714,6 +887,15 @@ export class WorldScene extends Phaser.Scene {
     }
     // an officer who sees a bare face during a chase puts it on file (docs/05)
     if (seen && wanted.stars > 0) sighted(this.state.heat, 'police', this.disguise(), this.state.minutes);
+    if (seen && wanted.stars > 0)
+      policeSighting(
+        this.chase,
+        wanted,
+        this.state.heat,
+        this.state.minutes,
+        visibleWeapon(this.state.combat),
+        street,
+      );
     if (tickWanted(wanted, dt, seen, street)) {
       this.toast('POLICE', 'YOU LOST THEM.');
       this.reported.clear();
@@ -876,6 +1058,11 @@ export class WorldScene extends Phaser.Scene {
     else if (o.jailDays > 0)
       lines.push(`${o.jailDays} DAY${o.jailDays > 1 ? 'S' : ''} IN JAIL${s.lawyer ? ' (LAWYER)' : ''}`);
     if (o.seizedCash > 0) lines.push(`DIRTY CASH SEIZED: $${o.seizedCash}`);
+    if (s.repeat) {
+      const guns = seizeUnregistered(st.combat);
+      if (guns.length) lines.push(`SEIZED: ${guns.map((g) => WEAPONS[g].name).join(', ')}`);
+    }
+    this.combatWorld?.clear();
     if (impounded) lines.push('THE STOLEN CAR WAS IMPOUNDED');
     if (repLost > 0) lines.push(`STREET REP LOST: ${repLost}`);
     lines.push(`PROMOTION FROZEN ${BALANCE.careers.freezeDays} DAYS, EXTRA WORK AFTER`);
@@ -1150,6 +1337,34 @@ export class WorldScene extends Phaser.Scene {
     });
     kb.on(`keydown-${KEYS.debugOverlay}`, () => this.setDebug(!this.debugOn));
     kb.on(`keydown-${KEYS.mask}`, () => free() && this.toggleMask());
+    // weapons (docs/11): 1-4 draw a slot (again holsters), R reloads, the wheel cycles (Ctrl+wheel zooms)
+    for (const [k, slot] of [
+      ['ONE', 0],
+      ['TWO', 1],
+      ['THREE', 2],
+      ['FOUR', 3],
+    ] as const)
+      kb.on(`keydown-${k}`, () => free() && !this.inside && selectSlot(this.state.combat, slot));
+    kb.on(`keydown-${KEYS.reload}`, () => free() && reload(this.state.combat));
+    this.input.mouse?.disableContextMenu();
+    this.input.on('pointerdown', (ptr: Phaser.Input.Pointer) => {
+      this.mouse.x = ptr.x;
+      this.mouse.y = ptr.y;
+      if (ptr.leftButtonDown()) this.mouse.left = true;
+      if (ptr.rightButtonDown()) this.mouse.right = true;
+    });
+    this.input.on('pointerup', (ptr: Phaser.Input.Pointer) => {
+      if (!ptr.leftButtonDown()) this.mouse.left = false;
+      if (!ptr.rightButtonDown()) this.mouse.right = false;
+    });
+    this.input.on('pointermove', (ptr: Phaser.Input.Pointer) => {
+      this.mouse.x = ptr.x;
+      this.mouse.y = ptr.y;
+    });
+    this.input.on('wheel', (ptr: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
+      if (ptr.event instanceof WheelEvent && ptr.event.ctrlKey) return;
+      if (free() && !this.inside && dy !== 0) cycleWeapon(this.state.combat, dy > 0 ? 1 : -1);
+    });
     kb.on(`keydown-${KEYS.skipGuide}`, () => {
       if (!free() || !onboardingActive(this.state.onboarding)) return;
       skipOnboarding(this.state.onboarding);
@@ -1265,6 +1480,17 @@ export class WorldScene extends Phaser.Scene {
       case 'heal':
         st.player.health = BALANCE.player.maxHealth;
         break;
+      case 'gun': {
+        // a weapon with a full reserve, drawn (Phase 4 testing)
+        const id = c.weapon as WeaponId;
+        if (!(id in WEAPONS)) break;
+        giveWeapon(st.combat, id, false, statsOf(id).clip, false);
+        const ammo = WEAPONS[id].ammo;
+        if (ammo) addAmmo(st.combat, ammo, 999);
+        const slot = st.combat.slots.findIndex((w) => w?.id === id);
+        if (slot >= 0 && st.combat.drawn !== slot) selectSlot(st.combat, slot);
+        break;
+      }
       case 'stars':
         if (c.stars === 0) st.wanted = emptyWanted();
         else {
@@ -1609,6 +1835,10 @@ export class WorldScene extends Phaser.Scene {
       if (this.lastNpcMinute % 10 === 0) this.updateInteriorObjective();
     }
     if (!this.isReference) this.updateStreetLife(dt);
+    if (!this.isReference) {
+      this.combatTick(dt);
+      this.combatWorld?.update(dt, !!this.inside);
+    }
     const k = this.keys;
     const car = this.drivenCar();
     if (car) {
@@ -1628,12 +1858,18 @@ export class WorldScene extends Phaser.Scene {
     }
     // WASD: the same screen speed in every direction, two-key diagonals along the tile edges (systems/movement.ts)
     p.sprinting = k.sprint.isDown;
-    const speed = BALANCE.walker.walkSpeed * (p.sprinting ? BALANCE.walker.sprintMultiplier : 1);
+    if (this.state.combat.raised) p.sprinting = false;
+    const speed =
+      BALANCE.walker.walkSpeed *
+      (p.sprinting ? BALANCE.walker.sprintMultiplier : 1) *
+      (this.state.combat.raised ? BALANCE.combatWorld.aimWalk : 1) *
+      moveFactor(this.state.combat);
     const v = moveVector(sx, sy, speed) as { x: number; y: number };
     const next = moveWithCollision(p.x, p.y, v.x * dt, v.y * dt, this.walkSolids(), this.collisionRules);
     p.x = next.x;
     p.y = next.y;
-    p.dir = facingFromWorld(v.x, v.y);
+    // aiming, the player faces the mouse and steps sideways or backwards
+    if (!this.state.combat.raised && !this.mouse.left) p.dir = facingFromWorld(v.x, v.y);
     p.moving = true;
   }
 
@@ -1646,7 +1882,15 @@ export class WorldScene extends Phaser.Scene {
     this.player.setPosition(x, y);
     this.playerShadow?.setPosition(x, y);
     const anim = `walk-${p.costume}-${DIRS[p.dir]}`;
-    if (p.moving) {
+    const aimFrame =
+      p.moving && this.state.combat.raised && p.costume.startsWith('player/')
+        ? this.actions.frame(p.costume.slice(7), p.dir)
+        : null;
+    if (aimFrame) {
+      this.player.stop();
+      if (this.player.texture.key !== ACTIONS_TEXTURE || this.player.frame.name !== aimFrame)
+        this.player.setTexture(ACTIONS_TEXTURE, aimFrame);
+    } else if (p.moving) {
       if (this.player.anims.currentAnim?.key !== anim || !this.player.anims.isPlaying) {
         // keep the cycle's phase when turning, so the legs don't snap back to idle
         const progress = this.player.anims.isPlaying ? this.player.anims.getProgress() : 0;
@@ -1844,6 +2088,8 @@ export class WorldScene extends Phaser.Scene {
     else if (u.id.startsWith('atm')) this.openList('atm');
     else if (u.id.startsWith('rob:atm')) this.robAtmStart(u.id.slice(4), u);
     else if (u.id.startsWith('house:')) this.breakIn(u.id.slice(6), u);
+    else if (u.id.startsWith('drop:')) this.takeDrop(u.id);
+    else if (u.id === 'zone:arms_dealer') this.openArms();
     else if (u.id === 'owner') this.scareOff();
     else if (u.id.startsWith('job:')) this.jobTask(u.id.slice(4) as TaskId);
     else if (u.id.startsWith('gig:')) this.gigAction(u.id.slice(4) as GigId);
@@ -2582,6 +2828,28 @@ export class WorldScene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------- the fence and masks (docs/04, docs/05)
+
+  /** E on a weapon on the ground (docs/07 looting): looted weapons are unregistered. */
+  private takeDrop(id: string): void {
+    const d = this.combatWorld?.take(id);
+    if (!d) return;
+    const r = pickUp(this.state.combat, d);
+    if (r.text) this.toast('WEAPON', r.text);
+    if (r.dropped) {
+      const p = this.state.player;
+      this.combatWorld?.dropAt(p.x + 8, p.y + 8, { weapon: r.dropped.id, rounds: r.dropped.clip });
+    }
+  }
+
+  /** The arms dealer's van (docs/07 decisions): weapons, ammo and armor for dirty cash, at night (assumed). */
+  private openArms(): void {
+    const H = BALANCE.combatWorld.dealerHours;
+    if (!isOpen(H, this.minuteOfDay())) {
+      this.toast('ARMS DEALER', `NOT NOW. ${formatClock(H.from)} TO ${formatClock(H.to)}.`);
+      return;
+    }
+    this.openPanel('arms', () => armsPage(this.state));
+  }
 
   /** Precinct 1's desk sergeant reads out your record (docs/05). */
   private frontDesk(): void {
@@ -4045,6 +4313,7 @@ export class WorldScene extends Phaser.Scene {
     h.rep = this.state.crime.rep;
     h.robbing = !!this.robbery;
     h.goods = this.state.goods.length;
+    h.weapon = hudWeapon(this.state.combat);
     h.masked = !!this.state.maskOn;
     this.syncMoneyHook();
     h.driving = this.state.driving;
@@ -4086,7 +4355,9 @@ export class WorldScene extends Phaser.Scene {
         money: this.state.money,
         stars: this.state.wanted.stars,
         health: p.health / BALANCE.player.maxHealth,
-        armor: p.armor,
+        armor: armorShare(p),
+        weapon: hudWeapon(this.state.combat),
+        aiming: this.state.combat.raised,
         district: districtAt(this.map, this.state.player.x, this.state.player.y),
         street: this.inside ? this.inside.def.name : this.street,
         map: this.map,

@@ -14,10 +14,11 @@ export type Cheat =
   | { kind: 'car'; model: string; x: number | null; y: number | null; dir: number }
   | { kind: 'stars'; stars: number }
   | { kind: 'heal' }
+  | { kind: 'gun'; weapon: string }
   | { kind: 'help' };
 
 export const CHEAT_HELP =
-  'CASH N · DIRTY N · BANK N · ITEM NAME N · TIME HH:MM · DAY N · RANK 1-5 · JOB NAME · STARS 0-5 · TP X Y · CAR MODEL [X Y DIR] · HEAL';
+  'CASH N · DIRTY N · BANK N · ITEM NAME N · TIME HH:MM · DAY N · RANK 1-5 · JOB NAME · STARS 0-5 · TP X Y · CAR MODEL [X Y DIR] · HEAL · GUN NAME';
 
 const num = (s: string | undefined): number | null => {
   if (s === undefined || s.trim() === '') return null;
@@ -75,6 +76,8 @@ export function parseCheat(line: string): Cheat | { error: string } {
         : { error: 'STARS 0-5' };
     case 'heal':
       return { kind: 'heal' };
+    case 'gun':
+      return args[0] ? { kind: 'gun', weapon: args[0] } : { error: 'GUN PISTOL|SHOTGUN|SMG|...' };
     case 'help':
     case '?':
       return { kind: 'help' };

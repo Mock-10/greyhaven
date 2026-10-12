@@ -127,6 +127,14 @@ export class StreetLife {
     }
   }
 
+  /** Someone went down (combat): they leave the crowd; the combat layer draws the body. */
+  removePed(id: number): void {
+    const pv = this.peds.find((q) => q.ped.id === id);
+    if (!pv) return;
+    pv.sprite.destroy();
+    this.peds = this.peds.filter((q) => q !== pv);
+  }
+
   private trySpawnPed(): void {
     const rng = this.host.rng;
     const path = rng.int(0, this.walk.paths.length - 1);

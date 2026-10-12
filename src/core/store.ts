@@ -15,6 +15,7 @@ import { emptyWanted, type WantedState } from '../systems/wanted';
 import { createCrime, type CrimeState } from '../systems/reputation';
 import { emptyHeat, type HeatState } from '../systems/identify';
 import type { Goods } from '../systems/burglary';
+import { createCombat, type CombatState } from '../systems/combat';
 
 /** Where the player is: out on the street map, or inside an interior. */
 export type Area = { kind: 'street' } | { kind: 'interior'; id: InteriorId };
@@ -123,6 +124,8 @@ export interface GameState {
   /** Masks owned (data ids) and the one worn, or null (docs/05). */
   masks: string[];
   maskOn: string | null;
+  /** Weapons, ammo and what's drawn (systems/combat.ts, docs/12 `loadout`). */
+  combat: CombatState;
   /** Real seconds played, for the save summary and local play stats (docs/12). */
   playtime: number;
 }
@@ -192,6 +195,7 @@ export function createState(
     goods: [],
     masks: [],
     maskOn: null,
+    combat: createCombat(),
     playtime: 0,
   };
 }

@@ -163,6 +163,54 @@ def drill():
                  (-12, 8, -3, 3, 0, 13))
 
 
+def gun(length, body=2.6, stock=None, mag=None, pump=False, drum=False, tube=False, scope=False, ramp='night'):
+    """A side-on firearm along +x for the weapon icons (Phase 4): body, barrel, grip, optional stock and magazine."""
+    def parts(P):
+        bod = rbox(P, (0, 0, 6.6), (body, 0.9, 1.1), 0.4)
+        bar = capsule(P, (body - 0.4, 0, 7.0), (body + length, 0, 7.0), 0.55 if not tube else 1.4)
+        grip = capsule(P, (-body * 0.35, 0, 6.0), (-body * 0.55 - 0.6, 0, 2.6), 0.75)
+        out = [np.minimum.reduce([bod, bar]), grip]
+        if stock:
+            out.append(rbox(P, (-body - stock / 2, 0, 6.0), (stock / 2, 0.75, 1.3), 0.5))
+        if mag:
+            out.append(rbox(P, (body * 0.35, 0, 4.0), (0.8, 0.7, mag), 0.3))
+        if pump:
+            out.append(rbox(P, (body + length * 0.45, 0, 6.1), (1.8, 1.0, 0.7), 0.3))
+        if drum:
+            out.append(cyl_z(P, (body * 0.2, 0, 3.4), 1.9, 1.2))
+        if scope:
+            out.append(capsule(P, (-0.6, 0, 9.0), (body + 1.2, 0, 9.0), 0.75))
+        return out
+    mats = [solid(ramp, 1.6, 0.6), solid('night', 1.2, 0.2)]
+    if stock: mats.append(solid('wood', 2.6, 0.1))
+    if mag: mats.append(solid('night', 1.0, 0.2))
+    if pump: mats.append(solid('wood', 2.8, 0.1))
+    if drum: mats.append(solid('night', 1.4, 0.4))
+    if scope: mats.append(solid('blueg', 2.2, 0.8))
+    ext = body + length + 1
+    return Model(parts, mats, (-body - (stock or 0) - 2, ext, -2, 2, 0, 11))
+
+
+def ammo_box():
+    """An open ammo box with a row of cartridges standing in it."""
+    def parts(P):
+        box = rbox(P, (0, 0, 3.0), (5.0, 3.2, 3.0), 0.4)
+        rounds = np.minimum.reduce([capsule(P, (-3.6 + k * 1.8, 0, 5.0), (-3.6 + k * 1.8, 0, 8.4), 0.6, 0.4) for k in range(5)])
+        return [box, rounds]
+    return Model(parts, [solid('sage', 2.2, 0.1), solid('clay', 4.0, 1.0)], (-6, 6, -4, 4, 0, 9.5))
+
+
+def bat():
+    def parts(P): return [capsule(P, (-7.5, 0, 3.0), (7.5, 0, 8.0), 0.55, 1.35)]
+    return Model(parts, [solid('wood', 3.2, 0.2)], (-9, 9, -2, 2, 1, 10))
+
+
+def knife():
+    def parts(P):
+        return [capsule(P, (-5.0, 0, 5.0), (-1.0, 0, 5.0), 0.8), capsule(P, (-0.6, 0, 5.2), (5.5, 0, 5.6), 0.55, 0.15)]
+    return Model(parts, [solid('night', 1.3), solid('white', 3.8, 1.2)], (-6.5, 7, -2, 2, 3, 7))
+
+
 def mask():
     """A balaclava on a dark head form (the fence's masks, docs/04)."""
     return humans.human(skin_tone=2.6, upper=('night', 1.0), hair=('night', 1.0), mask=True)
@@ -473,6 +521,19 @@ ICONS = {
 for k, f in FACES.items():
     ICONS[f'face/{k}'] = ((lambda f=f: bust(f())), 0.785, 32)
 ICONS['item/mask'] = ((lambda: bust(mask())), 0.785, 32)
+# Phase 4 weapons (docs/07), seen side-on and a little from above
+ICONS.update({
+    'weapon/bat': (bat, -0.785, 32), 'weapon/knife': (knife, -0.785, 32),
+    'weapon/pistol': (lambda: gun(3.0, body=2.4), -0.785, 32),
+    'weapon/revolver': (lambda: gun(4.0, body=2.2, drum=True), -0.785, 32),
+    'weapon/shotgun': (lambda: gun(9.0, body=2.4, stock=4.5, pump=True), -0.785, 32),
+    'weapon/smg': (lambda: gun(3.6, body=3.2, mag=2.6), -0.785, 32),
+    'weapon/assault_rifle': (lambda: gun(7.0, body=3.4, stock=4.0, mag=2.4), -0.785, 32),
+    'weapon/hunting_rifle': (lambda: gun(8.5, body=3.0, stock=4.6, scope=True), -0.785, 32),
+    'weapon/lmg': (lambda: gun(8.0, body=4.2, stock=3.6, drum=True), -0.785, 32),
+    'weapon/grenade_launcher': (lambda: gun(4.5, body=3.4, stock=3.4, tube=True, ramp='sage'), -0.785, 32),
+    'item/armor': (vest, -0.6, 32), 'item/ammo': (ammo_box, 0.5, 32),
+})
 
 # outfits (milestone 6b): a dress form wearing the outfit's top and bottom (src/data/looks.ts: the same ramps,
 # a shift of one tone ~ one step of base)

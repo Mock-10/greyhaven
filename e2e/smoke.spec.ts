@@ -740,3 +740,31 @@ test('house burglary: pick a Linden Avenue door, search the living room, leave w
   await page.waitForFunction(() => (window.__DL__.goods ?? 0) > 0 || window.__DL__.dirty > 0);
   expect(problems).toEqual([]);
 });
+
+test('the arms dealer sells a pistol; it draws, aims and fires (Phase 4)', async ({ page }) => {
+  test.setTimeout(120_000);
+  const problems = await boot(page, '?scene=world&zoom=3&time=20:00&x=1705&y=440');
+  await cheat(page, 'dirty 1000');
+  await page.waitForFunction(() => window.__DL__.target === 'zone:arms_dealer');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__DL__.minigame === 'arms');
+  await page.waitForTimeout(400);
+  // PISTOL is the third row
+  await page.keyboard.press('3');
+  await page.waitForFunction(() => window.__DL__.dirty === 1000 - 600);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__DL__.minigame === null);
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Digit2');
+  await page.waitForFunction(() => window.__DL__.weapon?.label === 'PISTOL');
+  const clip0 = Number((await page.evaluate(() => window.__DL__.weapon!.ammo)).split('/')[0]);
+  await page.mouse.move(800, 250);
+  await page.mouse.down({ button: 'right' });
+  await page.waitForTimeout(300);
+  await page.mouse.down({ button: 'left' });
+  await page.waitForTimeout(120);
+  await page.mouse.up({ button: 'left' });
+  await page.mouse.up({ button: 'right' });
+  await page.waitForFunction((c) => Number(window.__DL__.weapon!.ammo.split('/')[0]) === c - 1, clip0);
+  expect(problems).toEqual([]);
+});

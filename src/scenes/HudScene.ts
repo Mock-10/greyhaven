@@ -15,6 +15,7 @@ import {
   hintKeys,
   hintKeysWidth,
   plate,
+  px,
   radar,
   senderIcon,
   stars,
@@ -157,7 +158,28 @@ export class HudScene extends Phaser.Scene {
     const snap = this.snap;
     if (snap) {
       const cal = calendar(snap.minutes);
-      topLeft(s, 6, 6, { ammo: '-/-', label: 'UNARMED', hp: this.anim.health, armor: snap.armor });
+      topLeft(s, 6, 6, {
+        ammo: snap.weapon.ammo,
+        label: snap.weapon.label,
+        hp: this.anim.health,
+        armor: snap.armor,
+      });
+      // the crosshair at the mouse while a weapon is raised (docs/07)
+      if (snap.aiming) {
+        const ptr = this.input.activePointer;
+        const cx = Math.floor(ptr.x / this.z);
+        const cy = Math.floor(ptr.y / this.z);
+        for (const [dx, dy] of [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ] as const)
+          for (let k = 3; k <= 6; k++) {
+            px(s, cx + dx * k, cy + dy * k, C.INK);
+            px(s, cx + dx * k + (dy ? 1 : 0), cy + dy * k + (dx ? 1 : 0), C.CREAM);
+          }
+      }
       this.anim.drawVitals(s, 6, 6);
       stars(
         s,
